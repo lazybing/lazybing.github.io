@@ -35,6 +35,8 @@ origin	git@github.com:imathis/octopress.git (push)
 ```
 `git clone` 是 clone 仓库，它主要用于在服务器端已经存在源码目录的情况，该方法在程序开发过程中非常有用。但如果一开始并没有这样的远程仓库，而需要我们从头开始呢？`git init` 正是在现有目录中初始化仓库，该命令创建一个名为 `.git` 的子仓库，这个子目录含有你初始化的 Git 仓库中所有的必须文件。
 
+抓取代码除了用于初始化的 `git clone` 外，还有 `git fetch [remote name]` 和 `git pull`。其中 `git fetch`只是简单的从远程服务器拉取 code，但并捕鱼本地 branch 进行合并；而 `git pull` 不仅拉取远端服务器有而本地没有的 code 到本地，还会进行合并。
+
 ###修改代码
 ---
 git 仓库里的源码一共有 4 种状态，分别是：`Untracked` `Unmodified` `Modified` `Staged`。仓库里哪些文件处于哪些状态可以通过 `git status` 命令来查看。
@@ -55,4 +57,27 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 `git status` 不仅可以查看状态，还能够提示如果变更某些文件的状态，如上面的 `2016-05-08-how-to-use-git.md` 处于 `modified` 状态，可以使用 `git add` 或 `git checkout` 命令修改它的状态。
 
+###提交代码
+---
+`git commit` 作为提交命令可以用于提交处于暂存区中的文件到仓库里。使用 `git commit` 时会自动启动一个编辑器用于添加提交说明。或者可以直接加 `-m` 选项，并在后面直接加上提交说明：
+
+```
+binglis-Mac:octopress bingli$ git commit -m "commit on how to use git blog"
+[source 6bf4d37] commit on how to use git blog
+ 1 file changed, 38 insertions(+)
+```
+提交后，会有信息显示当前是在哪个分之(`master`)下提交的，校验和(`6bf4d37`)，以及有多少文件修改过，多少行添加，多少行删除等信息。
+
+`git commit` 只是提交到了本地仓库，如果有远程仓库，可以使用 `git push [remote name] [branch name]` 命令，将其推送到远程仓库。例如：
+
+```
+binglis-Mac:octopress bingli$ git push origin source
+Counting objects: 5, done.
+Delta compression using up to 2 threads.
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (5/5), 1.85 KiB | 0 bytes/s, done.
+Total 5 (delta 2), reused 0 (delta 0)
+To git@github.com:lazybing/lazybing.github.io.git
+   df4de96..6bf4d37  source -> source
+```
 
