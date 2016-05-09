@@ -6,10 +6,13 @@ comments: true
 categories: 源码分析
 ---
 
+
+
+[FFmpeg 官网](https://ffmpeg.org/)对 FFmpeg 的描述是这样的：
+
 ```
 A complete, cross-platform solution to record, convert and stream audio and video.
 ```
-这是 [FFmpeg 官网](https://ffmpeg.org/)对 FFmpeg 的简短描述。
 <!--more-->
 ###介绍
 `FFmpeg` 是一个多媒体架构，能够用于解码、编码、转码、复用、解复用、滤波以及播放人类或机器制造出来的各种媒体文件。它能够支持最古老的、最前沿的媒体格式，不管这种格式是由官方标准社区制定还是由各大公司合作制定。
@@ -18,19 +21,19 @@ A complete, cross-platform solution to record, convert and stream audio and vide
 
 作为视频解码程序员，我将 `FFmpeg` 大致分为两个方向：
 
-	1. FFmpeg 工具：`ffmpeg` `ffplay` `ffserver` `ffprobe`
+	1. FFmpeg 工具：ffmpeg、 ffplay、 ffserver、 ffprobe
 
-	2. FFmpeg 库：`libavutil` `libavcodec` `libavformat` `libavdevice` `libavfilter` `libswscale` `libswresample`
+	2. FFmpeg 库：libavutil、 libavcodec、 libavformat、 libavdevice、 libavfilter、 libswscale、 libswresample
 
 首先介绍 FFmpeg 的几个工具：
 
-	`ffmpeg` 是一个用于装换各种多媒体格式的命令行工具。
+	ffmpeg 是一个用于装换各种多媒体格式的命令行工具。
 	
-	`ffplay` 是一个基于 `SDL` 和 `FFmpeg` 库的简单播放器。
+	ffplay 是一个基于 `SDL` 和 `FFmpeg` 库的简单播放器。
 	
-	`ffprobe` 是一个简单的多媒体流分析器。
+	ffprobe 是一个简单的多媒体流分析器。
 	
-	`ffserver` 是一个用于现场播放的流媒体服务器。
+	ffserver 是一个用于现场播放的流媒体服务器。
 
 
 其次 `FFmpeg` 库的介绍。这部分后续会补上。
