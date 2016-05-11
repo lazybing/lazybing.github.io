@@ -136,5 +136,33 @@ avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, 
 最后，我们读取码流。
 
 ----
-####
-读数据
+####读数据
+我们接下来要做的就是通过读`packet`中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。
+{% codeblock lang:c %}
+struct SwsContext *sws_ctx = NULL;
+int frameFinished;
+AVPacket packet;
+// initialize SWS context for software scaling
+sws_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height, PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+
+i = 0;
+while(av_read_frame(pFormatCtx, &packet) >= 0){
+	// Is this a packet from the video stream?
+	if(packet.stream_index == videoStream){
+		//Decode video frame
+		avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
+		
+		//Did we get a video frame?
+		if(frameFinished){
+			//Convert the image from its native format to RGB
+			sws_scale(sws_ctx, (uint8_t const * contst *)pFrame->data, pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data, pFrameRGB->linesize);
+			
+			// Save the frame to disk
+			if(++i <= 5)
+			SaveFrame(pFrameRGB, pCodecCtx->widht, pCodecCtx->height, i);
+		}
+	}
+	// Free the packet that was allocated by av_read_frame
+	av_free_packet(&packet);
+}
+{% endcodeblock %}
