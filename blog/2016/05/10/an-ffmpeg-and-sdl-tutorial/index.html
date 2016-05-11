@@ -106,6 +106,97 @@
 </code></pre>
 
 <p>当然，步骤 4 中的"DO SOMETHING"可能非常复杂，我们先简单的把得到的 frames 写到一个 PPM 文件中。</p>
+
+<hr />
+
+<h4>打开文件</h4>
+
+<p>想要利用FFmpeg，你必须首先初始化库。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[]){</span>
+</span><span class='line'><span class="n">av_register_all</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="http://coverage.ffmpeg.org/src/libavformat/allformats.c.gcov.html">av_register_all()</a>用于注册所有编译过的<code>muxers``demuxers</code>和<code>protocols</code>，同时，该函数还会调用<a href="http://coverage.ffmpeg.org/src/libavcodec/allcodecs.c.gcov.html">avcodec_register_all()</a>注册所有的音视频 codec。</p>
+
+<p>现在就可以打开视频文件了。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">pFormatCtx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//open video file</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_open_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">NUL</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn&#39;t open file</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>调用函数 <code>avformat_open_input</code>,该函数读取文件头部，并将文件的格式信息存储到<code>AVFormatContext</code>结构中。最后的三个参数分别用于指定文件格式、buffer 大小和格式选项，此处设为<code>NULL</code>或 0，<code>libavformat</code>能够自动侦测到。</p>
+
+<p>该函数只是简单的查看头部信息，接下来我们需要文件中码流的信息：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Retrieve stream information</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_find_stream_info</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn&#39;t find stream information</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>该函数用适当的信息填充<code>pFormatCtx-&gt;streams</code>。此处介绍一个便于调试的函数来看一下里面的内容：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Dump information about file onto standard error</span>
+</span><span class='line'><span class="n">av_dump_format</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>现在<code>pFormatCtx-&gt;streams</code>仅仅是一个数组指针，数组大小为<code>pFormatCtx-&gt;nb_streams</code>,遍历该数组直到找到一个视频流。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">pCodecCtxOrig</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">pCodecCtx</span>     <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Find the first video stream</span>
+</span><span class='line'><span class="n">videoStream</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">nb_streams</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">codec_type</span> <span class="o">=</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">videoStream</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">videoStream</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Didn&#39;t find a video stream</span>
+</span><span class='line'>  
+</span><span class='line'><span class="c1">// Get a pointer to the codec context for the video stream</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
 </div>
 
 
