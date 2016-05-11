@@ -196,7 +196,54 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
+<p>关于<code>codec</code>的流信息我们称之为<code>codec context</code>。它包含了关于流使用的该<code>codec</code>的所有信息，并且我们有一个指针指向它。但我们必须找到实际的codec并打开它：</p>
 
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVCodec</span> <span class="o">*</span><span class="n">pCodec</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Find the decoder for the video stream</span>
+</span><span class='line'><span class="n">pCodec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pCodec</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">){</span>
+</span><span class='line'>  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Unsupported codec!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Codec not found</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Copy context</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">pCodec</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodecc_copy_context</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodecCtxOrig</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Couldn&#39;t copy codec context&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Error copying codec context</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Open codec</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodec</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Could not open codec</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>因为不能直接使用视频流的<code>AVCodecContext</code>！因此必须使用<code>avcodec_copy_context()</code>来 copy 该 context 到一个新位置。</p>
+
+<hr />
+
+<h4>存储数据</h4>
 </div>
 
 
