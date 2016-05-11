@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-05-11T06:18:55-07:00</updated>
+  <updated>2016-05-11T06:46:27-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -237,9 +237,64 @@
 
 <hr />
 
-<h3>#</h3>
+<h4>读数据</h4>
 
-<p>读数据</p>
+<p>我们接下来要做的就是通过读<code>packet</code>中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">struct</span> <span class="n">SwsContext</span> <span class="o">*</span><span class="n">sws_ctx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">frameFinished</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVPacket</span> <span class="n">packet</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// initialize SWS context for software scaling</span>
+</span><span class='line'><span class="n">sws_ctx</span> <span class="o">=</span> <span class="n">sws_getContext</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">pix_fmt</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">SWS_BILINEAR</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">av_read_frame</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>  <span class="c1">// Is this a packet from the video stream?</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">videoStream</span><span class="p">){</span>
+</span><span class='line'>      <span class="c1">//Decode video frame</span>
+</span><span class='line'>      <span class="n">avcodec_decode_video2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pFrame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">frameFinished</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//Did we get a video frame?</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">frameFinished</span><span class="p">){</span>
+</span><span class='line'>          <span class="c1">//Convert the image from its native format to RGB</span>
+</span><span class='line'>          <span class="n">sws_scale</span><span class="p">(</span><span class="n">sws_ctx</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="k">const</span> <span class="o">*</span> <span class="n">contst</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">);</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">// Save the frame to disk</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="o">++</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">SaveFrame</span><span class="p">(</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">widht</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// Free the packet that was allocated by av_read_frame</span>
+</span><span class='line'>  <span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 ]]></content>
   </entry>
   
