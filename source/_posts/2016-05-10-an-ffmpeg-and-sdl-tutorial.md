@@ -35,7 +35,7 @@ categories: 项目实践
 int main(int argc, char *argv[]){
 av_register_all();
 {% endcodeblock %}
-[av_register_all()](http://coverage.ffmpeg.org/src/libavformat/allformats.c.gcov.html)用于注册所有编译过的`muxers``demuxers`和`protocols`，同时，该函数还会调用[avcodec_register_all()](http://coverage.ffmpeg.org/src/libavcodec/allcodecs.c.gcov.html)注册所有的音视频 codec。
+`av_register_all()`用于注册所有编译过的`muxers` `demuxers`和`protocols`，同时，该函数还会调用`avcodec_register_all()`注册所有的音视频 codec。
 
 现在就可以打开视频文件了。
 {% codeblock lang:c %}
@@ -45,7 +45,7 @@ AVFormatContext *pFormatCtx = NULL;
 if(avformat_open_input(&pFormatCtx, argv[1], NULL, 0, NUL) != 0)
 	return -1; //Couldn't open file
 {% endcodeblock %}
-调用函数 `avformat_open_input`,该函数读取文件头部，并将文件的格式信息存储到`AVFormatContext`结构中。最后的三个参数分别用于指定文件格式、buffer 大小和格式选项，此处设为`NULL`或 0，`libavformat`能够自动侦测到。
+调用函数 `avformat_open_input`,该函数读取文件头部，并将文件的格式信息存储到`AVFormatContext`结构中。最后的三个参数分别用于指定文件格式、内存大小和格式选项，此处设为`NULL`或 0，`libavformat`能够自动侦测到。
 
 该函数只是简单的查看头部信息，接下来我们需要文件中码流的信息：
 {% codeblock lang:c %}
