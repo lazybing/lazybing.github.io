@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-05-11T05:32:29-07:00</updated>
+  <updated>2016-05-11T06:18:55-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -160,6 +160,56 @@
 <hr />
 
 <h4>存储数据</h4>
+
+<p>现在我们需要一块内存来真实的存储这些帧：
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFrame</span> <span class="o">*</span><span class="n">pFrame</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Allocate video frame</span>
+</span><span class='line'><span class="n">pFrame</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+既然我们想要输出 PPM 文件（被存储为 24-bit RGB），我们必须将帧从它原本格式转换为 RGB。FFmpeg 可以为我们做这种转换。对于大多数项目，会将初始帧转换为特定格式。让我们分配一帧来为转换帧。
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Allocate an AVFrame structure</span>
+</span><span class='line'><span class="n">pFrameRGB</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFrameRGB</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+尽管我们已经分配了帧，仍然需要一块内存存放 raw data 信息。我们使用 avpicture_get_size 来获得我们需要的大小，并手动分配该内存。
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">uint8_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buffer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">numBytes</span><span class="p">;</span>
+</span><span class='line'><span class="c1">//Determine required buffer size and allocate buffer</span>
+</span><span class='line'><span class="n">numBytes</span> <span class="o">=</span> <span class="n">avpicture_get_size</span><span class="p">(</span><span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span><span class='line'><span class="n">buffer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">numBytes</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+<code>av_malloc</code>是 FFmpeg 的分配函数，它简单封装了 malloc 函数并做内存对齐，并不会保护内存泄漏、多次释放内存或者其他分配问题。</p>
+
+<p>现在我们使用<code>avpicture_fill</code>来将帧和新分配的内存联系起来。关于<code>AVPicture</code>强制转换：<code>AVPicture</code>结构是<code>AVFrame</code>结构体的子集——<code>AVFrame</code>结构的开始对于<code>AVPicture</code>结构来说是唯一的。
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Assign appropriate parts of buffer to image planes in pFrameRGB</span>
+</span><span class='line'><span class="c1">// Note that pFrameRGB is an AVFrame, but AVFrame is a superset of AVPicture</span>
+</span><span class='line'><span class="n">avpicture_fill</span><span class="p">((</span><span class="n">AVPicture</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+最后，我们读取码流。</p>
+
+<hr />
+
+<h3>#</h3>
+
+<p>读数据</p>
 ]]></content>
   </entry>
   
