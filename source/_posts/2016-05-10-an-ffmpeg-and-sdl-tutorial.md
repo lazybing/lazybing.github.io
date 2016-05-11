@@ -77,5 +77,30 @@ if(videoStream == -1)
 // Get a pointer to the codec context for the video stream
 pCodecCtx = pFormatCtx->streams[videoStream]->codec;
 {% endcodeblock %}
+关于`codec`的流信息我们称之为`codec context`。它包含了关于流使用的该`codec`的所有信息，并且我们有一个指针指向它。但我们必须找到实际的codec并打开它：
+{% codeblock lang:c %}
+AVCodec *pCodec = NULL;
 
+// Find the decoder for the video stream
+pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
+if(pCodec == NULL){
+	fprintf(stderr, "Unsupported codec!\n");
+	return -1;	// Codec not found
+}
+
+// Copy context
+pCodecCtx = avcodec_alloc_context3(pCodec);
+if(avcodecc_copy_context(pCodecCtx, pCodecCtxOrig) != 0){
+	fprintf(stderr, "Couldn't copy codec context");
+	return -1;	// Error copying codec context
+}
+
+//Open codec
+if(avcodec_open2(pCodecCtx, pCodec) < 0)
+	return -1;	// Could not open codec
+{% endcodeblock %}
+因为不能直接使用视频流的`AVCodecContext`！因此必须使用`avcodec_copy_context()`来 copy 该 context 到一个新位置。
+
+----
+####存储数据
 
