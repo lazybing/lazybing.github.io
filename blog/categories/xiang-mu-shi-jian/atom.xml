@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: 项目实践 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2016-05-10T17:17:48-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[FFmpeg 和 SDL 使用教程]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/"/>
+    <updated>2016-05-10T16:45:03-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial</id>
+    <content type="html"><![CDATA[<p><a href="https://ffmpeg.org/">FFmpeg</a> 是制作视频应用或一般工具的非常棒的库。<a href="https://www.libsdl.org/">SDL</a> 通过封装复杂的视音频底层交互工作，降低了视音频的处理难度。</p>
+
+<p>本文就记录一下利用 FFmpeg 和 SDL 制作简单播放器的详细步骤。<!--more--></p>
+
+<h3>介绍</h3>
+
+<p>对于一个视音频文件，可以从外到内的依次分为几个层面：container、stream、packets、frames.其中 container 就是平时说的<code>.avi</code> <code>.flv</code> <code>.mkv</code>等等。stream可能是 <code>video</code>、可能是 <code>audio</code>、也可能是 <code>subtitle</code>，一个文件里面可能包含多个 <code>video</code> <code>audio</code> <code>subtitle</code>。packets 是从 stream 里得到的，通常会包含一个 <code>video frame</code> 或多个 <code>audio frame</code>。</p>
+
+<p>视音频的处理就是按照这几个层级处理的，以 <code>.avi</code> 为例大概步骤如下：</p>
+
+<pre><code>1. OPEN video_stream FROM video.avi
+
+2. READ packet FROM video_stream INTO frame
+
+3. IF frame NOT COMPLETE GOTO 2
+
+4. DO SOMETHING WITH frame
+
+5. GOTO 2
+</code></pre>
+
+<p>当然，步骤 4 中的"DO SOMETHING"可能非常复杂，我们先简单的把得到的 frames 写到一个 PPM 文件中。</p>
+]]></content>
+  </entry>
+  
+</feed>
