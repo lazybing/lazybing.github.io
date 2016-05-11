@@ -103,4 +103,38 @@ if(avcodec_open2(pCodecCtx, pCodec) < 0)
 
 ----
 ####存储数据
+现在我们需要一块内存来真实的存储这些帧：
+{% codeblock lang:c %}
+AVFrame *pFrame = NULL;
 
+//Allocate video frame
+pFrame = av_frame_alloc();
+{% endcodeblock %}
+既然我们想要输出 PPM 文件（被存储为 24-bit RGB），我们必须将帧从它原本格式转换为 RGB。FFmpeg 可以为我们做这种转换。对于大多数项目，会将初始帧转换为特定格式。让我们分配一帧来为转换帧。
+{% codeblock lang:c %}
+// Allocate an AVFrame structure
+pFrameRGB = av_frame_alloc();
+if(pFrameRGB == NULL)
+	return -1;
+{% endcodeblock %}
+尽管我们已经分配了帧，仍然需要一块内存存放 raw data 信息。我们使用 avpicture_get_size 来获得我们需要的大小，并手动分配该内存。
+{% codeblock lang:c %}
+uint8_t *buffer = NULL;
+int numBytes;
+//Determine required buffer size and allocate buffer
+numBytes = avpicture_get_size(PIX_FMT_RGB24, pCodecCtx->width, pCodecCtx->height);
+buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+{% endcodeblock %}
+`av_malloc`是 FFmpeg 的分配函数，它简单封装了 malloc 函数并做内存对齐，并不会保护内存泄漏、多次释放内存或者其他分配问题。
+
+现在我们使用`avpicture_fill`来将帧和新分配的内存联系起来。关于`AVPicture`强制转换：`AVPicture`结构是`AVFrame`结构体的子集——`AVFrame`结构的开始对于`AVPicture`结构来说是唯一的。
+{% codeblock lang:c %}
+// Assign appropriate parts of buffer to image planes in pFrameRGB
+// Note that pFrameRGB is an AVFrame, but AVFrame is a superset of AVPicture
+avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, pCodecCtx->height);
+{% endcodeblock %}
+最后，我们读取码流。
+
+----
+####
+读数据
