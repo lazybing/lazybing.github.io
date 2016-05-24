@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[懒人李冰]]></title>
+  <link href="http://lazybing.github.io/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2016-05-24T04:56:51-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[The Data Layout]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/23/the-data-layout/"/>
+    <updated>2016-05-23T09:23:07-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/23/the-data-layout</id>
+    <content type="html"><![CDATA[<p>图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。</p>
+
+<!--more-->
+
+
+<h3>YUV420摆放格式</h3>
+
+<p><img class="[YUV420P layout]" src="http://lazybing.github.io/images/datalayout/Yuv420.png" width="798" height="357"></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FFmpeg 和 SDL 使用教程]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/"/>
+    <updated>2016-05-10T16:45:03-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial</id>
+    <content type="html"><![CDATA[<p><a href="https://ffmpeg.org/">FFmpeg</a> 是制作视频应用或一般工具的非常棒的库。<a href="https://www.libsdl.org/">SDL</a> 通过封装复杂的视音频底层交互工作，降低了视音频的处理难度。</p>
+
+<p>本文就记录一下利用 FFmpeg 和 SDL 制作简单播放器的详细步骤。<!--more--></p>
+
+<h3>介绍</h3>
+
+<p>对于一个视音频文件，可以从外到内的依次分为几个层面：container、stream、packets、frames.其中 container 就是平时说的<code>.avi</code> <code>.flv</code> <code>.mkv</code>等等。stream可能是 <code>video</code>、可能是 <code>audio</code>、也可能是 <code>subtitle</code>，一个文件里面可能包含多个 <code>video</code> <code>audio</code> <code>subtitle</code>。packets 是从 stream 里得到的，通常会包含一个 <code>video frame</code> 或多个 <code>audio frame</code>。</p>
+
+<p>视音频的处理就是按照这几个层级处理的，以 <code>.avi</code> 为例大概步骤如下：</p>
+
+<pre><code>1. OPEN video_stream FROM video.avi
+
+2. READ packet FROM video_stream INTO frame
+
+3. IF frame NOT COMPLETE GOTO 2
+
+4. DO SOMETHING WITH frame
+
+5. GOTO 2
+</code></pre>
+
+<p>当然，步骤 4 中的"DO SOMETHING"可能非常复杂，我们先简单的把得到的 frames 写到一个 PPM 文件中。</p>
+
+<hr />
+
+<h4>打开文件</h4>
+
+<p>想要利用FFmpeg，你必须首先初始化库。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[]){</span>
+</span><span class='line'><span class="n">av_register_all</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>av_register_all()</code>用于注册所有编译过的<code>muxers</code> <code>demuxers</code>和<code>protocols</code>，同时，该函数还会调用<code>avcodec_register_all()</code>注册所有的音视频 codec。</p>
+
+<p>现在就可以打开视频文件了。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">pFormatCtx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//open video file</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_open_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">NUL</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn&#39;t open file</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>调用函数 <code>avformat_open_input</code>,该函数读取文件头部，并将文件的格式信息存储到<code>AVFormatContext</code>结构中。最后的三个参数分别用于指定文件格式、内存大小和格式选项，此处设为<code>NULL</code>或 0，<code>libavformat</code>能够自动侦测到。</p>
+
+<p>该函数只是简单的查看头部信息，接下来我们需要文件中码流的信息：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Retrieve stream information</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_find_stream_info</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn&#39;t find stream information</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>该函数用适当的信息填充<code>pFormatCtx-&gt;streams</code>。此处介绍一个便于调试的函数来看一下里面的内容：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Dump information about file onto standard error</span>
+</span><span class='line'><span class="n">av_dump_format</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>现在<code>pFormatCtx-&gt;streams</code>仅仅是一个数组指针，数组大小为<code>pFormatCtx-&gt;nb_streams</code>,遍历该数组直到找到一个视频流。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">pCodecCtxOrig</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">pCodecCtx</span>     <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Find the first video stream</span>
+</span><span class='line'><span class="n">videoStream</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">nb_streams</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">codec_type</span> <span class="o">=</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">videoStream</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">videoStream</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Didn&#39;t find a video stream</span>
+</span><span class='line'>  
+</span><span class='line'><span class="c1">// Get a pointer to the codec context for the video stream</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关于<code>codec</code>的流信息我们称之为<code>codec context</code>。它包含了关于流使用的该<code>codec</code>的所有信息，并且我们有一个指针指向它。但我们必须找到实际的codec并打开它：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVCodec</span> <span class="o">*</span><span class="n">pCodec</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Find the decoder for the video stream</span>
+</span><span class='line'><span class="n">pCodec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pCodec</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">){</span>
+</span><span class='line'>  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Unsupported codec!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Codec not found</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Copy context</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">pCodec</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodecc_copy_context</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodecCtxOrig</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Couldn&#39;t copy codec context&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Error copying codec context</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Open codec</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodec</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Could not open codec</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>因为不能直接使用视频流的<code>AVCodecContext</code>！因此必须使用<code>avcodec_copy_context()</code>来 copy 该 context 到一个新位置。</p>
+
+<hr />
+
+<h4>存储数据</h4>
+
+<p>现在我们需要一块内存来真实的存储这些帧：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFrame</span> <span class="o">*</span><span class="n">pFrame</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Allocate video frame</span>
+</span><span class='line'><span class="n">pFrame</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>既然我们想要输出 PPM 文件（被存储为 24-bit RGB），我们必须将帧从它原本格式转换为 RGB。FFmpeg 可以为我们做这种转换。对于大多数项目，会将初始帧转换为特定格式。让我们分配一帧来为转换帧。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Allocate an AVFrame structure</span>
+</span><span class='line'><span class="n">pFrameRGB</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFrameRGB</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>尽管我们已经分配了帧，仍然需要一块内存存放 raw data 信息。我们使用 avpicture_get_size 来获得我们需要的大小，并手动分配该内存。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buffer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">numBytes</span><span class="p">;</span>
+</span><span class='line'><span class="c1">//Determine required buffer size and allocate buffer</span>
+</span><span class='line'><span class="n">numBytes</span> <span class="o">=</span> <span class="n">avpicture_get_size</span><span class="p">(</span><span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span><span class='line'><span class="n">buffer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">numBytes</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>av_malloc</code>是 FFmpeg 的分配函数，它简单封装了 malloc 函数并做内存对齐，并不会保护内存泄漏、多次释放内存或者其他分配问题。</p>
+
+<p>现在我们使用<code>avpicture_fill</code>来将帧和新分配的内存联系起来。关于<code>AVPicture</code>强制转换：<code>AVPicture</code>结构是<code>AVFrame</code>结构体的子集——<code>AVFrame</code>结构的开始对于<code>AVPicture</code>结构来说是唯一的。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Assign appropriate parts of buffer to image planes in pFrameRGB</span>
+</span><span class='line'><span class="c1">// Note that pFrameRGB is an AVFrame, but AVFrame is a superset of AVPicture</span>
+</span><span class='line'><span class="n">avpicture_fill</span><span class="p">((</span><span class="n">AVPicture</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最后，我们读取码流。</p>
+
+<hr />
+
+<h4>读数据</h4>
+
+<p>我们接下来要做的就是通过读<code>packet</code>中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">struct</span> <span class="n">SwsContext</span> <span class="o">*</span><span class="n">sws_ctx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">frameFinished</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVPacket</span> <span class="n">packet</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// initialize SWS context for software scaling</span>
+</span><span class='line'><span class="n">sws_ctx</span> <span class="o">=</span> <span class="n">sws_getContext</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">pix_fmt</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">SWS_BILINEAR</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">av_read_frame</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>  <span class="c1">// Is this a packet from the video stream?</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">videoStream</span><span class="p">){</span>
+</span><span class='line'>      <span class="c1">//Decode video frame</span>
+</span><span class='line'>      <span class="n">avcodec_decode_video2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pFrame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">frameFinished</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//Did we get a video frame?</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">frameFinished</span><span class="p">){</span>
+</span><span class='line'>          <span class="c1">//Convert the image from its native format to RGB</span>
+</span><span class='line'>          <span class="n">sws_scale</span><span class="p">(</span><span class="n">sws_ctx</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="k">const</span> <span class="o">*</span> <span class="n">contst</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">);</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">// Save the frame to disk</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="o">++</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">SaveFrame</span><span class="p">(</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">widht</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// Free the packet that was allocated by av_read_frame</span>
+</span><span class='line'>  <span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FFmpeg的介绍、安装及使用]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/09/ffmpeg-install-and-use/"/>
+    <updated>2016-05-09T04:00:29-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/09/ffmpeg-install-and-use</id>
+    <content type="html"><![CDATA[<p><a href="https://ffmpeg.org/">FFmpeg 官网</a>对 FFmpeg 的描述是这样的：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>A complete, cross-platform solution to record, convert and stream audio and video.</span></code></pre></td></tr></table></div></figure>
+
+
+<!--more-->
+
+
+<h3>介绍</h3>
+
+<p><code>FFmpeg</code> 是一个多媒体架构，能够用于解码、编码、转码、复用、解复用、滤波以及播放人类或机器制造出来的各种媒体文件。它能够支持最古老的、最前沿的媒体格式，不管这种格式是由官方标准社区制定还是由各大公司合作制定。</p>
+
+<p><code>FFmpeg</code> 的使用非常广泛，几乎涵盖了所有的媒体相关的视频播放器、转码器等。例如使用 <code>FFmpeg</code> 作为内核的视频播放器有（Mplayer，射手影音，暴风影音，KMPlayer，QQ影音等）；使用 <code>FFmpeg</code> 作为内核的转码器有(格式工厂，狸窝视频转换器，暴风转码等)。</p>
+
+<p>作为视频解码程序员，我将 <code>FFmpeg</code> 大致分为两个方向：</p>
+
+<pre><code>1. FFmpeg 工具：ffmpeg、 ffplay、 ffserver、 ffprobe
+
+2. FFmpeg 库：libavutil、 libavcodec、 libavformat、 libavdevice、 libavfilter、 libswscale、 libswresample
+</code></pre>
+
+<p>首先介绍 FFmpeg 的几个工具：</p>
+
+<pre><code>ffmpeg 是一个用于装换各种多媒体格式的命令行工具。
+
+ffplay 是一个基于 `SDL` 和 `FFmpeg` 库的简单播放器。
+
+ffprobe 是一个简单的多媒体流分析器。
+
+ffserver 是一个用于现场播放的流媒体服务器。
+</code></pre>
+
+<p>其次 <code>FFmpeg</code> 库的介绍。这部分后续会补上。</p>
+
+<h3>安装</h3>
+
+<p><code>FFmpeg</code> 源码根目录下有 <code>FFmpeg</code> 的安装介绍文件 <code>INSTALL.md</code>。</p>
+
+<pre><code>1. ./configure #配置，可以指定 FFmpeg 的安装路径。
+
+2. make #版本号至少要GNU Make 3.81
+
+3. make install
+</code></pre>
+
+<p>上述步骤可能需要一点时间。
+安装完成后，就可以使用 <code>FFmpeg</code> 工具了。</p>
+
+<h3>使用</h3>
+
+<p>Linux 下如果想深入的学习 <code>FFmpeg</code> 工具的使用，可以类似于学习 Linux 自带的命令一样，使用 <code>man ffmpeg</code> 或者 <code>ffmpeg --help</code> 等获取帮助信息。</p>
+
+<p>以 <code>ffmpeg</code>为例，可以使用如下命令进行转换。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file out_file</span></code></pre></td></tr></table></div></figure>
+
+
+<p>或者可以使用 <code>ffplay</code> 命令直接播放视频文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffplay play_file </span></code></pre></td></tr></table></div></figure>
+
+
+<p>或者可以使用 <code>ffprobe</code> 命令分析媒体文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffprobe file</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何使用git]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/08/how-to-use-git/"/>
+    <updated>2016-05-08T07:48:51-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/08/how-to-use-git</id>
+    <content type="html"><![CDATA[<p>git 作为版本控制工具，已被广泛使用，公司从去年开始陆续将版本控制系统从 Perforce 向 git 转移。<a href="https://git-scm.com/book/en/v2">《Pro Git》</a>作为官方推荐的学习 git 书籍，不可不读，而且该书已经有<a href="https://git-scm.com/book/zh">中文版</a>。这篇就将记录自己学习使用 git 的过程。</p>
+
+<!--more-->
+
+
+<p>开发项目时，使用 git 主要的全过程可以大体概况为如下三个步骤：</p>
+
+<pre><code>1. 使用 git clone 命令从远程服务器上拉取源代码到本地。
+
+2. 按照自己的需要，本地修改从步骤 1 拉取下来的代码。
+
+3. 将修改好的代码 git push 到远程服务器上。
+</code></pre>
+
+<h3>拉取源码</h3>
+
+<hr />
+
+<p>以 octopress 为例，使用 <code>git clone</code> 命令从远程服务器拉起代码的命令一般如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git clone git@github.com:imathis/octopress.git octopress</span></code></pre></td></tr></table></div></figure>
+
+
+<p>此时，该命令就会将 octopress 的源码拉取到本地，并命名为 octopress 文件夹。如果使用 <code>git branch</code> 命令查看 branch 名称时，默认 branch 会是 <code>master</code> 。如果使用 <code>git remote -v</code> 来查看远程服务器名称时，默认名称会是 <code>origin</code>。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git branch
+</span><span class='line'>* master
+</span><span class='line'>binglis-Mac:octopress bingli$ git remote -v
+</span><span class='line'>origin    git@github.com:imathis/octopress.git (fetch)
+</span><span class='line'>origin    git@github.com:imathis/octopress.git (push)</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>git clone</code> 是 clone 仓库，它主要用于在服务器端已经存在源码目录的情况，该方法在程序开发过程中非常有用。但如果一开始并没有这样的远程仓库，而需要我们从头开始呢？<code>git init</code> 正是在现有目录中初始化仓库，该命令创建一个名为 <code>.git</code> 的子仓库，这个子目录含有你初始化的 Git 仓库中所有的必须文件。</p>
+
+<p>抓取代码除了用于初始化的 <code>git clone</code> 外，还有 <code>git fetch [remote name]</code> 和 <code>git pull</code>。其中 <code>git fetch</code>只是简单的从远程服务器拉取 code，但并捕鱼本地 branch 进行合并；而 <code>git pull</code> 不仅拉取远端服务器有而本地没有的 code 到本地，还会进行合并。</p>
+
+<h3>修改代码</h3>
+
+<hr />
+
+<p>git 仓库里的源码一共有 4 种状态，分别是：<code>Untracked</code> <code>Unmodified</code> <code>Modified</code> <code>Staged</code>。仓库里哪些文件处于哪些状态可以通过 <code>git status</code> 命令来查看。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git status
+</span><span class='line'>On branch source
+</span><span class='line'>Your branch is based on 'origin/master', but the upstream is gone.
+</span><span class='line'>  (use "git branch --unset-upstream" to fixup)
+</span><span class='line'>Changes not staged for commit:
+</span><span class='line'>  (use "git add &lt;file&gt;..." to update what will be committed)
+</span><span class='line'>  (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)
+</span><span class='line'>
+</span><span class='line'>  modified:   source/_posts/2016-05-08-how-to-use-git.md
+</span><span class='line'>
+</span><span class='line'>no changes added to commit (use "git add" and/or "git commit -a")</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>git status</code> 不仅可以查看状态，还能够提示如果变更某些文件的状态，如上面的 <code>2016-05-08-how-to-use-git.md</code> 处于 <code>modified</code> 状态，可以使用 <code>git add</code> 或 <code>git checkout</code> 命令修改它的状态。</p>
+
+<h3>提交代码</h3>
+
+<hr />
+
+<p><code>git commit</code> 作为提交命令可以用于提交处于暂存区中的文件到仓库里。使用 <code>git commit</code> 时会自动启动一个编辑器用于添加提交说明。或者可以直接加 <code>-m</code> 选项，并在后面直接加上提交说明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git commit -m "commit on how to use git blog"
+</span><span class='line'>[source 6bf4d37] commit on how to use git blog
+</span><span class='line'> 1 file changed, 38 insertions(+)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>提交后，会有信息显示当前是在哪个分之(<code>master</code>)下提交的，校验和(<code>6bf4d37</code>)，以及有多少文件修改过，多少行添加，多少行删除等信息。</p>
+
+<p><code>git commit</code> 只是提交到了本地仓库，如果有远程仓库，可以使用 <code>git push [remote name] [branch name]</code> 命令，将其推送到远程仓库。例如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git push origin source
+</span><span class='line'>Counting objects: 5, done.
+</span><span class='line'>Delta compression using up to 2 threads.
+</span><span class='line'>Compressing objects: 100% (5/5), done.
+</span><span class='line'>Writing objects: 100% (5/5), 1.85 KiB | 0 bytes/s, done.
+</span><span class='line'>Total 5 (delta 2), reused 0 (delta 0)
+</span><span class='line'>To git@github.com:lazybing/lazybing.github.io.git
+</span><span class='line'>   df4de96..6bf4d37  source -&gt; source</span></code></pre></td></tr></table></div></figure>
+
+
+
+]]></content>
+  </entry>
+  
+</feed>
