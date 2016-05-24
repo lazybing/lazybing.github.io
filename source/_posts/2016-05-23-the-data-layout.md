@@ -11,5 +11,5 @@ categories: 总结积累
 
 ###YUV420摆放格式
 
-{% img [YUV420P layout] /source/images/datalayout/Yuv420.png 798 357 %}
+{% img [YUV420P layout] /images/datalayout/Yuv420.png 798 357 %}
 
