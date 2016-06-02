@@ -21,7 +21,7 @@ categories: 总结积累
 
 ###YUV420摆放格式
 
-{% img [YUV420P layout] /source/images/datalayout/Yuv420.png 798 357 %}
+<img src="/images/datalayout/Yuv420.png">
 
 通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。以 Planar、progressive、YUV420、176*144为例，示例代码如下：
 ```
