@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-06-12T09:40:31-07:00</updated>
+  <updated>2016-06-12T09:49:07-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -41,7 +41,8 @@
 
 <p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。以 Planar、progressive、YUV420、176*144为例，示例代码如下：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>splityuvfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -72,37 +73,40 @@
 <span class='line-number'>29</span>
 <span class='line-number'>30</span>
 <span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>int split_yuv(char *str, uint height, uint width)                                                                                                                                
-</span><span class='line'>{
-</span><span class='line'>    FILE *fp;
-</span><span class='line'>    FILE *fpy;
-</span><span class='line'>    FILE *fpu;
-</span><span class='line'>    FILE *fpv;
-</span><span class='line'> 
-</span><span class='line'>    unsigned char  *buf = (unsigned char *)malloc(height * width * 3 / 2);
-</span><span class='line'> 
-</span><span class='line'>    fp = fopen(str, "r");
-</span><span class='line'>    fpy = fopen("y.bin", "wa");
-</span><span class='line'>    fpu = fopen("u.bin", "wa");
-</span><span class='line'>    fpv = fopen("v.bin", "wa");
-</span><span class='line'>    if(!fpv || !fpu || !fpy || !fp){
-</span><span class='line'>         fprintf(stderr, "line %d open file error.\n", __LINE__);
-</span><span class='line'>        return FALSE;
-</span><span class='line'>    }
-</span><span class='line'> 
-</span><span class='line'>    fread(buf, 1, height * width * 3 / 2, fp);
-</span><span class='line'>    fwrite(buf, 1, height * width , fpy);
-</span><span class='line'>    fwrite(buf + height * width, 1, height * width &gt;&gt; 2, fpu);
-</span><span class='line'>    fwrite(buf + (uint)(height * width * 5 / 4), 1, height * width &gt;&gt; 2, fpv);
-</span><span class='line'> 
-</span><span class='line'>    fclose(fpv);
-</span><span class='line'>    fclose(fpu);
-</span><span class='line'>    fclose(fpy);
-</span><span class='line'>    fclose(fp);
-</span><span class='line'>    free(buf);
-</span><span class='line'>   
-</span><span class='line'>    return TRUE;
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
+</span><span class='line'>         <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
