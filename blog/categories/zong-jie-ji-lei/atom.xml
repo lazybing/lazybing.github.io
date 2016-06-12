@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-06-02T10:04:20-07:00</updated>
+  <updated>2016-06-12T09:40:31-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -39,8 +39,40 @@
 
 <p><img src="http://lazybing.github.io/images/datalayout/Yuv420.png"></p>
 
-<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。以 Planar、progressive、YUV420、176*144为例，示例代码如下：
-```</p>
+<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。以 Planar、progressive、YUV420、176*144为例，示例代码如下：</p>
+
+<pre><code>int split_yuv(char *str, uint height, uint width)                                                                                                                                
+{
+    FILE *fp;
+    FILE *fpy;
+    FILE *fpu;
+    FILE *fpv;
+
+    unsigned char  *buf = (unsigned char *)malloc(height * width * 3 / 2);
+
+    fp = fopen(str, "r");
+    fpy = fopen("y.bin", "wa");
+    fpu = fopen("u.bin", "wa");
+    fpv = fopen("v.bin", "wa");
+    if(!fpv || !fpu || !fpy || !fp){
+         fprintf(stderr, "line %d open file error.\n", __LINE__);
+        return FALSE;
+    }
+
+    fread(buf, 1, height * width * 3 / 2, fp);
+    fwrite(buf, 1, height * width , fpy);
+    fwrite(buf + height * width, 1, height * width &gt;&gt; 2, fpu);
+    fwrite(buf + (uint)(height * width * 5 / 4), 1, height * width &gt;&gt; 2, fpv);
+
+    fclose(fpv);
+    fclose(fpu);
+    fclose(fpy);
+    fclose(fp);
+    free(buf);
+
+    return TRUE;
+}
+</code></pre>
 ]]></content>
   </entry>
   

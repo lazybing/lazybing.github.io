@@ -118,8 +118,71 @@
 
 <p><img src="/images/datalayout/Yuv420.png"></p>
 
-<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。以 Planar、progressive、YUV420、176*144为例，示例代码如下：
-```</p>
+<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。以 Planar、progressive、YUV420、176*144为例，示例代码如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int split_yuv(char *str, uint height, uint width)                                                                                                                                
+</span><span class='line'>{
+</span><span class='line'>    FILE *fp;
+</span><span class='line'>    FILE *fpy;
+</span><span class='line'>    FILE *fpu;
+</span><span class='line'>    FILE *fpv;
+</span><span class='line'> 
+</span><span class='line'>    unsigned char  *buf = (unsigned char *)malloc(height * width * 3 / 2);
+</span><span class='line'> 
+</span><span class='line'>    fp = fopen(str, "r");
+</span><span class='line'>    fpy = fopen("y.bin", "wa");
+</span><span class='line'>    fpu = fopen("u.bin", "wa");
+</span><span class='line'>    fpv = fopen("v.bin", "wa");
+</span><span class='line'>    if(!fpv || !fpu || !fpy || !fp){
+</span><span class='line'>         fprintf(stderr, "line %d open file error.\n", __LINE__);
+</span><span class='line'>        return FALSE;
+</span><span class='line'>    }
+</span><span class='line'> 
+</span><span class='line'>    fread(buf, 1, height * width * 3 / 2, fp);
+</span><span class='line'>    fwrite(buf, 1, height * width , fpy);
+</span><span class='line'>    fwrite(buf + height * width, 1, height * width &gt;&gt; 2, fpu);
+</span><span class='line'>    fwrite(buf + (uint)(height * width * 5 / 4), 1, height * width &gt;&gt; 2, fpv);
+</span><span class='line'> 
+</span><span class='line'>    fclose(fpv);
+</span><span class='line'>    fclose(fpu);
+</span><span class='line'>    fclose(fpy);
+</span><span class='line'>    fclose(fp);
+</span><span class='line'>    free(buf);
+</span><span class='line'>   
+</span><span class='line'>    return TRUE;
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
