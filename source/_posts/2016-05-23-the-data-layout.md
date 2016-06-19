@@ -21,9 +21,11 @@ categories: 总结积累
 
 ###YUV420摆放格式
 
+progressive 的摆放格式如图：
+
 <img src="/images/datalayout/Yuv420.png">
 
-通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。以 Planar、progressive、YUV420、176*144为例，示例代码如下：
+通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：
 
 {% codeblock lang:c  splityuvfile %}
 
@@ -60,3 +62,7 @@ int split_yuv(char *str, uint height, uint width)
     return TRUE;
 }
 {% endcodeblock %}
+
+上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
+interlace 的摆放格式如图：
+
