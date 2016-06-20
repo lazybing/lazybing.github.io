@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 读书笔记 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/du-shu-bi-ji/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-06-20T10:15:46-07:00</updated>
+  <updated>2016-06-20T11:08:15-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -109,6 +109,26 @@ ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4
 <hr />
 
 <h3>Cropping Video</h3>
+
+<p>Cropping Video 是指截取源视频中的某个矩形区域作为输出视频显示。通常它会与 Resizing/Padding 等共同配合使用。</p>
+
+<p>旧版 FFmpeg 中会使用 cropbottom/cropleft/cropright/croptop 等选项，现在的版本中废弃了这种使用方式，改用<code>crop filter</code>的方式来实现Cropping Video。</p>
+
+<p>syntax 是<code>crop=ow[:oh[:x[:y[:keep_aspect]]]]</code>，其中 <code>ow=out_w oh=out_h</code>。示例如下：</p>
+
+<pre><code>ffmpeg -i input -vf crop=iw/3:ih:0:0 output
+ffmpet -i input -vf crop=iw/3:ih:iw/3*2:0 output
+</code></pre>
+
+<p>如果x和y没有专门给出，会有默认值计算：</p>
+
+<pre><code>X(default) = (input width - output widht)/2
+Y(default) = (input height - output height)/2
+</code></pre>
+
+<pre><code>ffmpeg -i input_file -vf crop=w:h output_file
+ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi
+</code></pre>
 ]]></content>
   </entry>
   
