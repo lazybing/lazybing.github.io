@@ -97,3 +97,24 @@ ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4
 
 ---
 ### Cropping Video
+
+Cropping Video 是指截取源视频中的某个矩形区域作为输出视频显示。通常它会与 Resizing/Padding 等共同配合使用。
+
+旧版 FFmpeg 中会使用 cropbottom/cropleft/cropright/croptop 等选项，现在的版本中废弃了这种使用方式，改用`crop filter`的方式来实现Cropping Video。
+
+syntax 是`crop=ow[:oh[:x[:y[:keep_aspect]]]]`，其中 `ow=out_w oh=out_h`。示例如下：
+
+```
+ffmpeg -i input -vf crop=iw/3:ih:0:0 output
+ffmpet -i input -vf crop=iw/3:ih:iw/3*2:0 output
+```
+如果x和y没有专门给出，会有默认值计算：
+
+```
+X(default) = (input width - output widht)/2
+Y(default) = (input height - output height)/2
+```
+```
+ffmpeg -i input_file -vf crop=w:h output_file
+ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi
+```
