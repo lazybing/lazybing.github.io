@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 读书笔记 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/du-shu-bi-ji/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-06-19T10:37:22-07:00</updated>
+  <updated>2016-06-20T10:15:46-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -63,6 +63,50 @@ audio_size = sampling_rate * bit_depth * channels * time_in_seconds / 8;
 
 <pre><code>ffmpeg -i input.avi -fs 10MB output.mp4
 </code></pre>
+
+<hr />
+
+<h3>Resizing and Scaling Video</h3>
+
+<p>Resizing 是指改变宽高，Scaling 是利用 scale filter 改变 frame size。</p>
+
+<p>Resizing Video ： 利用 <code>-s</code>选项指定输出视频的宽高，格式为<code>wxh</code>，其中 w 是以 pixel 为单位的宽， h 是以 pixel 为单位的高。例如:</p>
+
+<pre><code>ffmpeg -i input_file -s 320x240 output_file
+</code></pre>
+
+<p>此外，FFmpeg 针对不同的宽高信息，提供了预定义的视频大小简写，下面两个命令的作用相同，都是将 input_file 转换为 640*480 的输出文件：</p>
+
+<pre><code>ffmpeg -i input_file.avi -s 640x480 output.avi
+ffmpeg -i input_file.avi -s vga output.avi
+</code></pre>
+
+<p>通常情况下，做 resize 是从<code>big frame -&gt; small frame</code>，反过来的话，可能导致图片不清晰，尤其是当原始视频的 resolution 比较小的时候。针对 <code>small frame -&gt; big frame</code>，有专门的特殊 filter（<code>super2xsai</code>） 可以使用，它可以使原视频文件变大两倍。2xsai 即指 2 times scale and interpolate, syntax 是 <code>-vf super2xsai</code>。
+例如把 128x96 的 phone_video.3gp 文件转换为 256x192 的视频文件。</p>
+
+<pre><code>ffmpeg -i phone_video.3gp -vf super2xsai output.mp4
+</code></pre>
+
+<p>Scaling Video : 当使用<code>-s</code>选项来改变 frame size 时，其实在 filtergraph 的最后有一个 scale filter。scale filter也可以通过设置来固定在某个位置。</p>
+
+<p>scale 可以改变输出视频的 sample aspect ration，同时 display aspect ration 保持不变。</p>
+
+<p>syntax 是 <code>scale=width:height[:interl={l|-l}]</code>。其中 width 和 height 可以是 iw/in_w/ih/in_h/ow/out_w/oh/out_h等。</p>
+
+<p>下面两个 command 执行效果相同:</p>
+
+<pre><code>ffmpeg -i input.mpg -s 320x240 output.mp4
+ffmpeg -i input.mpg -vf scale=320:240 output.mp4
+</code></pre>
+
+<p>如果不知道源视频的 resolution，又需要做 scale，可以用下面的方法:</p>
+
+<pre><code>ffmpeg -i input.mpg -vf scale=iw/2:ih/2 output.mp4
+ffmpeg -i input.mpg -vf scale=iw*0.9:ih*0.9 output.mp4
+ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4
+</code></pre>
+
+<hr />
 
 <h3>Cropping Video</h3>
 ]]></content>
