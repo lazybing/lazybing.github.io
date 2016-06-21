@@ -232,6 +232,43 @@ Bit Rate 设置使用 -b 选项：<code>ffmpeg -i input -b bitrates output</code
 </pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file -vf crop=w:h output_file
 </span><span class='line'>ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi</span></code></pre></td></tr></table></div></figure>
 
+
+<hr />
+
+<h3>Padding Video</h3>
+
+<p>对于 Padding Video ，使用 pad filter 来实现。
+syntax 是<code>pad=width[:height[:x[:y[:color]]]]</code>，其中的 color 表示 padding 的颜色。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Padding videos from 4:3 to 16:9</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
+</span><span class='line'>ffmepg -i film.mpg -vf pad=ih*16/9:ih:(ow-iw)/2:0 filem_wide.avi</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Padding videos from 16:9 to 4:3</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
+</span><span class='line'>ffmpeg -i hd_video.avi -vf pad=iw:iw*3/4:0:(oh-ih)/2 video.avi</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Padding from and to various aspect ratios</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
+</span><span class='line'>ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)</span></code></pre></td></tr></table></div></figure>
+
+
+<hr />
 </div>
 
 
