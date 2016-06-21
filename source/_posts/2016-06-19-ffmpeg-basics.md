@@ -118,3 +118,34 @@ Y(default) = (input height - output height)/2
 ffmpeg -i input_file -vf crop=w:h output_file
 ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi
 ```
+
+---
+### Padding Video
+对于 Padding Video ，使用 pad filter 来实现。
+syntax 是`pad=width[:height[:x[:y[:color]]]]`，其中的 color 表示 padding 的颜色。
+
+```
+ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg
+```
+
+Padding videos from 4:3 to 16:9
+
+```
+ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
+ffmepg -i film.mpg -vf pad=ih*16/9:ih:(ow-iw)/2:0 filem_wide.avi
+```
+
+Padding videos from 16:9 to 4:3
+
+```
+ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
+ffmpeg -i hd_video.avi -vf pad=iw:iw*3/4:0:(oh-ih)/2 video.avi
+```
+
+Padding from and to various aspect ratios
+
+```
+ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
+ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)
+```
+---
