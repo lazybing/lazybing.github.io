@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-06-27T06:26:10-07:00</updated>
+  <updated>2016-06-27T06:28:11-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -43,43 +43,80 @@
 
 <p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：</p>
 
-<p>{% codeblock lang:c  splityuvfile %}</p>
-
-<p>int split_yuv(char *str, uint height, uint width)                                                                                                                              <br/>
-{</p>
-
-<pre><code>FILE *fp;  
-FILE *fpy;
-FILE *fpu;
-FILE *fpv;
-
-unsigned char  *buf = (unsigned char *)malloc(height * width * 3 / 2);
-
-fp = fopen(str, "r");
-fpy = fopen("y.bin", "wa");
-fpu = fopen("u.bin", "wa");
-fpv = fopen("v.bin", "wa");
-if(!fpv || !fpu || !fpy || !fp){
-     fprintf(stderr, "line %d open file error.\n", __LINE__);
-    return FALSE;
-}
-
-fread(buf, 1, height * width * 3 / 2, fp);
-fwrite(buf, 1, height * width , fpy);
-fwrite(buf + height * width, 1, height * width &gt;&gt; 2, fpu);
-fwrite(buf + (uint)(height * width * 5 / 4), 1, height * width &gt;&gt; 2, fpv);
-
-fclose(fpv);
-fclose(fpu);
-fclose(fpy);
-fclose(fp);
-free(buf);
-
-return TRUE;
-</code></pre>
-
-<p>}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>splityuvfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>                                                                                                                              <span class="o">&lt;</span><span class="n">br</span><span class="o">/&gt;</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
+</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
+</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
+</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
+</span><span class='line'>     <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
+</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+</span><span class='line'><span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
 interlace 的摆放格式如图：</p>
