@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-06-27T07:04:40-07:00</updated>
+  <updated>2016-06-27T07:06:19-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -46,74 +46,115 @@
 <h4>打开文件</h4>
 
 <p>想要利用FFmpeg，你必须首先初始化库。
-{% codeblock lang:c %}
-int main(int argc, char *argv[]){
-av_register_all();
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[]){</span>
+</span><span class='line'><span class="n">av_register_all</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
 <code>av_register_all()</code>用于注册所有编译过的<code>muxers</code> <code>demuxers</code>和<code>protocols</code>，同时，该函数还会调用<code>avcodec_register_all()</code>注册所有的音视频 codec。</p>
 
 <p>现在就可以打开视频文件了。
-{% codeblock lang:c %}
-AVFormatContext *pFormatCtx = NULL;</p>
-
-<p>//open video file
-if(avformat_open_input(&amp;pFormatCtx, argv[1], NULL, 0, NUL) != 0)
-    return -1; //Couldn&rsquo;t open file
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">pFormatCtx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//open video file</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_open_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">NUL</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn&amp;rsquo;t open file</span>
+</span></code></pre></td></tr></table></div></figure>
 调用函数 <code>avformat_open_input</code>,该函数读取文件头部，并将文件的格式信息存储到<code>AVFormatContext</code>结构中。最后的三个参数分别用于指定文件格式、内存大小和格式选项，此处设为<code>NULL</code>或 0，<code>libavformat</code>能够自动侦测到。</p>
 
 <p>该函数只是简单的查看头部信息，接下来我们需要文件中码流的信息：
-{% codeblock lang:c %}
-//Retrieve stream information
-if(avformat_find_stream_info(pFormatCtx, NULL) &lt; 0)
-    return -1;  //Couldn&rsquo;t find stream information
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Retrieve stream information</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_find_stream_info</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>  <span class="c1">//Couldn&amp;rsquo;t find stream information</span>
+</span></code></pre></td></tr></table></div></figure>
 该函数用适当的信息填充<code>pFormatCtx-&gt;streams</code>。此处介绍一个便于调试的函数来看一下里面的内容：
-{% codeblock lang:c %}
-//Dump information about file onto standard error
-av_dump_format(pFormatCtx, 0, argv[1], 0);
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Dump information about file onto standard error</span>
+</span><span class='line'><span class="n">av_dump_format</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
 现在<code>pFormatCtx-&gt;streams</code>仅仅是一个数组指针，数组大小为<code>pFormatCtx-&gt;nb_streams</code>,遍历该数组直到找到一个视频流。
-{% codeblock lang:c %}
-int i;
-AVCodecContext <em>pCodecCtxOrig = NULL;
-AVCodecContext </em>pCodecCtx     = NULL;</p>
-
-<p>//Find the first video stream
-videoStream = -1;
-for(i = 0; i &lt; pFormatCtx->nb_streams; i++)
-    if(pFormatCtx->streams[i]->codec->codec_type = AVMEDIA_TYPE_VIDEO){
-        videoStream = i;
-        break;
-    }
-if(videoStream == -1)
-    return -1; //Didn&rsquo;t find a video stream</p>
-
-<p>// Get a pointer to the codec context for the video stream
-pCodecCtx = pFormatCtx->streams[videoStream]->codec;
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pCodecCtxOrig</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pCodecCtx</span>     <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Find the first video stream</span>
+</span><span class='line'><span class="n">videoStream</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">nb_streams</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">codec_type</span> <span class="o">=</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">videoStream</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">videoStream</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Didn&amp;rsquo;t find a video stream&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Get a pointer to the codec context for the video stream</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
 关于<code>codec</code>的流信息我们称之为<code>codec context</code>。它包含了关于流使用的该<code>codec</code>的所有信息，并且我们有一个指针指向它。但我们必须找到实际的codec并打开它：
-{% codeblock lang:c %}
-AVCodec *pCodec = NULL;</p>
-
-<p>// Find the decoder for the video stream
-pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
-if(pCodec == NULL){
-    fprintf(stderr, &ldquo;Unsupported codec!\n&rdquo;);
-    return -1;  // Codec not found
-}</p>
-
-<p>// Copy context
-pCodecCtx = avcodec_alloc_context3(pCodec);
-if(avcodecc_copy_context(pCodecCtx, pCodecCtxOrig) != 0){
-    fprintf(stderr, &ldquo;Couldn&rsquo;t copy codec context&rdquo;);
-    return -1;  // Error copying codec context
-}</p>
-
-<p>//Open codec
-if(avcodec_open2(pCodecCtx, pCodec) &lt; 0)
-    return -1;  // Could not open codec
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVCodec</span> <span class="o">*</span><span class="n">pCodec</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Find the decoder for the video stream</span>
+</span><span class='line'><span class="n">pCodec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pCodec</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Unsupported</span> <span class="n">codec</span><span class="o">!</span><span class="err">\</span><span class="n">n</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>  <span class="c1">// Codec not found</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Copy context</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">pCodec</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodecc_copy_context</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodecCtxOrig</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Couldn</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">t</span> <span class="n">copy</span> <span class="n">codec</span> <span class="n">context</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>  <span class="c1">// Error copying codec context</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Open codec</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodec</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>  <span class="c1">// Could not open codec</span>
+</span></code></pre></td></tr></table></div></figure>
 因为不能直接使用视频流的<code>AVCodecContext</code>！因此必须使用<code>avcodec_copy_context()</code>来 copy 该 context 到一个新位置。</p>
 
 <hr />
@@ -121,35 +162,47 @@ if(avcodec_open2(pCodecCtx, pCodec) &lt; 0)
 <h4>存储数据</h4>
 
 <p>现在我们需要一块内存来真实的存储这些帧：
-{% codeblock lang:c %}
-AVFrame *pFrame = NULL;</p>
-
-<p>//Allocate video frame
-pFrame = av_frame_alloc();
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFrame</span> <span class="o">*</span><span class="n">pFrame</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Allocate video frame</span>
+</span><span class='line'><span class="n">pFrame</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
 既然我们想要输出 PPM 文件（被存储为 24-bit RGB），我们必须将帧从它原本格式转换为 RGB。FFmpeg 可以为我们做这种转换。对于大多数项目，会将初始帧转换为特定格式。让我们分配一帧来为转换帧。
-{% codeblock lang:c %}
-// Allocate an AVFrame structure
-pFrameRGB = av_frame_alloc();
-if(pFrameRGB == NULL)
-    return -1;
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Allocate an AVFrame structure</span>
+</span><span class='line'><span class="n">pFrameRGB</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFrameRGB</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
 尽管我们已经分配了帧，仍然需要一块内存存放 raw data 信息。我们使用 avpicture_get_size 来获得我们需要的大小，并手动分配该内存。
-{% codeblock lang:c %}
-uint8_t <em>buffer = NULL;
-int numBytes;
-//Determine required buffer size and allocate buffer
-numBytes = avpicture_get_size(PIX_FMT_RGB24, pCodecCtx->width, pCodecCtx->height);
-buffer = (uint8_t </em>)av_malloc(numBytes * sizeof(uint8_t));
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">uint8_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buffer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">numBytes</span><span class="p">;</span>
+</span><span class='line'><span class="c1">//Determine required buffer size and allocate buffer</span>
+</span><span class='line'><span class="n">numBytes</span> <span class="o">=</span> <span class="n">avpicture_get_size</span><span class="p">(</span><span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span><span class='line'><span class="n">buffer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">numBytes</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
 <code>av_malloc</code>是 FFmpeg 的分配函数，它简单封装了 malloc 函数并做内存对齐，并不会保护内存泄漏、多次释放内存或者其他分配问题。</p>
 
 <p>现在我们使用<code>avpicture_fill</code>来将帧和新分配的内存联系起来。关于<code>AVPicture</code>强制转换：<code>AVPicture</code>结构是<code>AVFrame</code>结构体的子集——<code>AVFrame</code>结构的开始对于<code>AVPicture</code>结构来说是唯一的。
-{% codeblock lang:c %}
-// Assign appropriate parts of buffer to image planes in pFrameRGB
-// Note that pFrameRGB is an AVFrame, but AVFrame is a superset of AVPicture
-avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, pCodecCtx->height);
-{% endcodeblock %}
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Assign appropriate parts of buffer to image planes in pFrameRGB</span>
+</span><span class='line'><span class="c1">// Note that pFrameRGB is an AVFrame, but AVFrame is a superset of AVPicture</span>
+</span><span class='line'><span class="n">avpicture_fill</span><span class="p">((</span><span class="n">AVPicture</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
 最后，我们读取码流。</p>
 
 <hr />
@@ -157,36 +210,63 @@ avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, 
 <h4>读数据</h4>
 
 <p>我们接下来要做的就是通过读<code>packet</code>中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。
-{% codeblock lang:c %}
-struct SwsContext *sws_ctx = NULL;
-int frameFinished;
-AVPacket packet;
-// initialize SWS context for software scaling
-sws_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height, PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);</p>
-
-<p>i = 0;
-while(av_read_frame(pFormatCtx, &amp;packet) >= 0){
-    // Is this a packet from the video stream?
-    if(packet.stream_index == videoStream){
-        //Decode video frame
-        avcodec_decode_video2(pCodecCtx, pFrame, &amp;frameFinished, &amp;packet);</p>
-
-<pre><code>    //Did we get a video frame?
-    if(frameFinished){
-        //Convert the image from its native format to RGB
-        sws_scale(sws_ctx, (uint8_t const * contst *)pFrame-&gt;data, pFrame-&gt;linesize, 0, pCodecCtx-&gt;height, pFrameRGB-&gt;data, pFrameRGB-&gt;linesize);
-
-        // Save the frame to disk
-        if(++i &lt;= 5)
-        SaveFrame(pFrameRGB, pCodecCtx-&gt;widht, pCodecCtx-&gt;height, i);
-    }
-}
-// Free the packet that was allocated by av_read_frame
-av_free_packet(&amp;packet);
-</code></pre>
-
-<p>}
-{% endcodeblock %}</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">struct</span> <span class="n">SwsContext</span> <span class="o">*</span><span class="n">sws_ctx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">frameFinished</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVPacket</span> <span class="n">packet</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// initialize SWS context for software scaling</span>
+</span><span class='line'><span class="n">sws_ctx</span> <span class="o">=</span> <span class="n">sws_getContext</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">pix_fmt</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">SWS_BILINEAR</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">av_read_frame</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">packet</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>    <span class="c1">// Is this a packet from the video stream?</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">videoStream</span><span class="p">){</span>
+</span><span class='line'>        <span class="c1">//Decode video frame</span>
+</span><span class='line'>        <span class="n">avcodec_decode_video2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pFrame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">frameFinished</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">packet</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>    <span class="c1">//Did we get a video frame?</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">frameFinished</span><span class="p">){</span>
+</span><span class='line'>        <span class="c1">//Convert the image from its native format to RGB</span>
+</span><span class='line'>        <span class="n">sws_scale</span><span class="p">(</span><span class="n">sws_ctx</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="k">const</span> <span class="o">*</span> <span class="n">contst</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">linesize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">height</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">linesize</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Save the frame to disk</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="o">++</span><span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">SaveFrame</span><span class="p">(</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">widht</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">height</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="c1">// Free the packet that was allocated by av_read_frame</span>
+</span><span class='line'><span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 ]]></content>
   </entry>
   
