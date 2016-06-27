@@ -149,3 +149,8 @@ ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding
 ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)
 ```
 ---
+###Filpping and Rotating Video
+###Blur Sharpen adn Other Denoising
+###Overlay - Picture in Picture
+###Adding Text on Video
+###Conversion Between Formats
