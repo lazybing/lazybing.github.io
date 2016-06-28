@@ -7,10 +7,9 @@ categories: 源码分析
 ---
 
 `AVFrame` 这个结构体主要描述了解码后的未压缩的视频和音频数据。
-
+<!--more-->
 ---
 `AVFrame`必须使用`av_frame_alloc()`函数来分配，注意该函数只能分配`AVFrame`，对于分配出的内存需要靠其他方法来管理。`AVFrame`必须由`av_frame_free()`函数释放。`AVFrame`只需分配一次，即可多次重复使用来存储不停的数据data——一个`AVFrame`可以可以存储解码出的多张 frame。
-<!--more-->
 
 {% codeblock lang:c AVFrame%}
 
