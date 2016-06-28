@@ -9,8 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="
-">
+  <meta name="description" content="AVFrame 这个结构体主要描述了解码后的未压缩的视频和音频数据。AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配AVFrame，对于分配出的内存需要靠其他方法来管理。AVFrame必须由av_frame_free()函数释放。AVFrame只需分配一次， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +78,90 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/06/28/avframe-structure/">AVFrame-Structure</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-06-28T09:10:38-07:00'><span class='date'>2016 年 06 月 28 日</span> <span class='time'>9:10 am</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><code>AVFrame</code> 这个结构体主要描述了解码后的未压缩的视频和音频数据。<code>AVFrame</code>必须使用<code>av_frame_alloc()</code>函数来分配，注意该函数只能分配<code>AVFrame</code>，对于分配出的内存需要靠其他方法来管理。<code>AVFrame</code>必须由<code>av_frame_free()</code>函数释放。<code>AVFrame</code>只需分配一次，即可多次重复使用来存储不停的数据data——一个<code>AVFrame</code>可以可以存储解码出的多张 frame。</p>
+
+<figure class='code'><figcaption><span>AVFrame</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFrame</span><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define AV_NUM_DATA_POINTERS 8</span>
+</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">linesize</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">**</span><span class="n">extended_data</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">nb_samples</span><span class="p">;</span> <span class="cm">/* number of audio samples(per channel) described by this frame */</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">format</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">key_frame</span><span class="p">;</span> <span class="cm">/* 1-&gt;keyframe, 0-&gt;not*/</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVPictureType</span> <span class="n">pict_type</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pts</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pkt_pts</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pkt_dts</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">coded_picture_number</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">display_picture_number</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">quality</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span> <span class="cm">/* for some private data of the user */</span>
+</span><span class='line'>  <span class="kt">uint64_t</span> <span class="n">error</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">repeat_pict</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">interlaced_frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">top_field_first</span><span class="p">;</span>  <span class="cm">/* If the content is interlaced, is top field displayed first */</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">palette_has_changed</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -301,7 +384,7 @@
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (2)</a></li>
-<li class='category'><a href='/blog/categories/yuan-ma-fen-xi/'>源码分析 (1)</a></li>
+<li class='category'><a href='/blog/categories/yuan-ma-fen-xi/'>源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (1)</a></li>
 
@@ -310,6 +393,10 @@
 <section>
   <h1>最新文章</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/06/28/avframe-structure/">AVFrame-Structure</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2016/06/27/profiles-tiers-levels/">Profiles-Tiers-Levels</a>
@@ -325,10 +412,6 @@
     
       <li class="post">
         <a href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/">FFmpeg 和 SDL 使用教程</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2016/05/09/ffmpeg-install-and-use/">FFmpeg的介绍、安装及使用</a>
       </li>
     
   </ul>
