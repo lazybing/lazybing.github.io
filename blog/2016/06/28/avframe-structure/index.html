@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>AVFrame-Structure - 懒人李冰</title>
+  <title>AVFramec 结构体解析 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
@@ -81,7 +81,7 @@
   
   <header>
     
-      <h1 class="entry-title">AVFrame-Structure</h1>
+      <h1 class="entry-title">AVFramec 结构体解析</h1>
     
     
       <p class="meta">
@@ -133,6 +133,32 @@
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFrame</span><span class="p">{</span>
 </span><span class='line'>
 </span><span class='line'><span class="cp">#define AV_NUM_DATA_POINTERS 8</span>
@@ -157,6 +183,32 @@
 </span><span class='line'>  <span class="kt">int</span> <span class="n">interlaced_frame</span><span class="p">;</span>
 </span><span class='line'>  <span class="kt">int</span> <span class="n">top_field_first</span><span class="p">;</span>  <span class="cm">/* If the content is interlaced, is top field displayed first */</span>
 </span><span class='line'>  <span class="kt">int</span> <span class="n">palette_has_changed</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">reordered_opaque</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">sample_rate</span><span class="p">;</span>    <span class="cm">/*Sample rate of the audio data*/</span>
+</span><span class='line'>    <span class="kt">uint64_t</span> <span class="n">channel_layout</span><span class="p">;</span> <span class="cm">/*channel layout of the audio data*/</span>
+</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">**</span><span class="n">extended_buf</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_exteneded_buf</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVFrameSideData</span> <span class="o">**</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_side_data</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#define AV_FRAME_FLAG_CORRUPT   (1&lt;&lt;0)</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorRange</span> <span class="n">color_range</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorPrimaries</span> <span class="n">color_primaries</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorTransferCharacteristic</span> <span class="n">color_trc</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorSpace</span> <span class="n">colorspace</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVChromaLocation</span> <span class="n">chroma_location</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">best_effort_timestamp</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pkt_pos</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pkt_duration</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">decode</span> <span class="n">_error_flags</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#define FF_DECODE_ERROR_INVALID_BITSTREAM   1</span>
+</span><span class='line'><span class="cp">#define FF_DECODE_ERROR_MISSING_REFERENCE   2</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">channels</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pkt_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">qp_table_buf</span><span class="p">;</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -209,7 +261,7 @@
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/06/28/avframe-structure" data-title="AVFrame-Structure" data-url="http://lazybing.github.io/blog/2016/06/28/avframe-structure//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/06/28/avframe-structure" data-title="AVFramec 结构体解析" data-url="http://lazybing.github.io/blog/2016/06/28/avframe-structure//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
@@ -247,7 +299,7 @@ var duoshuoQuery = {short_name:"lazybing"};
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2016/06/28/avframe-structure/">AVFrame-Structure</a>
+        <a href="/blog/2016/06/28/avframe-structure/">AVFramec 结构体解析</a>
       </li>
     
       <li class="post">
