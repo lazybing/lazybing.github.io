@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AVFrame-Structure"
+title: "AVFramec 结构体解析"
 date: 2016-06-28 09:10:38 -0700
 comments: true
 categories: 源码分析 
@@ -37,6 +37,32 @@ typedef struct AVFrame{
 	int interlaced_frame;
 	int top_field_first;	/* If the content is interlaced, is top field displayed first */
 	int palette_has_changed;
+    int64_t reordered_opaque;
+    int sample_rate;    /*Sample rate of the audio data*/
+    uint64_t channel_layout; /*channel layout of the audio data*/
+    AVBufferRef *buf[AV_NUM_DATA_POINTERS];
+    AVBufferRef **extended_buf;
+    int nb_exteneded_buf;
+    AVFrameSideData **side_data;
+    int nb_side_data;
+#define AV_FRAME_FLAG_CORRUPT   (1<<0)
+    int flags;
+    enum AVColorRange color_range;
+    enum AVColorPrimaries color_primaries;
+    enum AVColorTransferCharacteristic color_trc;
+    enum AVColorSpace colorspace;
+    enum AVChromaLocation chroma_location;
+
+    int64_t best_effort_timestamp;
+    int64_t pkt_pos;
+    int64_t pkt_duration;
+    AVDictionary *metadata;
+    int decode _error_flags;
+#define FF_DECODE_ERROR_INVALID_BITSTREAM   1
+#define FF_DECODE_ERROR_MISSING_REFERENCE   2
+    int channels;
+    int pkt_size;
+    AVBufferRef *qp_table_buf;
 }
 
 {% endcodeblock %}
