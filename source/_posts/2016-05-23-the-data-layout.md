@@ -8,7 +8,7 @@ categories: 总结积累
 
 图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。
 <!--more-->
----
+
 ##YUV 数据
 对于 YUV 图像来说，会有如下几个特性：`FOURCC` `Format` `Component Order` `Image Resolution` `Interlace/Progressive` `Packed/Planar` 。
 

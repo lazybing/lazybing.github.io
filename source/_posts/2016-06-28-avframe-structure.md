@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AVFramec 结构体解析"
+title: "AVFrame 结构体解析"
 date: 2016-06-28 09:10:38 -0700
 comments: true
 categories: 源码分析 
