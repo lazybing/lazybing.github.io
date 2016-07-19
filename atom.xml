@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-07-19T05:39:17-07:00</updated>
+  <updated>2016-07-19T16:00:58-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -43,6 +43,21 @@
 <li>Action Message Format(AMF):</li>
 </ul>
 
+
+<h3>2.字节序、字节对齐和时间格式</h3>
+
+<p>所有完整的字段都是按照网络字节序被承载的。即零字节是第一个字节，bit 0 是一个字段中的最高有效位。即所谓的大端。
+如无特殊说明，RTMP 中的所有字段都是字节对齐的，</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#define ALIGN_16bit(value) (((value + 15) &gt;&gt; 4) &lt;&lt; 4)
+</span><span class='line'>#define ALIGN_32bit(value) (((value + 31) &gt;&gt; 5) &lt;&lt; 5)
+</span><span class='line'>#define ALIGN_64bit(value) (((value + 63) &gt;&gt; 6) &lt;&lt; 6)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>RTMP 中的时间戳用整数来表示，它是以毫秒为单位的相对时间。典型的，码流中都是从时间戳为0开始的，但这不是必须的，只要通讯双方用统一的时间即可。注意，这就要求任何跨流的同步都需要 RTMP 外的额外机制。</p>
 ]]></content>
   </entry>
   
