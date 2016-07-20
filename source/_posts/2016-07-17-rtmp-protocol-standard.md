@@ -57,5 +57,6 @@ C0 和 S0 是一个8-bit的整数字段：
 C1 和 S1 是一个1536 byte 的序列，其中 4 byte 是表示时间，4 byte 全部填0，剩余部分填写其他值。
 C2 和 S2 是对 C1 和 S1 的一个对等。
 ##### 握手框图(HandShake Diagram)
+
 <image src="/images/RTMPProtocol/HandShake_Diagram.png">
 
