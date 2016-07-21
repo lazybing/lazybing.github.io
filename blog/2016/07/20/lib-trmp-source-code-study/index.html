@@ -5,11 +5,15 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>RTMP 协议学习（上）: 协议规范 - 懒人李冰</title>
+  <title>RTMP协议学习（中）：源码分析 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="RTMP(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的文档。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。 &hellip;">
+  <meta name="description" content="了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。 大致流程 使用RTMP下载流媒体的主要流程包括以下几个步骤：
+1. InitSocket()
+2. RTMP_Init(Struct RTMP)
+3. RTMP_ParseURL
+4. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +86,7 @@
   
   <header>
     
-      <h1 class="entry-title">RTMP 协议学习（上）: 协议规范</h1>
+      <h1 class="entry-title">RTMP协议学习（中）：源码分析</h1>
     
     
       <p class="meta">
@@ -91,7 +95,7 @@
 
 
 
-<time class='entry-date' datetime='2016-07-17T08:17:38-07:00'><span class='date'>2016 年 07 月 17 日</span> <span class='time'>8:17 am</span></time>
+<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
         
         
       </p>
@@ -99,78 +103,43 @@
   </header>
 
 
-<div class="entry-content"><p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。</p>
+<div class="entry-content"><p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。</p>
 
 <!--more-->
 
 
-<h3>1. 几个概念</h3>
+<h3>大致流程</h3>
 
-<ul>
-<li>负载(Payload): 分组中包含的数据，比如音频采样数据和视频压缩数据。</li>
-<li>分组(Packet): 数据分组由固定头部和负载组成的。对于底层协议，可能需要定义分组的封装。</li>
-<li>端口(Port): 用于区分不同的目标抽象，一般用整数表示，如TCP/IP中的端口号。</li>
-<li>传输地址(Transport address): 网络地址和端口号的组合,用于标识一个传输层的端口。如IP地址+TCP端口号。</li>
-<li>消息流(Message stream): 允许消息流动的逻辑上的通讯通道。</li>
-<li>消息流ID(Message stream ID): 每隔消息都有与之关联的ID号，用于与其他消息流作区分。</li>
-<li>块(Chunk): 一个消息片段。消息被放到网络上传输之前被切分成小的片段并被交错存取。分块确保跨流的所有消息按时间戳顺序被不断的传输。</li>
-<li>块流(Chunk stream):</li>
-<li>块流ID(Chunk stream ID): 每个块所关联的用于区分其他块流的ID。</li>
-<li>复用(Multiplexing): 将音视频数据整合到一个数据流内,使得多个音视频数据流可以同步传输.</li>
-<li>解复用(DeMultimplexing): 复用的反过程,交互的音视频数据被分成原始的音频数据和视频数据。</li>
-<li>远程过程调用(Remote Procedure Call(RPC)):</li>
-<li>元数据(Metadata): 数据的一个简单描述。如一部电影的电影名、时长、制作时间等等.</li>
-<li>应用Instance（Application Instance): 对于服务器端的应用Instance，客户端就是通过连接该Instance来发送请求的.</li>
-<li>Action Message Format(AMF):</li>
-</ul>
+<p>使用RTMP下载流媒体的主要流程包括以下几个步骤：
+1. InitSocket()
+2. RTMP_Init(Struct RTMP)
+3. RTMP_ParseURL
+4. RTMP_SetupStream
+4. fopen
+5. RTMP_Connect()
+6. RTMP_ConnectStream
+7. Download
+8. CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</p>
 
+<p>下面逐个记录各个步骤的功能。</p>
 
-<h3>2.字节序、字节对齐和时间格式</h3>
+<h3>InitSocket()</h3>
 
-<p>所有完整的字段都是按照网络字节序被承载的。即零字节是第一个字节，bit 0 是一个字段中的最高有效位。即所谓的大端。
-如无特殊说明，RTMP 中的所有字段都是字节对齐的。</p>
+<h3>RTMP_Init(Struct RTMP)</h3>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#define ALIGN_16bit(value) (((value + 15) &gt;&gt; 4) &lt;&lt; 4)
-</span><span class='line'>#define ALIGN_32bit(value) (((value + 31) &gt;&gt; 5) &lt;&lt; 5)
-</span><span class='line'>#define ALIGN_64bit(value) (((value + 63) &gt;&gt; 6) &lt;&lt; 6)</span></code></pre></td></tr></table></div></figure>
+<h3>RTMP_ParseURL</h3>
 
+<h3>RTMP_SetupStream</h3>
 
-<p>RTMP 中的时间戳用整数来表示，它是以毫秒为单位的相对时间。典型的，码流中都是从时间戳为0开始的，但这不是必须的，只要通讯双方用统一的时间即可。注意，这就要求任何跨流的同步都需要 RTMP 外的额外机制。</p>
+<h3>fopen</h3>
 
-<h3>3. RTMP Chunk Stream</h3>
+<h3>RTMP_Connect()</h3>
 
-<h4>3.1 消息格式</h4>
+<h3>RTMP_ConnectStream</h3>
 
-<p>根据上层协议，消息格式可以被分成多个块以支持复用。消息格式应包含如下字段，这对于创建块是必须的:
-1. 时间戳(TimeStamp)：消息的时间戳，占 4 个字节。
-2. 长度(Length): 消息的长度，包含头部。占头部中的3 个字节。
-3. 类型Id(Type Id):
-4. 消息流ID（Message Stream ID）:</p>
+<h3>Download</h3>
 
-<h4>3.2 握手(HandShake)</h4>
-
-<p>RTMP 协议开始于握手，这里的握手不同于其他协议的握手，它是由 3 个固定大小的块组成，而不是带有头部的可变大小的块。
-客户端和服务器端都会发送 3 个固定大小的块。客户端发送的称为 C0/C1/C2，服务器端发送的称为S0/S1/S2。</p>
-
-<h5>握手序列:</h5>
-
-<p>首先，握手必须是由客户端发送C0/C1开始的。
-其次，客户端必须接收到服务器端发送的S1后才能发送C2, 必须接收到服务器端发送的S2后才能发送其他数据。
-再次，服务器端必须等到客户端发送的C0后才能发送S0和S1,也可等到接收到C1后再发送。
-同样，服务器端必须等到客户端发送的C1后才能发送S1,必须等到客户端发送的C2后才能发送其他数据。</p>
-
-<h5>C0 和 S0 格式：</h5>
-
-<p>C0 和 S0 是一个8-bit的整数字段：
-C1 和 S1 是一个1536 byte 的序列，其中 4 byte 是表示时间，4 byte 全部填0，剩余部分填写其他值。
-C2 和 S2 是对 C1 和 S1 的一个对等。</p>
-
-<h5>握手框图(HandShake Diagram)</h5>
-
-<p><image src="/images/RTMPProtocol/HandShake_Diagram.png"></p>
+<h3>CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</h3>
 </div>
 
 
@@ -186,7 +155,7 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
 
 
 
-<time class='entry-date' datetime='2016-07-17T08:17:38-07:00'><span class='date'>2016 年 07 月 17 日</span> <span class='time'>8:17 am</span></time>
+<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
       
 
 <span class="categories">
@@ -200,7 +169,7 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study/" >Tweet</a>
   
   
   
@@ -209,10 +178,8 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/07/07/how-to-use-vim/" title="Previous Post: Vim 使用技巧">&laquo; Vim 使用技巧</a>
+        <a class="basic-alignment left" href="/blog/2016/07/17/rtmp-protocol-standard/" title="Previous Post: RTMP 协议学习（上）: 协议规范">&laquo; RTMP 协议学习（上）: 协议规范</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2016/07/20/lib-trmp-source-code-study/" title="Next Post: RTMP协议学习（中）：源码分析">RTMP协议学习（中）：源码分析 &raquo;</a>
       
     </p>
   </footer>
@@ -222,7 +189,7 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/07/17/rtmp-protocol-standard" data-title="RTMP 协议学习（上）: 协议规范" data-url="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/07/20/lib-trmp-source-code-study" data-title="RTMP协议学习（中）：源码分析" data-url="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">

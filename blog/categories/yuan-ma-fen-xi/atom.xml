@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/yuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-07-20T09:15:29-07:00</updated>
+  <updated>2016-07-20T17:38:24-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,7 +14,52 @@
 
   
   <entry>
-    <title type="html"><![CDATA[RTMP 协议规范]]></title>
+    <title type="html"><![CDATA[RTMP协议学习（中）：源码分析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study/"/>
+    <updated>2016-07-20T17:03:14-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study</id>
+    <content type="html"><![CDATA[<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。</p>
+
+<!--more-->
+
+
+<h3>大致流程</h3>
+
+<p>使用RTMP下载流媒体的主要流程包括以下几个步骤：
+1. InitSocket()
+2. RTMP_Init(Struct RTMP)
+3. RTMP_ParseURL
+4. RTMP_SetupStream
+4. fopen
+5. RTMP_Connect()
+6. RTMP_ConnectStream
+7. Download
+8. CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</p>
+
+<p>下面逐个记录各个步骤的功能。</p>
+
+<h3>InitSocket()</h3>
+
+<h3>RTMP_Init(Struct RTMP)</h3>
+
+<h3>RTMP_ParseURL</h3>
+
+<h3>RTMP_SetupStream</h3>
+
+<h3>fopen</h3>
+
+<h3>RTMP_Connect()</h3>
+
+<h3>RTMP_ConnectStream</h3>
+
+<h3>Download</h3>
+
+<h3>CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</h3>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[RTMP 协议学习（上）: 协议规范]]></title>
     <link href="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/"/>
     <updated>2016-07-17T08:17:38-07:00</updated>
     <id>http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard</id>
@@ -385,88 +430,6 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
 </span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[AVIOContext 结构体解析]]></title>
-    <link href="http://lazybing.github.io/blog/2016/07/02/aviocontext/"/>
-    <updated>2016-07-02T17:15:20-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/07/02/aviocontext</id>
-    <content type="html"><![CDATA[<p>AVIOContext 是FFMPEG管理输入输出数据的结构体。</p>
-
-<!--more-->
-
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVIOContext</span><span class="p">{</span>
-</span><span class='line'>    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">av_class</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buffer</span><span class="p">;</span>  <span class="o">/&lt;</span><span class="n">strong</span><span class="o">&gt;&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">Start</span> <span class="n">of</span> <span class="n">the</span> <span class="n">buffer</span><span class="p">.</span> <span class="err">*/</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">buffer_size</span><span class="p">;</span>        <span class="o">/&lt;/</span><span class="n">strong</span><span class="o">&gt;&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">Maximum</span> <span class="n">buffer</span> <span class="n">size</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buf_ptr</span><span class="p">;</span> <span class="o">/&lt;</span><span class="n">strong</span><span class="o">&gt;&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">Current</span> <span class="n">position</span> <span class="n">in</span> <span class="n">the</span> <span class="n">buffer</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buf_end</span><span class="p">;</span> <span class="o">/&lt;/</span><span class="n">strong</span><span class="o">&gt;&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">End</span> <span class="n">of</span> <span class="n">the</span> <span class="n">data</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">read_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">write_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int64_t</span> <span class="n">offset</span><span class="p">,</span> <span class="kt">int</span> <span class="n">whence</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pos</span><span class="p">;</span>            <span class="cm">/**&amp;lt; position in the file of the current buffer &lt;/em&gt;/</span>
-</span><span class='line'><span class="cm">    int must_flush;         /&lt;strong&gt;&amp;lt; true if the next seek should flush */</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">eof_reached</span><span class="p">;</span>        <span class="o">/&lt;/</span><span class="n">strong</span><span class="o">&gt;&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="nb">true</span> <span class="k">if</span> <span class="n">eof</span> <span class="n">reached</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">write_flag</span><span class="p">;</span>         <span class="o">/**&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="nb">true</span> <span class="k">if</span> <span class="n">open</span> <span class="k">for</span> <span class="n">writing</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">max_packet_size</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">checksum_ptr</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">unsigned</span> <span class="nf">long</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">update_checksum</span><span class="p">)(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">buf</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">error</span><span class="p">;</span>              <span class="o">/**&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">contains</span> <span class="n">the</span> <span class="n">error</span> <span class="n">code</span> <span class="n">or</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">no</span> <span class="n">error</span> <span class="n">happened</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">read_pause</span><span class="p">)(</span><span class="kt">void</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pause</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">read_seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">stream_index</span><span class="p">,</span>
-</span><span class='line'>                         <span class="kt">int64_t</span> <span class="n">timestamp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">seekable</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">maxsize</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">direct</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">bytes_read</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">seek_count</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">writeout_count</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">orig_buffer_size</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">short_seek_threshold</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
 </span></code></pre></td></tr></table></div></figure></p>
 ]]></content>
   </entry>
