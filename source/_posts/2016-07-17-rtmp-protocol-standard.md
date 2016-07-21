@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "RTMP 协议规范"
+title: "RTMP 协议学习（上）: 协议规范"
 date: 2016-07-17 08:17:38 -0700
 comments: true
 categories: 源码分析
