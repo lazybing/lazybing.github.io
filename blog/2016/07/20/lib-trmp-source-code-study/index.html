@@ -9,11 +9,11 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。 大致流程 使用RTMP下载流媒体的主要流程包括以下几个步骤：
-1. InitSocket()
-2. RTMP_Init(Struct RTMP)
-3. RTMP_ParseURL
-4. &hellip;">
+  <meta name="description" content="了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。 大致流程 使用RTMP下载流媒体的主要流程包括以下几个步骤： InitSocket()
+RTMP_Init(Struct RTMP)
+RTMP_ParseURL
+RTMP_SetupStream
+fopen &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -110,16 +110,20 @@
 
 <h3>大致流程</h3>
 
-<p>使用RTMP下载流媒体的主要流程包括以下几个步骤：
-1. InitSocket()
-2. RTMP_Init(Struct RTMP)
-3. RTMP_ParseURL
-4. RTMP_SetupStream
-4. fopen
-5. RTMP_Connect()
-6. RTMP_ConnectStream
-7. Download
-8. CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</p>
+<p>使用RTMP下载流媒体的主要流程包括以下几个步骤：</p>
+
+<ol>
+<li>InitSocket()</li>
+<li>RTMP_Init(Struct RTMP)</li>
+<li>RTMP_ParseURL</li>
+<li>RTMP_SetupStream</li>
+<li>fopen</li>
+<li>RTMP_Connect()</li>
+<li>RTMP_ConnectStream</li>
+<li>Download</li>
+<li>CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</li>
+</ol>
+
 
 <p>下面逐个记录各个步骤的功能。</p>
 
