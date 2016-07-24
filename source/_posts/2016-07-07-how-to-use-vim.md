@@ -49,5 +49,5 @@ vim 在多窗口打开。
 
 ---
 ### vim 浏览代码
-vim 浏览代码一般会与`catgs``cscope``taglist`等一起使用。 
+vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。 
 
