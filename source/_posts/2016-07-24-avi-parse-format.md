@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "媒体文件分析之AVI"
+title: "媒体文件格式分析之AVI"
 date: 2016-07-24 01:04:52 -0700
 comments: true
 categories: 总结积累 
