@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Vim 使用技巧 - 懒人李冰</title>
+  <title>媒体文件格式分析之TS - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Vim 是一个学习成本比较高的编辑器。 vim 寄存器 使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。 寄存器种类 寄存器 寄存器描述 无名寄存器 &ldquo;&rdquo; 缓存最后一个操作内容 数字寄存器 &ldquo &hellip;">
+  <meta name="description" content="TS是MPEG2-TS 的简称，是“Transport Stream”的缩写。一段 TS 流，必须包含 PAT 包、PMT 包、多个音频包、多个视频包、多个 PCR 包以及其他信息包。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/07/07/how-to-use-vim/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/07/26/ts-parse-format/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">Vim 使用技巧</h1>
+      <h1 class="entry-title">媒体文件格式分析之TS</h1>
     
     
       <p class="meta">
@@ -91,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2016-07-07T08:17:10-07:00'><span class='date'>2016 年 07 月 07 日</span> <span class='time'>8:17 am</span></time>
+<time class='entry-date' datetime='2016-07-26T04:57:15-07:00'><span class='date'>2016 年 07 月 26 日</span> <span class='time'>4:57 am</span></time>
         
         
       </p>
@@ -99,105 +99,12 @@
   </header>
 
 
-<div class="entry-content"><p>Vim 是一个学习成本比较高的编辑器。</p>
+<div class="entry-content"><p><a href="https://en.wikipedia.org/wiki/MPEG_transport_stream">TS</a>是MPEG2-TS 的简称，是“Transport Stream”的缩写。一段 TS 流，必须包含 PAT 包、PMT 包、多个音频包、多个视频包、多个 PCR 包以及其他信息包。</p>
 
 <!--more-->
 
 
-<hr />
 
-<h3>vim 寄存器</h3>
-
-<p>使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。</p>
-
-<table>
-<thead>
-<tr>
-<th style="text-align:center;">寄存器种类         </th>
-<th style="text-align:center;">  寄存器  </th>
-<th style="text-align:center;">寄存器描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:center;">无名寄存器         </td>
-<td style="text-align:center;">  &ldquo;&rdquo;           </td>
-<td style="text-align:center;">缓存最后一个操作内容</td>
-</tr>
-<tr>
-<td style="text-align:center;">数字寄存器         </td>
-<td style="text-align:center;">  &ldquo;0~"9        </td>
-<td style="text-align:center;">缓存最近操作内容</td>
-</tr>
-<tr>
-<td style="text-align:center;">行内寄存器         </td>
-<td style="text-align:center;">  &ldquo;-           </td>
-<td style="text-align:center;">缓存行内删除内容</td>
-</tr>
-<tr>
-<td style="text-align:center;">具名寄存器         </td>
-<td style="text-align:center;">  &ldquo;a~"z或"A~"Z </td>
-<td style="text-align:center;"> 指定时可用</td>
-</tr>
-<tr>
-<td style="text-align:center;">只读寄存器         </td>
-<td style="text-align:center;">  &ldquo;:,&rdquo;.,&ldquo;%,&rdquo;#  </td>
-<td style="text-align:center;">分别缓存最近命令，最近插入文本，当前文件名，当前交替文件名</td>
-</tr>
-<tr>
-<td style="text-align:center;">表达式寄存器       </td>
-<td style="text-align:center;">  &ldquo;=           </td>
-<td style="text-align:center;">只读，用于执行表达式命令</td>
-</tr>
-<tr>
-<td style="text-align:center;">选择及拖拽寄存器    </td>
-<td style="text-align:center;">  &ldquo;*,&rdquo;+,&ldquo;~  </td>
-<td style="text-align:center;">存取GUI选择文本</td>
-</tr>
-<tr>
-<td style="text-align:center;">黑洞寄存器         </td>
-<td style="text-align:center;">  &ldquo;_        </td>
-<td style="text-align:center;"> 不缓存操作内容</td>
-</tr>
-<tr>
-<td style="text-align:center;">模式寄存器         </td>
-<td style="text-align:center;">  &ldquo;/        </td>
-<td style="text-align:center;">缓存最近的搜索模式</td>
-</tr>
-</tbody>
-</table>
-
-
-<hr />
-
-<h3>vim 分屏功能</h3>
-
-<p><image src="/images/vim_split_screen.png">
-vim 同时打开多个文件。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>vim -o file1 file2       //小写 o 参数来水平分屏
-</span><span class='line'>vim -O file1 file2        //大写 O 参数来垂直分屏</span></code></pre></td></tr></table></div></figure>
-
-
-<p>vim 在多窗口打开。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>:vs path/file        //在新的垂直分屏中打开文件
-</span><span class='line'>:sv path/file       //在新的水平分屏中打开文件</span></code></pre></td></tr></table></div></figure>
-
-
-<p>多窗口间切换的3方法：<code>Ctrl+w+方向键</code> <code>Ctrl+w+h/j/k/l</code> <code>Ctrl+ww</code>。</p>
-
-<p>移动分屏的方法：<code>Ctrl+w L</code>向右移动分屏；<code>Ctrl+w H</code>向左移动分屏；<code>Ctrl+w K</code>向上移动分屏；<code>Ctrl+w J</code>向下移动分屏。</p>
-
-<hr />
-
-<h3>vim 浏览代码</h3>
-
-<p>vim 浏览代码一般会与 <code>catgs</code> <code>cscope</code> <code>taglist</code> 等一起使用。</p>
 </div>
 
 
@@ -213,12 +120,12 @@ vim 同时打开多个文件。</p>
 
 
 
-<time class='entry-date' datetime='2016-07-07T08:17:10-07:00'><span class='date'>2016 年 07 月 07 日</span> <span class='time'>8:17 am</span></time>
+<time class='entry-date' datetime='2016-07-26T04:57:15-07:00'><span class='date'>2016 年 07 月 26 日</span> <span class='time'>4:57 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a>
+    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
   
 </span>
 
@@ -227,7 +134,7 @@ vim 同时打开多个文件。</p>
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/07/07/how-to-use-vim/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/07/07/how-to-use-vim/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/07/26/ts-parse-format/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/07/26/ts-parse-format/" >Tweet</a>
   
   
   
@@ -236,10 +143,8 @@ vim 同时打开多个文件。</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/07/03/avpacket-structure/" title="Previous Post: AVPacket 结构体解析">&laquo; AVPacket 结构体解析</a>
+        <a class="basic-alignment left" href="/blog/2016/07/26/mp4-parse-format/" title="Previous Post: 媒体文件格式分析之MP4">&laquo; 媒体文件格式分析之MP4</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2016/07/17/rtmp-protocol-standard/" title="Next Post: RTMP 协议学习（上）: 协议规范">RTMP 协议学习（上）: 协议规范 &raquo;</a>
       
     </p>
   </footer>
@@ -249,7 +154,7 @@ vim 同时打开多个文件。</p>
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/07/07/how-to-use-vim" data-title="Vim 使用技巧" data-url="http://lazybing.github.io/blog/2016/07/07/how-to-use-vim//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/07/26/ts-parse-format" data-title="媒体文件格式分析之TS" data-url="http://lazybing.github.io/blog/2016/07/26/ts-parse-format//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
