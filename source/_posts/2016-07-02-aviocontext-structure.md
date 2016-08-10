@@ -3,7 +3,7 @@ layout: post
 title: "AVIOContext 结构体解析"
 date: 2016-07-02 17:15:20 -0700
 comments: true
-categories: 源码分析
+categories: FFMPEG源码分析
 ---
 
 AVIOContext 是FFMPEG管理输入输出数据的结构体。

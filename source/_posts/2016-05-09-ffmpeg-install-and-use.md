@@ -3,7 +3,7 @@ layout: post
 title: "FFmpeg的介绍、安装及使用"
 date: 2016-05-09 04:00:29 -0700
 comments: true
-categories: 源码分析
+categories: FFMPEG源码分析
 ---
 
 

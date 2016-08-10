@@ -3,7 +3,7 @@ layout: post
 title: "AVFormatContext 结构体解析"
 date: 2016-06-30 07:42:13 -0700
 comments: true
-categories: 源码分析
+categories: FFMPEG源码分析
 ---
 AVFormatContext 是包含码流参数比较多的结构体，它是 FFmpege 解封装(flv、mp4、rmvb、avi)功能的结构体。一般使用 avformat_alloc_context() 来创建该结构体。
 <!--more-->

@@ -3,7 +3,7 @@ layout: post
 title: "AVPacket 结构体解析"
 date: 2016-07-03 08:19:32 -0700
 comments: true
-categories: 源码分析
+categories: FFMPEG源码分析
 ---
 
 AVPacket是存储压缩编码数据相关信息的结构体。

@@ -3,7 +3,7 @@ layout: post
 title: "AVCodec 结构体解析"
 date: 2016-07-03 01:11:57 -0700
 comments: true
-categories: 源码分析
+categories: FFMPEG源码分析
 ---
 AVCodec是存储编解码器信息的结构体。
 <!--more-->

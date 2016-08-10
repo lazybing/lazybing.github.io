@@ -3,7 +3,7 @@ layout: post
 title: "AVCodecContext 结构体解析"
 date: 2016-07-01 10:16:42 -0700
 comments: true
-categories: 源码分析
+categories: FFMPEG源码分析
 ---
 
 AVCodecContext 可能是最复杂的结构体了。

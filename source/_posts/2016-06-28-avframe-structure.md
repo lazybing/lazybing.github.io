@@ -3,7 +3,7 @@ layout: post
 title: "AVFrame 结构体解析"
 date: 2016-06-28 09:10:38 -0700
 comments: true
-categories: 源码分析 
+categories: FFMPEG源码分析 
 ---
 
 `AVFrame` 这个结构体主要描述了解码后的未压缩的视频和音频数据。

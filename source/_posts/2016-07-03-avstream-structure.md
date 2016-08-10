@@ -3,7 +3,7 @@ layout: post
 title: "AVStream 结构体解析"
 date: 2016-07-03 04:31:41 -0700
 comments: true
-categories: 源码分析
+categories: FFMPEG源码分析
 ---
 AVStream是存储每一个视频/音频流信息的结构体。
 <!--more-->

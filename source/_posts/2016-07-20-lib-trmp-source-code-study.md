@@ -3,7 +3,7 @@ layout: post
 title: "RTMP协议学习（中）：源码分析"
 date: 2016-07-20 17:03:14 -0700
 comments: true
-categories: 源码分析
+categories: RTMP源码分析
 ---
 
 了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
