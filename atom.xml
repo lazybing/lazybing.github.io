@@ -1,0 +1,2288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[懒人李冰]]></title>
+  <link href="http://lazybing.github.io/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2016-09-03T08:18:22-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之TS]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/26/ts-parse-format/"/>
+    <updated>2016-07-26T04:57:15-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/26/ts-parse-format</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/MPEG_transport_stream">TS</a>是MPEG2-TS 的简称，是“Transport Stream”的缩写。一段 TS 流，必须包含 PAT 包、PMT 包、多个音频包、多个视频包、多个 PCR 包以及其他信息包。</p>
+
+<!--more-->
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之MP4]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/26/mp4-parse-format/"/>
+    <updated>2016-07-26T04:31:32-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/26/mp4-parse-format</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/MPEG-4_Part_14">MP4</a>是由许多 Box 和 FullBox 组成的，每个 Box 是由 Header 和 Data 组成的，FullBox 是 Box 的扩展，Box 结构的基础上在 Header 中增加 8bits version 和 24bits flags。</p>
+
+<!--more-->
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之AVI]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/24/avi-parse-format/"/>
+    <updated>2016-07-24T01:04:52-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/24/avi-parse-format</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">AVI</a> 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。</p>
+
+<!--more-->
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之FLV]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/24/flv-parse/"/>
+    <updated>2016-07-24T00:22:21-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/24/flv-parse</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Flash_Video">FLV</a> 是 FLASH VIDEO 的简称，FLV 流媒体是随着Flash MX 的推出发展而来的视频格式。FLV 一般由文件头(FLV header) 和文件体(FLV body) 组成。其中文件体(FLV body)由一些列tag组成，tag又可分成三类:audio/video/script，分别代表音频流、视频流、脚本流(关键字或文件信息之类)。</p>
+
+<!--more-->
+
+
+<p>在 FLV 文件中，每种 tag 类型都由一个单独的流组成，即在 FLV 文件中最多有一个视频流和一个音频流，对同一种类型的流，FLV 中不能够定义多个独立的流。
+与 SWF 文件不同,FLV 文件以大字节序存储多字节。比如，0x300(0x12C) 在 SWF 文件中的字节序为 0x2C 0x01,在FLV 文件中则为 0x01 0x2C。</p>
+
+<h2>FLV Header</h2>
+
+<p>以 FLV Header <code>46 4C 56 01 05 00 00 00 09</code>为例：
+<img src="http://lazybing.github.io/images/flvparse/flv_header.png"></p>
+
+<p>FLV Header 的前三个字节是固定的<code>FLV</code>的 ASCII 码的值<code>0x46 0x4C 0x56</code>; 接下来的一个字节表示 FLV 的版本号,例如 0x01 代表 FLV 版本号为 1。第 5 个字节中的第0位和第2位分别表示video和audio的存在情况（1表示存在，0表示不存在）,其余6位必须为0.最后的4字节表示FLV Header的长度，对于version 1，此处为9.</p>
+
+<h2>FLV File Body</h2>
+
+<p>FLV Header 之后，FLV 文件的剩余部分由tag组成，它们交替如下：
+PreviousTagSize0|Tag1|PreviousTagSize1|Tag2|……|PreviousTagSizeN-1|TagN|PreviousTagSizeN</p>
+
+<h2>FLV tags</h2>
+
+<p>FLV tags 有以下几个字段构成：8bit的<code>TagType</code>、24bit的<code>DataSize</code>、24bit的<code>TimeStamp</code>、8bit的<code>TimeStampExtended</code>、24bit的<code>StreamID</code>以及最后的<code>Data</code>。</p>
+
+<p><code>TagType</code>指该Tag的类型，8 代表 Audio，9 代表 Video，18 代表 Script Data。</p>
+
+<p><code>DataSize</code>指定后面的<code>Data</code>字段的大小。</p>
+
+<p>以 Tag <code>12 00 12 A9 00 00 00 00 00 00 00 02 00 0A……</code>为例，<code>0x12</code>代表该 tag 为script data，<code>00 12 A9</code>代表该 tag 的 DataSize 为 681 byte，<code>00 00 00</code>代表该 tag 的 TimeStamp 为 0，<code>00</code>代表该 tag 的 TimeStampExtended 为 0，StreamID 总是 0，接下来的 681 byte 为script data 的内容。</p>
+
+<p>播放过程中，FLV tag的时间信息完全依赖于 FLV 时间戳，内置的其他时间信息都被忽略掉。</p>
+
+<h3>Audio tags</h3>
+
+<h3>Video tags</h3>
+
+<p>Video Tag 与 SWF 文件格式中的 VideoFrame Tag 类似，它们的 Payload 数据是同一的。关于 SWF 文件格式的介绍，请看<a href="www.adobe.com/go/swf_file_format">SWF(File Format Specification)</a>。</p>
+
+<p>以<code>09 00 00 2D 00 00 00 00 00 00 00 17 00 00 00 00 01 4D 40 1F FF E1 00 19 67 4D 40 ……</code>为例，<code>09</code>表示 Tag Type 为 Video Tag;<code>00 00 2D</code>表示 DataSize 为 45；<code>00 00 00</code>表示 Timestamp 为 0；<code>00</code>表示 TimestampExtended 为 0；<code>00 00 00</code>表示 StreamID 为 0；<code>17</code>中的 8 bit，其中前 4 bit<code>1</code>表示 FrameType 为 keyframe,后 4 bit<code>7</code>表示 CodecID 为 AVC；之后的 45 byte 为 VideoData;</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[RTMP协议学习（中）：源码分析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study/"/>
+    <updated>2016-07-20T17:03:14-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study</id>
+    <content type="html"><![CDATA[<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。</p>
+
+<!--more-->
+
+
+<h3>大致流程</h3>
+
+<p>使用RTMP下载流媒体的主要流程包括以下几个步骤：</p>
+
+<ul>
+<li>InitSocket()</li>
+<li>RTMP_Init(Struct RTMP)</li>
+<li>RTMP_ParseURL</li>
+<li>RTMP_SetupStream</li>
+<li>fopen</li>
+<li>RTMP_Connect()</li>
+<li>RTMP_ConnectStream</li>
+<li>Download</li>
+<li>CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</li>
+</ul>
+
+
+<p>下面逐个记录各个步骤的功能。
+在了解具体步骤之前，先了解结构重要的Structure:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct RTMP
+</span><span class='line'>{
+</span><span class='line'>    int m_inChunkSize;
+</span><span class='line'>    int m_outChunkSize;
+</span><span class='line'>    int m_nBWCheckCounter;
+</span><span class='line'>    int m_nBytesIn;
+</span><span class='line'>    int m_nBytesInSent;
+</span><span class='line'>    int m_nBufferMS;
+</span><span class='line'>    int m_stream_id;
+</span><span class='line'>    int m_mediaChannel;
+</span><span class='line'>    uint32_t m_mediaStamp;
+</span><span class='line'>    uint32_t m_pauseStamp;
+</span><span class='line'>    int m_pausing;
+</span><span class='line'>    int m_nServerBW;
+</span><span class='line'>    int m_nClientBW;
+</span><span class='line'>    uint8_t m_nClientBW2;
+</span><span class='line'>    uint8_t m_bPlaying;
+</span><span class='line'>    uint8_t m_bSendEncoding;
+</span><span class='line'>    uint8_t m_bSendCounter;
+</span><span class='line'>
+</span><span class='line'>    int m_numInvokes;
+</span><span class='line'>    int m_numCalls;
+</span><span class='line'>    RTMP_METHOD *m_methodCalls;
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>InitSocket()</h3>
+
+<p>初始化 Socket ,代码非常简单。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int InitSockets()
+</span><span class='line'>{
+</span><span class='line'>#ifdef WIN32
+</span><span class='line'>    WORD version;
+</span><span class='line'>    WSADATA wsaData;
+</span><span class='line'>
+</span><span class='line'>    version MAKEWORD(1, 1);       
+</span><span class='line'>    return (WSASTartup(version, &wsaData) == 1);
+</span><span class='line'>#else
+</span><span class='line'>    return TRUE;
+</span><span class='line'>#endif
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>RTMP_Init(Struct RTMP)</h3>
+
+<p>初始化 RTMP 结构体。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>void RTMP_Init(RTMP *r)
+</span><span class='line'>{
+</span><span class='line'>#ifdef CRYPTO
+</span><span class='line'>    if(!RTMP_TLS_cts)
+</span><span class='line'>        RTMP_TLS_Init();
+</span><span class='line'>#endif
+</span><span class='line'>
+</span><span class='line'>    memset(r, 0, sizeof(RTMP));
+</span><span class='line'>    r-&gt;m_sb.sb_socket = -1;
+</span><span class='line'>    r-&gt;m_inChunkSize  = RTMP_DEFAULT_CHUNKSIZE;
+</span><span class='line'>    r-&gt;m_outChunkSize = RTMP_DEFAULT_CHUNKSIZE;
+</span><span class='line'>    r-&gt;m_nBufferMS    = 30000;
+</span><span class='line'>    r-&gt;m_nClientBW    = 2500000;
+</span><span class='line'>    r-&gt;m_nClientBW2   = 2;
+</span><span class='line'>    r-&gt;m_nServerBW    = 2500000;
+</span><span class='line'>    r-&gt;m_fAudioCodecs = 3191.0;
+</span><span class='line'>    r-&gt;m_fVideoCodecs = 252.0;
+</span><span class='line'>    r-&gt;Link.timeout   = 20;
+</span><span class='line'>    r-&gt;Link.swfAge    = 30;
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>RTMP_ParseURL</h3>
+
+<p>URL 一般由三部分组成: 资源类型、存放资源的主机域名、资源文件名。
+语法格式为([]为可选项):protocol://hostname[:port]/path/[:parameters][?query]#fragment
+protocol(协议名称)、hostname(主机名)、port(端口号)、path(路径)、parameters(参数)。</p>
+
+<p>RTMP_ParseURL函数定义:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port, AVal *playpath, AVal *app);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从函数定义的几个参数可以看出，url 被定位为 const 型，即该参数在函数内部不可改变，而protocol、host、port、palypath、app 则是在函数内部根据url来进行解析，之后进行赋值的。</p>
+
+<h3>RTMP_SetupStream</h3>
+
+<h3>fopen</h3>
+
+<h3>RTMP_Connect()</h3>
+
+<h3>RTMP_ConnectStream</h3>
+
+<h3>Download</h3>
+
+<h3>CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</h3>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[RTMP 协议学习（上）: 协议规范]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/"/>
+    <updated>2016-07-17T08:17:38-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。</p>
+
+<!--more-->
+
+
+<h3>1. 几个概念</h3>
+
+<ul>
+<li>负载(Payload): 分组中包含的数据，比如音频采样数据和视频压缩数据。</li>
+<li>分组(Packet): 数据分组由固定头部和负载组成的。对于底层协议，可能需要定义分组的封装。</li>
+<li>端口(Port): 用于区分不同的目标抽象，一般用整数表示，如TCP/IP中的端口号。</li>
+<li>传输地址(Transport address): 网络地址和端口号的组合,用于标识一个传输层的端口。如IP地址+TCP端口号。</li>
+<li>消息流(Message stream): 允许消息流动的逻辑上的通讯通道。</li>
+<li>消息流ID(Message stream ID): 每隔消息都有与之关联的ID号，用于与其他消息流作区分。</li>
+<li>块(Chunk): 一个消息片段。消息被放到网络上传输之前被切分成小的片段并被交错存取。分块确保跨流的所有消息按时间戳顺序被不断的传输。</li>
+<li>块流(Chunk stream):</li>
+<li>块流ID(Chunk stream ID): 每个块所关联的用于区分其他块流的ID。</li>
+<li>复用(Multiplexing): 将音视频数据整合到一个数据流内,使得多个音视频数据流可以同步传输.</li>
+<li>解复用(DeMultimplexing): 复用的反过程,交互的音视频数据被分成原始的音频数据和视频数据。</li>
+<li>远程过程调用(Remote Procedure Call(RPC)):</li>
+<li>元数据(Metadata): 数据的一个简单描述。如一部电影的电影名、时长、制作时间等等.</li>
+<li>应用Instance（Application Instance): 对于服务器端的应用Instance，客户端就是通过连接该Instance来发送请求的.</li>
+<li>Action Message Format(AMF):</li>
+</ul>
+
+
+<h3>2.字节序、字节对齐和时间格式</h3>
+
+<p>所有完整的字段都是按照网络字节序被承载的。即零字节是第一个字节，bit 0 是一个字段中的最高有效位。即所谓的大端。
+如无特殊说明，RTMP 中的所有字段都是字节对齐的。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#define ALIGN_16bit(value) (((value + 15) &gt;&gt; 4) &lt;&lt; 4)
+</span><span class='line'>#define ALIGN_32bit(value) (((value + 31) &gt;&gt; 5) &lt;&lt; 5)
+</span><span class='line'>#define ALIGN_64bit(value) (((value + 63) &gt;&gt; 6) &lt;&lt; 6)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>RTMP 中的时间戳用整数来表示，它是以毫秒为单位的相对时间。典型的，码流中都是从时间戳为0开始的，但这不是必须的，只要通讯双方用统一的时间即可。注意，这就要求任何跨流的同步都需要 RTMP 外的额外机制。</p>
+
+<h3>3. RTMP Chunk Stream</h3>
+
+<h4>3.1 消息格式</h4>
+
+<p>根据上层协议，消息格式可以被分成多个块以支持复用。消息格式应包含如下字段，这对于创建块是必须的:
+1. 时间戳(TimeStamp)：消息的时间戳，占 4 个字节。
+2. 长度(Length): 消息的长度，包含头部。占头部中的3 个字节。
+3. 类型Id(Type Id):
+4. 消息流ID（Message Stream ID）:</p>
+
+<h4>3.2 握手(HandShake)</h4>
+
+<p>RTMP 协议开始于握手，这里的握手不同于其他协议的握手，它是由 3 个固定大小的块组成，而不是带有头部的可变大小的块。
+客户端和服务器端都会发送 3 个固定大小的块。客户端发送的称为 C0/C1/C2，服务器端发送的称为S0/S1/S2。</p>
+
+<h5>握手序列:</h5>
+
+<p>首先，握手必须是由客户端发送C0/C1开始的。
+其次，客户端必须接收到服务器端发送的S1后才能发送C2, 必须接收到服务器端发送的S2后才能发送其他数据。
+再次，服务器端必须等到客户端发送的C0后才能发送S0和S1,也可等到接收到C1后再发送。
+同样，服务器端必须等到客户端发送的C1后才能发送S1,必须等到客户端发送的C2后才能发送其他数据。</p>
+
+<h5>C0 和 S0 格式：</h5>
+
+<p>C0 和 S0 是一个8-bit的整数字段：
+C1 和 S1 是一个1536 byte 的序列，其中 4 byte 是表示时间，4 byte 全部填0，剩余部分填写其他值。
+C2 和 S2 是对 C1 和 S1 的一个对等。</p>
+
+<h5>握手框图(HandShake Diagram)</h5>
+
+<p><image src="http://lazybing.github.io/images/RTMPProtocol/HandShake_Diagram.png"></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Vim 使用技巧]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/07/how-to-use-vim/"/>
+    <updated>2016-07-07T08:17:10-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/07/how-to-use-vim</id>
+    <content type="html"><![CDATA[<p>Vim 是一个学习成本比较高的编辑器。</p>
+
+<!--more-->
+
+
+<hr />
+
+<h3>vim 寄存器</h3>
+
+<p>使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。</p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align:center;">寄存器种类         </th>
+<th style="text-align:center;">  寄存器  </th>
+<th style="text-align:center;">寄存器描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center;">无名寄存器         </td>
+<td style="text-align:center;">  &ldquo;&rdquo;           </td>
+<td style="text-align:center;">缓存最后一个操作内容</td>
+</tr>
+<tr>
+<td style="text-align:center;">数字寄存器         </td>
+<td style="text-align:center;">  &ldquo;0~"9        </td>
+<td style="text-align:center;">缓存最近操作内容</td>
+</tr>
+<tr>
+<td style="text-align:center;">行内寄存器         </td>
+<td style="text-align:center;">  &ldquo;-           </td>
+<td style="text-align:center;">缓存行内删除内容</td>
+</tr>
+<tr>
+<td style="text-align:center;">具名寄存器         </td>
+<td style="text-align:center;">  &ldquo;a~"z或"A~"Z </td>
+<td style="text-align:center;"> 指定时可用</td>
+</tr>
+<tr>
+<td style="text-align:center;">只读寄存器         </td>
+<td style="text-align:center;">  &ldquo;:,&rdquo;.,&ldquo;%,&rdquo;#  </td>
+<td style="text-align:center;">分别缓存最近命令，最近插入文本，当前文件名，当前交替文件名</td>
+</tr>
+<tr>
+<td style="text-align:center;">表达式寄存器       </td>
+<td style="text-align:center;">  &ldquo;=           </td>
+<td style="text-align:center;">只读，用于执行表达式命令</td>
+</tr>
+<tr>
+<td style="text-align:center;">选择及拖拽寄存器    </td>
+<td style="text-align:center;">  &ldquo;*,&rdquo;+,&ldquo;~  </td>
+<td style="text-align:center;">存取GUI选择文本</td>
+</tr>
+<tr>
+<td style="text-align:center;">黑洞寄存器         </td>
+<td style="text-align:center;">  &ldquo;_        </td>
+<td style="text-align:center;"> 不缓存操作内容</td>
+</tr>
+<tr>
+<td style="text-align:center;">模式寄存器         </td>
+<td style="text-align:center;">  &ldquo;/        </td>
+<td style="text-align:center;">缓存最近的搜索模式</td>
+</tr>
+</tbody>
+</table>
+
+
+<hr />
+
+<h3>vim 分屏功能</h3>
+
+<p><image src="http://lazybing.github.io/images/vim_split_screen.png">
+vim 同时打开多个文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vim -o file1 file2       //小写 o 参数来水平分屏
+</span><span class='line'>vim -O file1 file2        //大写 O 参数来垂直分屏</span></code></pre></td></tr></table></div></figure>
+
+
+<p>vim 在多窗口打开。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>:vs path/file        //在新的垂直分屏中打开文件
+</span><span class='line'>:sv path/file       //在新的水平分屏中打开文件</span></code></pre></td></tr></table></div></figure>
+
+
+<p>多窗口间切换的3方法：<code>Ctrl+w+方向键</code> <code>Ctrl+w+h/j/k/l</code> <code>Ctrl+ww</code>。</p>
+
+<p>移动分屏的方法：<code>Ctrl+w L</code>向右移动分屏；<code>Ctrl+w H</code>向左移动分屏；<code>Ctrl+w K</code>向上移动分屏；<code>Ctrl+w J</code>向下移动分屏。</p>
+
+<hr />
+
+<h3>vim 浏览代码</h3>
+
+<p>vim 浏览代码一般会与 <code>catgs</code> <code>cscope</code> <code>taglist</code> 等一起使用。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AVPacket 结构体解析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/03/avpacket-structure/"/>
+    <updated>2016-07-03T08:19:32-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/03/avpacket-structure</id>
+    <content type="html"><![CDATA[<p>AVPacket是存储压缩编码数据相关信息的结构体。</p>
+
+<!--more-->
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVPacket</span><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">dts</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span>   <span class="n">size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span>   <span class="n">stream_index</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span>   <span class="n">flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVPacketSideData</span> <span class="o">*</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">side_data_elems</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span>   <span class="n">duration</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pos</span><span class="p">;</span>                            <span class="c1">///&lt; byte position in stream, -1 if unknown</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">convergence_duration</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AVStream 结构体解析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/03/avstream-structure/"/>
+    <updated>2016-07-03T04:31:41-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/03/avstream-structure</id>
+    <content type="html"><![CDATA[<p>AVStream是存储每一个视频/音频流信息的结构体。</p>
+
+<!--more-->
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVStream</span><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">index</span><span class="p">;</span>      <span class="cm">/* stream index in AVFormatContext */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span>         <span class="cm">/*  Format-specific stream ID */</span>
+</span><span class='line'>    <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">codec</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVRational</span> <span class="n">time_base</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">start_time</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">duration</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">nb_frames</span><span class="p">;</span>                 <span class="c1">///&lt; number of frames in this stream if known or 0</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">disposition</span><span class="p">;</span> <span class="cm">/**&lt; AV_DISPOSITION_* bit field */</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVDiscard</span> <span class="n">discard</span><span class="p">;</span> <span class="c1">///&lt; Selects which packets can be discarded at will and do not need to be demuxed.</span>
+</span><span class='line'>    <span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVRational</span> <span class="n">avg_frame_rate</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">AVPacket</span> <span class="n">attached_pic</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVPacketSideData</span> <span class="o">*</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span>            <span class="n">nb_side_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">event_flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pts_wrap_bits</span><span class="p">;</span> <span class="cm">/**&lt; number of bits in pts (used for wrapping control) */</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">first_dts</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">cur_dts</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">last_IP_pts</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">last_IP_duration</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">probe_packets</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">codec_info_nb_frames</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/* av_read_frame() support */</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVStreamParseType</span> <span class="n">need_parsing</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">AVCodecParserContext</span> <span class="o">*</span><span class="n">parser</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">AVPacketList</span> <span class="o">*</span><span class="n">last_in_packet_buffer</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVProbeData</span> <span class="n">probe_data</span><span class="p">;</span>
+</span><span class='line'>  <span class="cp">#define MAX_REORDER_DELAY 16</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts_buffer</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">AVIndexEntry</span> <span class="o">*</span><span class="n">index_entries</span><span class="p">;</span> <span class="cm">/**&lt; Only used if the format does not</span>
+</span><span class='line'><span class="cm">                                    support seeking natively. */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_index_entries</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">index_entries_allocated_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVRational</span> <span class="n">r_frame_rate</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">stream_identifier</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">interleaver_chunk_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">interleaver_chunk_duration</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">request_probe</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">skip_to_keyframe</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">skip_samples</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">start_skip_samples</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">first_discard_sample</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">last_discard_sample</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_decoded_frames</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">mux_ts_offset</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts_wrap_reference</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pts_wrap_behavior</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">update_initial_durations_done</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts_reorder_error</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">pts_reorder_error_count</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">last_dts_for_order_check</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">dts_ordered</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">dts_misordered</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">inject_global_side_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">recommended_encoder_configuration</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVRational</span> <span class="n">display_aspect_ratio</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">FFFrac</span> <span class="o">*</span><span class="n">priv_pts</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AVCodec 结构体解析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/03/avcodec-structure/"/>
+    <updated>2016-07-03T01:11:57-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/03/avcodec-structure</id>
+    <content type="html"><![CDATA[<p>AVCodec是存储编解码器信息的结构体。</p>
+
+<!--more-->
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVCodec</span><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">long_name</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">type</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">capabilities</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">const</span> <span class="n">AVRational</span> <span class="o">*</span><span class="n">supported_framerates</span><span class="p">;</span> <span class="c1">///&lt; array of supported framerates, or NULL if any, array is terminated by {0,0}</span>
+</span><span class='line'>    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="o">*</span><span class="n">pix_fmts</span><span class="p">;</span>     <span class="c1">///&lt; array of supported pixel formats, or NULL if unknown, array is terminated by -1</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="o">*</span><span class="n">supported_samplerates</span><span class="p">;</span>       <span class="c1">///&lt; array of supported audio samplerates, or NULL if unknown, array is terminated by 0</span>
+</span><span class='line'>    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVSampleFormat</span> <span class="o">*</span><span class="n">sample_fmts</span><span class="p">;</span> <span class="c1">///&lt; array of supported sample formats, or NULL if unknown, array is terminated by -1</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">channel_layouts</span><span class="p">;</span>         <span class="c1">///&lt; array of support channel layouts, or NULL if unknown. array is terminated by 0</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">max_lowres</span><span class="p">;</span>                     <span class="c1">///&lt; maximum value for lowres supported by the decoder, no direct access, use av_codec_get_max_lowres()</span>
+</span><span class='line'>    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">priv_class</span><span class="p">;</span>              <span class="c1">///&lt; AVClass for the private context</span>
+</span><span class='line'>    <span class="k">const</span> <span class="n">AVProfile</span> <span class="o">*</span><span class="n">profiles</span><span class="p">;</span>              <span class="c1">///&lt; array of recognized profiles, or NULL if unknown, array is terminated by {FF_PROFILE_UNKNOWN}</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">priv_data_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init_thread_copy</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">update_thread_context</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">src</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">const</span> <span class="n">AVCodecDefault</span> <span class="o">*</span><span class="n">defaults</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">init_static_data</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode_sub</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode2</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">avctx</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">frame</span><span class="p">,</span>
+</span><span class='line'>                   <span class="kt">int</span> <span class="o">*</span><span class="n">got_packet_ptr</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">decode</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">outdata</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">outdata_size</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">close</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">flush</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">caps_internal</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AVIOContext 结构体解析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/02/aviocontext-structure/"/>
+    <updated>2016-07-02T17:15:20-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/02/aviocontext-structure</id>
+    <content type="html"><![CDATA[<p>AVIOContext 是FFMPEG管理输入输出数据的结构体。</p>
+
+<!--more-->
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVIOContext</span><span class="p">{</span>
+</span><span class='line'>    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>  <span class="cm">/**&lt; Start of the buffer. */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">buffer_size</span><span class="p">;</span>        <span class="cm">/**&lt; Maximum buffer size */</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buf_ptr</span><span class="p">;</span> <span class="cm">/**&lt; Current position in the buffer */</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buf_end</span><span class="p">;</span> <span class="cm">/**&lt; End of the data */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">read_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">write_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">*</span><span class="n">seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int64_t</span> <span class="n">offset</span><span class="p">,</span> <span class="kt">int</span> <span class="n">whence</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pos</span><span class="p">;</span>            <span class="cm">/**&lt; position in the file of the current buffer */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">must_flush</span><span class="p">;</span>         <span class="cm">/**&lt; true if the next seek should flush */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">eof_reached</span><span class="p">;</span>        <span class="cm">/**&lt; true if eof reached */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">write_flag</span><span class="p">;</span>         <span class="cm">/**&lt; true if open for writing */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">max_packet_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">checksum_ptr</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="nf">long</span> <span class="p">(</span><span class="o">*</span><span class="n">update_checksum</span><span class="p">)(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">error</span><span class="p">;</span>              <span class="cm">/**&lt; contains the error code or 0 if no error happened */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">read_pause</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pause</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">*</span><span class="n">read_seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">stream_index</span><span class="p">,</span>
+</span><span class='line'>                         <span class="kt">int64_t</span> <span class="n">timestamp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">seekable</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">maxsize</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">direct</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">bytes_read</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">seek_count</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">writeout_count</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">orig_buffer_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">short_seek_threshold</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AVCodecContext 结构体解析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/01/avcodeccontext-structure/"/>
+    <updated>2016-07-01T10:16:42-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/01/avcodeccontext-structure</id>
+    <content type="html"><![CDATA[<p>AVCodecContext 可能是最复杂的结构体了。</p>
+
+<!--more-->
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+<span class='line-number'>145</span>
+<span class='line-number'>146</span>
+<span class='line-number'>147</span>
+<span class='line-number'>148</span>
+<span class='line-number'>149</span>
+<span class='line-number'>150</span>
+<span class='line-number'>151</span>
+<span class='line-number'>152</span>
+<span class='line-number'>153</span>
+<span class='line-number'>154</span>
+<span class='line-number'>155</span>
+<span class='line-number'>156</span>
+<span class='line-number'>157</span>
+<span class='line-number'>158</span>
+<span class='line-number'>159</span>
+<span class='line-number'>160</span>
+<span class='line-number'>161</span>
+<span class='line-number'>162</span>
+<span class='line-number'>163</span>
+<span class='line-number'>164</span>
+<span class='line-number'>165</span>
+<span class='line-number'>166</span>
+<span class='line-number'>167</span>
+<span class='line-number'>168</span>
+<span class='line-number'>169</span>
+<span class='line-number'>170</span>
+<span class='line-number'>171</span>
+<span class='line-number'>172</span>
+<span class='line-number'>173</span>
+<span class='line-number'>174</span>
+<span class='line-number'>175</span>
+<span class='line-number'>176</span>
+<span class='line-number'>177</span>
+<span class='line-number'>178</span>
+<span class='line-number'>179</span>
+<span class='line-number'>180</span>
+<span class='line-number'>181</span>
+<span class='line-number'>182</span>
+<span class='line-number'>183</span>
+<span class='line-number'>184</span>
+<span class='line-number'>185</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVCodecContext</span><span class="p">{</span>
+</span><span class='line'>  <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">log_level_offset</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">codec_type</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">const</span> <span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVCodecID</span>     <span class="n">codec_id</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">codec_tag</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">struct</span> <span class="n">AVCodecInternal</span> <span class="o">*</span><span class="n">internal</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">bit_rate</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">bit_rate_tolerance</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">global_quality</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">compression_level</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">flags2</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">extradata</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">extradata_size</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVRational</span> <span class="n">time_base</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">ticks_per_frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">delay</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">coded_width</span><span class="p">,</span> <span class="n">coded_height</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">gop_size</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="n">pix_fmt</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">draw_horiz_band</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span>
+</span><span class='line'>                            <span class="k">const</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">int</span> <span class="n">offset</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">],</span>
+</span><span class='line'>                            <span class="kt">int</span> <span class="n">y</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="nf">AVPixelFormat</span> <span class="p">(</span><span class="o">*</span><span class="n">get_format</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="k">const</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="o">*</span> <span class="n">fmt</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">max_b_frames</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">b_quant_factor</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">b_frame_strategy</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">b_quant_offset</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">has_b_frames</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">mpeg_quant</span><span class="p">;</span>       <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">i_quant_factor</span><span class="p">;</span>     <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">i_quant_offset</span><span class="p">;</span>     <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">lumi_masking</span><span class="p">;</span>       <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">temporal_cplx_masking</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">spatial_cplx_masking</span><span class="p">;</span>  <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">p_masking</span><span class="p">;</span>      <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">dark_masking</span><span class="p">;</span>       <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">slice_count</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">prediction_method</span><span class="p">;</span>    <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="o">*</span><span class="n">slice_offset</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">me_cmp</span><span class="p">;</span>               <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">me_sub_cmp</span><span class="p">;</span>           <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">mb_cmp</span><span class="p">;</span>               <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">ildct_cmp</span><span class="p">;</span>            <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">dia_size</span><span class="p">;</span>         <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">last_predictor_count</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">pre_me</span><span class="p">;</span>               <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">me_pre_cmp</span><span class="p">;</span>           <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">pre_dia_size</span><span class="p">;</span>     <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">me_subpel_quality</span><span class="p">;</span>    <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">me_range</span><span class="p">;</span>         <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">slice_flags</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">mb_decision</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint16_t</span> <span class="o">*</span><span class="n">intra_matrix</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint16_t</span> <span class="o">*</span><span class="n">inter_matrix</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">scenechange_threshold</span><span class="p">;</span>    <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">noise_reduction</span><span class="p">;</span>      <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">intra_dc_precision</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">skip_top</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">skip_bottom</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">mb_lmin</span><span class="p">;</span>          <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">mb_lmax</span><span class="p">;</span>          <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">me_penalty_compensation</span><span class="p">;</span>  <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">bidir_refine</span><span class="p">;</span>     <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">brd_scale</span><span class="p">;</span>            <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">keyint_min</span><span class="p">;</span>           <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">refs</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">chromaoffset</span><span class="p">;</span>     <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">mv0_threshold</span><span class="p">;</span>        <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">b_sensitivity</span><span class="p">;</span>        <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVColorPrimaries</span> <span class="n">color_primaries</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVColorTransferCharacteristic</span> <span class="n">color_trc</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVColorSpace</span> <span class="n">colorspace</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVColorRange</span> <span class="n">color_range</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVChromaLocation</span> <span class="n">chroma_sample_location</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">slices</span><span class="p">;</span>               <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVFieldOrder</span> <span class="n">field_order</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">sample_rate</span><span class="p">;</span>      <span class="cm">/* audio only */</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">channels</span><span class="p">;</span>             <span class="cm">/* audio only */</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVSampleFormat</span> <span class="n">sample_fmt</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">frame_size</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">frame_number</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">block_align</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">cutoff</span><span class="p">;</span>               <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">uint64_t</span> <span class="n">channel_layout</span><span class="p">;</span>  <span class="cm">/* audio */</span>
+</span><span class='line'>  <span class="kt">uint64_t</span> <span class="n">request_channel_layout</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVAudioServiceType</span> <span class="n">audio_service_type</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVSampleFormat</span> <span class="n">request_sample_fmt</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">get_buffer2</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">frame</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">refcounted_frames</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">qcompress</span><span class="p">;</span>  <span class="cm">/* - encoding parameters */</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">qblur</span><span class="p">;</span>      <span class="cm">/* - encoding parameters */</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">qmin</span><span class="p">;</span>         <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">qmax</span><span class="p">;</span>         <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">max_qdiff</span><span class="p">;</span>        <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">rc_buffer_size</span><span class="p">;</span>       <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">rc_override_count</span><span class="p">;</span>    <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="n">RcOverride</span> <span class="o">*</span><span class="n">rc_override</span><span class="p">;</span><span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">rc_max_rate</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">rc_max_available_vbv_use</span><span class="p">;</span>   <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">rc_min_vbv_overflow_use</span><span class="p">;</span>    <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">rc_initial_buffer_occupancy</span><span class="p">;</span><span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">coder_type</span><span class="p">;</span>               <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">context_model</span><span class="p">;</span>            <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">frame_skip_threshold</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">frame_skip_factor</span><span class="p">;</span>        <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">frame_skip_exp</span><span class="p">;</span>           <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">frame_skip_cmp</span><span class="p">;</span>           <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">trellis</span><span class="p">;</span>              <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">min_prediction_order</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">max_prediction_order</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">timecode_frame_start</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">rtp_callback</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">avctx</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">int</span> <span class="n">size</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mb_nb</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">rtp_payload_size</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/* statistics, used for 2-pass encoding */</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">mv_bits</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">header_bits</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_tex_bits</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">p_tex_bits</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_count</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">p_count</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">skip_count</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">misc_bits</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">frame_bits</span><span class="p">;</span>       <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">char</span> <span class="o">*</span><span class="n">stats_out</span><span class="p">;</span>   <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">char</span> <span class="o">*</span><span class="n">stats_in</span><span class="p">;</span>        <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kt">int</span> <span class="n">workaround_bugs</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">strict_std_compliance</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">error_concealment</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">debug</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">reordered_opaque</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">struct</span> <span class="n">AVHWAccel</span> <span class="o">*</span><span class="n">hwaccel</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="o">*</span><span class="n">hwaccel_context</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint64_t</span> <span class="n">error</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">dct_algo</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">idct_algo</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">bits_per_coded_sample</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">bits_per_raw_sample</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">thread_count</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">thread_type</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">active_thread_type</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">thread_safe_callbacks</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">execute</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">c</span><span class="p">,</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">c2</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg2</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">ret</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span> <span class="kt">int</span> <span class="n">size</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">execute2</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">c</span><span class="p">,</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">c2</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="kt">int</span> <span class="n">jobnr</span><span class="p">,</span> <span class="kt">int</span> <span class="n">threadnr</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg2</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">ret</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">nsse_weight</span><span class="p">;</span>  <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">profile</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">level</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVDiscard</span> <span class="n">skip_loop_filter</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVDiscard</span> <span class="n">skip_idct</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVDiscard</span> <span class="n">skip_frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">subtitle_header</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">subtitle_header_size</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint64_t</span> <span class="n">vbv_delay</span><span class="p">;</span>       <span class="cm">/*decoding: unused*/</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">side_data_only_packets</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">initial_padding</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVRational</span> <span class="n">framerate</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="n">sw_pix_fmt</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVRational</span> <span class="n">pkt_timebase</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">const</span> <span class="n">AVCodecDescriptor</span> <span class="o">*</span><span class="n">codec_descriptor</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts_correction_num_faulty_pts</span><span class="p">;</span> <span class="c1">/// Number of incorrect PTS values so far</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts_correction_num_faulty_dts</span><span class="p">;</span> <span class="c1">/// Number of incorrect DTS values so far</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts_correction_last_pts</span><span class="p">;</span>       <span class="c1">/// PTS of the last frame</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pts_correction_last_dts</span><span class="p">;</span>       <span class="c1">/// DTS of the last frame</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">char</span> <span class="o">*</span><span class="n">sub_charenc</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">sub_charenc_mode</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">skip_alpha</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">seek_preroll</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">debug_mv</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint16_t</span> <span class="o">*</span><span class="n">chroma_intra_matrix</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dump_separator</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">char</span> <span class="o">*</span><span class="n">codec_whitelist</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">unsigned</span> <span class="n">properties</span><span class="p">;</span>
+</span><span class='line'>      
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AVFormatContext 结构体解析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/30/avformatcontext-structure/"/>
+    <updated>2016-06-30T07:42:13-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/30/avformatcontext-structure</id>
+    <content type="html"><![CDATA[<p>AVFormatContext 是包含码流参数比较多的结构体，它是 FFmpege 解封装(flv、mp4、rmvb、avi)功能的结构体。一般使用 avformat_alloc_context() 来创建该结构体。</p>
+
+<!--more-->
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFormatContext</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">struct</span> <span class="n">AVInputFormat</span> <span class="o">*</span><span class="n">iformat</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">struct</span> <span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">oformat</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVIOContext</span> <span class="o">*</span><span class="n">pb</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">ctx_flags</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">nb_streams</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVStream</span> <span class="o">**</span><span class="n">streams</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">char</span> <span class="n">filename</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">start_time</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">duration</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">bit_rate</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">packet_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">max_delay</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">keylen</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">nb_programs</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVProgram</span> <span class="o">**</span><span class="n">programs</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">video_codec_id</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">audio_codec_id</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">subtitle_codec_id</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">max_index_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">max_picture_buffer</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">nb_chapters</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVChapter</span> <span class="o">**</span><span class="n">chapters</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">start_time_realtime</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">fps_probe_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">error_recognition</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVIOInterruptCB</span> <span class="n">interrupt_callback</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">max_interleave_delta</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">strict_std_compliance</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">event_flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">max_ts_probe</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">avoid_negative_ts</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ts_id</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">audio_preload</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">max_chunk_duration</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">max_chunk_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">use_wallclock_as_timestamps</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">avio_flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVDurationEstimationMethod</span> <span class="n">duration_estimation_method</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">skip_initial_bytes</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">correct_ts_overflow</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">seek2any</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">probe_score</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">format_probesize</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">codec_whitelist</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">format_whitelist</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVFormatInternal</span> <span class="o">*</span><span class="n">internal</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">io_repositioned</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">video_codec</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">audio_codec</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">subtitle_codec</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">data_codec</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">metadata_header_padding</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">av_format_control_message</span> <span class="n">control_message_cb</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">output_ts_offset</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dump_separator</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">data_codec_id</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">open_cb</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="n">AVIOContext</span> <span class="o">**</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVIOInterruptCB</span> <span class="o">*</span><span class="n">int_cb</span><span class="p">,</span> <span class="n">AVDictionary</span> <span class="o">**</span><span class="n">options</span><span class="p">);</span>    
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[AVFrame 结构体解析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/28/avframe-structure/"/>
+    <updated>2016-06-28T09:10:38-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/28/avframe-structure</id>
+    <content type="html"><![CDATA[<p><code>AVFrame</code> 这个结构体主要描述了解码后的未压缩的视频和音频数据。</p>
+
+<!--more-->
+
+
+<hr />
+
+<p><code>AVFrame</code>必须使用<code>av_frame_alloc()</code>函数来分配，注意该函数只能分配<code>AVFrame</code>，对于分配出的内存需要靠其他方法来管理。<code>AVFrame</code>必须由<code>av_frame_free()</code>函数释放。<code>AVFrame</code>只需分配一次，即可多次重复使用来存储不停的数据data——一个<code>AVFrame</code>可以可以存储解码出的多张 frame。</p>
+
+<figure class='code'><figcaption><span>AVFrame</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFrame</span><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define AV_NUM_DATA_POINTERS 8</span>
+</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">linesize</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">**</span><span class="n">extended_data</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">nb_samples</span><span class="p">;</span> <span class="cm">/* number of audio samples(per channel) described by this frame */</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">format</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">key_frame</span><span class="p">;</span> <span class="cm">/* 1-&gt;keyframe, 0-&gt;not*/</span>
+</span><span class='line'>  <span class="k">enum</span> <span class="n">AVPictureType</span> <span class="n">pict_type</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pts</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pkt_pts</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pkt_dts</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">coded_picture_number</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">display_picture_number</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">quality</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span> <span class="cm">/* for some private data of the user */</span>
+</span><span class='line'>  <span class="kt">uint64_t</span> <span class="n">error</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">repeat_pict</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">interlaced_frame</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">top_field_first</span><span class="p">;</span>  <span class="cm">/* If the content is interlaced, is top field displayed first */</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">palette_has_changed</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">reordered_opaque</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">sample_rate</span><span class="p">;</span>    <span class="cm">/*Sample rate of the audio data*/</span>
+</span><span class='line'>    <span class="kt">uint64_t</span> <span class="n">channel_layout</span><span class="p">;</span> <span class="cm">/*channel layout of the audio data*/</span>
+</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">**</span><span class="n">extended_buf</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_exteneded_buf</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVFrameSideData</span> <span class="o">**</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_side_data</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#define AV_FRAME_FLAG_CORRUPT   (1&lt;&lt;0)</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorRange</span> <span class="n">color_range</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorPrimaries</span> <span class="n">color_primaries</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorTransferCharacteristic</span> <span class="n">color_trc</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorSpace</span> <span class="n">colorspace</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">AVChromaLocation</span> <span class="n">chroma_location</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">best_effort_timestamp</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pkt_pos</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pkt_duration</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">decode</span> <span class="n">_error_flags</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#define FF_DECODE_ERROR_INVALID_BITSTREAM   1</span>
+</span><span class='line'><span class="cp">#define FF_DECODE_ERROR_MISSING_REFERENCE   2</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">channels</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pkt_size</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">qp_table_buf</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Profiles-Tiers-Levels]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/"/>
+    <updated>2016-06-27T07:52:00-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels</id>
+    <content type="html"><![CDATA[
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FFmpeg 使用]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics/"/>
+    <updated>2016-06-19T09:59:26-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics</id>
+    <content type="html"><![CDATA[<p>FFmpeg Basics &mdash;Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。</p>
+
+<!--more-->
+
+
+<hr />
+
+<h3>Bit Rate, Frame Rate 和 File Size</h3>
+
+<p>Frame Rate 是一秒钟播放的 frame 的个数，又可以分为 interlaced 和 progressive 两种， Interlaced Frame 主要用于 TV，如 NTSC 标准使用 60i fps ，即 60 interlaced fields（30 frames）每秒。</p>
+
+<p>Frame rate 设置使用 -r 选项： <code>ffmpeg -i input -r fps output</code></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.avi -r 30 output.mp4</span></code></pre></td></tr></table></div></figure>
+
+
+<p>除此之外，也可用 fps filter 设置 frame rate。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i clip.mpg -vf fps=fps=25 clip.webm</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bit Rate 是单位时间内可以处理的 bits 数，可分为 <code>ABR(Average bit rate)</code> <code>CBR(Constant bit rate)</code> <code>VBR(Variable bit rate)</code>。
+Bit Rate 设置使用 -b 选项：<code>ffmpeg -i input -b bitrates output</code>
+针对 video 和 audio 的不同，又可使用 <code>-b:v</code> 和 <code>-b:a</code>。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i file.avi -b 1.5M film.mp4
+</span><span class='line'>ffmpeg -i input.avi -b:v 1500k output.mp4</span></code></pre></td></tr></table></div></figure>
+
+
+<p>CBR 的设置需要同时设置 bitrate、minimal rate 和 maximal rate 为相同的值，设置 maxrate的同时需要设置 bufsize 选项。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i in.avi -b 0.5M -minrate 0.5M -maxrate 0.5M -bufsize 1M out.mkv</span></code></pre></td></tr></table></div></figure>
+
+
+<p>File Size 是由 Video Size 和 Audio Size 两者之和组成的。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>video_size = video_bitrate * time_in_seconds / 8;
+</span><span class='line'>audio_size = audio_bitrate * time_in_seconds / 8; 或
+</span><span class='line'>audio_size = sampling_rate * bit_depth * channels * time_in_seconds / 8;</span></code></pre></td></tr></table></div></figure>
+
+
+<p>也可设置输出文件的最大值,设置选项为 -fs(file size) ：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.avi -fs 10MB output.mp4</span></code></pre></td></tr></table></div></figure>
+
+
+<hr />
+
+<h3>Resizing and Scaling Video</h3>
+
+<p>Resizing 是指改变宽高，Scaling 是利用 scale filter 改变 frame size。</p>
+
+<p>Resizing Video ： 利用 <code>-s</code>选项指定输出视频的宽高，格式为<code>wxh</code>，其中 w 是以 pixel 为单位的宽， h 是以 pixel 为单位的高。例如:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file -s 320x240 output_file</span></code></pre></td></tr></table></div></figure>
+
+
+<p>此外，FFmpeg 针对不同的宽高信息，提供了预定义的视频大小简写，下面两个命令的作用相同，都是将 input_file 转换为 640*480 的输出文件：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file.avi -s 640x480 output.avi
+</span><span class='line'>ffmpeg -i input_file.avi -s vga output.avi</span></code></pre></td></tr></table></div></figure>
+
+
+<p>通常情况下，做 resize 是从<code>big frame -&gt; small frame</code>，反过来的话，可能导致图片不清晰，尤其是当原始视频的 resolution 比较小的时候。针对 <code>small frame -&gt; big frame</code>，有专门的特殊 filter（<code>super2xsai</code>） 可以使用，它可以使原视频文件变大两倍。2xsai 即指 2 times scale and interpolate, syntax 是 <code>-vf super2xsai</code>。
+例如把 128x96 的 phone_video.3gp 文件转换为 256x192 的视频文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i phone_video.3gp -vf super2xsai output.mp4</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Scaling Video : 当使用<code>-s</code>选项来改变 frame size 时，其实在 filtergraph 的最后有一个 scale filter。scale filter也可以通过设置来固定在某个位置。</p>
+
+<p>scale 可以改变输出视频的 sample aspect ration，同时 display aspect ration 保持不变。</p>
+
+<p>syntax 是 <code>scale=width:height[:interl={l|-l}]</code>。其中 width 和 height 可以是 iw/in_w/ih/in_h/ow/out_w/oh/out_h等。</p>
+
+<p>下面两个 command 执行效果相同:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.mpg -s 320x240 output.mp4
+</span><span class='line'>ffmpeg -i input.mpg -vf scale=320:240 output.mp4</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果不知道源视频的 resolution，又需要做 scale，可以用下面的方法:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.mpg -vf scale=iw/2:ih/2 output.mp4
+</span><span class='line'>ffmpeg -i input.mpg -vf scale=iw*0.9:ih*0.9 output.mp4
+</span><span class='line'>ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4</span></code></pre></td></tr></table></div></figure>
+
+
+<hr />
+
+<h3>Cropping Video</h3>
+
+<p>Cropping Video 是指截取源视频中的某个矩形区域作为输出视频显示。通常它会与 Resizing/Padding 等共同配合使用。</p>
+
+<p>旧版 FFmpeg 中会使用 cropbottom/cropleft/cropright/croptop 等选项，现在的版本中废弃了这种使用方式，改用<code>crop filter</code>的方式来实现Cropping Video。</p>
+
+<p>syntax 是<code>crop=ow[:oh[:x[:y[:keep_aspect]]]]</code>，其中 <code>ow=out_w oh=out_h</code>。示例如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf crop=iw/3:ih:0:0 output
+</span><span class='line'>ffmpet -i input -vf crop=iw/3:ih:iw/3*2:0 output</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果x和y没有专门给出，会有默认值计算：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>X(default) = (input width - output widht)/2
+</span><span class='line'>Y(default) = (input height - output height)/2</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file -vf crop=w:h output_file
+</span><span class='line'>ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi</span></code></pre></td></tr></table></div></figure>
+
+
+<hr />
+
+<h3>Padding Video</h3>
+
+<p>对于 Padding Video ，使用 pad filter 来实现。
+syntax 是<code>pad=width[:height[:x[:y[:color]]]]</code>，其中的 color 表示 padding 的颜色。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Padding videos from 4:3 to 16:9</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
+</span><span class='line'>ffmepg -i film.mpg -vf pad=ih*16/9:ih:(ow-iw)/2:0 filem_wide.avi</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Padding videos from 16:9 to 4:3</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
+</span><span class='line'>ffmpeg -i hd_video.avi -vf pad=iw:iw*3/4:0:(oh-ih)/2 video.avi</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Padding from and to various aspect ratios</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
+</span><span class='line'>ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)</span></code></pre></td></tr></table></div></figure>
+
+
+<hr />
+
+<h3>Filpping and Rotating Video</h3>
+
+<h3>Blur Sharpen adn Other Denoising</h3>
+
+<h3>Overlay - Picture in Picture</h3>
+
+<h3>Adding Text on Video</h3>
+
+<h3>Conversion Between Formats</h3>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[YUV 数据分析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/23/the-data-layout/"/>
+    <updated>2016-05-23T09:23:07-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/23/the-data-layout</id>
+    <content type="html"><![CDATA[<p>图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。</p>
+
+<!--more-->
+
+
+<h2>YUV 数据</h2>
+
+<p>对于 YUV 图像来说，会有如下几个特性：<code>FOURCC</code> <code>Format</code> <code>Component Order</code> <code>Image Resolution</code> <code>Interlace/Progressive</code> <code>Packed/Planar</code> 。</p>
+
+<p><code>FOURCC</code>包括：<code>UYVY</code> <code>UYNV</code> <code>Y422</code> <code>IUYV</code> 等等；</p>
+
+<p><code>Format</code>包括：<code>YUV420</code> <code>YUV422</code> <code>YUV444</code> <code>RGB444</code> <code>MONO</code>等等：</p>
+
+<p><code>Component Order</code>包括：<code>YUV</code> <code>YVU</code>。</p>
+
+<h3>YUV420摆放格式</h3>
+
+<p>progressive 的摆放格式如图：</p>
+
+<p><img src="http://lazybing.github.io/images/datalayout/Yuv420.png"></p>
+
+<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：</p>
+
+<figure class='code'><figcaption><span>splityuvfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
+</span><span class='line'>         <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
+interlace 的摆放格式如图：</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FFmpeg 和 SDL 使用教程]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/"/>
+    <updated>2016-05-10T16:45:03-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial</id>
+    <content type="html"><![CDATA[<p><a href="https://ffmpeg.org/">FFmpeg</a> 是制作视频应用或一般工具的非常棒的库。<a href="https://www.libsdl.org/">SDL</a> 通过封装复杂的视音频底层交互工作，降低了视音频的处理难度。</p>
+
+<p>本文就记录一下利用 FFmpeg 和 SDL 制作简单播放器的详细步骤。<!--more--></p>
+
+<h3>介绍</h3>
+
+<p>对于一个视音频文件，可以从外到内的依次分为几个层面：container、stream、packets、frames.其中 container 就是平时说的<code>.avi</code> <code>.flv</code> <code>.mkv</code>等等。stream可能是 <code>video</code>、可能是 <code>audio</code>、也可能是 <code>subtitle</code>，一个文件里面可能包含多个 <code>video</code> <code>audio</code> <code>subtitle</code>。packets 是从 stream 里得到的，通常会包含一个 <code>video frame</code> 或多个 <code>audio frame</code>。</p>
+
+<p>视音频的处理就是按照这几个层级处理的，以 <code>.avi</code> 为例大概步骤如下：</p>
+
+<pre><code>1. OPEN video_stream FROM video.avi
+
+2. READ packet FROM video_stream INTO frame
+
+3. IF frame NOT COMPLETE GOTO 2
+
+4. DO SOMETHING WITH frame
+
+5. GOTO 2
+</code></pre>
+
+<p>当然，步骤 4 中的"DO SOMETHING"可能非常复杂，我们先简单的把得到的 frames 写到一个 PPM 文件中。</p>
+
+<hr />
+
+<h4>打开文件</h4>
+
+<p>想要利用FFmpeg，你必须首先初始化库。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[]){</span>
+</span><span class='line'><span class="n">av_register_all</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>av_register_all()</code>用于注册所有编译过的<code>muxers</code> <code>demuxers</code>和<code>protocols</code>，同时，该函数还会调用<code>avcodec_register_all()</code>注册所有的音视频 codec。</p>
+
+<p>现在就可以打开视频文件了。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">pFormatCtx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//open video file</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_open_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">NUL</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn&#39;t open file</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>调用函数 <code>avformat_open_input</code>,该函数读取文件头部，并将文件的格式信息存储到<code>AVFormatContext</code>结构中。最后的三个参数分别用于指定文件格式、内存大小和格式选项，此处设为<code>NULL</code>或 0，<code>libavformat</code>能够自动侦测到。</p>
+
+<p>该函数只是简单的查看头部信息，接下来我们需要文件中码流的信息：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Retrieve stream information</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_find_stream_info</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn&#39;t find stream information</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>该函数用适当的信息填充<code>pFormatCtx-&gt;streams</code>。此处介绍一个便于调试的函数来看一下里面的内容：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Dump information about file onto standard error</span>
+</span><span class='line'><span class="n">av_dump_format</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>现在<code>pFormatCtx-&gt;streams</code>仅仅是一个数组指针，数组大小为<code>pFormatCtx-&gt;nb_streams</code>,遍历该数组直到找到一个视频流。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">pCodecCtxOrig</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">pCodecCtx</span>     <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Find the first video stream</span>
+</span><span class='line'><span class="n">videoStream</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">nb_streams</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">codec_type</span> <span class="o">=</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">videoStream</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">videoStream</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Didn&#39;t find a video stream</span>
+</span><span class='line'>  
+</span><span class='line'><span class="c1">// Get a pointer to the codec context for the video stream</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">pFormatCtx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关于<code>codec</code>的流信息我们称之为<code>codec context</code>。它包含了关于流使用的该<code>codec</code>的所有信息，并且我们有一个指针指向它。但我们必须找到实际的codec并打开它：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVCodec</span> <span class="o">*</span><span class="n">pCodec</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Find the decoder for the video stream</span>
+</span><span class='line'><span class="n">pCodec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pCodec</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">){</span>
+</span><span class='line'>  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Unsupported codec!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Codec not found</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Copy context</span>
+</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">pCodec</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodecc_copy_context</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodecCtxOrig</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Couldn&#39;t copy codec context&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Error copying codec context</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Open codec</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pCodec</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// Could not open codec</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>因为不能直接使用视频流的<code>AVCodecContext</code>！因此必须使用<code>avcodec_copy_context()</code>来 copy 该 context 到一个新位置。</p>
+
+<hr />
+
+<h4>存储数据</h4>
+
+<p>现在我们需要一块内存来真实的存储这些帧：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVFrame</span> <span class="o">*</span><span class="n">pFrame</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Allocate video frame</span>
+</span><span class='line'><span class="n">pFrame</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>既然我们想要输出 PPM 文件（被存储为 24-bit RGB），我们必须将帧从它原本格式转换为 RGB。FFmpeg 可以为我们做这种转换。对于大多数项目，会将初始帧转换为特定格式。让我们分配一帧来为转换帧。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Allocate an AVFrame structure</span>
+</span><span class='line'><span class="n">pFrameRGB</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFrameRGB</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>尽管我们已经分配了帧，仍然需要一块内存存放 raw data 信息。我们使用 avpicture_get_size 来获得我们需要的大小，并手动分配该内存。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buffer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">numBytes</span><span class="p">;</span>
+</span><span class='line'><span class="c1">//Determine required buffer size and allocate buffer</span>
+</span><span class='line'><span class="n">numBytes</span> <span class="o">=</span> <span class="n">avpicture_get_size</span><span class="p">(</span><span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span><span class='line'><span class="n">buffer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="p">)</span><span class="n">av_malloc</span><span class="p">(</span><span class="n">numBytes</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>av_malloc</code>是 FFmpeg 的分配函数，它简单封装了 malloc 函数并做内存对齐，并不会保护内存泄漏、多次释放内存或者其他分配问题。</p>
+
+<p>现在我们使用<code>avpicture_fill</code>来将帧和新分配的内存联系起来。关于<code>AVPicture</code>强制转换：<code>AVPicture</code>结构是<code>AVFrame</code>结构体的子集——<code>AVFrame</code>结构的开始对于<code>AVPicture</code>结构来说是唯一的。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Assign appropriate parts of buffer to image planes in pFrameRGB</span>
+</span><span class='line'><span class="c1">// Note that pFrameRGB is an AVFrame, but AVFrame is a superset of AVPicture</span>
+</span><span class='line'><span class="n">avpicture_fill</span><span class="p">((</span><span class="n">AVPicture</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最后，我们读取码流。</p>
+
+<hr />
+
+<h4>读数据</h4>
+
+<p>我们接下来要做的就是通过读<code>packet</code>中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">struct</span> <span class="n">SwsContext</span> <span class="o">*</span><span class="n">sws_ctx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">frameFinished</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVPacket</span> <span class="n">packet</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// initialize SWS context for software scaling</span>
+</span><span class='line'><span class="n">sws_ctx</span> <span class="o">=</span> <span class="n">sws_getContext</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">pix_fmt</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">PIX_FMT_RGB24</span><span class="p">,</span> <span class="n">SWS_BILINEAR</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">av_read_frame</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>  <span class="c1">// Is this a packet from the video stream?</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">videoStream</span><span class="p">){</span>
+</span><span class='line'>      <span class="c1">//Decode video frame</span>
+</span><span class='line'>      <span class="n">avcodec_decode_video2</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">,</span> <span class="n">pFrame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">frameFinished</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">//Did we get a video frame?</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">frameFinished</span><span class="p">){</span>
+</span><span class='line'>          <span class="c1">//Convert the image from its native format to RGB</span>
+</span><span class='line'>          <span class="n">sws_scale</span><span class="p">(</span><span class="n">sws_ctx</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="k">const</span> <span class="o">*</span> <span class="n">contst</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">pFrameRGB</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">);</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="c1">// Save the frame to disk</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="o">++</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">SaveFrame</span><span class="p">(</span><span class="n">pFrameRGB</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">widht</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// Free the packet that was allocated by av_read_frame</span>
+</span><span class='line'>  <span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FFmpeg的介绍、安装及使用]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/09/ffmpeg-install-and-use/"/>
+    <updated>2016-05-09T04:00:29-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/09/ffmpeg-install-and-use</id>
+    <content type="html"><![CDATA[<p><a href="https://ffmpeg.org/">FFmpeg 官网</a>对 FFmpeg 的描述是这样的：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>A complete, cross-platform solution to record, convert and stream audio and video.</span></code></pre></td></tr></table></div></figure>
+
+
+<!--more-->
+
+
+<h3>介绍</h3>
+
+<p><code>FFmpeg</code> 是一个多媒体架构，能够用于解码、编码、转码、复用、解复用、滤波以及播放人类或机器制造出来的各种媒体文件。它能够支持最古老的、最前沿的媒体格式，不管这种格式是由官方标准社区制定还是由各大公司合作制定。</p>
+
+<p><code>FFmpeg</code> 的使用非常广泛，几乎涵盖了所有的媒体相关的视频播放器、转码器等。例如使用 <code>FFmpeg</code> 作为内核的视频播放器有（Mplayer，射手影音，暴风影音，KMPlayer，QQ影音等）；使用 <code>FFmpeg</code> 作为内核的转码器有(格式工厂，狸窝视频转换器，暴风转码等)。</p>
+
+<p>作为视频解码程序员，我将 <code>FFmpeg</code> 大致分为两个方向：</p>
+
+<pre><code>1. FFmpeg 工具：ffmpeg、 ffplay、 ffserver、 ffprobe
+
+2. FFmpeg 库：libavutil、 libavcodec、 libavformat、 libavdevice、 libavfilter、 libswscale、 libswresample
+</code></pre>
+
+<p>首先介绍 FFmpeg 的几个工具：</p>
+
+<pre><code>ffmpeg 是一个用于装换各种多媒体格式的命令行工具。
+
+ffplay 是一个基于 `SDL` 和 `FFmpeg` 库的简单播放器。
+
+ffprobe 是一个简单的多媒体流分析器。
+
+ffserver 是一个用于现场播放的流媒体服务器。
+</code></pre>
+
+<p>其次 <code>FFmpeg</code> 库的介绍。这部分后续会补上。</p>
+
+<h3>安装</h3>
+
+<p><code>FFmpeg</code> 源码根目录下有 <code>FFmpeg</code> 的安装介绍文件 <code>INSTALL.md</code>。</p>
+
+<pre><code>1. ./configure #配置，可以指定 FFmpeg 的安装路径。
+
+2. make #版本号至少要GNU Make 3.81
+
+3. make install
+</code></pre>
+
+<p>上述步骤可能需要一点时间。
+安装完成后，就可以使用 <code>FFmpeg</code> 工具了。</p>
+
+<h3>使用</h3>
+
+<p>Linux 下如果想深入的学习 <code>FFmpeg</code> 工具的使用，可以类似于学习 Linux 自带的命令一样，使用 <code>man ffmpeg</code> 或者 <code>ffmpeg --help</code> 等获取帮助信息。</p>
+
+<p>以 <code>ffmpeg</code>为例，可以使用如下命令进行转换。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file out_file</span></code></pre></td></tr></table></div></figure>
+
+
+<p>或者可以使用 <code>ffplay</code> 命令直接播放视频文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffplay play_file </span></code></pre></td></tr></table></div></figure>
+
+
+<p>或者可以使用 <code>ffprobe</code> 命令分析媒体文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ffprobe file</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何使用git]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/08/how-to-use-git/"/>
+    <updated>2016-05-08T07:48:51-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/08/how-to-use-git</id>
+    <content type="html"><![CDATA[<p>git 作为版本控制工具，已被广泛使用，公司从去年开始陆续将版本控制系统从 Perforce 向 git 转移。<a href="https://git-scm.com/book/en/v2">《Pro Git》</a>作为官方推荐的学习 git 书籍，不可不读，而且该书已经有<a href="https://git-scm.com/book/zh">中文版</a>。这篇就将记录自己学习使用 git 的过程。</p>
+
+<!--more-->
+
+
+<p>开发项目时，使用 git 主要的全过程可以大体概况为如下三个步骤：</p>
+
+<pre><code>1. 使用 git clone 命令从远程服务器上拉取源代码到本地。
+
+2. 按照自己的需要，本地修改从步骤 1 拉取下来的代码。
+
+3. 将修改好的代码 git push 到远程服务器上。
+</code></pre>
+
+<h3>拉取源码</h3>
+
+<hr />
+
+<p>以 octopress 为例，使用 <code>git clone</code> 命令从远程服务器拉起代码的命令一般如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git clone git@github.com:imathis/octopress.git octopress</span></code></pre></td></tr></table></div></figure>
+
+
+<p>此时，该命令就会将 octopress 的源码拉取到本地，并命名为 octopress 文件夹。如果使用 <code>git branch</code> 命令查看 branch 名称时，默认 branch 会是 <code>master</code> 。如果使用 <code>git remote -v</code> 来查看远程服务器名称时，默认名称会是 <code>origin</code>。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git branch
+</span><span class='line'>* master
+</span><span class='line'>binglis-Mac:octopress bingli$ git remote -v
+</span><span class='line'>origin    git@github.com:imathis/octopress.git (fetch)
+</span><span class='line'>origin    git@github.com:imathis/octopress.git (push)</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>git clone</code> 是 clone 仓库，它主要用于在服务器端已经存在源码目录的情况，该方法在程序开发过程中非常有用。但如果一开始并没有这样的远程仓库，而需要我们从头开始呢？<code>git init</code> 正是在现有目录中初始化仓库，该命令创建一个名为 <code>.git</code> 的子仓库，这个子目录含有你初始化的 Git 仓库中所有的必须文件。</p>
+
+<p>抓取代码除了用于初始化的 <code>git clone</code> 外，还有 <code>git fetch [remote name]</code> 和 <code>git pull</code>。其中 <code>git fetch</code>只是简单的从远程服务器拉取 code，但并捕鱼本地 branch 进行合并；而 <code>git pull</code> 不仅拉取远端服务器有而本地没有的 code 到本地，还会进行合并。</p>
+
+<h3>修改代码</h3>
+
+<hr />
+
+<p>git 仓库里的源码一共有 4 种状态，分别是：<code>Untracked</code> <code>Unmodified</code> <code>Modified</code> <code>Staged</code>。仓库里哪些文件处于哪些状态可以通过 <code>git status</code> 命令来查看。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git status
+</span><span class='line'>On branch source
+</span><span class='line'>Your branch is based on 'origin/master', but the upstream is gone.
+</span><span class='line'>  (use "git branch --unset-upstream" to fixup)
+</span><span class='line'>Changes not staged for commit:
+</span><span class='line'>  (use "git add &lt;file&gt;..." to update what will be committed)
+</span><span class='line'>  (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)
+</span><span class='line'>
+</span><span class='line'>  modified:   source/_posts/2016-05-08-how-to-use-git.md
+</span><span class='line'>
+</span><span class='line'>no changes added to commit (use "git add" and/or "git commit -a")</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>git status</code> 不仅可以查看状态，还能够提示如果变更某些文件的状态，如上面的 <code>2016-05-08-how-to-use-git.md</code> 处于 <code>modified</code> 状态，可以使用 <code>git add</code> 或 <code>git checkout</code> 命令修改它的状态。</p>
+
+<h3>提交代码</h3>
+
+<hr />
+
+<p><code>git commit</code> 作为提交命令可以用于提交处于暂存区中的文件到仓库里。使用 <code>git commit</code> 时会自动启动一个编辑器用于添加提交说明。或者可以直接加 <code>-m</code> 选项，并在后面直接加上提交说明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git commit -m "commit on how to use git blog"
+</span><span class='line'>[source 6bf4d37] commit on how to use git blog
+</span><span class='line'> 1 file changed, 38 insertions(+)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>提交后，会有信息显示当前是在哪个分之(<code>master</code>)下提交的，校验和(<code>6bf4d37</code>)，以及有多少文件修改过，多少行添加，多少行删除等信息。</p>
+
+<p><code>git commit</code> 只是提交到了本地仓库，如果有远程仓库，可以使用 <code>git push [remote name] [branch name]</code> 命令，将其推送到远程仓库。例如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>binglis-Mac:octopress bingli$ git push origin source
+</span><span class='line'>Counting objects: 5, done.
+</span><span class='line'>Delta compression using up to 2 threads.
+</span><span class='line'>Compressing objects: 100% (5/5), done.
+</span><span class='line'>Writing objects: 100% (5/5), 1.85 KiB | 0 bytes/s, done.
+</span><span class='line'>Total 5 (delta 2), reused 0 (delta 0)
+</span><span class='line'>To git@github.com:lazybing/lazybing.github.io.git
+</span><span class='line'>   df4de96..6bf4d37  source -&gt; source</span></code></pre></td></tr></table></div></figure>
+
+
+
+]]></content>
+  </entry>
+  
+</feed>

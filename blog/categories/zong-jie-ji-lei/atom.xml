@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: 总结积累 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2016-09-03T08:18:22-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之TS]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/26/ts-parse-format/"/>
+    <updated>2016-07-26T04:57:15-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/26/ts-parse-format</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/MPEG_transport_stream">TS</a>是MPEG2-TS 的简称，是“Transport Stream”的缩写。一段 TS 流，必须包含 PAT 包、PMT 包、多个音频包、多个视频包、多个 PCR 包以及其他信息包。</p>
+
+<!--more-->
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之MP4]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/26/mp4-parse-format/"/>
+    <updated>2016-07-26T04:31:32-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/26/mp4-parse-format</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/MPEG-4_Part_14">MP4</a>是由许多 Box 和 FullBox 组成的，每个 Box 是由 Header 和 Data 组成的，FullBox 是 Box 的扩展，Box 结构的基础上在 Header 中增加 8bits version 和 24bits flags。</p>
+
+<!--more-->
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之AVI]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/24/avi-parse-format/"/>
+    <updated>2016-07-24T01:04:52-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/24/avi-parse-format</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">AVI</a> 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。</p>
+
+<!--more-->
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之FLV]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/24/flv-parse/"/>
+    <updated>2016-07-24T00:22:21-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/24/flv-parse</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Flash_Video">FLV</a> 是 FLASH VIDEO 的简称，FLV 流媒体是随着Flash MX 的推出发展而来的视频格式。FLV 一般由文件头(FLV header) 和文件体(FLV body) 组成。其中文件体(FLV body)由一些列tag组成，tag又可分成三类:audio/video/script，分别代表音频流、视频流、脚本流(关键字或文件信息之类)。</p>
+
+<!--more-->
+
+
+<p>在 FLV 文件中，每种 tag 类型都由一个单独的流组成，即在 FLV 文件中最多有一个视频流和一个音频流，对同一种类型的流，FLV 中不能够定义多个独立的流。
+与 SWF 文件不同,FLV 文件以大字节序存储多字节。比如，0x300(0x12C) 在 SWF 文件中的字节序为 0x2C 0x01,在FLV 文件中则为 0x01 0x2C。</p>
+
+<h2>FLV Header</h2>
+
+<p>以 FLV Header <code>46 4C 56 01 05 00 00 00 09</code>为例：
+<img src="/images/flvparse/flv_header.png"></p>
+
+<p>FLV Header 的前三个字节是固定的<code>FLV</code>的 ASCII 码的值<code>0x46 0x4C 0x56</code>; 接下来的一个字节表示 FLV 的版本号,例如 0x01 代表 FLV 版本号为 1。第 5 个字节中的第0位和第2位分别表示video和audio的存在情况（1表示存在，0表示不存在）,其余6位必须为0.最后的4字节表示FLV Header的长度，对于version 1，此处为9.</p>
+
+<h2>FLV File Body</h2>
+
+<p>FLV Header 之后，FLV 文件的剩余部分由tag组成，它们交替如下：
+PreviousTagSize0|Tag1|PreviousTagSize1|Tag2|……|PreviousTagSizeN-1|TagN|PreviousTagSizeN</p>
+
+<h2>FLV tags</h2>
+
+<p>FLV tags 有以下几个字段构成：8bit的<code>TagType</code>、24bit的<code>DataSize</code>、24bit的<code>TimeStamp</code>、8bit的<code>TimeStampExtended</code>、24bit的<code>StreamID</code>以及最后的<code>Data</code>。</p>
+
+<p><code>TagType</code>指该Tag的类型，8 代表 Audio，9 代表 Video，18 代表 Script Data。</p>
+
+<p><code>DataSize</code>指定后面的<code>Data</code>字段的大小。</p>
+
+<p>以 Tag <code>12 00 12 A9 00 00 00 00 00 00 00 02 00 0A……</code>为例，<code>0x12</code>代表该 tag 为script data，<code>00 12 A9</code>代表该 tag 的 DataSize 为 681 byte，<code>00 00 00</code>代表该 tag 的 TimeStamp 为 0，<code>00</code>代表该 tag 的 TimeStampExtended 为 0，StreamID 总是 0，接下来的 681 byte 为script data 的内容。</p>
+
+<p>播放过程中，FLV tag的时间信息完全依赖于 FLV 时间戳，内置的其他时间信息都被忽略掉。</p>
+
+<h3>Audio tags</h3>
+
+<h3>Video tags</h3>
+
+<p>Video Tag 与 SWF 文件格式中的 VideoFrame Tag 类似，它们的 Payload 数据是同一的。关于 SWF 文件格式的介绍，请看<a href="www.adobe.com/go/swf_file_format">SWF(File Format Specification)</a>。</p>
+
+<p>以<code>09 00 00 2D 00 00 00 00 00 00 00 17 00 00 00 00 01 4D 40 1F FF E1 00 19 67 4D 40 ……</code>为例，<code>09</code>表示 Tag Type 为 Video Tag;<code>00 00 2D</code>表示 DataSize 为 45；<code>00 00 00</code>表示 Timestamp 为 0；<code>00</code>表示 TimestampExtended 为 0；<code>00 00 00</code>表示 StreamID 为 0；<code>17</code>中的 8 bit，其中前 4 bit<code>1</code>表示 FrameType 为 keyframe,后 4 bit<code>7</code>表示 CodecID 为 AVC；之后的 45 byte 为 VideoData;</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Profiles-Tiers-Levels]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/"/>
+    <updated>2016-06-27T07:52:00-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels</id>
+    <content type="html"><![CDATA[
+]]></content>
+  </entry>
+  
+</feed>
