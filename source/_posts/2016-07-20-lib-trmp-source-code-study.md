@@ -109,5 +109,3 @@ int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port
 ### Download
 ### CleanUp:RTMP_Close(&rtmp); fclose(file); CleanupSockets();
 
-
-
