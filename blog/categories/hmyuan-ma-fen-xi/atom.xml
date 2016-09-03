@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Hm源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hmyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-03T09:51:51-07:00</updated>
+  <updated>2016-09-03T10:48:40-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,12 +18,30 @@
     <link href="http://lazybing.github.io/blog/2015/10/01/hm-source-code-analyse0/"/>
     <updated>2015-10-01T07:48:51-07:00</updated>
     <id>http://lazybing.github.io/blog/2015/10/01/hm-source-code-analyse0</id>
-    <content type="html"><![CDATA[<p>在分析源码之前，有必要先了解下HEVC中使用的专业术语的含义。这篇将纪录spce中经常使用到的一些专业术语机器含义。</p>
+    <content type="html"><![CDATA[<p>在HM的源码分析中，经常会用到读取 syntax 值，此时用到<code>xReadCode``xReadUvlc``xReadSvlc``xReadFlag</code>的函数，这篇就主要分析这几个寒暑的源码。</p>
 
 <!--more-->
 
 
+<p>其实读取 syntax 值的这几个函数，主要是spce 中第9 部分的代码实现。这几个函数共同调用了 Read 函数。
+```
+  m_numBitsRead += uiNumberOfBits;</p>
 
+<p>  /<em> NB, bits are extracted from the MSB of each byte. </em>/
+  UInt retval = 0;
+  if (uiNumberOfBits &lt;= m_num_held_bits)
+  {
+    /<em> n=1, len(H)=7:   -VHH HHHH, shift_down=6, mask=0xfe
+     * n=3, len(H)=7:   -VVV HHHH, shift_down=4, mask=0xf8
+     </em>/
+    retval = m_held_bits >> (m_num_held_bits - uiNumberOfBits);
+    retval &amp;= ~(0xff &lt;&lt; uiNumberOfBits);
+    m_num_held_bits -= uiNumberOfBits;
+    ruiBits = retval;
+    return;
+  }</p>
+
+<p>```</p>
 ]]></content>
   </entry>
   
