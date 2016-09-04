@@ -10,7 +10,7 @@ categories: 总结积累
 
 ##多台Mac上同时使用
 
-#### 在新的Mac上创建`ssh key`并添加到`github`中。参加`github`官方[帮助文档](https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac)。
+#### 在新的Mac上创建 ssh key 并添加到 github 中。参见 github 官方[帮助文档](https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac)。
 
 创建`ssh-key`。
 ```
