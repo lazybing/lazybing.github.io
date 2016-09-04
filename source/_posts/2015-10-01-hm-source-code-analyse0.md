@@ -169,5 +169,5 @@ Void SyntaxElementParser::xReadFlag (UInt& ruiCode)
 
 {% endcodeblock %}
 
-
+与`SyntaxElementParser`相对应的是`SyntaxElementWrite`，其中包含了`xWriteCode` `xWriteUvlc` `xWriteSvlc` `xWriteFlag`四个函数。此处不在分析。
 
