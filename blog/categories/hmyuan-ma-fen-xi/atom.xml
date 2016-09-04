@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Hm源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hmyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-03T22:06:32-07:00</updated>
+  <updated>2016-09-03T22:08:45-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -24,38 +24,70 @@
 
 
 <p>对 syntax 的分析，主要是由<code>SyntaxElementParser</code>完成，位于<code>lib\libdecoder\SyntaxElementParser.h</code>中。
-{% codeblock [lang:C++] syntaxelementparser.h %}</p>
-
-<h1>define READ_CODE(length, code, name)     xReadCode ( length, code )</h1>
-
-<h1>define READ_UVLC(        code, name)     xReadUvlc (         code )</h1>
-
-<h1>define READ_SVLC(        code, name)     xReadSvlc (         code )</h1>
-
-<h1>define READ_FLAG(        code, name)     xReadFlag (         code )</h1>
-
-<p>class SyntaxElementParser
-{
-protected:
-    TComInputBitstream * m_pcBitstream;</p>
-
-<pre><code>SyntaxElementParser()
-: m_pcBitstream(NULL)
-{};
-
-virtual ~SyntaxElementParser();
-
-void xReadCode(UInt length, UInt&amp; val);
-void xReadUvlc(UInt&amp; val);
-void xReadSvlc(UInt&amp; val);
-void xReadFlag(UInt&amp; val);
-</code></pre>
-
-<p>public:
-    void setBitstream(TComInputBitstream<em> p) { m_pcBitstream = p; }
-    TComInputBitstream</em> getBitstream() { return m_pcBitstream; }
-}
-{% endcodeblock %}</p>
+<figure class='code'><figcaption><span>syntaxelementparser.h </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='C++'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">READ_CODE</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>     <span class="n">xReadCode</span> <span class="p">(</span> <span class="n">length</span><span class="p">,</span> <span class="n">code</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">READ_UVLC</span><span class="p">(</span>        <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>     <span class="n">xReadUvlc</span> <span class="p">(</span>         <span class="n">code</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">READ_SVLC</span><span class="p">(</span>        <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>     <span class="n">xReadSvlc</span> <span class="p">(</span>         <span class="n">code</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">READ_FLAG</span><span class="p">(</span>        <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>     <span class="n">xReadFlag</span> <span class="p">(</span>         <span class="n">code</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">class</span> <span class="nc">SyntaxElementParser</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">protected</span><span class="o">:</span>
+</span><span class='line'>    <span class="n">TComInputBitstream</span> <span class="o">*</span> <span class="n">m_pcBitstream</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">SyntaxElementParser</span><span class="p">()</span>
+</span><span class='line'><span class="o">:</span> <span class="n">m_pcBitstream</span><span class="p">(</span><span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'><span class="p">{};</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">virtual</span> <span class="o">~</span><span class="n">SyntaxElementParser</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadCode</span><span class="p">(</span><span class="n">UInt</span> <span class="n">length</span><span class="p">,</span> <span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadUvlc</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadSvlc</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadFlag</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">public</span><span class="o">:</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="n">setBitstream</span><span class="p">(</span><span class="n">TComInputBitstream</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span> <span class="n">m_pcBitstream</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">TComInputBitstream</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">getBitstream</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">m_pcBitstream</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>其实读取 syntax 值的这几个函数，主要是 SPEC 中第 9 部分的代码实现。这几个函数共同调用了<code>Read</code>函数。
 ```

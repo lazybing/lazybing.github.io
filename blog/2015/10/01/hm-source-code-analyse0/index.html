@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="在HM的源码分析中，经常会用到读取 syntax 值，此时用到 xReadCode xReadUvlc xReadSvlc xReadFlag 的函数，这篇就主要分析这几个函数的源码。 其实读取 syntax 值的这几个函数，主要是spce 中第9 部分的代码实现。这几个函数共同调用了 Read &hellip;">
+  <meta name="description" content="在 HM 的源码分析中，经常会用到读取 syntax 值，此时用到 xReadCode xReadUvlc xReadSvlc xReadFlag 的函数，这篇就主要分析这几个函数的源码。 对 syntax 的分析，主要是由SyntaxElementParser完成，位于lib\ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,12 +99,66 @@
   </header>
 
 
-<div class="entry-content"><p>在HM的源码分析中，经常会用到读取 syntax 值，此时用到 <code>xReadCode</code> <code>xReadUvlc</code> <code>xReadSvlc</code> <code>xReadFlag</code> 的函数，这篇就主要分析这几个函数的源码。</p>
+<div class="entry-content"><p>在 HM 的源码分析中，经常会用到读取 syntax 值，此时用到 <code>xReadCode</code> <code>xReadUvlc</code> <code>xReadSvlc</code> <code>xReadFlag</code> 的函数，这篇就主要分析这几个函数的源码。</p>
 
 <!--more-->
 
 
-<p>其实读取 syntax 值的这几个函数，主要是spce 中第9 部分的代码实现。这几个函数共同调用了 Read 函数。</p>
+<p>对 syntax 的分析，主要是由<code>SyntaxElementParser</code>完成，位于<code>lib\libdecoder\SyntaxElementParser.h</code>中。</p>
+
+<figure class='code'><figcaption><span>syntaxelementparser.h </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='C++'><span class='line'><span class="cp">#define READ_CODE(length, code, name)     xReadCode ( length, code )</span>
+</span><span class='line'><span class="cp">#define READ_UVLC(        code, name)     xReadUvlc (         code )</span>
+</span><span class='line'><span class="cp">#define READ_SVLC(        code, name)     xReadSvlc (         code )</span>
+</span><span class='line'><span class="cp">#define READ_FLAG(        code, name)     xReadFlag (         code )</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">SyntaxElementParser</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">protected</span><span class="o">:</span>
+</span><span class='line'>  <span class="n">TComInputBitstream</span> <span class="o">*</span> <span class="n">m_pcBitstream</span><span class="p">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="n">SyntaxElementParser</span><span class="p">()</span>
+</span><span class='line'>  <span class="o">:</span> <span class="n">m_pcBitstream</span><span class="p">(</span><span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{};</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">virtual</span> <span class="o">~</span><span class="n">SyntaxElementParser</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">xReadCode</span><span class="p">(</span><span class="n">UInt</span> <span class="n">length</span><span class="p">,</span> <span class="n">UInt</span><span class="o">&amp;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">xReadUvlc</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">xReadSvlc</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">xReadFlag</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="k">public</span><span class="o">:</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="n">setBitstream</span><span class="p">(</span><span class="n">TComInputBitstream</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span> <span class="n">m_pcBitstream</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">TComInputBitstream</span><span class="o">*</span> <span class="n">getBitstream</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">m_pcBitstream</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其实读取 syntax 值的这几个函数，主要是 SPEC 中第 9 部分的代码实现。这几个函数共同调用了<code>Read</code>函数。</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>

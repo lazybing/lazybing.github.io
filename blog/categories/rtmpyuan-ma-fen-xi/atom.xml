@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Rtmp源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-03T22:06:32-07:00</updated>
+  <updated>2016-09-03T22:08:45-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -42,92 +42,158 @@
 
 <p>下面逐个记录各个步骤的功能。
 在了解具体步骤之前，先了解结构重要的Structure:
-```
-typedef struct RTMP
-{
-    int m_inChunkSize;
-    int m_outChunkSize;
-    int m_nBWCheckCounter;
-    int m_nBytesIn;
-    int m_nBytesInSent;
-    int m_nBufferMS;
-    int m_stream_id;
-    int m_mediaChannel;
-    uint32_t m_mediaStamp;
-    uint32_t m_pauseStamp;
-    int m_pausing;
-    int m_nServerBW;
-    int m_nClientBW;
-    uint8_t m_nClientBW2;
-    uint8_t m_bPlaying;
-    uint8_t m_bSendEncoding;
-    uint8_t m_bSendCounter;</p>
-
-<pre><code>int m_numInvokes;
-int m_numCalls;
-RTMP_METHOD *m_methodCalls;
-</code></pre>
-
-<p>}
-```</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct RTMP
+</span><span class='line'>{
+</span><span class='line'>    int m_inChunkSize;
+</span><span class='line'>    int m_outChunkSize;
+</span><span class='line'>    int m_nBWCheckCounter;
+</span><span class='line'>    int m_nBytesIn;
+</span><span class='line'>    int m_nBytesInSent;
+</span><span class='line'>    int m_nBufferMS;
+</span><span class='line'>    int m_stream_id;
+</span><span class='line'>    int m_mediaChannel;
+</span><span class='line'>    uint32_t m_mediaStamp;
+</span><span class='line'>    uint32_t m_pauseStamp;
+</span><span class='line'>    int m_pausing;
+</span><span class='line'>    int m_nServerBW;
+</span><span class='line'>    int m_nClientBW;
+</span><span class='line'>    uint8_t m_nClientBW2;
+</span><span class='line'>    uint8_t m_bPlaying;
+</span><span class='line'>    uint8_t m_bSendEncoding;
+</span><span class='line'>    uint8_t m_bSendCounter;&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;int m_numInvokes;
+</span><span class='line'>int m_numCalls;
+</span><span class='line'>RTMP_METHOD *m_methodCalls;
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;}</span></code></pre></td></tr></table></div></figure></p>
 
 <h3>InitSocket()</h3>
 
 <p>初始化 Socket ,代码非常简单。
-```
-int InitSockets()
-{</p>
-
-<h1>ifdef WIN32</h1>
-
-<pre><code>WORD version;
-WSADATA wsaData;
-
-version MAKEWORD(1, 1);       
-return (WSASTartup(version, &amp;wsaData) == 1);
-</code></pre>
-
-<h1>else</h1>
-
-<pre><code>return TRUE;
-</code></pre>
-
-<h1>endif</h1>
-
-<p>}
-```</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int InitSockets()
+</span><span class='line'>{&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;h1&gt;ifdef WIN32&lt;/h1&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;WORD version;
+</span><span class='line'>WSADATA wsaData;
+</span><span class='line'>
+</span><span class='line'>version MAKEWORD(1, 1);       
+</span><span class='line'>return (WSASTartup(version, &amp;wsaData) == 1);
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;h1&gt;else&lt;/h1&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;return TRUE;
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;h1&gt;endif&lt;/h1&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;}</span></code></pre></td></tr></table></div></figure></p>
 
 <h3>RTMP_Init(Struct RTMP)</h3>
 
 <p>初始化 RTMP 结构体。
-```
-void RTMP_Init(RTMP *r)
-{</p>
-
-<h1>ifdef CRYPTO</h1>
-
-<pre><code>if(!RTMP_TLS_cts)
-    RTMP_TLS_Init();
-</code></pre>
-
-<h1>endif</h1>
-
-<pre><code>memset(r, 0, sizeof(RTMP));
-r-&gt;m_sb.sb_socket = -1;
-r-&gt;m_inChunkSize  = RTMP_DEFAULT_CHUNKSIZE;
-r-&gt;m_outChunkSize = RTMP_DEFAULT_CHUNKSIZE;
-r-&gt;m_nBufferMS    = 30000;
-r-&gt;m_nClientBW    = 2500000;
-r-&gt;m_nClientBW2   = 2;
-r-&gt;m_nServerBW    = 2500000;
-r-&gt;m_fAudioCodecs = 3191.0;
-r-&gt;m_fVideoCodecs = 252.0;
-r-&gt;Link.timeout   = 20;
-r-&gt;Link.swfAge    = 30;
-</code></pre>
-
-<p>}
-```</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>void RTMP_Init(RTMP *r)
+</span><span class='line'>{&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;h1&gt;ifdef CRYPTO&lt;/h1&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;if(!RTMP_TLS_cts)
+</span><span class='line'>    RTMP_TLS_Init();
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;h1&gt;endif&lt;/h1&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;memset(r, 0, sizeof(RTMP));
+</span><span class='line'>r-&gt;m_sb.sb_socket = -1;
+</span><span class='line'>r-&gt;m_inChunkSize  = RTMP_DEFAULT_CHUNKSIZE;
+</span><span class='line'>r-&gt;m_outChunkSize = RTMP_DEFAULT_CHUNKSIZE;
+</span><span class='line'>r-&gt;m_nBufferMS    = 30000;
+</span><span class='line'>r-&gt;m_nClientBW    = 2500000;
+</span><span class='line'>r-&gt;m_nClientBW2   = 2;
+</span><span class='line'>r-&gt;m_nServerBW    = 2500000;
+</span><span class='line'>r-&gt;m_fAudioCodecs = 3191.0;
+</span><span class='line'>r-&gt;m_fVideoCodecs = 252.0;
+</span><span class='line'>r-&gt;Link.timeout   = 20;
+</span><span class='line'>r-&gt;Link.swfAge    = 30;
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;}</span></code></pre></td></tr></table></div></figure></p>
 
 <h3>RTMP_ParseURL</h3>
 
