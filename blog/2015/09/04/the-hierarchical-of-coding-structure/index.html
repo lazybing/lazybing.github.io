@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: 编程工具 - 懒人李冰</title>
+  <title>HM源码分析(一)————HEVC编码结构 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Category: 编程工具">
+  <meta name="description" content="本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。 VPS(Video Parameter Set):视频参数集，主要用于传输视频分级信息，包含多个子层和操作点共享的语法元素、会话所需要的有关操作的关键信息（档次/级别等）、其他不属于 SPS &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -78,50 +78,104 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: 编程工具</h1>
+    
+      <h1 class="entry-title">HM源码分析(一)————HEVC编码结构</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-09-04T09:57:17-07:00'><span class='date'>2015 年 09 月 04 日</span> <span class='time'>9:57 am</span></time>
+        
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。</p>
 
-  
-  <h2>2016</h2>
-
-<article>
-  
-<h1><a href="/blog/2016/07/07/how-to-use-vim/">Vim 使用技巧</a></h1>
-<time datetime="2016-07-07T08:17:10-07:00" pubdate><span class='month'>07 月</span> <span class='day'>07 日</span> <span class='year'>2016</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
+<!--more-->
 
 
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2016/04/01/how-to-use-gdb/">How to Use Gdb</a></h1>
-<time datetime="2016-04-01T07:48:51-07:00" pubdate><span class='month'>04 月</span> <span class='day'>01 日</span> <span class='year'>2016</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
-
-
-</article>
-
+<p>VPS(Video Parameter Set):视频参数集，主要用于传输视频分级信息，包含多个子层和操作点共享的语法元素、会话所需要的有关操作的关键信息（档次/级别等）、其他不属于 SPS 的操作点特性信息（如HRD）。
+SPS(Sequence Parameter Set):序列参数集，主要包含一个 CVS 中所有编码图像的共享编码参数。如图像格式信息（采样格式/图像分辨率/量化深度/Crop信息）、编码参数信息（编码块/变换块的尺寸等）、与参考图像相关的信息、可视话可用性信息(VUI)等。
+PPS(Picture Parameter Set):图像参数集。</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-09-04T09:57:17-07:00'><span class='date'>2015 年 09 月 04 日</span> <span class='time'>9:57 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/" data-via="" data-counturl="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/07/01/how-to-boot-up-system/" title="Previous Post: UBoot 源码分析">&laquo; UBoot 源码分析</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/10/01/hm-source-code-analyse0/" title="Next Post: HM 源码分析（一）">HM 源码分析（一） &raquo;</a>
+      
+    </p>
+  </footer>
 </article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2015/09/04/the-hierarchical-of-coding-structure" data-title="HM源码分析(一)————HEVC编码结构" data-url="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
 
 </div>
 
