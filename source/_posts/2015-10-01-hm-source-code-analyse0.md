@@ -6,10 +6,39 @@ commit: true
 categories: HM源码分析
 ---
 
-在HM的源码分析中，经常会用到读取 syntax 值，此时用到 `xReadCode` `xReadUvlc` `xReadSvlc` `xReadFlag` 的函数，这篇就主要分析这几个函数的源码。
+在 HM 的源码分析中，经常会用到读取 syntax 值，此时用到 `xReadCode` `xReadUvlc` `xReadSvlc` `xReadFlag` 的函数，这篇就主要分析这几个函数的源码。
 <!--more-->
 
-其实读取 syntax 值的这几个函数，主要是spce 中第9 部分的代码实现。这几个函数共同调用了 Read 函数。
+对 syntax 的分析，主要是由`SyntaxElementParser`完成，位于`lib\libdecoder\SyntaxElementParser.h`中。
+{% codeblock [lang:C++] syntaxelementparser.h}
+
+#define READ_CODE(length, code, name)     xReadCode ( length, code )
+#define READ_UVLC(        code, name)     xReadUvlc (         code )
+#define READ_SVLC(        code, name)     xReadSvlc (         code )
+#define READ_FLAG(        code, name)     xReadFlag (         code )
+
+class SyntaxElementParser
+{
+protected:
+	TComInputBitstream * m_pcBitstream;
+	
+	SyntaxElementParser()
+	: m_pcBitstream(NULL)
+	{};
+
+	virtual ~SyntaxElementParser();
+
+	void xReadCode(UInt length, UInt& val);
+	void xReadUvlc(UInt& val);
+	void xReadSvlc(UInt& val);
+	void xReadFlag(UInt& val);
+public:
+	void setBitstream(TComInputBitstream* p) { m_pcBitstream = p; }
+	TComInputBitstream* getBitstream() { return m_pcBitstream; }
+}
+{% endcodeblock %}
+
+其实读取 syntax 值的这几个函数，主要是 SPEC 中第 9 部分的代码实现。这几个函数共同调用了`Read`函数。
 ```
   m_numBitsRead += uiNumberOfBits;
 
