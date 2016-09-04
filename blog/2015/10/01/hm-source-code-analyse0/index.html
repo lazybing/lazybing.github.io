@@ -175,22 +175,180 @@
 <span class='line-number'>13</span>
 <span class='line-number'>14</span>
 <span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>  m_numBitsRead += uiNumberOfBits;
-</span><span class='line'>
-</span><span class='line'>  /* NB, bits are extracted from the MSB of each byte. */
-</span><span class='line'>  UInt retval = 0;
-</span><span class='line'>  if (uiNumberOfBits &lt;= m_num_held_bits)
-</span><span class='line'>  {
-</span><span class='line'>    /* n=1, len(H)=7:   -VHH HHHH, shift_down=6, mask=0xfe
-</span><span class='line'>     * n=3, len(H)=7:   -VVV HHHH, shift_down=4, mask=0xf8
-</span><span class='line'>     */
-</span><span class='line'>    retval = m_held_bits &gt;&gt; (m_num_held_bits - uiNumberOfBits);
-</span><span class='line'>    retval &= ~(0xff &lt;&lt; uiNumberOfBits);
-</span><span class='line'>    m_num_held_bits -= uiNumberOfBits;
-</span><span class='line'>    ruiBits = retval;
-</span><span class='line'>    return;
-</span><span class='line'>  }
-</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>TcomBitStream.cpp </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class='C++'><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span><span class="n">Void</span> <span class="n">TcomInputBitstream</span><span class="o">::</span><span class="n">read</span> <span class="p">(</span><span class="n">UInt</span> <span class="n">uiNumberOfBits</span><span class="p">,</span> <span class="n">UInt</span><span class="o">&amp;</span> <span class="n">ruiBits</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span><span class="p">{</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">assert</span><span class="p">(</span> <span class="n">uiNumberOfBits</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mi">32</span> <span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">m_numBitsRead</span> <span class="o">+=</span> <span class="n">uiNumberOfBits</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* NB, bits are extracted from the MSB of each byte. */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">UInt</span> <span class="n">retval</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="k">if</span> <span class="p">(</span><span class="n">uiNumberOfBits</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">m_num_held_bits</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="p">{</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>    <span class="cm">/* n=1, len(H)=7:   -VHH HHHH, shift_down=6, mask=0xfe</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;     * n=3, len(H)=7:   -VVV HHHH, shift_down=4, mask=0xf8</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;     */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>    <span class="n">retval</span> <span class="o">=</span> <span class="n">m_held_bits</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="p">(</span><span class="n">m_num_held_bits</span> <span class="o">-</span> <span class="n">uiNumberOfBits</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>    <span class="n">retval</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xff</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">uiNumberOfBits</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>    <span class="n">m_num_held_bits</span> <span class="o">-=</span> <span class="n">uiNumberOfBits</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>    <span class="n">ruiBits</span> <span class="o">=</span> <span class="n">retval</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>    <span class="k">return</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* all num_held_bits will go into retval</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   *   =&amp;gt; need to mask leftover bits from previous extractions</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   *   =&amp;gt; align retval with top of extracted word */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* n=5, len(H)=3: ---- -VVV, mask=0x07, shift_up=5-3=2,</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   * n=9, len(H)=3: ---- -VVV, mask=0x07, shift_up=9-3=6 */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">uiNumberOfBits</span> <span class="o">-=</span> <span class="n">m_num_held_bits</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">retval</span> <span class="o">=</span> <span class="n">m_held_bits</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xff</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">m_num_held_bits</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">retval</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">uiNumberOfBits</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* number of whole bytes that need to be loaded to form retval */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* n=32, len(H)=0, load 4bytes, shift_down=0</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   * n=32, len(H)=1, load 4bytes, shift_down=1</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   * n=31, len(H)=1, load 4bytes, shift_down=1+1</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   * n=8,  len(H)=0, load 1byte,  shift_down=0</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   * n=8,  len(H)=3, load 1byte,  shift_down=3</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   * n=5,  len(H)=1, load 1byte,  shift_down=1+3</span>
+</span><span class='line'><span class="cm">&lt;/span&gt;&lt;span class=&#39;line&#39;&gt;   */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">UInt</span> <span class="n">aligned_word</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">UInt</span> <span class="n">num_bytes_to_load</span> <span class="o">=</span> <span class="p">(</span><span class="n">uiNumberOfBits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">assert</span><span class="p">(</span><span class="n">m_fifo_idx</span> <span class="o">+</span> <span class="n">num_bytes_to_load</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">m_fifo</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">size</span><span class="p">());</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="k">switch</span> <span class="p">(</span><span class="n">num_bytes_to_load</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="p">{</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="n">aligned_word</span>  <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">24</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">aligned_word</span> <span class="o">|=</span> <span class="p">(</span><span class="o">*</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">16</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">aligned_word</span> <span class="o">|=</span> <span class="p">(</span><span class="o">*</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span>  <span class="mi">8</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">aligned_word</span> <span class="o">|=</span> <span class="p">(</span><span class="o">*</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">];</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* resolve remainder bits */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">UInt</span> <span class="n">next_num_held_bits</span> <span class="o">=</span> <span class="p">(</span><span class="mi">32</span> <span class="o">-</span> <span class="n">uiNumberOfBits</span><span class="p">)</span> <span class="o">%</span> <span class="mi">8</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* copy required part of aligned_word into retval */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">retval</span> <span class="o">|=</span> <span class="n">aligned_word</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">next_num_held_bits</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="cm">/* store held bits */</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">m_num_held_bits</span> <span class="o">=</span> <span class="n">next_num_held_bits</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">m_held_bits</span> <span class="o">=</span> <span class="n">aligned_word</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>  <span class="n">ruiBits</span> <span class="o">=</span> <span class="n">retval</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">span</span><span class="o">&gt;&lt;</span><span class="n">span</span> <span class="n">class</span><span class="o">=</span><span class="err">&#39;</span><span class="n">line</span><span class="err">&#39;</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></span></code></pre></td></tr></table></div></figure></notextile></div>
 
 </div>
 
