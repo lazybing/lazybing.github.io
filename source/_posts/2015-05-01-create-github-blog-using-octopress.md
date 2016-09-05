@@ -8,6 +8,21 @@ categories: 总结积累
 详细记录使用`Octopress`的搭建和使用过程中遇到的问题。
 <!--more-->
 
+##添加图片
+在写 blog 的过程中，经常需要用到插入图片。示例如下：
+
+1. 把图片 `meinv.png` copy 到 `source/images`下。
+
+2. 在需要的位置添加代码.
+
+{% codeblock %}
+{% img /images/meinv.png %}
+{% endcodeblock %}
+
+{% img /images/meinvping.png %}
+
+更多技巧，请参见 Octopress 官网提供的[技术支持](http://octopress.org/docs/plugins/image-tag/)。
+
 ##多台Mac上同时使用
 
 #### 在新的Mac上创建 ssh key 并添加到 github 中。参见 github 官方[帮助文档](https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac)。
