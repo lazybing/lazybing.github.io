@@ -16,7 +16,7 @@ categories: 总结积累
 2. 在需要的位置添加代码.
 
 {% codeblock %}
-{% img /images/meinv.png %}
+{% img /images/meinvp.png %}
 {% endcodeblock %}
 
 {% img /images/meinvping.png %}

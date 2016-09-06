@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HM源码分析（一）:HEVC编码结构"
+title: "HM源码分析（一）：HEVC编码结构"
 date: 2015-09-04 09:57:17 -0700
 comments: true
 categories: HM源码分析
@@ -31,4 +31,9 @@ PPS(Picture Parameter Set):图像参数集。主要包括编码工具的可用�
 
 {% img /images/HM/vps_sps_pps.png %}
 
+由上图可看出，SPS 会根据 parse 出来的`VPS index`来引用 VPS 的信息，同样的 PPS 会根据 parse 出来的`SPS index`来引用 PPS 的信息。当 SPS 中包含有 VPS 的信息时，使用 SPS 的信息，VPS内的信息失效，同样的当 PPS 中含有 SPS 的信息时，使用 PPS 中的信息，SPS 中的信息失效。
+
+参考内容：[新一代高效视频编码H.265/HEVC:原理、标准与实现](https://www.amazon.cn/%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81H-265-HEVC-%E5%8E%9F%E7%90%86-%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E4%B8%87%E5%B8%85/dp/B00QXIN7B2/ref=sr_1_1?s=books&ie=UTF8&qid=1473127274&sr=1-1&keywords=%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81h.265+hevc+%E5%8E%9F%E7%90%86+%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0)第三章编码结构。
+
+[HM](https://hevc.hhi.fraunhofer.de/)中关于`VPS` `SPS` `PPS`编码结构的介绍主要在`lib\tlibcommon\TComSlice.h`内，稍后会对它们进行详细分析。
 
