@@ -10,6 +10,14 @@ Vim 是一个学习成本比较高的编辑器。
 <!--more-->
 
 ---
+### Mac OSX 下安装 gvim
+{% codeblock %}
+brew install macvim
+{% endcodeblock %}
+
+###基本设置
+显示行号，在`.vimrc`中添加`set nu`
+
 ### vim 寄存器
 
 使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。
