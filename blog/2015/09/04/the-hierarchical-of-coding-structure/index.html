@@ -9,7 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。 编码分层处理架构 GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视频序列分割成的图像组就为 GOP。GOP 分为封闭式 GOP 和 开放式 GOP,其中封闭式 GOP &hellip;">
+  <meta name="description" content="本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。 编码分层处理架构
+GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视频序列分割成的图像组就为 GOP。GOP 分为封闭式 GOP 和 开放式 GOP,其中封闭式 GOP &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,16 +100,13 @@
   </header>
 
 
-<div class="entry-content"><p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。</p>
+<div class="entry-content"><p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
+<!--more--></p>
 
-<!--more-->
-
-
-<h2>编码分层处理架构</h2>
-
+<h2 id="section">编码分层处理架构</h2>
 <p>GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视频序列分割成的图像组就为 GOP。GOP 分为封闭式 GOP 和 开放式 GOP,其中封闭式 GOP 其第一帧为 IDR, GOP内的图像不会参考到其他 GOP 内图像;开放式 GOP 只有第一个 GOP 内的第一帧才是 IDR，后续的 GOP 中的第一个帧内编码图像为 non-IDR，会参考前一个 GOP 中的已编码图像做参考图像。</p>
 
-<p><img src="/images/HM/gop_type.png"></p>
+<p><img src="/images/HM/gop_type.png" /></p>
 
 <p>Slice,每个 GOP 又被划分为多个 Slice 片，每个片由一个或多个片段(Slice Segment, SS) 组成。</p>
 
@@ -116,23 +114,23 @@
 
 <p>一个 SS 在编码时，先被分割为相同大小的 CTU ，每个CTU 按照四叉树分割方式被划分为不同类型的编码单元(Coding Unit, CU)。</p>
 
-<p><img src="/images/HM/slice_cu.png"></p>
+<p><img src="/images/HM/slice_cu.png" /></p>
 
-<h2>码流的语法架构</h2>
-
+<h2 id="section-1">码流的语法架构</h2>
 <p>VPS(Video Parameter Set):视频参数集，主要用于传输视频分级信息，包含多个子层和操作点共享的语法元素、会话所需要的有关操作的关键信息（档次/级别等）、其他不属于 SPS 的操作点特性信息（如HRD）。</p>
 
 <p>SPS(Sequence Parameter Set):序列参数集，主要包含一个 CVS 中所有编码图像的共享编码参数。如图像格式信息（采样格式/图像分辨率/量化深度/Crop信息）、编码参数信息（编码块/变换块的尺寸等）、与参考图像相关的信息、可视话可用性信息(VUI)等。</p>
 
 <p>PPS(Picture Parameter Set):图像参数集。主要包括编码工具的可用性标志、量化过程相关的句法元素、Tile 相关句法元素、去方块滤波相关句法元素、片头中的控制信息。</p>
 
-<p><img src="/images/HM/vps_sps_pps.png"></p>
+<p><img src="/images/HM/vps_sps_pps.png" /></p>
 
 <p>由上图可看出，SPS 会根据 parse 出来的<code>VPS index</code>来引用 VPS 的信息，同样的 PPS 会根据 parse 出来的<code>SPS index</code>来引用 PPS 的信息。当 SPS 中包含有 VPS 的信息时，使用 SPS 的信息，VPS内的信息失效，同样的当 PPS 中含有 SPS 的信息时，使用 PPS 中的信息，SPS 中的信息失效。</p>
 
 <p>参考内容：<a href="https://www.amazon.cn/%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81H-265-HEVC-%E5%8E%9F%E7%90%86-%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E4%B8%87%E5%B8%85/dp/B00QXIN7B2/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1473127274&amp;sr=1-1&amp;keywords=%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81h.265+hevc+%E5%8E%9F%E7%90%86+%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0">新一代高效视频编码H.265/HEVC:原理、标准与实现</a>第三章编码结构。</p>
 
 <p><a href="https://hevc.hhi.fraunhofer.de/">HM</a>中关于<code>VPS</code> <code>SPS</code> <code>PPS</code>编码结构的介绍主要在<code>lib\tlibcommon\TComSlice.h</code>内，稍后会对它们进行详细分析。</p>
+
 </div>
 
 

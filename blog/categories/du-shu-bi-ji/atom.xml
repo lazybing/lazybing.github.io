@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 读书笔记 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/du-shu-bi-ji/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-10T05:45:54-07:00</updated>
+  <updated>2016-09-10T08:49:44-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,74 +18,74 @@
     <link href="http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics/"/>
     <updated>2016-06-19T09:59:26-07:00</updated>
     <id>http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics</id>
-    <content type="html"><![CDATA[<p>FFmpeg Basics &mdash;Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。</p>
-
+    <content type="html"><![CDATA[<p>FFmpeg Basics —Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。
 <!--more-->
+—</p>
 
-
-<hr />
-
-<h3>Bit Rate, Frame Rate 和 File Size</h3>
+<h3 id="bit-rate-frame-rate--file-size">Bit Rate, Frame Rate 和 File Size</h3>
 
 <p>Frame Rate 是一秒钟播放的 frame 的个数，又可以分为 interlaced 和 progressive 两种， Interlaced Frame 主要用于 TV，如 NTSC 标准使用 60i fps ，即 60 interlaced fields（30 frames）每秒。</p>
 
 <p>Frame rate 设置使用 -r 选项： <code>ffmpeg -i input -r fps output</code></p>
 
-<pre><code>ffmpeg -i input.avi -r 30 output.mp4
-</code></pre>
+<p><code>
+ffmpeg -i input.avi -r 30 output.mp4
+</code>
+除此之外，也可用 fps filter 设置 frame rate。</p>
 
-<p>除此之外，也可用 fps filter 设置 frame rate。</p>
-
-<pre><code>ffmpeg -i clip.mpg -vf fps=fps=25 clip.webm
-</code></pre>
+<p><code>
+ffmpeg -i clip.mpg -vf fps=fps=25 clip.webm
+</code></p>
 
 <p>Bit Rate 是单位时间内可以处理的 bits 数，可分为 <code>ABR(Average bit rate)</code> <code>CBR(Constant bit rate)</code> <code>VBR(Variable bit rate)</code>。
 Bit Rate 设置使用 -b 选项：<code>ffmpeg -i input -b bitrates output</code>
 针对 video 和 audio 的不同，又可使用 <code>-b:v</code> 和 <code>-b:a</code>。</p>
 
-<pre><code>ffmpeg -i file.avi -b 1.5M film.mp4
+<p><code>
+ffmpeg -i file.avi -b 1.5M film.mp4
 ffmpeg -i input.avi -b:v 1500k output.mp4
-</code></pre>
+</code>
+CBR 的设置需要同时设置 bitrate、minimal rate 和 maximal rate 为相同的值，设置 maxrate的同时需要设置 bufsize 选项。</p>
 
-<p>CBR 的设置需要同时设置 bitrate、minimal rate 和 maximal rate 为相同的值，设置 maxrate的同时需要设置 bufsize 选项。</p>
-
-<pre><code>ffmpeg -i in.avi -b 0.5M -minrate 0.5M -maxrate 0.5M -bufsize 1M out.mkv
-</code></pre>
+<p><code>
+ffmpeg -i in.avi -b 0.5M -minrate 0.5M -maxrate 0.5M -bufsize 1M out.mkv
+</code></p>
 
 <p>File Size 是由 Video Size 和 Audio Size 两者之和组成的。</p>
 
-<pre><code>video_size = video_bitrate * time_in_seconds / 8;
+<p><code>
+video_size = video_bitrate * time_in_seconds / 8;
 audio_size = audio_bitrate * time_in_seconds / 8; 或
 audio_size = sampling_rate * bit_depth * channels * time_in_seconds / 8;
-</code></pre>
+</code>
+也可设置输出文件的最大值,设置选项为 -fs(file size) ：</p>
 
-<p>也可设置输出文件的最大值,设置选项为 -fs(file size) ：</p>
+<p><code>
+ffmpeg -i input.avi -fs 10MB output.mp4
+</code>
+—-</p>
 
-<pre><code>ffmpeg -i input.avi -fs 10MB output.mp4
-</code></pre>
-
-<hr />
-
-<h3>Resizing and Scaling Video</h3>
+<h3 id="resizing-and-scaling-video">Resizing and Scaling Video</h3>
 
 <p>Resizing 是指改变宽高，Scaling 是利用 scale filter 改变 frame size。</p>
 
 <p>Resizing Video ： 利用 <code>-s</code>选项指定输出视频的宽高，格式为<code>wxh</code>，其中 w 是以 pixel 为单位的宽， h 是以 pixel 为单位的高。例如:</p>
 
-<pre><code>ffmpeg -i input_file -s 320x240 output_file
-</code></pre>
+<p><code>
+ffmpeg -i input_file -s 320x240 output_file
+</code>
+此外，FFmpeg 针对不同的宽高信息，提供了预定义的视频大小简写，下面两个命令的作用相同，都是将 input_file 转换为 640*480 的输出文件：</p>
 
-<p>此外，FFmpeg 针对不同的宽高信息，提供了预定义的视频大小简写，下面两个命令的作用相同，都是将 input_file 转换为 640*480 的输出文件：</p>
-
-<pre><code>ffmpeg -i input_file.avi -s 640x480 output.avi
+<p><code>
+ffmpeg -i input_file.avi -s 640x480 output.avi
 ffmpeg -i input_file.avi -s vga output.avi
-</code></pre>
-
-<p>通常情况下，做 resize 是从<code>big frame -&gt; small frame</code>，反过来的话，可能导致图片不清晰，尤其是当原始视频的 resolution 比较小的时候。针对 <code>small frame -&gt; big frame</code>，有专门的特殊 filter（<code>super2xsai</code>） 可以使用，它可以使原视频文件变大两倍。2xsai 即指 2 times scale and interpolate, syntax 是 <code>-vf super2xsai</code>。
+</code>
+通常情况下，做 resize 是从<code>big frame -&gt; small frame</code>，反过来的话，可能导致图片不清晰，尤其是当原始视频的 resolution 比较小的时候。针对 <code>small frame -&gt; big frame</code>，有专门的特殊 filter（<code>super2xsai</code>） 可以使用，它可以使原视频文件变大两倍。2xsai 即指 2 times scale and interpolate, syntax 是 <code>-vf super2xsai</code>。
 例如把 128x96 的 phone_video.3gp 文件转换为 256x192 的视频文件。</p>
 
-<pre><code>ffmpeg -i phone_video.3gp -vf super2xsai output.mp4
-</code></pre>
+<p><code>
+ffmpeg -i phone_video.3gp -vf super2xsai output.mp4
+</code></p>
 
 <p>Scaling Video : 当使用<code>-s</code>选项来改变 frame size 时，其实在 filtergraph 的最后有一个 scale filter。scale filter也可以通过设置来固定在某个位置。</p>
 
@@ -95,20 +95,20 @@ ffmpeg -i input_file.avi -s vga output.avi
 
 <p>下面两个 command 执行效果相同:</p>
 
-<pre><code>ffmpeg -i input.mpg -s 320x240 output.mp4
+<p><code>
+ffmpeg -i input.mpg -s 320x240 output.mp4
 ffmpeg -i input.mpg -vf scale=320:240 output.mp4
-</code></pre>
+</code>
+如果不知道源视频的 resolution，又需要做 scale，可以用下面的方法:</p>
 
-<p>如果不知道源视频的 resolution，又需要做 scale，可以用下面的方法:</p>
-
-<pre><code>ffmpeg -i input.mpg -vf scale=iw/2:ih/2 output.mp4
+<p><code>
+ffmpeg -i input.mpg -vf scale=iw/2:ih/2 output.mp4
 ffmpeg -i input.mpg -vf scale=iw*0.9:ih*0.9 output.mp4
 ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4
-</code></pre>
+</code></p>
 
 <hr />
-
-<h3>Cropping Video</h3>
+<p>### Cropping Video</p>
 
 <p>Cropping Video 是指截取源视频中的某个矩形区域作为输出视频显示。通常它会与 Resizing/Padding 等共同配合使用。</p>
 
@@ -116,59 +116,56 @@ ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4
 
 <p>syntax 是<code>crop=ow[:oh[:x[:y[:keep_aspect]]]]</code>，其中 <code>ow=out_w oh=out_h</code>。示例如下：</p>
 
-<pre><code>ffmpeg -i input -vf crop=iw/3:ih:0:0 output
+<p><code>
+ffmpeg -i input -vf crop=iw/3:ih:0:0 output
 ffmpet -i input -vf crop=iw/3:ih:iw/3*2:0 output
-</code></pre>
+</code>
+如果x和y没有专门给出，会有默认值计算：</p>
 
-<p>如果x和y没有专门给出，会有默认值计算：</p>
-
-<pre><code>X(default) = (input width - output widht)/2
+<p><code>
+X(default) = (input width - output widht)/2
 Y(default) = (input height - output height)/2
-</code></pre>
-
-<pre><code>ffmpeg -i input_file -vf crop=w:h output_file
+</code>
+<code>
+ffmpeg -i input_file -vf crop=w:h output_file
 ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi
-</code></pre>
+</code></p>
 
 <hr />
-
-<h3>Padding Video</h3>
-
-<p>对于 Padding Video ，使用 pad filter 来实现。
+<p>### Padding Video
+对于 Padding Video ，使用 pad filter 来实现。
 syntax 是<code>pad=width[:height[:x[:y[:color]]]]</code>，其中的 color 表示 padding 的颜色。</p>
 
-<pre><code>ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg
-</code></pre>
+<p><code>
+ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg
+</code></p>
 
 <p>Padding videos from 4:3 to 16:9</p>
 
-<pre><code>ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
+<p><code>
+ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
 ffmepg -i film.mpg -vf pad=ih*16/9:ih:(ow-iw)/2:0 filem_wide.avi
-</code></pre>
+</code></p>
 
 <p>Padding videos from 16:9 to 4:3</p>
 
-<pre><code>ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
+<p><code>
+ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
 ffmpeg -i hd_video.avi -vf pad=iw:iw*3/4:0:(oh-ih)/2 video.avi
-</code></pre>
+</code></p>
 
 <p>Padding from and to various aspect ratios</p>
 
-<pre><code>ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
+<p><code>
+ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
 ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)
-</code></pre>
-
-<hr />
-
-<h3>Filpping and Rotating Video</h3>
-
-<h3>Blur Sharpen adn Other Denoising</h3>
-
-<h3>Overlay - Picture in Picture</h3>
-
-<h3>Adding Text on Video</h3>
-
-<h3>Conversion Between Formats</h3>
+</code>
+—
+###Filpping and Rotating Video
+###Blur Sharpen adn Other Denoising
+###Overlay - Picture in Picture
+###Adding Text on Video
+###Conversion Between Formats</p>
 ]]></content>
   </entry>
   
@@ -177,10 +174,8 @@ ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding
     <link href="http://lazybing.github.io/blog/2016/05/08/how-to-use-git/"/>
     <updated>2016-05-08T07:48:51-07:00</updated>
     <id>http://lazybing.github.io/blog/2016/05/08/how-to-use-git</id>
-    <content type="html"><![CDATA[<p>git 作为版本控制工具，已被广泛使用，公司从去年开始陆续将版本控制系统从 Perforce 向 git 转移。<a href="https://git-scm.com/book/en/v2">《Pro Git》</a>作为官方推荐的学习 git 书籍，不可不读，而且该书已经有<a href="https://git-scm.com/book/zh">中文版</a>。这篇就将记录自己学习使用 git 的过程。</p>
-
-<!--more-->
-
+    <content type="html"><![CDATA[<p>git 作为版本控制工具，已被广泛使用，公司从去年开始陆续将版本控制系统从 Perforce 向 git 转移。<a href="https://git-scm.com/book/en/v2">《Pro Git》</a>作为官方推荐的学习 git 书籍，不可不读，而且该书已经有<a href="https://git-scm.com/book/zh">中文版</a>。这篇就将记录自己学习使用 git 的过程。
+<!--more--></p>
 
 <p>开发项目时，使用 git 主要的全过程可以大体概况为如下三个步骤：</p>
 
@@ -191,65 +186,62 @@ ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding
 3. 将修改好的代码 git push 到远程服务器上。
 </code></pre>
 
-<h3>拉取源码</h3>
-
+<h3 id="section">拉取源码</h3>
 <hr />
-
 <p>以 octopress 为例，使用 <code>git clone</code> 命令从远程服务器拉起代码的命令一般如下：</p>
 
-<pre><code>$ git clone git@github.com:imathis/octopress.git octopress
-</code></pre>
+<p><code>
+$ git clone git@github.com:imathis/octopress.git octopress
+</code>
+此时，该命令就会将 octopress 的源码拉取到本地，并命名为 octopress 文件夹。如果使用 <code>git branch</code> 命令查看 branch 名称时，默认 branch 会是 <code>master</code> 。如果使用 <code>git remote -v</code> 来查看远程服务器名称时，默认名称会是 <code>origin</code>。</p>
 
-<p>此时，该命令就会将 octopress 的源码拉取到本地，并命名为 octopress 文件夹。如果使用 <code>git branch</code> 命令查看 branch 名称时，默认 branch 会是 <code>master</code> 。如果使用 <code>git remote -v</code> 来查看远程服务器名称时，默认名称会是 <code>origin</code>。</p>
-
-<pre><code>binglis-Mac:octopress bingli$ git branch
+<p><code>
+binglis-Mac:octopress bingli$ git branch
 * master
 binglis-Mac:octopress bingli$ git remote -v
-origin  git@github.com:imathis/octopress.git (fetch)
-origin  git@github.com:imathis/octopress.git (push)
-</code></pre>
-
-<p><code>git clone</code> 是 clone 仓库，它主要用于在服务器端已经存在源码目录的情况，该方法在程序开发过程中非常有用。但如果一开始并没有这样的远程仓库，而需要我们从头开始呢？<code>git init</code> 正是在现有目录中初始化仓库，该命令创建一个名为 <code>.git</code> 的子仓库，这个子目录含有你初始化的 Git 仓库中所有的必须文件。</p>
+origin	git@github.com:imathis/octopress.git (fetch)
+origin	git@github.com:imathis/octopress.git (push)
+</code>
+<code>git clone</code> 是 clone 仓库，它主要用于在服务器端已经存在源码目录的情况，该方法在程序开发过程中非常有用。但如果一开始并没有这样的远程仓库，而需要我们从头开始呢？<code>git init</code> 正是在现有目录中初始化仓库，该命令创建一个名为 <code>.git</code> 的子仓库，这个子目录含有你初始化的 Git 仓库中所有的必须文件。</p>
 
 <p>抓取代码除了用于初始化的 <code>git clone</code> 外，还有 <code>git fetch [remote name]</code> 和 <code>git pull</code>。其中 <code>git fetch</code>只是简单的从远程服务器拉取 code，但并捕鱼本地 branch 进行合并；而 <code>git pull</code> 不仅拉取远端服务器有而本地没有的 code 到本地，还会进行合并。</p>
 
-<h3>修改代码</h3>
-
+<h3 id="section-1">修改代码</h3>
 <hr />
-
 <p>git 仓库里的源码一共有 4 种状态，分别是：<code>Untracked</code> <code>Unmodified</code> <code>Modified</code> <code>Staged</code>。仓库里哪些文件处于哪些状态可以通过 <code>git status</code> 命令来查看。</p>
 
-<pre><code>binglis-Mac:octopress bingli$ git status
+<p>```
+binglis-Mac:octopress bingli$ git status
 On branch source
-Your branch is based on 'origin/master', but the upstream is gone.
-  (use "git branch --unset-upstream" to fixup)
+Your branch is based on ‘origin/master’, but the upstream is gone.
+  (use “git branch –unset-upstream” to fixup)
 Changes not staged for commit:
-  (use "git add &lt;file&gt;..." to update what will be committed)
-  (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)
+  (use “git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)</file></file></p>
 
-    modified:   source/_posts/2016-05-08-how-to-use-git.md
-
-no changes added to commit (use "git add" and/or "git commit -a")
+<pre><code>modified:   source/_posts/2016-05-08-how-to-use-git.md
 </code></pre>
+
+<p>no changes added to commit (use “git add” and/or “git commit -a”)
+```</p>
 
 <p><code>git status</code> 不仅可以查看状态，还能够提示如果变更某些文件的状态，如上面的 <code>2016-05-08-how-to-use-git.md</code> 处于 <code>modified</code> 状态，可以使用 <code>git add</code> 或 <code>git checkout</code> 命令修改它的状态。</p>
 
-<h3>提交代码</h3>
-
+<h3 id="section-2">提交代码</h3>
 <hr />
-
 <p><code>git commit</code> 作为提交命令可以用于提交处于暂存区中的文件到仓库里。使用 <code>git commit</code> 时会自动启动一个编辑器用于添加提交说明。或者可以直接加 <code>-m</code> 选项，并在后面直接加上提交说明：</p>
 
-<pre><code>binglis-Mac:octopress bingli$ git commit -m "commit on how to use git blog"
+<p><code>
+binglis-Mac:octopress bingli$ git commit -m "commit on how to use git blog"
 [source 6bf4d37] commit on how to use git blog
  1 file changed, 38 insertions(+)
-</code></pre>
-
-<p>提交后，会有信息显示当前是在哪个分之(<code>master</code>)下提交的，校验和(<code>6bf4d37</code>)，以及有多少文件修改过，多少行添加，多少行删除等信息。</p>
+</code>
+提交后，会有信息显示当前是在哪个分之(<code>master</code>)下提交的，校验和(<code>6bf4d37</code>)，以及有多少文件修改过，多少行添加，多少行删除等信息。</p>
 
 <p><code>git commit</code> 只是提交到了本地仓库，如果有远程仓库，可以使用 <code>git push [remote name] [branch name]</code> 命令，将其推送到远程仓库。例如：</p>
 
-<pre><code>binglis-Mac:octopress bingli$ git push origin source
+<p><code>
+binglis-Mac:octopress bingli$ git push origin source
 Counting objects: 5, done.
 Delta compression using up to 2 threads.
 Compressing objects: 100% (5/5), done.
@@ -257,7 +249,8 @@ Writing objects: 100% (5/5), 1.85 KiB | 0 bytes/s, done.
 Total 5 (delta 2), reused 0 (delta 0)
 To git@github.com:lazybing/lazybing.github.io.git
    df4de96..6bf4d37  source -&gt; source
-</code></pre>
+</code></p>
+
 ]]></content>
   </entry>
   

@@ -9,7 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AVFrame 这个结构体主要描述了解码后的未压缩的视频和音频数据。 AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配AVFrame，对于分配出的内存需要靠其他方法来管理。AVFrame必须由av_frame_free()函数释放。AVFrame只需分配一次， &hellip;">
+  <meta name="description" content="AVFrame 这个结构体主要描述了解码后的未压缩的视频和音频数据。 —
+AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配AVFrame，对于分配出的内存需要靠其他方法来管理。AVFrame必须由av_frame_free()函数释放。AVFrame只需分配一次 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,120 +100,115 @@
   </header>
 
 
-<div class="entry-content"><p><code>AVFrame</code> 这个结构体主要描述了解码后的未压缩的视频和音频数据。</p>
-
+<div class="entry-content"><p><code>AVFrame</code> 这个结构体主要描述了解码后的未压缩的视频和音频数据。
 <!--more-->
+—
+<code>AVFrame</code>必须使用<code>av_frame_alloc()</code>函数来分配，注意该函数只能分配<code>AVFrame</code>，对于分配出的内存需要靠其他方法来管理。<code>AVFrame</code>必须由<code>av_frame_free()</code>函数释放。<code>AVFrame</code>只需分配一次，即可多次重复使用来存储不停的数据data——一个<code>AVFrame</code>可以可以存储解码出的多张 frame。</p>
 
-
-<hr />
-
-<p><code>AVFrame</code>必须使用<code>av_frame_alloc()</code>函数来分配，注意该函数只能分配<code>AVFrame</code>，对于分配出的内存需要靠其他方法来管理。<code>AVFrame</code>必须由<code>av_frame_free()</code>函数释放。<code>AVFrame</code>只需分配一次，即可多次重复使用来存储不停的数据data——一个<code>AVFrame</code>可以可以存储解码出的多张 frame。</p>
-
-<figure class='code'><figcaption><span>AVFrame</span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFrame</span><span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#define AV_NUM_DATA_POINTERS 8</span>
-</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">linesize</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
-</span><span class='line'>  <span class="kt">uint8_t</span> <span class="o">**</span><span class="n">extended_data</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">nb_samples</span><span class="p">;</span> <span class="cm">/* number of audio samples(per channel) described by this frame */</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">format</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">key_frame</span><span class="p">;</span> <span class="cm">/* 1-&gt;keyframe, 0-&gt;not*/</span>
-</span><span class='line'>  <span class="k">enum</span> <span class="n">AVPictureType</span> <span class="n">pict_type</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pts</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pkt_pts</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int64_t</span> <span class="n">pkt_dts</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">coded_picture_number</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">display_picture_number</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">quality</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span> <span class="cm">/* for some private data of the user */</span>
-</span><span class='line'>  <span class="kt">uint64_t</span> <span class="n">error</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">repeat_pict</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">interlaced_frame</span><span class="p">;</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">top_field_first</span><span class="p">;</span>  <span class="cm">/* If the content is interlaced, is top field displayed first */</span>
-</span><span class='line'>  <span class="kt">int</span> <span class="n">palette_has_changed</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">reordered_opaque</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">sample_rate</span><span class="p">;</span>    <span class="cm">/*Sample rate of the audio data*/</span>
-</span><span class='line'>    <span class="kt">uint64_t</span> <span class="n">channel_layout</span><span class="p">;</span> <span class="cm">/*channel layout of the audio data*/</span>
-</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
-</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">**</span><span class="n">extended_buf</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_exteneded_buf</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">AVFrameSideData</span> <span class="o">**</span><span class="n">side_data</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">nb_side_data</span><span class="p">;</span>
-</span><span class='line'><span class="cp">#define AV_FRAME_FLAG_CORRUPT   (1&lt;&lt;0)</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorRange</span> <span class="n">color_range</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorPrimaries</span> <span class="n">color_primaries</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorTransferCharacteristic</span> <span class="n">color_trc</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">enum</span> <span class="n">AVColorSpace</span> <span class="n">colorspace</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">enum</span> <span class="n">AVChromaLocation</span> <span class="n">chroma_location</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">best_effort_timestamp</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pkt_pos</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">pkt_duration</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">decode</span> <span class="n">_error_flags</span><span class="p">;</span>
-</span><span class='line'><span class="cp">#define FF_DECODE_ERROR_INVALID_BITSTREAM   1</span>
-</span><span class='line'><span class="cp">#define FF_DECODE_ERROR_MISSING_REFERENCE   2</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">channels</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">pkt_size</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">qp_table_buf</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
+<figure class="code"><figcaption><span>AVFrame</span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFrame</span><span class="p">{</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define AV_NUM_DATA_POINTERS 8</span>
+</span><span class="line">	<span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">linesize</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">uint8_t</span> <span class="o">**</span><span class="n">extended_data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">nb_samples</span><span class="p">;</span> <span class="cm">/* number of audio samples(per channel) described by this frame */</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">format</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">key_frame</span><span class="p">;</span> <span class="cm">/* 1-&gt;keyframe, 0-&gt;not*/</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVPictureType</span> <span class="n">pict_type</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">pts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">pkt_pts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">pkt_dts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">coded_picture_number</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">display_picture_number</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">quality</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span> <span class="cm">/* for some private data of the user */</span>
+</span><span class="line">	<span class="kt">uint64_t</span> <span class="n">error</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">repeat_pict</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">interlaced_frame</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">top_field_first</span><span class="p">;</span>	<span class="cm">/* If the content is interlaced, is top field displayed first */</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">palette_has_changed</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">reordered_opaque</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">sample_rate</span><span class="p">;</span>    <span class="cm">/*Sample rate of the audio data*/</span>
+</span><span class="line">    <span class="kt">uint64_t</span> <span class="n">channel_layout</span><span class="p">;</span> <span class="cm">/*channel layout of the audio data*/</span>
+</span><span class="line">    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">    <span class="n">AVBufferRef</span> <span class="o">**</span><span class="n">extended_buf</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_exteneded_buf</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVFrameSideData</span> <span class="o">**</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_side_data</span><span class="p">;</span>
+</span><span class="line"><span class="cp">#define AV_FRAME_FLAG_CORRUPT   (1&lt;&lt;0)</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorRange</span> <span class="n">color_range</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorPrimaries</span> <span class="n">color_primaries</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorTransferCharacteristic</span> <span class="n">color_trc</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorSpace</span> <span class="n">colorspace</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVChromaLocation</span> <span class="n">chroma_location</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">best_effort_timestamp</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pkt_pos</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pkt_duration</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">decode</span> <span class="n">_error_flags</span><span class="p">;</span>
+</span><span class="line"><span class="cp">#define FF_DECODE_ERROR_INVALID_BITSTREAM   1</span>
+</span><span class="line"><span class="cp">#define FF_DECODE_ERROR_MISSING_REFERENCE   2</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">channels</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">pkt_size</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">qp_table_buf</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
-
 </div>
 
 

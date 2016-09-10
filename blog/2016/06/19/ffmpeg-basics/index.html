@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="FFmpeg Basics &mdash;Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。 Bit &hellip;">
+  <meta name="description" content="FFmpeg Basics —Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。 — Bit Rate, &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,87 +99,69 @@
   </header>
 
 
-<div class="entry-content"><p>FFmpeg Basics &mdash;Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。</p>
-
+<div class="entry-content"><p>FFmpeg Basics —Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。
 <!--more-->
+—</p>
 
-
-<hr />
-
-<h3>Bit Rate, Frame Rate 和 File Size</h3>
+<h3 id="bit-rate-frame-rate--file-size">Bit Rate, Frame Rate 和 File Size</h3>
 
 <p>Frame Rate 是一秒钟播放的 frame 的个数，又可以分为 interlaced 和 progressive 两种， Interlaced Frame 主要用于 TV，如 NTSC 标准使用 60i fps ，即 60 interlaced fields（30 frames）每秒。</p>
 
 <p>Frame rate 设置使用 -r 选项： <code>ffmpeg -i input -r fps output</code></p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.avi -r 30 output.mp4</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.avi -r 30 output.mp4</span></code></pre></td></tr></table></div></figure>
 <p>除此之外，也可用 fps filter 设置 frame rate。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i clip.mpg -vf fps=fps=25 clip.webm</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i clip.mpg -vf fps=fps=25 clip.webm</span></code></pre></td></tr></table></div></figure>
 
 <p>Bit Rate 是单位时间内可以处理的 bits 数，可分为 <code>ABR(Average bit rate)</code> <code>CBR(Constant bit rate)</code> <code>VBR(Variable bit rate)</code>。
 Bit Rate 设置使用 -b 选项：<code>ffmpeg -i input -b bitrates output</code>
 针对 video 和 audio 的不同，又可使用 <code>-b:v</code> 和 <code>-b:a</code>。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i file.avi -b 1.5M film.mp4
-</span><span class='line'>ffmpeg -i input.avi -b:v 1500k output.mp4</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i file.avi -b 1.5M film.mp4
+</span><span class="line">ffmpeg -i input.avi -b:v 1500k output.mp4</span></code></pre></td></tr></table></div></figure>
 <p>CBR 的设置需要同时设置 bitrate、minimal rate 和 maximal rate 为相同的值，设置 maxrate的同时需要设置 bufsize 选项。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i in.avi -b 0.5M -minrate 0.5M -maxrate 0.5M -bufsize 1M out.mkv</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i in.avi -b 0.5M -minrate 0.5M -maxrate 0.5M -bufsize 1M out.mkv</span></code></pre></td></tr></table></div></figure>
 
 <p>File Size 是由 Video Size 和 Audio Size 两者之和组成的。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>video_size = video_bitrate * time_in_seconds / 8;
-</span><span class='line'>audio_size = audio_bitrate * time_in_seconds / 8; 或
-</span><span class='line'>audio_size = sampling_rate * bit_depth * channels * time_in_seconds / 8;</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">video_size = video_bitrate * time_in_seconds / 8;
+</span><span class="line">audio_size = audio_bitrate * time_in_seconds / 8; 或
+</span><span class="line">audio_size = sampling_rate * bit_depth * channels * time_in_seconds / 8;</span></code></pre></td></tr></table></div></figure>
 <p>也可设置输出文件的最大值,设置选项为 -fs(file size) ：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.avi -fs 10MB output.mp4</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.avi -fs 10MB output.mp4</span></code></pre></td></tr></table></div></figure>
 <hr />
 
-<h3>Resizing and Scaling Video</h3>
+<h3 id="resizing-and-scaling-video">Resizing and Scaling Video</h3>
 
 <p>Resizing 是指改变宽高，Scaling 是利用 scale filter 改变 frame size。</p>
 
 <p>Resizing Video ： 利用 <code>-s</code>选项指定输出视频的宽高，格式为<code>wxh</code>，其中 w 是以 pixel 为单位的宽， h 是以 pixel 为单位的高。例如:</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file -s 320x240 output_file</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input_file -s 320x240 output_file</span></code></pre></td></tr></table></div></figure>
 <p>此外，FFmpeg 针对不同的宽高信息，提供了预定义的视频大小简写，下面两个命令的作用相同，都是将 input_file 转换为 640*480 的输出文件：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file.avi -s 640x480 output.avi
-</span><span class='line'>ffmpeg -i input_file.avi -s vga output.avi</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input_file.avi -s 640x480 output.avi
+</span><span class="line">ffmpeg -i input_file.avi -s vga output.avi</span></code></pre></td></tr></table></div></figure>
 <p>通常情况下，做 resize 是从<code>big frame -&gt; small frame</code>，反过来的话，可能导致图片不清晰，尤其是当原始视频的 resolution 比较小的时候。针对 <code>small frame -&gt; big frame</code>，有专门的特殊 filter（<code>super2xsai</code>） 可以使用，它可以使原视频文件变大两倍。2xsai 即指 2 times scale and interpolate, syntax 是 <code>-vf super2xsai</code>。
 例如把 128x96 的 phone_video.3gp 文件转换为 256x192 的视频文件。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i phone_video.3gp -vf super2xsai output.mp4</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i phone_video.3gp -vf super2xsai output.mp4</span></code></pre></td></tr></table></div></figure>
 
 <p>Scaling Video : 当使用<code>-s</code>选项来改变 frame size 时，其实在 filtergraph 的最后有一个 scale filter。scale filter也可以通过设置来固定在某个位置。</p>
 
@@ -189,25 +171,21 @@ Bit Rate 设置使用 -b 选项：<code>ffmpeg -i input -b bitrates output</code
 
 <p>下面两个 command 执行效果相同:</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.mpg -s 320x240 output.mp4
-</span><span class='line'>ffmpeg -i input.mpg -vf scale=320:240 output.mp4</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.mpg -s 320x240 output.mp4
+</span><span class="line">ffmpeg -i input.mpg -vf scale=320:240 output.mp4</span></code></pre></td></tr></table></div></figure>
 <p>如果不知道源视频的 resolution，又需要做 scale，可以用下面的方法:</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input.mpg -vf scale=iw/2:ih/2 output.mp4
-</span><span class='line'>ffmpeg -i input.mpg -vf scale=iw*0.9:ih*0.9 output.mp4
-</span><span class='line'>ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.mpg -vf scale=iw/2:ih/2 output.mp4
+</span><span class="line">ffmpeg -i input.mpg -vf scale=iw*0.9:ih*0.9 output.mp4
+</span><span class="line">ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4</span></code></pre></td></tr></table></div></figure>
 
 <hr />
-
-<h3>Cropping Video</h3>
+<p>### Cropping Video</p>
 
 <p>Cropping Video 是指截取源视频中的某个矩形区域作为输出视频显示。通常它会与 Resizing/Padding 等共同配合使用。</p>
 
@@ -215,72 +193,55 @@ Bit Rate 设置使用 -b 选项：<code>ffmpeg -i input -b bitrates output</code
 
 <p>syntax 是<code>crop=ow[:oh[:x[:y[:keep_aspect]]]]</code>，其中 <code>ow=out_w oh=out_h</code>。示例如下：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf crop=iw/3:ih:0:0 output
-</span><span class='line'>ffmpet -i input -vf crop=iw/3:ih:iw/3*2:0 output</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf crop=iw/3:ih:0:0 output
+</span><span class="line">ffmpet -i input -vf crop=iw/3:ih:iw/3*2:0 output</span></code></pre></td></tr></table></div></figure>
 <p>如果x和y没有专门给出，会有默认值计算：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>X(default) = (input width - output widht)/2
-</span><span class='line'>Y(default) = (input height - output height)/2</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input_file -vf crop=w:h output_file
-</span><span class='line'>ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">X(default) = (input width - output widht)/2
+</span><span class="line">Y(default) = (input height - output height)/2</span></code></pre></td></tr></table></div></figure>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input_file -vf crop=w:h output_file
+</span><span class="line">ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi</span></code></pre></td></tr></table></div></figure>
 
 <hr />
-
-<h3>Padding Video</h3>
-
-<p>对于 Padding Video ，使用 pad filter 来实现。
+<p>### Padding Video
+对于 Padding Video ，使用 pad filter 来实现。
 syntax 是<code>pad=width[:height[:x[:y[:color]]]]</code>，其中的 color 表示 padding 的颜色。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg</span></code></pre></td></tr></table></div></figure>
 
 <p>Padding videos from 4:3 to 16:9</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
-</span><span class='line'>ffmepg -i film.mpg -vf pad=ih*16/9:ih:(ow-iw)/2:0 filem_wide.avi</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
+</span><span class="line">ffmepg -i film.mpg -vf pad=ih*16/9:ih:(ow-iw)/2:0 filem_wide.avi</span></code></pre></td></tr></table></div></figure>
 
 <p>Padding videos from 16:9 to 4:3</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
-</span><span class='line'>ffmpeg -i hd_video.avi -vf pad=iw:iw*3/4:0:(oh-ih)/2 video.avi</span></code></pre></td></tr></table></div></figure>
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
+</span><span class="line">ffmpeg -i hd_video.avi -vf pad=iw:iw*3/4:0:(oh-ih)/2 video.avi</span></code></pre></td></tr></table></div></figure>
 
 <p>Padding from and to various aspect ratios</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
-</span><span class='line'>ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)</span></code></pre></td></tr></table></div></figure>
-
-
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
+</span><span class="line">ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)</span></code></pre></td></tr></table></div></figure>
 <hr />
-
-<h3>Filpping and Rotating Video</h3>
-
-<h3>Blur Sharpen adn Other Denoising</h3>
-
-<h3>Overlay - Picture in Picture</h3>
-
-<h3>Adding Text on Video</h3>
-
-<h3>Conversion Between Formats</h3>
+<p>###Filpping and Rotating Video
+###Blur Sharpen adn Other Denoising
+###Overlay - Picture in Picture
+###Adding Text on Video
+###Conversion Between Formats</p>
 </div>
 
 

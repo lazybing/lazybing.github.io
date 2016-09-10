@@ -131,77 +131,73 @@ typedef struct AVCodec{ const char *name &hellip;">
   </header>
 
 
-<div class="entry-content"><p>AVCodec是存储编解码器信息的结构体。</p>
-
-<!--more-->
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVCodec</span><span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">long_name</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">type</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">capabilities</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">const</span> <span class="n">AVRational</span> <span class="o">*</span><span class="n">supported_framerates</span><span class="p">;</span> <span class="c1">///&lt; array of supported framerates, or NULL if any, array is terminated by {0,0}</span>
-</span><span class='line'>    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="o">*</span><span class="n">pix_fmts</span><span class="p">;</span>     <span class="c1">///&lt; array of supported pixel formats, or NULL if unknown, array is terminated by -1</span>
-</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="o">*</span><span class="n">supported_samplerates</span><span class="p">;</span>       <span class="c1">///&lt; array of supported audio samplerates, or NULL if unknown, array is terminated by 0</span>
-</span><span class='line'>    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVSampleFormat</span> <span class="o">*</span><span class="n">sample_fmts</span><span class="p">;</span> <span class="c1">///&lt; array of supported sample formats, or NULL if unknown, array is terminated by -1</span>
-</span><span class='line'>    <span class="k">const</span> <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">channel_layouts</span><span class="p">;</span>         <span class="c1">///&lt; array of support channel layouts, or NULL if unknown. array is terminated by 0</span>
-</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">max_lowres</span><span class="p">;</span>                     <span class="c1">///&lt; maximum value for lowres supported by the decoder, no direct access, use av_codec_get_max_lowres()</span>
-</span><span class='line'>    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">priv_class</span><span class="p">;</span>              <span class="c1">///&lt; AVClass for the private context</span>
-</span><span class='line'>    <span class="k">const</span> <span class="n">AVProfile</span> <span class="o">*</span><span class="n">profiles</span><span class="p">;</span>              <span class="c1">///&lt; array of recognized profiles, or NULL if unknown, array is terminated by {FF_PROFILE_UNKNOWN}</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">priv_data_size</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init_thread_copy</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">update_thread_context</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">src</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">const</span> <span class="n">AVCodecDefault</span> <span class="o">*</span><span class="n">defaults</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">init_static_data</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode_sub</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode2</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">avctx</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">frame</span><span class="p">,</span>
-</span><span class='line'>                   <span class="kt">int</span> <span class="o">*</span><span class="n">got_packet_ptr</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">decode</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">outdata</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">outdata_size</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">close</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">flush</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">caps_internal</span><span class="p">;</span>
-</span><span class='line'>  
-</span><span class='line'><span class="p">}</span>
+<div class="entry-content"><p>AVCodec是存储编解码器信息的结构体。
+<!--more--></p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVCodec</span><span class="p">{</span>
+</span><span class="line">
+</span><span class="line">	<span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">long_name</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">type</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">capabilities</span><span class="p">;</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVRational</span> <span class="o">*</span><span class="n">supported_framerates</span><span class="p">;</span> <span class="c1">///&lt; array of supported framerates, or NULL if any, array is terminated by {0,0}</span>
+</span><span class="line">    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="o">*</span><span class="n">pix_fmts</span><span class="p">;</span>     <span class="c1">///&lt; array of supported pixel formats, or NULL if unknown, array is terminated by -1</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="o">*</span><span class="n">supported_samplerates</span><span class="p">;</span>       <span class="c1">///&lt; array of supported audio samplerates, or NULL if unknown, array is terminated by 0</span>
+</span><span class="line">    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVSampleFormat</span> <span class="o">*</span><span class="n">sample_fmts</span><span class="p">;</span> <span class="c1">///&lt; array of supported sample formats, or NULL if unknown, array is terminated by -1</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">channel_layouts</span><span class="p">;</span>         <span class="c1">///&lt; array of support channel layouts, or NULL if unknown. array is terminated by 0</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">max_lowres</span><span class="p">;</span>                     <span class="c1">///&lt; maximum value for lowres supported by the decoder, no direct access, use av_codec_get_max_lowres()</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">priv_class</span><span class="p">;</span>              <span class="c1">///&lt; AVClass for the private context</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVProfile</span> <span class="o">*</span><span class="n">profiles</span><span class="p">;</span>              <span class="c1">///&lt; array of recognized profiles, or NULL if unknown, array is terminated by {FF_PROFILE_UNKNOWN}</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">priv_data_size</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init_thread_copy</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">update_thread_context</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">src</span><span class="p">);</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVCodecDefault</span> <span class="o">*</span><span class="n">defaults</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">init_static_data</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode_sub</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">,</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode2</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">avctx</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">frame</span><span class="p">,</span>
+</span><span class="line">                   <span class="kt">int</span> <span class="o">*</span><span class="n">got_packet_ptr</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">decode</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">outdata</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">outdata_size</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">close</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">flush</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">caps_internal</span><span class="p">;</span>
+</span><span class="line">	
+</span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
-
 </div>
 
 
