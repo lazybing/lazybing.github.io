@@ -77,6 +77,8 @@ kramdown:
 }
 ```
 
+参考博文：[Octopress 精益修改](http://shengmingzhiqing.com/blog/octopress-lean-modification-5.html/#section-1) 和 [Table Of Contents in Octopress](http://blog.riemann.cc/2013/04/10/table-of-contents-in-octopress/)
+
 ##多台Mac上同时使用
 
 ### 在新的Mac上创建 ssh key 并添加到 github 中。
