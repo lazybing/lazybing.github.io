@@ -52,7 +52,7 @@ A complete, cross-platform solution to record, convert and stream audio and vide
 上述步骤可能需要一点时间。
 安装完成后，就可以使用 `FFmpeg` 工具了。
 
-如果只是想使用 FFMpeg,Max OSX下可以用`brew`来安装。
+如果只是想使用 `FFMpeg`,`Max OSX`下可以用`brew`来安装。
 {% codeblock %}
 brew install ffmpeg
 {% endcodeblock %}

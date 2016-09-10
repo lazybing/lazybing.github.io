@@ -5,6 +5,9 @@ date: 2015-05-01 19:47:37 -0700
 comments: true
 categories: 总结积累
 ---
+* list element with functor item
+{:toc}
+
 详细记录使用`Octopress`的搭建和使用过程中遇到的问题。
 <!--more-->
 
@@ -23,9 +26,60 @@ categories: 总结积累
 
 更多技巧，请参见 Octopress 官网提供的[技术支持](http://octopress.org/docs/plugins/image-tag/)。
 
+##添加文章目录
+
+文章一旦长了之后，想要找某个点就需要目录来索引。添加文章目录方法：
+
+首先，使用 kramdown 作为 Octopress 作为 Markdown 解析器。
+
+①  在`Gemfile`中添加如下代码.
+```
+gem 'kramdown'
+```
+
+②  端执行如下命令。
+
+```
+bundle install
+```
+
+③  修改`_config.yml`文件中相关内容如下。
+
+```
+markdown: kramdown
+kramdown:
+    user_coderay: true
+    coderay:
+        coderay_line_numbers: table
+        coderay_css: class
+```
+
+其次，在想要插入目录的地方，插入如下代码即可。
+
+```
+* list element with functor item
+{:toc}
+```
+
+再次,在目录前自动添加`本页目录`,修改`sass/custom/_style.scss`,代码如下.
+
+```
+#markdown-toc:before{
+    content: "本页目录";
+    font-weitht: bold;
+}
+```
+最后，为防止显示摘要时出现目录，在`sass/custom/_style.scss`添加代码。
+
+```
+.blog-index #markdown-toc{
+    display: none;
+}
+```
+
 ##多台Mac上同时使用
 
-#### 在新的Mac上创建 ssh key 并添加到 github 中。参见 github 官方[帮助文档](https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac)。
+### 在新的Mac上创建 ssh key 并添加到 github 中。
 
 创建`ssh-key`。
 ```
@@ -43,7 +97,9 @@ $ git clone -b source git@github.com:lazybing/lazybing.github.io octopress
 $ cd octopress
 $ git clone git @github.com:lazybing/lazybing.github.io _deploy
 ```
-#### 配置环境。
+参见 github 官方[帮助文档](https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac)。
+
+### 配置环境。
 
 执行以下命令配置环境：
 ```
@@ -52,7 +108,8 @@ $ rbenv rehash    # If you use rbenv, rehash to be able to run the bundle comman
 $ bundle install
 $ rake setup_github_pages 
 ```
-#### 使用技巧
+
+### 使用技巧
 
 及时提交本地修改
 ```
