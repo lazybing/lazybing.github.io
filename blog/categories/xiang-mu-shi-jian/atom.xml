@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-10T17:35:16-07:00</updated>
+  <updated>2016-09-10T17:54:11-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -28,22 +28,24 @@
 
 <p>视音频的处理就是按照这几个层级处理的，以 <code>.avi</code> 为例大概步骤如下：</p>
 
-<pre><code>1. OPEN video_stream FROM video.avi
+<pre><code>    1. OPEN video_stream FROM video.avi
 
-2. READ packet FROM video_stream INTO frame
+    2. READ packet FROM video_stream INTO frame
 
-3. IF frame NOT COMPLETE GOTO 2
+    3. IF frame NOT COMPLETE GOTO 2
 
-4. DO SOMETHING WITH frame
+    4. DO SOMETHING WITH frame
 
-5. GOTO 2
+    5. GOTO 2
 </code></pre>
 
 <p>当然，步骤 4 中的”DO SOMETHING”可能非常复杂，我们先简单的把得到的 frames 写到一个 PPM 文件中。</p>
 
 <hr />
-<p>####打开文件
-想要利用FFmpeg，你必须首先初始化库。
+
+<h3 id="section-1">打开文件</h3>
+
+<p>想要利用FFmpeg，你必须首先初始化库。
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[]){</span>
@@ -61,7 +63,7 @@
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//open video file</span>
 </span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_open_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">NUL</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>	<span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn’t open file</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Couldn’t open file</span>
 </span></code></pre></td></tr></table></div></figure>
 调用函数 <code>avformat_open_input</code>,该函数读取文件头部，并将文件的格式信息存储到<code>AVFormatContext</code>结构中。最后的三个参数分别用于指定文件格式、内存大小和格式选项，此处设为<code>NULL</code>或 0，<code>libavformat</code>能够自动侦测到。</p>
 
@@ -71,7 +73,7 @@
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Retrieve stream information</span>
 </span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avformat_find_stream_info</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>	<span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>	<span class="c1">//Couldn’t find stream information</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>      <span class="c1">//Couldn’t find stream information</span>
 </span></code></pre></td></tr></table></div></figure>
 该函数用适当的信息填充<code>pFormatCtx-&gt;streams</code>。此处介绍一个便于调试的函数来看一下里面的内容：
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -156,8 +158,10 @@
 因为不能直接使用视频流的<code>AVCodecContext</code>！因此必须使用<code>avcodec_copy_context()</code>来 copy 该 context 到一个新位置。</p>
 
 <hr />
-<p>####存储数据
-现在我们需要一块内存来真实的存储这些帧：
+
+<h3 id="section-2">存储数据</h3>
+
+<p>现在我们需要一块内存来真实的存储这些帧：
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -202,8 +206,10 @@
 最后，我们读取码流。</p>
 
 <hr />
-<p>####读数据
-我们接下来要做的就是通过读<code>packet</code>中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。
+
+<h3 id="section-3">读数据</h3>
+
+<p>我们接下来要做的就是通过读<code>packet</code>中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -256,6 +262,7 @@
 </span><span class='line'><span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">packet</span><span class="p">);</span> <span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 </code></pre>
+
 ]]></content>
   </entry>
   
