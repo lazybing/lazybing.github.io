@@ -6,6 +6,9 @@ comments: true
 categories: 项目实践
 ---
 
+* list element with functor item
+{:toc}
+
 [FFmpeg](https://ffmpeg.org/) 是制作视频应用或一般工具的非常棒的库。[SDL](https://www.libsdl.org/) 通过封装复杂的视音频底层交互工作，降低了视音频的处理难度。
 
 本文就记录一下利用 FFmpeg 和 SDL 制作简单播放器的详细步骤。<!--more-->
@@ -16,20 +19,22 @@ categories: 项目实践
 
 视音频的处理就是按照这几个层级处理的，以 `.avi` 为例大概步骤如下：
 
-	1. OPEN video_stream FROM video.avi
+        1. OPEN video_stream FROM video.avi
 
-	2. READ packet FROM video_stream INTO frame
+        2. READ packet FROM video_stream INTO frame
 
-	3. IF frame NOT COMPLETE GOTO 2
+        3. IF frame NOT COMPLETE GOTO 2
 
-	4. DO SOMETHING WITH frame
+        4. DO SOMETHING WITH frame
 
-	5. GOTO 2
-	
+        5. GOTO 2
+
 当然，步骤 4 中的"DO SOMETHING"可能非常复杂，我们先简单的把得到的 frames 写到一个 PPM 文件中。
 
 ------------
-####打开文件
+
+###打开文件
+
 想要利用FFmpeg，你必须首先初始化库。
 {% codeblock lang:c %}
 int main(int argc, char *argv[]){
@@ -43,7 +48,7 @@ AVFormatContext *pFormatCtx = NULL;
 
 //open video file
 if(avformat_open_input(&pFormatCtx, argv[1], NULL, 0, NUL) != 0)
-	return -1; //Couldn't open file
+        return -1; //Couldn't open file
 {% endcodeblock %}
 调用函数 `avformat_open_input`,该函数读取文件头部，并将文件的格式信息存储到`AVFormatContext`结构中。最后的三个参数分别用于指定文件格式、内存大小和格式选项，此处设为`NULL`或 0，`libavformat`能够自动侦测到。
 
@@ -51,7 +56,7 @@ if(avformat_open_input(&pFormatCtx, argv[1], NULL, 0, NUL) != 0)
 {% codeblock lang:c %}
 //Retrieve stream information
 if(avformat_find_stream_info(pFormatCtx, NULL) < 0)
-	return -1;	//Couldn't find stream information
+        return -1;      //Couldn't find stream information
 {% endcodeblock %}
 该函数用适当的信息填充`pFormatCtx->streams`。此处介绍一个便于调试的函数来看一下里面的内容：
 {% codeblock lang:c %}
@@ -102,7 +107,9 @@ if(avcodec_open2(pCodecCtx, pCodec) < 0)
 因为不能直接使用视频流的`AVCodecContext`！因此必须使用`avcodec_copy_context()`来 copy 该 context 到一个新位置。
 
 ----
-####存储数据
+
+###存储数据
+
 现在我们需要一块内存来真实的存储这些帧：
 {% codeblock lang:c %}
 AVFrame *pFrame = NULL;
@@ -136,7 +143,9 @@ avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, 
 最后，我们读取码流。
 
 ----
-####读数据
+
+###读数据
+
 我们接下来要做的就是通过读`packet`中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。
 {% codeblock lang:c %}
 struct SwsContext *sws_ctx = NULL;
@@ -166,3 +175,4 @@ while(av_read_frame(pFormatCtx, &packet) >= 0){
 	av_free_packet(&packet);
 }
 {% endcodeblock %}
+

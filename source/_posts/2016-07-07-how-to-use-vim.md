@@ -6,27 +6,31 @@ comments: true
 categories: 编程工具
 ---
 
+* list element with functor item
+{:toc}
+
 Vim 是一个学习成本比较高的编辑器。
 <!--more-->
 
----
-### Mac OSX 下安装 gvim
+## Mac OSX 下安装 gvim
+
 {% codeblock %}
 brew install macvim
 {% endcodeblock %}
 
-###基本设置
+##基本设置
+
 显示行号，在`.vimrc`中添加`set nu`
 
-### vim 寄存器
+## vim 寄存器
 
 使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。
 
 
-寄存器种类         |  寄存器  |寄存器描述             
+寄存器种类         |  寄存器  |寄存器描述
 :----------------:|:--------:|:---------------------:
-无名寄存器         |  ""           |缓存最后一个操作内容   
-数字寄存器         |  "0~"9        |缓存最近操作内容       
+无名寄存器         |  ""           |缓存最后一个操作内容
+数字寄存器         |  "0~"9        |缓存最近操作内容
 行内寄存器         |  "-           |缓存行内删除内容
 具名寄存器         |  "a~"z或"A~"Z | 指定时可用
 只读寄存器         |  ":,".,"%,"#  |分别缓存最近命令，最近插入文本，当前文件名，当前交替文件名
@@ -36,18 +40,21 @@ brew install macvim
 模式寄存器         |  "/        |缓存最近的搜索模式
 
 
----
-### vim 分屏功能
+## vim 分屏功能
+
 <image src="/images/vim_split_screen.png">
+
 vim 同时打开多个文件。
+
 ```
-vim -o file1 file2 		//小写 o 参数来水平分屏
-vim -O file1 file2 		//大写 O 参数来垂直分屏
+vim -o file1 file2              //小写 o 参数来水平分屏
+vim -O file1 file2              //大写 O 参数来垂直分屏
 ```
 
 vim 在多窗口打开。
+
 ```
-:vs path/file		//在新的垂直分屏中打开文件
+:vs path/file       //在新的垂直分屏中打开文件
 :sv path/file       //在新的水平分屏中打开文件
 ```
 
@@ -55,7 +62,7 @@ vim 在多窗口打开。
 
 移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。
 
----
-### vim 浏览代码
-vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。 
+## vim 浏览代码
+
+vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。
 
