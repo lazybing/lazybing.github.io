@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-18T08:39:23-07:00</updated>
+  <updated>2016-09-18T08:51:13-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1780,6 +1780,8 @@ interlace 的摆放格式如图：</p>
   <li><a href="#section-1" id="markdown-toc-section-1">打开文件</a></li>
   <li><a href="#section-2" id="markdown-toc-section-2">存储数据</a></li>
   <li><a href="#section-3" id="markdown-toc-section-3">读数据</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">清楚工作</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">程序编译</a></li>
 </ul>
 
 <p><a href="https://ffmpeg.org/">FFmpeg</a> 是制作视频应用或一般工具的非常棒的库。<a href="https://www.libsdl.org/">SDL</a> 通过封装复杂的视音频底层交互工作，降低了视音频的处理难度。</p>
@@ -2051,27 +2053,67 @@ interlace 的摆放格式如图：</p>
 <span class="line-number">19</span>
 <span class="line-number">20</span>
 <span class="line-number">21</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">void SaveFrame(AVFrame *pFrame, int width, int height, int iFrame){
-</span><span class="line">    FILE *pFile;
-</span><span class="line">    char szFilename[32];
-</span><span class="line">    int y;
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">SaveFrame</span><span class="p">(</span><span class="n">AVFrame</span> <span class="o">*</span><span class="n">pFrame</span><span class="p">,</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="kt">int</span> <span class="n">iFrame</span><span class="p">){</span>
+</span><span class="line">    <span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">szFilename</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">y</span><span class="p">;</span>
 </span><span class="line">
-</span><span class="line">    //Open file
-</span><span class="line">    sprintf(szFilename, "frame%d.ppm", iFrame);
-</span><span class="line">    pFile = fopen(szFilename, "wb");
-</span><span class="line">    if(pFile == NULL)
-</span><span class="line">        return;
+</span><span class="line">    <span class="c1">//Open file</span>
+</span><span class="line">    <span class="n">sprintf</span><span class="p">(</span><span class="n">szFilename</span><span class="p">,</span> <span class="s">&quot;frame%d.ppm&quot;</span><span class="p">,</span> <span class="n">iFrame</span><span class="p">);</span>
+</span><span class="line">    <span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">szFilename</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span><span class="p">;</span>
 </span><span class="line">
-</span><span class="line">    //Wirte header
-</span><span class="line">    fprintf(pFile, "P6\n%d %d\n255\n", width, height);
+</span><span class="line">    <span class="c1">//Wirte header</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="s">&quot;P6</span><span class="se">\n</span><span class="s">%d %d</span><span class="se">\n</span><span class="s">255</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
 </span><span class="line">
-</span><span class="line">    //Write piexl data
-</span><span class="line">    for(y = 0; y &lt; height; y++)
-</span><span class="line">        fwrite(pFrame-&gt;data[0] + y*pFrame-&gt;linesize[0], 1, width*3, pFile);
+</span><span class="line">    <span class="c1">//Write piexl data</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">        <span class="n">fwrite</span><span class="p">(</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="o">*</span><span class="n">pFrame</span><span class="o">-&gt;</span><span class="n">linesize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">width</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="n">pFile</span><span class="p">);</span>
 </span><span class="line">
-</span><span class="line">    //Close file
-</span><span class="line">    fclose(pFile);
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+</span><span class="line">    <span class="c1">//Close file</span>
+</span><span class="line">    <span class="n">fclose</span><span class="p">(</span><span class="n">pFile</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-4">清楚工作</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">//Free the RGB image</span>
+</span><span class="line"><span class="n">av_free</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+</span><span class="line"><span class="n">av_free</span><span class="p">(</span><span class="n">pFrameRGB</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="c1">//Free the YUV frame</span>
+</span><span class="line"><span class="n">av_free</span><span class="p">(</span><span class="n">pFrame</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="c1">//Close the codecs</span>
+</span><span class="line"><span class="n">avcodec_close</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="p">);</span>
+</span><span class="line"><span class="n">avcodec_close</span><span class="p">(</span><span class="n">pCodecCtxOrig</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="c1">//Close the video file</span>
+</span><span class="line"><span class="n">avformat_close_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pFormatCtx</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-5">程序编译</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">gcc -o tutorial01 tutorial01.c -lavutil -lavformt -lavcodec -lswscale-lz -lm</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
