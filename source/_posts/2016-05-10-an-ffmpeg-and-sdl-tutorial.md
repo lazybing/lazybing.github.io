@@ -144,7 +144,7 @@ avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, 
 
 ----
 
-###读数据
+###读取数据
 
 我们接下来要做的就是通过读`packet`中的整个视频流，解码到帧，一旦我们的帧完成后，就转换并保存它。
 {% codeblock lang:c %}
@@ -176,3 +176,58 @@ while(av_read_frame(pFormatCtx, &packet) >= 0){
 }
 {% endcodeblock %}
 
+这一过程仍然比较简单：`av_read_frame` 读取`packet`并把它保存到`AVPacket`结构体内。注意我们已经分配了`packet`结构体，它是用`packet.data`指针指出的，它由`av_free_packet`释放。`avcodec_decode_video`将`packets`转换为`frame`。最后，使用`sws_scale`转换原始格式为`RGB`。记住，你可以将`AVFrame`强制类型转换为`AVPicture`指针。最后要做的就是把`frame`和宽高信息传递给`SaveFrame`函数。
+
+{% codeblock lang:c %}
+void SaveFrame(AVFrame *pFrame, int width, int height, int iFrame){
+    FILE *pFile;
+    char szFilename[32];
+    int y;
+
+    //Open file
+    sprintf(szFilename, "frame%d.ppm", iFrame);
+    pFile = fopen(szFilename, "wb");
+    if(pFile == NULL)
+        return;
+
+    //Wirte header
+    fprintf(pFile, "P6\n%d %d\n255\n", width, height);
+
+    //Write piexl data
+    for(y = 0; y < height; y++)
+        fwrite(pFrame->data[0] + y*pFrame->linesize[0], 1, width*3, pFile);
+
+    //Close file
+    fclose(pFile);
+}
+{% endcodeblock %}
+
+### 清除工作
+
+{% codeblock lang:c %}
+//Free the RGB image
+av_free(buffer);
+av_free(pFrameRGB);
+
+//Free the YUV frame
+av_free(pFrame);
+
+//Close the codecs
+avcodec_close(pCodecCtx);
+avcodec_close(pCodecCtxOrig);
+
+//Close the video file
+avformat_close_input(&pFormatCtx);
+
+return 0;
+{% endcodeblock %}
+
+### 程序编译
+
+```
+gcc -o tutorial01 tutorial01.c -lavutil -lavformt -lavcodec -lswscale-lz -lm
+```
+
+### 注意事项
+
+本文主要参考`FFmpeg`官方文档[An ffmpeg and SDL Tutorial](http://dranger.com/ffmpeg/tutorial01.html), 改动有：1.将其中的`PIX_FMT_RGB24`改为`AV_PIX_FMT_RGB24`; 2.编译选项添加了`-lswscale`。
