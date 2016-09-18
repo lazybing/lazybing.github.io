@@ -352,6 +352,51 @@
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+<p>这一过程仍然比较简单：<code>av_read_frame</code> 读取<code>packet</code>并把它保存到<code>AVPacket</code>结构体内。注意我们已经分配了<code>packet</code>结构体，它是用<code>packet.data</code>指针指出的，它由<code>av_free_packet</code>释放。<code>avcodec_decode_video</code>将<code>packets</code>转换为<code>frame</code>。最后，使用<code>sws_scale</code>转换原始格式为<code>RGB</code>。记住，你可以将<code>AVFrame</code>强制类型转换为<code>AVPicture</code>指针。最后要做的就是把<code>frame</code>和宽高信息传递给<code>SaveFrame</code>函数。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void SaveFrame(AVFrame *pFrame, int width, int height, int iFrame){
+</span><span class="line">    FILE *pFile;
+</span><span class="line">    char szFilename[32];
+</span><span class="line">    int y;
+</span><span class="line">
+</span><span class="line">    //Open file
+</span><span class="line">    sprintf(szFilename, "frame%d.ppm", iFrame);
+</span><span class="line">    pFile = fopen(szFilename, "wb");
+</span><span class="line">    if(pFile == NULL)
+</span><span class="line">        return;
+</span><span class="line">
+</span><span class="line">    //Wirte header
+</span><span class="line">    fprintf(pFile, "P6\n%d %d\n255\n", width, height);
+</span><span class="line">
+</span><span class="line">    //Write piexl data
+</span><span class="line">    for(y = 0; y &lt; height; y++)
+</span><span class="line">        fwrite(pFrame-&gt;data[0] + y*pFrame-&gt;linesize[0], 1, width*3, pFile);
+</span><span class="line">
+</span><span class="line">    //Close file
+</span><span class="line">    fclose(pFile);
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
