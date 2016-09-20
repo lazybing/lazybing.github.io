@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "FFmpeg 和 SDL 使用教程"
+title: "FFmpeg 和 SDL 使用教程（一）"
 date: 2016-05-10 16:45:03 -0700
 comments: true
 categories: 项目实践
@@ -225,7 +225,7 @@ return 0;
 ### 程序编译
 
 ```
-gcc -o tutorial01 tutorial01.c -lavutil -lavformt -lavcodec -lswscale-lz -lm
+gcc -o tutorial01 tutorial01.c -lavutil -lavformat -lavcodec -lswscale -lz -lm
 ```
 
 ### 注意事项
