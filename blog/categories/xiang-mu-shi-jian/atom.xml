@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-20T09:33:34-07:00</updated>
+  <updated>2016-09-20T10:21:36-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -123,7 +123,7 @@
 </span><span class='line'>	<span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Didn’t find a video stream&lt;/p&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Get a pointer to the codec context for the video stream</span>
-</span><span class='line'><span class="n">pCodecCtx</span> <span class="o">=</span> <span class="n">pFormatCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec</span><span class="p">;</span>
+</span><span class='line'><span class="n">pCodecCtxOrig</span> <span class="o">=</span> <span class="n">pFormatCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">streams</span><span class="p">[</span><span class="n">videoStream</span><span class="p">]</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 关于<code>codec</code>的流信息我们称之为<code>codec context</code>。它包含了关于流使用的该<code>codec</code>的所有信息，并且我们有一个指针指向它。但我们必须找到实际的codec并打开它：
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -360,7 +360,14 @@ gcc -o tutorial01 tutorial01.c -lavutil -lavformat -lavcodec -lswscale -lz -lm
 
 <h3 id="section-6">注意事项</h3>
 
-<p>本文主要参考<code>FFmpeg</code>官方文档<a href="http://dranger.com/ffmpeg/tutorial01.html">An ffmpeg and SDL Tutorial</a>, 改动有：1.将其中的<code>PIX_FMT_RGB24</code>改为<code>AV_PIX_FMT_RGB24</code>; 2.编译选项添加了<code>-lswscale</code>。</p>
+<p>本文主要参考<code>FFmpeg</code>官方文档<a href="http://dranger.com/ffmpeg/tutorial01.html">An ffmpeg and SDL Tutorial</a>, 改动有：</p>
+
+<p>1.将其中的<code>PIX_FMT_RGB24</code>改为<code>AV_PIX_FMT_RGB24</code>;</p>
+
+<p>2.编译选项添加了<code>-lswscale</code>。</p>
+
+<p>3.Get a pointer to the codec context for the video stream 时，应将其 codec 赋给<code>pCodecCtxOrig</code>而不是<code>pCodecCtx</code>。</p>
+
 ]]></content>
   </entry>
   
