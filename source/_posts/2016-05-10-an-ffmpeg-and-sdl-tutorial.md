@@ -80,7 +80,7 @@ if(videoStream == -1)
 	return -1; //Didn't find a video stream
 	
 // Get a pointer to the codec context for the video stream
-pCodecCtx = pFormatCtx->streams[videoStream]->codec;
+pCodecCtxOrig = pFormatCtx->streams[videoStream]->codec;
 {% endcodeblock %}
 关于`codec`的流信息我们称之为`codec context`。它包含了关于流使用的该`codec`的所有信息，并且我们有一个指针指向它。但我们必须找到实际的codec并打开它：
 {% codeblock lang:c %}
@@ -230,4 +230,11 @@ gcc -o tutorial01 tutorial01.c -lavutil -lavformat -lavcodec -lswscale -lz -lm
 
 ### 注意事项
 
-本文主要参考`FFmpeg`官方文档[An ffmpeg and SDL Tutorial](http://dranger.com/ffmpeg/tutorial01.html), 改动有：1.将其中的`PIX_FMT_RGB24`改为`AV_PIX_FMT_RGB24`; 2.编译选项添加了`-lswscale`。
+本文主要参考`FFmpeg`官方文档[An ffmpeg and SDL Tutorial](http://dranger.com/ffmpeg/tutorial01.html), 改动有：
+
+1.将其中的`PIX_FMT_RGB24`改为`AV_PIX_FMT_RGB24`; 
+
+2.编译选项添加了`-lswscale`。
+
+3.Get a pointer to the codec context for the video stream 时，应将其 codec 赋给`pCodecCtxOrig`而不是`pCodecCtx`。
+
