@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-20T10:21:36-07:00</updated>
+  <updated>2016-09-22T10:56:43-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,103 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[如何使用gprof]]></title>
+    <link href="http://lazybing.github.io/blog/2016/09/22/how-to-use-gprof/"/>
+    <updated>2016-09-22T09:52:06-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/09/22/how-to-use-gprof</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Gprof">Gprof</a> 是一个 Unix 应用程序性能分析工具。
+<!--more--></p>
+
+<p><a href="https://sourceware.org/binutils/docs/gprof/index.html">Profiling</a> 可以使我们看到程序运行时程序的调用关系、函数的消耗时长等。这些信息可以使我们了解程序中那块代码耗时高于预期。</p>
+
+<p>使用 Profiling 主要包括如下三步：
+* 编译链接程序时要使能 profiling 。
+* 执行编译处的可执行文件，产生 profile 数据文件。
+* 使用 gpro 分析 profile 数据。</p>
+
+<p>根据产生的 profile ，可以产生各种不同实行的分析输出。如 The Flat Profile、The Call Graph、The Annotated Source Listing。</p>
+
+<p>示例分析：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;time.h&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">fun2</span><span class="p">()</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">fun1</span><span class="p">()</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">        <span class="n">fun2</span><span class="p">();</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">fun1</span><span class="p">();</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>编译，注意要添加<code>-pg</code>选项，这样才能与后面的 gprof 结合使用。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">gcc -pg -o test test.c</span></code></pre></td></tr></table></div></figure>
+
+<p>执行, 执行完毕后，会生成 gmon.out 文件，用于性能分析的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">./test</span></code></pre></td></tr></table></div></figure>
+
+<p>分析, 使用 gprof 分析。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">gprof test gmon.out &gt; analysis.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>此时生成的分析文件 analysis.txt 中有两种形式的分析数据。</p>
+
+<p>Flat Profile 如图：
+<img src="http://lazybing.github.io/images/gprof/Flat_profile.png" /></p>
+
+<p>Call Graph 如图：
+<img src="http://lazybing.github.io/images/gprof/Call_graph.png" /></p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[媒体文件格式分析之TS]]></title>
@@ -2198,108 +2295,6 @@ ffserver 是一个用于现场播放的流媒体服务器。
 <p>或者可以使用 <code>ffprobe</code> 命令分析媒体文件。</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">ffprobe file</span></code></pre></td></tr></table></div></figure>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[如何使用git]]></title>
-    <link href="http://lazybing.github.io/blog/2016/05/08/how-to-use-git/"/>
-    <updated>2016-05-08T07:48:51-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/05/08/how-to-use-git</id>
-    <content type="html"><![CDATA[<p>git 作为版本控制工具，已被广泛使用，公司从去年开始陆续将版本控制系统从 Perforce 向 git 转移。<a href="https://git-scm.com/book/en/v2">《Pro Git》</a>作为官方推荐的学习 git 书籍，不可不读，而且该书已经有<a href="https://git-scm.com/book/zh">中文版</a>。这篇就将记录自己学习使用 git 的过程。
-<!--more--></p>
-
-<p>开发项目时，使用 git 主要的全过程可以大体概况为如下三个步骤：</p>
-
-<pre><code>1. 使用 git clone 命令从远程服务器上拉取源代码到本地。
-
-2. 按照自己的需要，本地修改从步骤 1 拉取下来的代码。
-
-3. 将修改好的代码 git push 到远程服务器上。
-</code></pre>
-
-<h3 id="section">拉取源码</h3>
-<hr />
-<p>以 octopress 为例，使用 <code>git clone</code> 命令从远程服务器拉起代码的命令一般如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$ git clone git@github.com:imathis/octopress.git octopress</span></code></pre></td></tr></table></div></figure>
-<p>此时，该命令就会将 octopress 的源码拉取到本地，并命名为 octopress 文件夹。如果使用 <code>git branch</code> 命令查看 branch 名称时，默认 branch 会是 <code>master</code> 。如果使用 <code>git remote -v</code> 来查看远程服务器名称时，默认名称会是 <code>origin</code>。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git branch
-</span><span class="line">* master
-</span><span class="line">binglis-Mac:octopress bingli$ git remote -v
-</span><span class="line">origin	git@github.com:imathis/octopress.git (fetch)
-</span><span class="line">origin	git@github.com:imathis/octopress.git (push)</span></code></pre></td></tr></table></div></figure>
-<p><code>git clone</code> 是 clone 仓库，它主要用于在服务器端已经存在源码目录的情况，该方法在程序开发过程中非常有用。但如果一开始并没有这样的远程仓库，而需要我们从头开始呢？<code>git init</code> 正是在现有目录中初始化仓库，该命令创建一个名为 <code>.git</code> 的子仓库，这个子目录含有你初始化的 Git 仓库中所有的必须文件。</p>
-
-<p>抓取代码除了用于初始化的 <code>git clone</code> 外，还有 <code>git fetch [remote name]</code> 和 <code>git pull</code>。其中 <code>git fetch</code>只是简单的从远程服务器拉取 code，但并捕鱼本地 branch 进行合并；而 <code>git pull</code> 不仅拉取远端服务器有而本地没有的 code 到本地，还会进行合并。</p>
-
-<h3 id="section-1">修改代码</h3>
-<hr />
-<p>git 仓库里的源码一共有 4 种状态，分别是：<code>Untracked</code> <code>Unmodified</code> <code>Modified</code> <code>Staged</code>。仓库里哪些文件处于哪些状态可以通过 <code>git status</code> 命令来查看。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git status
-</span><span class="line">On branch source
-</span><span class="line">Your branch is based on 'origin/master', but the upstream is gone.
-</span><span class="line">  (use "git branch --unset-upstream" to fixup)
-</span><span class="line">Changes not staged for commit:
-</span><span class="line">  (use "git add &lt;file&gt;..." to update what will be committed)
-</span><span class="line">  (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)
-</span><span class="line">
-</span><span class="line">	modified:   source/_posts/2016-05-08-how-to-use-git.md
-</span><span class="line">
-</span><span class="line">no changes added to commit (use "git add" and/or "git commit -a")</span></code></pre></td></tr></table></div></figure>
-
-<p><code>git status</code> 不仅可以查看状态，还能够提示如果变更某些文件的状态，如上面的 <code>2016-05-08-how-to-use-git.md</code> 处于 <code>modified</code> 状态，可以使用 <code>git add</code> 或 <code>git checkout</code> 命令修改它的状态。</p>
-
-<h3 id="section-2">提交代码</h3>
-<hr />
-<p><code>git commit</code> 作为提交命令可以用于提交处于暂存区中的文件到仓库里。使用 <code>git commit</code> 时会自动启动一个编辑器用于添加提交说明。或者可以直接加 <code>-m</code> 选项，并在后面直接加上提交说明：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git commit -m "commit on how to use git blog"
-</span><span class="line">[source 6bf4d37] commit on how to use git blog
-</span><span class="line"> 1 file changed, 38 insertions(+)</span></code></pre></td></tr></table></div></figure>
-<p>提交后，会有信息显示当前是在哪个分之(<code>master</code>)下提交的，校验和(<code>6bf4d37</code>)，以及有多少文件修改过，多少行添加，多少行删除等信息。</p>
-
-<p><code>git commit</code> 只是提交到了本地仓库，如果有远程仓库，可以使用 <code>git push [remote name] [branch name]</code> 命令，将其推送到远程仓库。例如：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git push origin source
-</span><span class="line">Counting objects: 5, done.
-</span><span class="line">Delta compression using up to 2 threads.
-</span><span class="line">Compressing objects: 100% (5/5), done.
-</span><span class="line">Writing objects: 100% (5/5), 1.85 KiB | 0 bytes/s, done.
-</span><span class="line">Total 5 (delta 2), reused 0 (delta 0)
-</span><span class="line">To git@github.com:lazybing/lazybing.github.io.git
-</span><span class="line">   df4de96..6bf4d37  source -&gt; source</span></code></pre></td></tr></table></div></figure>
-
 ]]></content>
   </entry>
   
