@@ -5,9 +5,13 @@ date: 2016-06-19 09:59:26 -0700
 comments: true
 categories: 读书笔记
 ---
+* list element with functor item
+{:toc}
 
 FFmpeg Basics ---Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。
+
 <!--more-->
+
 ---
 
 ### Bit Rate, Frame Rate 和 File Size
@@ -96,6 +100,7 @@ ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4
 ```
 
 ---
+
 ### Cropping Video
 
 Cropping Video 是指截取源视频中的某个矩形区域作为输出视频显示。通常它会与 Resizing/Padding 等共同配合使用。
@@ -120,6 +125,7 @@ ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi
 ```
 
 ---
+
 ### Padding Video
 对于 Padding Video ，使用 pad filter 来实现。
 syntax 是`pad=width[:height[:x[:y[:color]]]]`，其中的 color 表示 padding 的颜色。
@@ -149,8 +155,14 @@ ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding
 ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)
 ```
 ---
+
 ###Filpping and Rotating Video
+
 ###Blur Sharpen adn Other Denoising
+
 ###Overlay - Picture in Picture
+
 ###Adding Text on Video
+
 ###Conversion Between Formats
+
