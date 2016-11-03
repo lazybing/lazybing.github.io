@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Rtmp源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-09-23T12:22:19-07:00</updated>
+  <updated>2016-11-03T08:25:50-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -172,26 +172,34 @@ int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port
 RTMP 中的时间戳用整数来表示，它是以毫秒为单位的相对时间。典型的，码流中都是从时间戳为0开始的，但这不是必须的，只要通讯双方用统一的时间即可。注意，这就要求任何跨流的同步都需要 RTMP 外的额外机制。</p>
 
 <h3 id="rtmp-chunk-stream">3. RTMP Chunk Stream</h3>
-<p>#### 3.1 消息格式
-根据上层协议，消息格式可以被分成多个块以支持复用。消息格式应包含如下字段，这对于创建块是必须的:
+
+<h4 id="section-2">3.1 消息格式</h4>
+
+<p>根据上层协议，消息格式可以被分成多个块以支持复用。消息格式应包含如下字段，这对于创建块是必须的:
 1. 时间戳(TimeStamp)：消息的时间戳，占 4 个字节。
 2. 长度(Length): 消息的长度，包含头部。占头部中的3 个字节。
 3. 类型Id(Type Id): 
-4. 消息流ID（Message Stream ID）:
-#### 3.2 握手(HandShake)
-RTMP 协议开始于握手，这里的握手不同于其他协议的握手，它是由 3 个固定大小的块组成，而不是带有头部的可变大小的块。
+4. 消息流ID（Message Stream ID）:</p>
+
+<h4 id="handshake">3.2 握手(HandShake)</h4>
+
+<p>RTMP 协议开始于握手，这里的握手不同于其他协议的握手，它是由 3 个固定大小的块组成，而不是带有头部的可变大小的块。
 客户端和服务器端都会发送 3 个固定大小的块。客户端发送的称为 C0/C1/C2，服务器端发送的称为S0/S1/S2。</p>
 
-<h5 id="section-2">握手序列:</h5>
+<h5 id="section-3">握手序列:</h5>
+
 <p>首先，握手必须是由客户端发送C0/C1开始的。
 其次，客户端必须接收到服务器端发送的S1后才能发送C2, 必须接收到服务器端发送的S2后才能发送其他数据。
 再次，服务器端必须等到客户端发送的C0后才能发送S0和S1,也可等到接收到C1后再发送。
-同样，服务器端必须等到客户端发送的C1后才能发送S1,必须等到客户端发送的C2后才能发送其他数据。
-##### C0 和 S0 格式：
-C0 和 S0 是一个8-bit的整数字段：
+同样，服务器端必须等到客户端发送的C1后才能发送S1,必须等到客户端发送的C2后才能发送其他数据。</p>
+
+<h5 id="c0--s0-">C0 和 S0 格式：</h5>
+
+<p>C0 和 S0 是一个8-bit的整数字段：
 C1 和 S1 是一个1536 byte 的序列，其中 4 byte 是表示时间，4 byte 全部填0，剩余部分填写其他值。
-C2 和 S2 是对 C1 和 S1 的一个对等。
-##### 握手框图(HandShake Diagram)</p>
+C2 和 S2 是对 C1 和 S1 的一个对等。</p>
+
+<h5 id="handshake-diagram">握手框图(HandShake Diagram)</h5>
 
 <image src="http://lazybing.github.io/images/RTMPProtocol/HandShake_Diagram.png">
 
