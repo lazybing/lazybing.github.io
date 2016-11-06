@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Rtmp源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-11-05T09:26:50-07:00</updated>
+  <updated>2016-11-05T20:53:37-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -38,60 +38,35 @@
 
 <p>下面逐个记录各个步骤的功能。
 在了解具体步骤之前，先了解结构重要的Structure:
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct RTMP
-</span><span class='line'>{
-</span><span class='line'>    int m_inChunkSize;
-</span><span class='line'>    int m_outChunkSize;
-</span><span class='line'>    int m_nBWCheckCounter;
-</span><span class='line'>    int m_nBytesIn;
-</span><span class='line'>    int m_nBytesInSent;
-</span><span class='line'>    int m_nBufferMS;
-</span><span class='line'>    int m_stream_id;
-</span><span class='line'>    int m_mediaChannel;
-</span><span class='line'>    uint32_t m_mediaStamp;
-</span><span class='line'>    uint32_t m_pauseStamp;
-</span><span class='line'>    int m_pausing;
-</span><span class='line'>    int m_nServerBW;
-</span><span class='line'>    int m_nClientBW;
-</span><span class='line'>    uint8_t m_nClientBW2;
-</span><span class='line'>    uint8_t m_bPlaying;
-</span><span class='line'>    uint8_t m_bSendEncoding;
-</span><span class='line'>    uint8_t m_bSendCounter;&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;int m_numInvokes;
-</span><span class='line'>int m_numCalls;
-</span><span class='line'>RTMP_METHOD *m_methodCalls; } ```
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;h3 id="initsocket"&gt;InitSocket()&lt;/h3&gt;
-</span><span class='line'>&lt;p&gt;初始化 Socket ,代码非常简单。</span></code></pre></td></tr></table></div></figure>
+```
+typedef struct RTMP
+{
+    int m_inChunkSize;
+    int m_outChunkSize;
+    int m_nBWCheckCounter;
+    int m_nBytesIn;
+    int m_nBytesInSent;
+    int m_nBufferMS;
+    int m_stream_id;
+    int m_mediaChannel;
+    uint32_t m_mediaStamp;
+    uint32_t m_pauseStamp;
+    int m_pausing;
+    int m_nServerBW;
+    int m_nClientBW;
+    uint8_t m_nClientBW2;
+    uint8_t m_bPlaying;
+    uint8_t m_bSendEncoding;
+    uint8_t m_bSendCounter;</p>
+
+<pre><code>int m_numInvokes;
+int m_numCalls;
+RTMP_METHOD *m_methodCalls; } ```
+</code></pre>
+
+<h3 id="initsocket">InitSocket()</h3>
+<p>初始化 Socket ,代码非常简单。
+```
 int InitSockets()
 {
 #ifdef WIN32
@@ -201,21 +176,19 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
 
 <h5 id="handshake-diagram">握手框图(HandShake Diagram)</h5>
 
-<image src="http://lazybing.github.io/images/RTMPProtocol/HandShake_Diagram.png">   
+<p>{% image src=”http://lazybing.github.io/images/RTMPProtocol/HandShake_Diagram.png” %}</p>
 
-----
+<hr />
 
-对上面的框图进行简单说明如下：  
+<p>对上面的框图进行简单说明如下：</p>
 
-未初始化阶段(Uninitialized):协议版本会在该阶段发送。客户端和服务器端都处于未初始化阶段。客户端在 C0 包里发送协议版本，如果服务器端支持该协议，就会发送 S0 和 S1 作为反馈，如果不支持，就会终止连接。   
-版本发送阶段(Version Sent): Uninitialized 阶段后，客户端和服务器端都会进入 Version Sent 阶段。客户端等待服务器端发送的 S1 包，服务器端等待客户端发送的 C1 包。一旦等到回应后，客户端会发送 C2 包、服务器端会发送 S2 包。之后进入 Ack Sent 阶段。      
-确认阶段(ACK Sent):客户端和服务器端分别等待 S2 和 C2.      
-握手结束(Handshake Done):客户端和服务器端交换消息.   
+<p>未初始化阶段(Uninitialized):协议版本会在该阶段发送。客户端和服务器端都处于未初始化阶段。客户端在 C0 包里发送协议版本，如果服务器端支持该协议，就会发送 S0 和 S1 作为反馈，如果不支持，就会终止连接。 <br />
+版本发送阶段(Version Sent): Uninitialized 阶段后，客户端和服务器端都会进入 Version Sent 阶段。客户端等待服务器端发送的 S1 包，服务器端等待客户端发送的 C1 包。一旦等到回应后，客户端会发送 C2 包、服务器端会发送 S2 包。之后进入 Ack Sent 阶段。    <br />
+确认阶段(ACK Sent):客户端和服务器端分别等待 S2 和 C2.    <br />
+握手结束(Handshake Done):客户端和服务器端交换消息.</p>
 
-### Chunking
+<h3 id="chunking">Chunking</h3>
 
-
-</image>
 ]]></content>
   </entry>
   
