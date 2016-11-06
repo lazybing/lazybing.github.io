@@ -66,7 +66,7 @@ C2 和 S2 是对 C1 和 S1 的一个对等。
 
 ##### 握手框图(HandShake Diagram)
 
-<image src="/images/RTMPProtocol/HandShake_Diagram.png">   
+{% img /images/RTMPProtocol/HandShake_Diagram.png %}  
 
 ----
 
