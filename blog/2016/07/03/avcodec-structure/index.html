@@ -252,23 +252,36 @@ typedef struct AVCodec{ const char *name &hellip;">
 </span><span class="line"><span class="cp">    }</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<p>其中的 avcodec_register 定义如下：
-av_cold void avcodec_register(AVCodec *codec)
-{
-    AVCodec **p;
-    avcodec_init();
-    p = last_avcodec;
-    codec-&gt;next = NULL;</p>
+<p>其中的<code>avcodec_register</code>定义如下：</p>
 
-<pre><code>while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, codec))
-    p = &amp;(*p)-&gt;next;
-last_avcodec = &amp;codec-&gt;next;
-
-if (codec-&gt;init_static_data)
-    codec-&gt;init_static_data(codec); }
-</code></pre>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line">
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">av_cold</span> <span class="kt">void</span> <span class="nf">avcodec_register</span><span class="p">(</span><span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">AVCodec</span> <span class="o">**</span><span class="n">p</span><span class="p">;</span>
+</span><span class="line">    <span class="n">avcodec_init</span><span class="p">();</span>
+</span><span class="line">    <span class="n">p</span> <span class="o">=</span> <span class="n">last_avcodec</span><span class="p">;</span>
+</span><span class="line">    <span class="n">codec</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">codec</span><span class="p">))</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="n">last_avcodec</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">init_static_data</span><span class="p">)</span>
+</span><span class="line">        <span class="n">codec</span><span class="o">-&gt;</span><span class="n">init_static_data</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 </div>
 
