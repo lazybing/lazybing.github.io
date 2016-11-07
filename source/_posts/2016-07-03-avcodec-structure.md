@@ -41,3 +41,55 @@ typedef struct AVCodec{
 	
 }
 {% endcodeblock %}
+
+以 HEVC 为例。
+
+{% codeblock lang:c %}
+AVCodec ff_hevc_decoder = {
+    .name                  = "hevc",
+    .long_name             = NULL_IF_CONFIG_SMALL("HEVC (High Efficiency Video Coding)"),
+    .type                  = AVMEDIA_TYPE_VIDEO,
+    .id                    = AV_CODEC_ID_HEVC,
+    .priv_data_size        = sizeof(HEVCContext),
+    .priv_class            = &hevc_decoder_class,
+    .init                  = hevc_decode_init,
+    .close                 = hevc_decode_free,
+    .decode                = hevc_decode_frame,
+    .flush                 = hevc_decode_flush,
+    .update_thread_context = hevc_update_thread_context,
+    .init_thread_copy      = hevc_init_thread_copy,
+    .capabilities          = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_DELAY |
+                             AV_CODEC_CAP_SLICE_THREADS | AV_CODEC_CAP_FRAME_THREADS,
+    .profiles              = NULL_IF_CONFIG_SMALL(profiles),
+};
+{% endcodeblock %}
+
+关于 AVCodec 的注册使用函数`avcodec_register_all`,该函数会调用`REGISTER_DECODER(HEVC, hevc);`, 其中的`REGISTER_DECODER`定义如下：
+{% codeblock lang:c %}
+#define REGISTER_DECODER(X, x)                                          \
+    {                                                                   \
+        extern AVCodec ff_##x##_decoder;                                \
+        if (CONFIG_##X##_DECODER)                                       \
+            avcodec_register(&ff_##x##_decoder);                        \
+    }
+{% endcodeblock %}
+
+其中的 avcodec_register 定义如下：
+av_cold void avcodec_register(AVCodec *codec)
+{
+    AVCodec **p;
+    avcodec_init();
+    p = last_avcodec;
+    codec->next = NULL;
+
+    while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, codec))
+        p = &(*p)->next;
+    last_avcodec = &codec->next;
+
+    if (codec->init_static_data)
+        codec->init_static_data(codec);
+}
+{% codeblock lang:c %}
+
+
+{% endcodeblock %}
