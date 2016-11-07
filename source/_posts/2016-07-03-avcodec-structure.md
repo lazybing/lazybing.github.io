@@ -74,7 +74,9 @@ AVCodec ff_hevc_decoder = {
     }
 {% endcodeblock %}
 
-其中的 avcodec_register 定义如下：
+其中的`avcodec_register`定义如下：
+
+{% codeblock lang:c %}
 av_cold void avcodec_register(AVCodec *codec)
 {
     AVCodec **p;
@@ -89,7 +91,4 @@ av_cold void avcodec_register(AVCodec *codec)
     if (codec->init_static_data)
         codec->init_static_data(codec);
 }
-{% codeblock lang:c %}
-
-
 {% endcodeblock %}
