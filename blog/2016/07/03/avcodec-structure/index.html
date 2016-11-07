@@ -198,6 +198,78 @@ typedef struct AVCodec{ const char *name &hellip;">
 </span><span class="line">	
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<p>以 HEVC 为例。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVCodec</span> <span class="n">ff_hevc_decoder</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class="line">    <span class="p">.</span><span class="n">name</span>                  <span class="o">=</span> <span class="s">&quot;hevc&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">long_name</span>             <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="s">&quot;HEVC (High Efficiency Video Coding)&quot;</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">type</span>                  <span class="o">=</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">id</span>                    <span class="o">=</span> <span class="n">AV_CODEC_ID_HEVC</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_data_size</span>        <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">HEVCContext</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_class</span>            <span class="o">=</span> <span class="o">&amp;</span><span class="n">hevc_decoder_class</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">init</span>                  <span class="o">=</span> <span class="n">hevc_decode_init</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">close</span>                 <span class="o">=</span> <span class="n">hevc_decode_free</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">decode</span>                <span class="o">=</span> <span class="n">hevc_decode_frame</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">flush</span>                 <span class="o">=</span> <span class="n">hevc_decode_flush</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">update_thread_context</span> <span class="o">=</span> <span class="n">hevc_update_thread_context</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">init_thread_copy</span>      <span class="o">=</span> <span class="n">hevc_init_thread_copy</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">capabilities</span>          <span class="o">=</span> <span class="n">AV_CODEC_CAP_DR1</span> <span class="o">|</span> <span class="n">AV_CODEC_CAP_DELAY</span> <span class="o">|</span>
+</span><span class="line">                             <span class="n">AV_CODEC_CAP_SLICE_THREADS</span> <span class="o">|</span> <span class="n">AV_CODEC_CAP_FRAME_THREADS</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">profiles</span>              <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="n">profiles</span><span class="p">),</span>
+</span><span class="line"><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>关于 AVCodec 的注册使用函数<code>avcodec_register_all</code>,该函数会调用<code>REGISTER_DECODER(HEVC, hevc);</code>, 其中的<code>REGISTER_DECODER</code>定义如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_DECODER(X, x)                                          \</span>
+</span><span class="line"><span class="cp">    {                                                                   \</span>
+</span><span class="line"><span class="cp">        extern AVCodec ff_##x##_decoder;                                \</span>
+</span><span class="line"><span class="cp">        if (CONFIG_##X##_DECODER)                                       \</span>
+</span><span class="line"><span class="cp">            avcodec_register(&amp;ff_##x##_decoder);                        \</span>
+</span><span class="line"><span class="cp">    }</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中的 avcodec_register 定义如下：
+av_cold void avcodec_register(AVCodec *codec)
+{
+    AVCodec **p;
+    avcodec_init();
+    p = last_avcodec;
+    codec-&gt;next = NULL;</p>
+
+<pre><code>while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, codec))
+    p = &amp;(*p)-&gt;next;
+last_avcodec = &amp;codec-&gt;next;
+
+if (codec-&gt;init_static_data)
+    codec-&gt;init_static_data(codec); }
+</code></pre>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line">
+</span></code></pre></td></tr></table></div></figure>
 </div>
 
 
