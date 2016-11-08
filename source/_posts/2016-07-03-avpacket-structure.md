@@ -29,3 +29,6 @@ typedef struct AVPacket{
 }
 
 {% endcodeblock %}
+
+其中`pts`代表显示时间戳(单位是AVStream->time_base units)、`dts`代表解码时间戳(单位是AVStream->time_base units)、`stream_index`标识该`AVPacket`所属的视频音频流。  
+
