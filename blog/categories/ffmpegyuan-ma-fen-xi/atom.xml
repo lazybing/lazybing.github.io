@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Ffmpeg源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-11-08T08:09:57-08:00</updated>
+  <updated>2016-11-08T08:42:39-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -30,6 +30,56 @@ ffplay [options] bitstream_file
 <p>其次我们可以通过使用<code>Esc</code><code>q</code>来推出播放，可以使用空格来暂停播放，可以使用<code>s</code>来执行逐帧播放视频等等操作。</p>
 
 <p>ffplay 里面最主要的函数时:<code>av_register_all()</code><code>SDL_Init(flags)</code><code>av_init_packet</code><code>stream_open</code><code>event_loop</code>。下面逐个分析这几个函数主要完成的功能。</p>
+
+<p><code>av_register_all</code>实现注册<code>codecs</code><code>demux</code>和<code>protocols</code>。其中注册的<code>codecs</code>时通过<code>avcodec_reigster_all()</code>函数来实现的；注册<code>demux</code>的方法，以 HEVC 为例。
+```
+#define REGISTER_MUXER(X, x)                                            \
+    {                                                                   \
+        extern AVOutputFormat ff_##x##<em>muxer;                           \
+        if (CONFIG</em>##X##<em>MUXER)                                         \
+            av_register_output_format(&amp;ff</em>##x##_muxer);                 \
+    }</p>
+
+<h1 id="define-registerdemuxerx-x------------------------------------------">define REGISTER_DEMUXER(X, x)                                          \</h1>
+<pre><code>{                                                                   \
+    extern AVInputFormat ff_##x##_demuxer;                          \
+    if (CONFIG_##X##_DEMUXER)                                       \
+        av_register_input_format(&amp;ff_##x##_demuxer);                \
+}
+</code></pre>
+
+<h1 id="define-registermuxdemuxx-x-registermuxerx-x-registerdemuxerx-x">define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</h1>
+
+<p>REGISTER_MUXDEMUX(HEVC,hevc);
+<code>
+将上面的宏展开即为：
+</code>
+void av_register_input_format(AVInputFormat *format)
+{
+    AVInputFormat **p = last_iformat;</p>
+
+<pre><code>format-&gt;next = NULL;
+while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
+    p = &amp;(*p)-&gt;next;
+last_iformat = &amp;format-&gt;next; }
+</code></pre>
+
+<p>void av_register_output_format(AVOutputFormat *format)
+{
+    AVOutputFormat **p = last_oformat;</p>
+
+<pre><code>format-&gt;next = NULL;
+while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
+    p = &amp;(*p)-&gt;next;
+last_oformat = &amp;format-&gt;next; } ``` ``` AVOutputFormat ff_hevc_muxer = {
+.name              = "hevc",
+.long_name         = NULL_IF_CONFIG_SMALL("raw HEVC video"),
+.extensions        = "hevc",
+.audio_codec       = AV_CODEC_ID_NONE,
+.video_codec       = AV_CODEC_ID_HEVC,
+.write_packet      = ff_raw_write_packet,
+.flags             = AVFMT_NOTIMESTAMPS, }; ```
+</code></pre>
 
 ]]></content>
   </entry>

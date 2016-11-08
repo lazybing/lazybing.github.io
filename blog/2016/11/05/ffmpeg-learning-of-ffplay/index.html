@@ -114,6 +114,99 @@ ffplay [options] bitstream_file
 
 <p>ffplay 里面最主要的函数时:<code>av_register_all()</code><code>SDL_Init(flags)</code><code>av_init_packet</code><code>stream_open</code><code>event_loop</code>。下面逐个分析这几个函数主要完成的功能。</p>
 
+<p><code>av_register_all</code>实现注册<code>codecs</code><code>demux</code>和<code>protocols</code>。其中注册的<code>codecs</code>时通过<code>avcodec_reigster_all()</code>函数来实现的；注册<code>demux</code>的方法，以 HEVC 为例。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_MUXER(X, x)                                            \
+</span><span class="line">    {                                                                   \
+</span><span class="line">        extern AVOutputFormat ff_##x##_muxer;                           \
+</span><span class="line">        if (CONFIG_##X##_MUXER)                                         \
+</span><span class="line">            av_register_output_format(&amp;ff_##x##_muxer);                 \
+</span><span class="line">    }
+</span><span class="line">
+</span><span class="line">#define REGISTER_DEMUXER(X, x)                                          \
+</span><span class="line">    {                                                                   \
+</span><span class="line">        extern AVInputFormat ff_##x##_demuxer;                          \
+</span><span class="line">        if (CONFIG_##X##_DEMUXER)                                       \
+</span><span class="line">            av_register_input_format(&amp;ff_##x##_demuxer);                \
+</span><span class="line">    }
+</span><span class="line">
+</span><span class="line">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)
+</span><span class="line">
+</span><span class="line">REGISTER_MUXDEMUX(HEVC,hevc);</span></code></pre></td></tr></table></div></figure>
+<p>将上面的宏展开即为：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void av_register_input_format(AVInputFormat *format)
+</span><span class="line">{
+</span><span class="line">    AVInputFormat **p = last_iformat;
+</span><span class="line">
+</span><span class="line">    format-&gt;next = NULL;
+</span><span class="line">    while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
+</span><span class="line">        p = &amp;(*p)-&gt;next;
+</span><span class="line">    last_iformat = &amp;format-&gt;next;
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">void av_register_output_format(AVOutputFormat *format)
+</span><span class="line">{
+</span><span class="line">    AVOutputFormat **p = last_oformat;
+</span><span class="line">
+</span><span class="line">    format-&gt;next = NULL;
+</span><span class="line">    while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
+</span><span class="line">        p = &amp;(*p)-&gt;next;
+</span><span class="line">    last_oformat = &amp;format-&gt;next;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">AVOutputFormat ff_hevc_muxer = {
+</span><span class="line">    .name              = "hevc",
+</span><span class="line">    .long_name         = NULL_IF_CONFIG_SMALL("raw HEVC video"),
+</span><span class="line">    .extensions        = "hevc",
+</span><span class="line">    .audio_codec       = AV_CODEC_ID_NONE,
+</span><span class="line">    .video_codec       = AV_CODEC_ID_HEVC,
+</span><span class="line">    .write_packet      = ff_raw_write_packet,
+</span><span class="line">    .flags             = AVFMT_NOTIMESTAMPS,
+</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
