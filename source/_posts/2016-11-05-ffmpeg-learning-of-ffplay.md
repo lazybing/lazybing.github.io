@@ -20,7 +20,8 @@ ffplay [options] bitstream_file
 ffplay 里面最主要的函数时:`av_register_all()``SDL_Init(flags)``av_init_packet``stream_open``event_loop`。下面逐个分析这几个函数主要完成的功能。  
 
 `av_register_all`实现注册`codecs``demux`和`protocols`。其中注册的`codecs`时通过`avcodec_reigster_all()`函数来实现的；注册`demux`的方法，以 HEVC 为例。
-```
+
+{% codeblock lang:c %}
 #define REGISTER_MUXER(X, x)                                            \
     {                                                                   \
         extern AVOutputFormat ff_##x##_muxer;                           \
@@ -38,9 +39,11 @@ ffplay 里面最主要的函数时:`av_register_all()``SDL_Init(flags)``av_init_
 #define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)
 
 REGISTER_MUXDEMUX(HEVC,hevc);
-```
+{% endcodeblock %}
+
 将上面的宏展开即为：
-```
+
+{% codeblock lang:c %}
 void av_register_input_format(AVInputFormat *format)
 {
     AVInputFormat **p = last_iformat;
@@ -60,8 +63,9 @@ void av_register_output_format(AVOutputFormat *format)
         p = &(*p)->next;
     last_oformat = &format->next;
 }
-```
-```
+{% endcodeblock %}
+
+{% codeblock lang:c %}
 AVOutputFormat ff_hevc_muxer = {
     .name              = "hevc",
     .long_name         = NULL_IF_CONFIG_SMALL("raw HEVC video"),
@@ -71,5 +75,5 @@ AVOutputFormat ff_hevc_muxer = {
     .write_packet      = ff_raw_write_packet,
     .flags             = AVFMT_NOTIMESTAMPS,
 };
-```
+{% endcodeblock %}
 
