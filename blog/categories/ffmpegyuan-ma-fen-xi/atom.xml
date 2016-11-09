@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Ffmpeg源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-11-08T08:42:39-08:00</updated>
+  <updated>2016-11-09T05:14:37-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -31,55 +31,106 @@ ffplay [options] bitstream_file
 
 <p>ffplay 里面最主要的函数时:<code>av_register_all()</code><code>SDL_Init(flags)</code><code>av_init_packet</code><code>stream_open</code><code>event_loop</code>。下面逐个分析这几个函数主要完成的功能。</p>
 
-<p><code>av_register_all</code>实现注册<code>codecs</code><code>demux</code>和<code>protocols</code>。其中注册的<code>codecs</code>时通过<code>avcodec_reigster_all()</code>函数来实现的；注册<code>demux</code>的方法，以 HEVC 为例。
-```
-#define REGISTER_MUXER(X, x)                                            \
-    {                                                                   \
-        extern AVOutputFormat ff_##x##<em>muxer;                           \
-        if (CONFIG</em>##X##<em>MUXER)                                         \
-            av_register_output_format(&amp;ff</em>##x##_muxer);                 \
-    }</p>
+<p><code>av_register_all</code>实现注册<code>codecs</code><code>demux</code>和<code>protocols</code>。其中注册的<code>codecs</code>时通过<code>avcodec_reigster_all()</code>函数来实现的；注册<code>demux</code>的方法，以 HEVC 为例。</p>
 
-<h1 id="define-registerdemuxerx-x------------------------------------------">define REGISTER_DEMUXER(X, x)                                          \</h1>
-<pre><code>{                                                                   \
-    extern AVInputFormat ff_##x##_demuxer;                          \
-    if (CONFIG_##X##_DEMUXER)                                       \
-        av_register_input_format(&amp;ff_##x##_demuxer);                \
-}
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define REGISTER_MUXER(X, x)                                            \</span>
+</span><span class='line'><span class="cp">    {                                                                   \</span>
+</span><span class='line'><span class="cp">        extern AVOutputFormat ff_##x##&lt;em&gt;muxer;                           \</span>
+</span><span class='line'><span class="cp">        if (CONFIG&lt;/em&gt;##X##&lt;em&gt;MUXER)                                         \</span>
+</span><span class='line'><span class="cp">            av_register_output_format(&amp;amp;ff&lt;/em&gt;##x##_muxer);                 \</span>
+</span><span class='line'><span class="cp">    }&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-registerdemuxerx-x------------------------------------------&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REGISTER_DEMUXER</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>                                          <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">{</span>                                                                   \
+</span><span class='line'>    <span class="k">extern</span> <span class="n">AVInputFormat</span> <span class="n">ff_</span><span class="err">##</span><span class="n">x</span><span class="err">##</span><span class="n">_demuxer</span><span class="p">;</span>                          \
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">CONFIG_</span><span class="err">##</span><span class="n">X</span><span class="err">##</span><span class="n">_DEMUXER</span><span class="p">)</span>                                       \
+</span><span class='line'>        <span class="n">av_register_input_format</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">ff_</span><span class="err">##</span><span class="n">x</span><span class="err">##</span><span class="n">_demuxer</span><span class="p">);</span>                \
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-registermuxdemuxx-x-registermuxerx-x-registerdemuxerx-x&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="n">REGISTER_MUXER</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span> <span class="n">REGISTER_DEMUXER</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">HEVC</span><span class="p">,</span><span class="n">hevc</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>将上面的宏展开即为：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">av_register_input_format</span><span class="p">(</span><span class="n">AVInputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">AVInputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_iformat</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
+</span><span class='line'>    <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span>
+</span><span class='line'><span class="n">last_iformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">av_register_output_format</span><span class="p">(</span><span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">AVOutputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_oformat</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
+</span><span class='line'>    <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span>
+</span><span class='line'><span class="n">last_oformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
-<h1 id="define-registermuxdemuxx-x-registermuxerx-x-registerdemuxerx-x">define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</h1>
-
-<p>REGISTER_MUXDEMUX(HEVC,hevc);
-<code>
-将上面的宏展开即为：
-</code>
-void av_register_input_format(AVInputFormat *format)
-{
-    AVInputFormat **p = last_iformat;</p>
-
-<pre><code>format-&gt;next = NULL;
-while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
-    p = &amp;(*p)-&gt;next;
-last_iformat = &amp;format-&gt;next; }
-</code></pre>
-
-<p>void av_register_output_format(AVOutputFormat *format)
-{
-    AVOutputFormat **p = last_oformat;</p>
-
-<pre><code>format-&gt;next = NULL;
-while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
-    p = &amp;(*p)-&gt;next;
-last_oformat = &amp;format-&gt;next; } ``` ``` AVOutputFormat ff_hevc_muxer = {
-.name              = "hevc",
-.long_name         = NULL_IF_CONFIG_SMALL("raw HEVC video"),
-.extensions        = "hevc",
-.audio_codec       = AV_CODEC_ID_NONE,
-.video_codec       = AV_CODEC_ID_HEVC,
-.write_packet      = ff_raw_write_packet,
-.flags             = AVFMT_NOTIMESTAMPS, }; ```
-</code></pre>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVOutputFormat</span> <span class="n">ff_hevc_muxer</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">name</span>              <span class="o">=</span> <span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">long_name</span>         <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="err">“</span><span class="n">raw</span> <span class="n">HEVC</span> <span class="n">video</span><span class="err">”</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">extensions</span>        <span class="o">=</span> <span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">audio_codec</span>       <span class="o">=</span> <span class="n">AV_CODEC_ID_NONE</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">video_codec</span>       <span class="o">=</span> <span class="n">AV_CODEC_ID_HEVC</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">write_packet</span>      <span class="o">=</span> <span class="n">ff_raw_write_packet</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">flags</span>             <span class="o">=</span> <span class="n">AVFMT_NOTIMESTAMPS</span><span class="p">,</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
   </entry>
