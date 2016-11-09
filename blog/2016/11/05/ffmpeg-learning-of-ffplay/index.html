@@ -5,14 +5,15 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>FFmpeg 学习之 FFplay源码分析 - 懒人李冰</title>
+  <title>FFmpeg 学习之 FFplay 源码分析 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="FFplay 是一个简单便携的媒体播放器，它使用了 FFmpeg 和 SDL 库。 首先看一下 FFplay 的使用：安装完 FFmpeg 后，直接在命令行中输入
+  <meta name="description" content="FFplay 是一个简单便携的媒体播放器，它使用了 FFmpeg 和 SDL 库。 FFplay 的使用
+首先看一下 FFplay 的使用：安装完 FFmpeg 后，直接在命令行中输入
 1
 ffplay [options] bitstream_file
-其中更详细的使用说明，可以使用man ffplay来查看。 &hellip;">
+其中更详细的使用说明，可以使用man &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -85,7 +86,7 @@ ffplay [options] bitstream_file
   
   <header>
     
-      <h1 class="entry-title">FFmpeg 学习之 FFplay源码分析</h1>
+      <h1 class="entry-title">FFmpeg 学习之 FFplay 源码分析</h1>
     
     
       <p class="meta">
@@ -105,6 +106,7 @@ ffplay [options] bitstream_file
 <div class="entry-content"><p>FFplay 是一个简单便携的媒体播放器，它使用了 FFmpeg 和 SDL 库。<br />
 <!--more--></p>
 
+<h3 id="ffplay-">FFplay 的使用</h3>
 <p>首先看一下 FFplay 的使用：安装完 FFmpeg 后，直接在命令行中输入</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">ffplay [options] bitstream_file</span></code></pre></td></tr></table></div></figure>
@@ -112,7 +114,11 @@ ffplay [options] bitstream_file
 
 <p>其次我们可以通过使用<code>Esc</code><code>q</code>来推出播放，可以使用空格来暂停播放，可以使用<code>s</code>来执行逐帧播放视频等等操作。</p>
 
+<h3 id="ffplay--1">FFplay 源码分析</h3>
+
 <p>ffplay 里面最主要的函数时:<code>av_register_all()</code><code>SDL_Init(flags)</code><code>av_init_packet</code><code>stream_open</code><code>event_loop</code>。下面逐个分析这几个函数主要完成的功能。</p>
+
+<h4 id="avregisterall">av_register_all()</h4>
 
 <p><code>av_register_all</code>实现注册<code>codecs</code><code>demux</code>和<code>protocols</code>。其中注册的<code>codecs</code>时通过<code>avcodec_reigster_all()</code>函数来实现的；注册<code>demux</code>的方法，以 HEVC 为例。</p>
 
@@ -263,7 +269,7 @@ ffplay [options] bitstream_file
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/11/05/ffmpeg-learning-of-ffplay" data-title="FFmpeg 学习之 FFplay源码分析" data-url="http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/11/05/ffmpeg-learning-of-ffplay" data-title="FFmpeg 学习之 FFplay 源码分析" data-url="http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
@@ -304,7 +310,7 @@ var duoshuoQuery = {short_name:"lazybing"};
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2016/11/05/ffmpeg-learning-of-ffplay/">FFmpeg 学习之 FFplay源码分析</a>
+        <a href="/blog/2016/11/05/ffmpeg-learning-of-ffplay/">FFmpeg 学习之 FFplay 源码分析</a>
       </li>
     
       <li class="post">
