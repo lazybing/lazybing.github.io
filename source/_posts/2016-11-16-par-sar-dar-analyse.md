@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "par、dar、sar分析"
+title: "PAR、DAR、SAR分析"
 date: 2016-11-16 08:11:53 -0800
 comments: true
 categories: 总结积累
