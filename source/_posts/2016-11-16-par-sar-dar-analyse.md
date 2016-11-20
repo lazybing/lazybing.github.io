@@ -24,8 +24,8 @@ PAR 示例如下：
 
 DAR 示例如下：  
 
-{% img /images/Aspect_ratio_16_9_example3.jpg %}  
+{% img /images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg %}  
 
-{% img /images/Aspect_ratio_4_3_example.jpg %}  
+{% img /images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg %}  
 
 
