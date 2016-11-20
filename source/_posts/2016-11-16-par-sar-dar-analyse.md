@@ -18,14 +18,14 @@ SAR(Sample Aspect Ratio):采样纵横比；
 
 PAR 示例如下：  
 
-<image src="images/PAR_DAR_SAR/220px-PAR-1to1.svg.png">  
 {% img /images/PAR_DAR_SAR/220px-PAR-1to1.svg.png %}  
 
-<image src="images/PAR_DAR_SAR/220px-PAR-2to1.svg.png">  
+{% img /images/PAR_DAR_SAR/220px-PAR-2to1.svg.png %}  
 
 DAR 示例如下：  
 
-<image src="images/Aspect_ratio_16_9_example3.jpg">  
+{% img /images/Aspect_ratio_16_9_example3.jpg %}  
 
-<image src="images/Aspect_ratio_4_3_example.jpg">  
+{% img /images/Aspect_ratio_4_3_example.jpg %}  
+
 
