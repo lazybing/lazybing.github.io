@@ -209,6 +209,75 @@ AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配
 </span><span class="line">    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">qp_table_buf</span><span class="p">;</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<p>视频帧的宽高</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int width, height;</span></code></pre></td></tr></table></div></figure>
+
+<p>由该帧描述的音频样本的数目</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int nb_samples;</span></code></pre></td></tr></table></div></figure>
+
+<p>帧格式，-1 表示未设置的帧格式或者未知的帧格式，<br />
+对于视频帧，该值为<code>enum AVPixelFormat</code>, 例如<code>AV_PIX_FMT_YUV420P</code><br />
+对于音频帧，该值为<code>enum AVSampleFormat</code>, 例如<code>AV_SAMPLE_FMT_S16</code></p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int format;</span></code></pre></td></tr></table></div></figure>
+
+<p>关键帧：1 表示关键帧，0 表示非关键帧</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int key_frame;</span></code></pre></td></tr></table></div></figure>
+
+<p>帧图片类型，例如I/P/B</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">enum AVPictureType pict_type;</span></code></pre></td></tr></table></div></figure>
+
+<p>帧的长宽比，0/1为未知/不确定</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">/**
+</span><span class="line"> * rational number numerator/denominator
+</span><span class="line"> */
+</span><span class="line">typedef struct AVRational{
+</span><span class="line">    int num; ///&lt; numerator
+</span><span class="line">    int den; ///&lt; denominator
+</span><span class="line">} AVRational;
+</span><span class="line">
+</span><span class="line">AVRational sample_aspect_ratio;</span></code></pre></td></tr></table></div></figure>
+
+<p>显示时间戳（决定何时显示）</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">/**
+</span><span class="line"> * Presentation timestamp in time_base units (time when frame should be shown to user).
+</span><span class="line"> */
+</span><span class="line">int64_t pts;</span></code></pre></td></tr></table></div></figure>
+
+<p>解码时间戳 (决定何时解码)</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">/* PTS copied from the AVPacket that was decoded to produce this frame */
+</span><span class="line">int64_t pkt_pts;</span></code></pre></td></tr></table></div></figure>
+
+<p>解码序列和显示序列（Display Order / Decoded Order）</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int coded_picture_number; /* picture number in bitstream order */
+</span><span class="line">int display_picture_number; /* picture number in display order */</span></code></pre></td></tr></table></div></figure>
+
+<p>品质(介于 1(最好) 和 FF_LAMBDA_MAX(坏) 之间 )</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int quality;</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
