@@ -66,3 +66,70 @@ typedef struct AVFrame{
 }
 
 {% endcodeblock %}
+
+视频帧的宽高  
+```
+int width, height;
+```
+
+由该帧描述的音频样本的数目  
+```
+int nb_samples;
+```
+
+帧格式，-1 表示未设置的帧格式或者未知的帧格式，  
+对于视频帧，该值为`enum AVPixelFormat`, 例如`AV_PIX_FMT_YUV420P`  
+对于音频帧，该值为`enum AVSampleFormat`, 例如`AV_SAMPLE_FMT_S16`  
+```
+int format;
+```
+
+关键帧：1 表示关键帧，0 表示非关键帧  
+```
+int key_frame;
+```
+
+帧图片类型，例如I/P/B  
+```
+enum AVPictureType pict_type;
+```
+
+帧的长宽比，0/1为未知/不确定
+```
+/**
+ * rational number numerator/denominator
+ */
+typedef struct AVRational{
+    int num; ///< numerator
+    int den; ///< denominator
+} AVRational;
+
+AVRational sample_aspect_ratio;
+```
+
+显示时间戳（决定何时显示）
+```
+/**
+ * Presentation timestamp in time_base units (time when frame should be shown to user).
+ */
+int64_t pts;
+```
+
+解码时间戳 (决定何时解码)  
+```
+/* PTS copied from the AVPacket that was decoded to produce this frame */
+int64_t pkt_pts;
+```
+
+解码序列和显示序列（Display Order / Decoded Order）  
+```
+int coded_picture_number; /* picture number in bitstream order */
+int display_picture_number; /* picture number in display order */
+```
+
+品质(介于 1(最好) 和 FF_LAMBDA_MAX(坏) 之间 )  
+```
+int quality;
+```
+
+
