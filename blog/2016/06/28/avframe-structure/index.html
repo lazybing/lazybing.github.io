@@ -9,8 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AVFrame 这个结构体主要描述了解码后的未压缩的视频和音频数据。 —
-AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配AVFrame，对于分配出的内存需要靠其他方法来管理。AVFrame必须由av_frame_free()函数释放。AVFrame只需分配一次 &hellip;">
+  <meta name="description" content="AVFrame 这个结构体主要描述了解码后的未压缩的视频和音频数据，比如视频的 YUV 数据、RGB 数据，音频的 PCM 数据。 AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配AVFrame，对于分配出的内存需要靠其他方法来管理。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -100,10 +99,12 @@ AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配
   </header>
 
 
-<div class="entry-content"><p><code>AVFrame</code> 这个结构体主要描述了解码后的未压缩的视频和音频数据。
+<div class="entry-content"><p><code>AVFrame</code> 这个结构体主要描述了解码后的未压缩的视频和音频数据，比如视频的 YUV 数据、RGB 数据，音频的 PCM 数据。</p>
+
 <!--more-->
-—
-<code>AVFrame</code>必须使用<code>av_frame_alloc()</code>函数来分配，注意该函数只能分配<code>AVFrame</code>，对于分配出的内存需要靠其他方法来管理。<code>AVFrame</code>必须由<code>av_frame_free()</code>函数释放。<code>AVFrame</code>只需分配一次，即可多次重复使用来存储不停的数据data——一个<code>AVFrame</code>可以可以存储解码出的多张 frame。</p>
+<hr />
+
+<p><code>AVFrame</code>必须使用<code>av_frame_alloc()</code>函数来分配，注意该函数只能分配<code>AVFrame</code>，对于分配出的内存需要靠其他方法来管理。<code>AVFrame</code>必须由<code>av_frame_free()</code>函数释放。<code>AVFrame</code>只需分配一次，即可多次重复使用来存储不停的数据data——一个<code>AVFrame</code>可以可以存储解码出的多张 frame。</p>
 
 <figure class="code"><figcaption><span>AVFrame</span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -210,6 +211,29 @@ AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+<p>指向图片或信道的指针，与初始化时分配的大小可能不同，一些解码器取数据范围超出(0, 0)-(width, height),具体请查看avcodec_align_dimensions2() 方法。一些过滤器和扫描器读数据时可能会超过16字节，所以当他们使用的时候，必须额外分配16字节。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">uint8_t *data[AV_NUM_DATA_POINTERS];</span></code></pre></td></tr></table></div></figure>
+
+<p>对于视频数据，为每个图像行的字节大小<br />
+对于音频数据，为每个平面的字节大小<br />
+对于音频，只有 LINESIZE[0]可以设置<br />
+对于平面音频，每个信道平面必须是相同的大小<br />
+对于视频的 linesize 应为 CPU 的对准要求的倍数，现代桌面 CPU 为16或32。
+某些代码需要这样对准，其他代码可以偏慢没有正确对齐，但目前没有区别。
+@注意 linesize 可大于可用的数据的尺寸，有可能存在由于性能原因额外填充。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int linesize[AV_NUM_DATA_POINTERS];</span></code></pre></td></tr></table></div></figure>
+
+<p>指向图片/信道层的指针 
+对于视频，只是指向数据。
+对于平面音频，每个通道都有一个单独的数据指针，LINESIZE[0]包含各信道的缓冲区的大小。
+用于打包的音频，只有一个数据指针，和LINESIZE[0]包含缓冲所有通道的总大小。
+注意：数据和扩展数据应该总是在一个有效的帧进行设置，但对于具有多个信道的平面的音频可以容纳的数据，
+扩展的数据必须被用来对所有频道存取。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">uint8_t **extended_data;</span></code></pre></td></tr></table></div></figure>
+
 <p>视频帧的宽高</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">int width, height;</span></code></pre></td></tr></table></div></figure>
@@ -277,6 +301,17 @@ AVFrame必须使用av_frame_alloc()函数来分配，注意该函数只能分配
 <p>品质(介于 1(最好) 和 FF_LAMBDA_MAX(坏) 之间 )</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">int quality;</span></code></pre></td></tr></table></div></figure>
+
+<p>是否为 interlace 码流或者为 progressvive 码流</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int interlaced_frame; /* The content of the picture is interlaced. */
+</span><span class="line">int top_field_first; /* If the content is interlaced, is top field displayed first. */</span></code></pre></td></tr></table></div></figure>
+
+<p>参考文章：
+1.<a href="http://blog.csdn.net/leixiaohua1020/article/details/14214577">FFMPEG结构体分析：AVFrame</a><br />
+2.<a href="http://www.jianshu.com/p/18fa498eb19e">FFMPEG结构体分析：AVFrame</a><br />
+3.<a href="http://blog.csdn.net/shaqoneal/article/details/16959671"> FFMPeg代码分析：AVFrame结构体及其相关的函数</a></p>
 
 </div>
 
