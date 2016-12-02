@@ -7,9 +7,7 @@ categories: FFMPEG源码分析
 ---
 
 `AVFrame` 这个结构体主要描述了解码后的未压缩的视频和音频数据，比如视频的 YUV 数据、RGB 数据，音频的 PCM 数据。  
-
 <!--more-->
-----
 
 `AVFrame`必须使用`av_frame_alloc()`函数来分配，注意该函数只能分配`AVFrame`，对于分配出的内存需要靠其他方法来管理。`AVFrame`必须由`av_frame_free()`函数释放。`AVFrame`只需分配一次，即可多次重复使用来存储不停的数据data——一个`AVFrame`可以可以存储解码出的多张 frame。
 
@@ -166,7 +164,7 @@ int interlaced_frame; /* The content of the picture is interlaced. */
 int top_field_first; /* If the content is interlaced, is top field displayed first. */
 ```
 
-参考文章：
+参考文章：  
 1.[FFMPEG结构体分析：AVFrame](http://blog.csdn.net/leixiaohua1020/article/details/14214577)  
 2.[FFMPEG结构体分析：AVFrame](http://www.jianshu.com/p/18fa498eb19e)  
 3.[ FFMPeg代码分析：AVFrame结构体及其相关的函数](http://blog.csdn.net/shaqoneal/article/details/16959671)  
