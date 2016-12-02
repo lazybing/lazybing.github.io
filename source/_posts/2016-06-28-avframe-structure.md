@@ -6,9 +6,11 @@ comments: true
 categories: FFMPEG源码分析 
 ---
 
-`AVFrame` 这个结构体主要描述了解码后的未压缩的视频和音频数据。
+`AVFrame` 这个结构体主要描述了解码后的未压缩的视频和音频数据，比如视频的 YUV 数据、RGB 数据，音频的 PCM 数据。  
+
 <!--more-->
----
+----
+
 `AVFrame`必须使用`av_frame_alloc()`函数来分配，注意该函数只能分配`AVFrame`，对于分配出的内存需要靠其他方法来管理。`AVFrame`必须由`av_frame_free()`函数释放。`AVFrame`只需分配一次，即可多次重复使用来存储不停的数据data——一个`AVFrame`可以可以存储解码出的多张 frame。
 
 {% codeblock lang:c AVFrame%}
@@ -66,6 +68,32 @@ typedef struct AVFrame{
 }
 
 {% endcodeblock %}
+
+指向图片或信道的指针，与初始化时分配的大小可能不同，一些解码器取数据范围超出(0, 0)-(width, height),具体请查看avcodec_align_dimensions2() 方法。一些过滤器和扫描器读数据时可能会超过16字节，所以当他们使用的时候，必须额外分配16字节。  
+```
+uint8_t *data[AV_NUM_DATA_POINTERS];
+```
+
+对于视频数据，为每个图像行的字节大小  
+对于音频数据，为每个平面的字节大小  
+对于音频，只有 LINESIZE[0]可以设置  
+对于平面音频，每个信道平面必须是相同的大小  
+对于视频的 linesize 应为 CPU 的对准要求的倍数，现代桌面 CPU 为16或32。
+某些代码需要这样对准，其他代码可以偏慢没有正确对齐，但目前没有区别。
+@注意 linesize 可大于可用的数据的尺寸，有可能存在由于性能原因额外填充。 
+```
+int linesize[AV_NUM_DATA_POINTERS];
+```
+
+指向图片/信道层的指针 
+对于视频，只是指向数据。
+对于平面音频，每个通道都有一个单独的数据指针，LINESIZE[0]包含各信道的缓冲区的大小。
+用于打包的音频，只有一个数据指针，和LINESIZE[0]包含缓冲所有通道的总大小。
+注意：数据和扩展数据应该总是在一个有效的帧进行设置，但对于具有多个信道的平面的音频可以容纳的数据，
+扩展的数据必须被用来对所有频道存取。
+```
+uint8_t **extended_data;
+```
 
 视频帧的宽高  
 ```
@@ -132,4 +160,14 @@ int display_picture_number; /* picture number in display order */
 int quality;
 ```
 
+是否为 interlace 码流或者为 progressvive 码流
+```
+int interlaced_frame; /* The content of the picture is interlaced. */
+int top_field_first; /* If the content is interlaced, is top field displayed first. */
+```
+
+参考文章：
+1.[FFMPEG结构体分析：AVFrame](http://blog.csdn.net/leixiaohua1020/article/details/14214577)  
+2.[FFMPEG结构体分析：AVFrame](http://www.jianshu.com/p/18fa498eb19e)  
+3.[ FFMPeg代码分析：AVFrame结构体及其相关的函数](http://blog.csdn.net/shaqoneal/article/details/16959671)  
 
