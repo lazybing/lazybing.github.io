@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-12-05T04:41:15-08:00</updated>
+  <updated>2016-12-05T06:41:38-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,249 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[FFMEPG 源码分析：av_register_all]]></title>
+    <link href="http://lazybing.github.io/blog/2016/12/05/av-register-all/"/>
+    <updated>2016-12-05T04:45:48-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/12/05/av-register-all</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#avregisterall-" id="markdown-toc-avregisterall-">av_register_all 框架</a></li>
+  <li><a href="#section" id="markdown-toc-section">源码分析</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">注册一次</a></li>
+      <li><a href="#codec" id="markdown-toc-codec">注册 codec</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">注册复用器</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">注册解复用器</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">注册协议</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p><code>av_register_all()</code>几乎是所有使用 FFMPEG 编程调用的第一个函数。<code>av_register_all()</code>的主要功能是注册所有的 formats 和 protocols。</p>
+
+<!--more-->
+
+<h2 id="avregisterall-">av_register_all 框架</h2>
+
+<p>首先列一下该函数的大体框架：</p>
+<figure class="code"><figcaption><span>av_register_all </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">av_register_all</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">static</span> <span class="kt">int</span> <span class="n">initialized</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">initialized</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span><span class="p">;</span>
+</span><span class="line">    <span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">avcodec_register_all</span><span class="p">();</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/*(de)muxers*/</span>
+</span><span class="line">    <span class="p">......</span>
+</span><span class="line">    <span class="n">REGISTER_MUXER</span>   <span class="p">(</span><span class="n">F4V</span><span class="p">,</span>              <span class="n">f4v</span><span class="p">);</span>
+</span><span class="line">    <span class="p">......</span>
+</span><span class="line">    <span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">FLV</span><span class="p">,</span>              <span class="n">flv</span><span class="p">);</span>
+</span><span class="line">    <span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">H264</span><span class="p">,</span>             <span class="n">h264</span><span class="p">);</span>
+</span><span class="line">    <span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">HEVC</span><span class="p">,</span>             <span class="n">hevc</span><span class="p">);</span>
+</span><span class="line">    <span class="n">REGISTER_MUXER</span>   <span class="p">(</span><span class="n">MP4</span><span class="p">,</span>              <span class="n">mp4</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/*protocols*/</span>
+</span><span class="line">    <span class="n">REGISTER_PROTOCOL</span><span class="p">(</span><span class="n">RTMP</span><span class="p">,</span>             <span class="n">rtmp</span><span class="p">);</span>
+</span><span class="line">    <span class="n">REGISTER_PROTOCOL</span><span class="p">(</span><span class="n">TCP</span><span class="p">,</span>              <span class="n">tcp</span><span class="p">);</span>
+</span><span class="line">    <span class="n">REGISTER_PROTOCOL</span><span class="p">(</span><span class="n">UDP</span><span class="p">,</span>              <span class="n">udp</span><span class="p">);</span>
+</span><span class="line">    <span class="p">......</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section">源码分析</h2>
+
+<h3 id="section-1">注册一次</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">static int initialized;
+</span><span class="line">
+</span><span class="line">if (initialized)
+</span><span class="line">    return;
+</span><span class="line">initialized = 1;</span></code></pre></td></tr></table></div></figure>
+<p>该段代码可以看出，当调用过该函数一次后，再次调用时，该函数直接返回。
+注意，这种方法在 FFMEPG 源码中非常常见。</p>
+
+<h3 id="codec">注册 codec</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">avcodec_register_all();</span></code></pre></td></tr></table></div></figure>
+<p>该函数的作用为注册<code>codecs</code><code>parsers</code>和<code>filters</code>。<br />
+该函数的源码，还请访问<code>avcodec_register_all</code>函数。</p>
+
+<h3 id="section-2">注册复用器</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_MUXER(X, x)                                            \
+</span><span class="line">    {                                                                   \
+</span><span class="line">        extern AVOutputFormat ff_##x##_muxer;                           \
+</span><span class="line">        if (CONFIG_##X##_MUXER)                                         \
+</span><span class="line">            av_register_output_format(&amp;ff_##x##_muxer);                 \
+</span><span class="line">    }</span></code></pre></td></tr></table></div></figure>
+<p>以<code>MP4</code>为例，<code>REGISTER_MUXER(MP4, mp4)</code>展开如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">extern AVOutpusFormat ff_mp4_muxer;
+</span><span class="line">if(CONFIG_MP4_MUXER)
+</span><span class="line">    av_register_output_format(&amp;ff_mp4_muxer);</span></code></pre></td></tr></table></div></figure>
+
+<p><code>av_register_input_format(&amp;ff_mp4_muxer)</code>展开如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void av_register_output_format(AVOutputFormat *format)
+</span><span class="line">{
+</span><span class="line">    AVOutputFormat **p = last_oformat;
+</span><span class="line">
+</span><span class="line">    format-&gt;next = NULL;
+</span><span class="line">    while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
+</span><span class="line">        p = &amp;(*p)-&gt;next;
+</span><span class="line">    last_oformat = &amp;format-&gt;next;
+</span><span class="line">}
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-3">注册解复用器</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_DEMUXER(X, x)                                          \
+</span><span class="line">    {                                                                   \
+</span><span class="line">        extern AVInputFormat ff_##x##_demuxer;                          \
+</span><span class="line">        if (CONFIG_##X##_DEMUXER)                                       \
+</span><span class="line">            av_register_input_format(&amp;ff_##x##_demuxer);                \
+</span><span class="line">    }</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void av_register_input_format(AVInputFormat *format)
+</span><span class="line">{
+</span><span class="line">    AVInputFormat **p = last_iformat;
+</span><span class="line">
+</span><span class="line">    format-&gt;next = NULL;
+</span><span class="line">    while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
+</span><span class="line">        p = &amp;(*p)-&gt;next;
+</span><span class="line">    last_iformat = &amp;format-&gt;next;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void *avpriv_atomic_ptr_cas(void * volatile *ptr, void *oldval, void *newval)
+</span><span class="line">{
+</span><span class="line">    void *ret;
+</span><span class="line">    pthread_mutex_lock(&amp;atomic_lock);
+</span><span class="line">    ret = *ptr;
+</span><span class="line">    if (ret == oldval)
+</span><span class="line">        *ptr = newval;
+</span><span class="line">    pthread_mutex_unlock(&amp;atomic_lock);
+</span><span class="line">    return ret;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-4">注册协议</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_PROTOCOL(X, x)                                         \
+</span><span class="line">    {                                                                   \
+</span><span class="line">        extern URLProtocol ff_##x##_protocol;                           \
+</span><span class="line">        if (CONFIG_##X##_PROTOCOL)                                      \
+</span><span class="line">            ffurl_register_protocol(&amp;ff_##x##_protocol);                \
+</span><span class="line">    }
+</span><span class="line">
+</span><span class="line">int ffurl_register_protocol(URLProtocol *protocol)
+</span><span class="line">{
+</span><span class="line">    URLProtocol **p;
+</span><span class="line">    p = &first_protocol;
+</span><span class="line">    while (*p)
+</span><span class="line">        p = &amp;(*p)-&gt;next;
+</span><span class="line">    *p             = protocol;
+</span><span class="line">    protocol-&gt;next = NULL;
+</span><span class="line">    return 0;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[PAR、DAR、SAR分析]]></title>
@@ -2180,104 +2423,6 @@ syntax 是<code>pad=width[:height[:x[:y[:color]]]]</code>，其中的 color 表�
 <h3 id="adding-text-on-video">Adding Text on Video</h3>
 
 <h3 id="conversion-between-formats">Conversion Between Formats</h3>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[YUV 数据分析]]></title>
-    <link href="http://lazybing.github.io/blog/2016/05/23/the-data-layout/"/>
-    <updated>2016-05-23T09:23:07-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/05/23/the-data-layout</id>
-    <content type="html"><![CDATA[<p>图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。
-<!--more--></p>
-
-<h2 id="yuv-">YUV 数据</h2>
-<p>对于 YUV 图像来说，会有如下几个特性：<code>FOURCC</code> <code>Format</code> <code>Component Order</code> <code>Image Resolution</code> <code>Interlace/Progressive</code> <code>Packed/Planar</code> 。</p>
-
-<p><code>FOURCC</code>包括：<code>UYVY</code> <code>UYNV</code> <code>Y422</code> <code>IUYV</code> 等等；</p>
-
-<p><code>Format</code>包括：<code>YUV420</code> <code>YUV422</code> <code>YUV444</code> <code>RGB444</code> <code>MONO</code>等等：</p>
-
-<p><code>Component Order</code>包括：<code>YUV</code> <code>YVU</code>。</p>
-
-<h3 id="yuv420">YUV420摆放格式</h3>
-
-<p>progressive 的摆放格式如图：</p>
-
-<p><img src="http://lazybing.github.io/images/datalayout/Yuv420.png" /></p>
-
-<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：</p>
-
-<figure class="code"><figcaption><span>splityuvfile </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">
-</span><span class="line">    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
-</span><span class="line">         <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
-</span><span class="line">        <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
-</span><span class="line">    <span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
-interlace 的摆放格式如图：</p>
 
 ]]></content>
   </entry>
