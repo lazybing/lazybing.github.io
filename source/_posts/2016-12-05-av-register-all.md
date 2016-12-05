@@ -44,6 +44,11 @@ void av_register_all(void)
 }
 {% endcodeblock %}
 
+## 调用关系  
+<img src="/images/av_register_all/av_register_all.png">
+
+从调用关系图可以看出，通过调用`avcodec_register_all`注册了和编解码器有关的组件；硬件加速器、解码器、编码器、Parser、Bistream Filter等，以及复用器、解复用器、协议处理。  
+
 ## 源码分析
 
 ### 注册一次  
