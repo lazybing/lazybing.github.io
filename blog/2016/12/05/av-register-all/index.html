@@ -175,17 +175,20 @@
 
 <h3 id="section-1">注册一次</h3>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><figcaption><span>initialized_once </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
 <span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">static int initialized;
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">int</span> <span class="n">initialized</span><span class="p">;</span>
 </span><span class="line">
-</span><span class="line">if (initialized)
-</span><span class="line">    return;
-</span><span class="line">initialized = 1;</span></code></pre></td></tr></table></div></figure>
-<p>该段代码可以看出，当调用过该函数一次后，再次调用时，该函数直接返回。
+</span><span class="line"><span class="k">if</span> <span class="p">(</span><span class="n">initialized</span><span class="p">)</span>
+</span><span class="line">    <span class="k">return</span><span class="p">;</span>
+</span><span class="line"><span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>该段代码可以看出，当调用过该函数一次后，再次调用时，该函数直接返回。<br />
 注意，这种方法在 FFMEPG 源码中非常常见。</p>
 
 <h3 id="codec">注册 codec</h3>
@@ -197,18 +200,21 @@
 
 <h3 id="section-2">注册复用器</h3>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><figcaption><span>REGISTER_MUXER </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
 <span class="line-number">5</span>
 <span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_MUXER(X, x)                                            \
-</span><span class="line">    {                                                                   \
-</span><span class="line">        extern AVOutputFormat ff_##x##_muxer;                           \
-</span><span class="line">        if (CONFIG_##X##_MUXER)                                         \
-</span><span class="line">            av_register_output_format(&amp;ff_##x##_muxer);                 \
-</span><span class="line">    }</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_MUXER(X, x)                                            \</span>
+</span><span class="line"><span class="cp">    {                                                                   \</span>
+</span><span class="line"><span class="cp">        extern AVOutputFormat ff_##x##_muxer;                           \</span>
+</span><span class="line"><span class="cp">        if (CONFIG_##X##_MUXER)                                         \</span>
+</span><span class="line"><span class="cp">            av_register_output_format(&amp;ff_##x##_muxer);                 \</span>
+</span><span class="line"><span class="cp">    }</span>
+</span></code></pre></td></tr></table></div></figure>
+
 <p>以<code>MP4</code>为例，<code>REGISTER_MUXER(MP4, mp4)</code>展开如下：</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -217,9 +223,10 @@
 </span><span class="line">if(CONFIG_MP4_MUXER)
 </span><span class="line">    av_register_output_format(&amp;ff_mp4_muxer);</span></code></pre></td></tr></table></div></figure>
 
-<p><code>av_register_input_format(&amp;ff_mp4_muxer)</code>展开如下：</p>
+<p><code>av_register_output_format(&amp;ff_mp4_muxer)</code>展开如下：</p>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><figcaption><span>av_register_output_format </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -228,33 +235,38 @@
 <span class="line-number">7</span>
 <span class="line-number">8</span>
 <span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">void av_register_output_format(AVOutputFormat *format)
-</span><span class="line">{
-</span><span class="line">    AVOutputFormat **p = last_oformat;
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">av_register_output_format</span><span class="p">(</span><span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">AVOutputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_oformat</span><span class="p">;</span>
 </span><span class="line">
-</span><span class="line">    format-&gt;next = NULL;
-</span><span class="line">    while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
-</span><span class="line">        p = &amp;(*p)-&gt;next;
-</span><span class="line">    last_oformat = &amp;format-&gt;next;
-</span><span class="line">}
+</span><span class="line">    <span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="n">last_oformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 <h3 id="section-3">注册解复用器</h3>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><figcaption><span>REGISTER_MUXER </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
 <span class="line-number">5</span>
 <span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_DEMUXER(X, x)                                          \
-</span><span class="line">    {                                                                   \
-</span><span class="line">        extern AVInputFormat ff_##x##_demuxer;                          \
-</span><span class="line">        if (CONFIG_##X##_DEMUXER)                                       \
-</span><span class="line">            av_register_input_format(&amp;ff_##x##_demuxer);                \
-</span><span class="line">    }</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_DEMUXER(X, x)                                          \</span>
+</span><span class="line"><span class="cp">    {                                                                   \</span>
+</span><span class="line"><span class="cp">        extern AVInputFormat ff_##x##_demuxer;                          \</span>
+</span><span class="line"><span class="cp">        if (CONFIG_##X##_DEMUXER)                                       \</span>
+</span><span class="line"><span class="cp">            av_register_input_format(&amp;ff_##x##_demuxer);                \</span>
+</span><span class="line"><span class="cp">    }</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<p><code>av_register_input_format(&amp;ff_mp4_muxer)</code>展开如下：</p>
+
+<figure class="code"><figcaption><span>av_register_output_format </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -263,17 +275,19 @@
 <span class="line-number">7</span>
 <span class="line-number">8</span>
 <span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">void av_register_input_format(AVInputFormat *format)
-</span><span class="line">{
-</span><span class="line">    AVInputFormat **p = last_iformat;
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">av_register_input_format</span><span class="p">(</span><span class="n">AVInputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">AVInputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_iformat</span><span class="p">;</span>
 </span><span class="line">
-</span><span class="line">    format-&gt;next = NULL;
-</span><span class="line">    while(*p || avpriv_atomic_ptr_cas((void * volatile *)p, NULL, format))
-</span><span class="line">        p = &amp;(*p)-&gt;next;
-</span><span class="line">    last_iformat = &amp;format-&gt;next;
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+</span><span class="line">    <span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="n">last_iformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><figcaption><span>avpriv_atomic_ptr_cas </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -283,23 +297,53 @@
 <span class="line-number">8</span>
 <span class="line-number">9</span>
 <span class="line-number">10</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">void *avpriv_atomic_ptr_cas(void * volatile *ptr, void *oldval, void *newval)
-</span><span class="line">{
-</span><span class="line">    void *ret;
-</span><span class="line">    pthread_mutex_lock(&amp;atomic_lock);
-</span><span class="line">    ret = *ptr;
-</span><span class="line">    if (ret == oldval)
-</span><span class="line">        *ptr = newval;
-</span><span class="line">    pthread_mutex_unlock(&amp;atomic_lock);
-</span><span class="line">    return ret;
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="o">*</span><span class="nf">avpriv_atomic_ptr_cas</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">oldval</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">newval</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">void</span> <span class="o">*</span><span class="n">ret</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">atomic_lock</span><span class="p">);</span>
+</span><span class="line">    <span class="n">ret</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">oldval</span><span class="p">)</span>
+</span><span class="line">        <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">newval</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">atomic_lock</span><span class="p">);</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</span></code></pre></td></tr></table></div></figure>
+<figure class="code"><figcaption><span>REGISTER_MUXDEMUX </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</span>
+</span></code></pre></td></tr></table></div></figure>
 
 <h3 id="section-4">注册协议</h3>
 
+<figure class="code"><figcaption><span>REGISTER_PROTOCOL </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_PROTOCOL(X, x)                                         \</span>
+</span><span class="line"><span class="cp">    {                                                                   \</span>
+</span><span class="line"><span class="cp">        extern URLProtocol ff_##x##_protocol;                           \</span>
+</span><span class="line"><span class="cp">        if (CONFIG_##X##_PROTOCOL)                                      \</span>
+</span><span class="line"><span class="cp">            ffurl_register_protocol(&amp;ff_##x##_protocol);                \</span>
+</span><span class="line"><span class="cp">    }</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>以<code>TCP</code>为例，<code>REGISTER_PROTOCOL(TCP,tcp)</code>展开如下：</p>
+
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">extern URLProtocol ff_tcp_protocol;
+</span><span class="line">if(CONFIG_TCP_PROTOCOL)
+</span><span class="line">    ffurl_register_protocol(&amp;ff_tcp_protocol);</span></code></pre></td></tr></table></div></figure>
+
+<p><code>ffurl_register_protocol(&amp;ff_tcp_protocol)</code>展开如下：</p>
+
+<figure class="code"><figcaption><span>ffurl_register_protocol </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -309,30 +353,17 @@
 <span class="line-number">8</span>
 <span class="line-number">9</span>
 <span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">#define REGISTER_PROTOCOL(X, x)                                         \
-</span><span class="line">    {                                                                   \
-</span><span class="line">        extern URLProtocol ff_##x##_protocol;                           \
-</span><span class="line">        if (CONFIG_##X##_PROTOCOL)                                      \
-</span><span class="line">            ffurl_register_protocol(&amp;ff_##x##_protocol);                \
-</span><span class="line">    }
-</span><span class="line">
-</span><span class="line">int ffurl_register_protocol(URLProtocol *protocol)
-</span><span class="line">{
-</span><span class="line">    URLProtocol **p;
-</span><span class="line">    p = &first_protocol;
-</span><span class="line">    while (*p)
-</span><span class="line">        p = &amp;(*p)-&gt;next;
-</span><span class="line">    *p             = protocol;
-</span><span class="line">    protocol-&gt;next = NULL;
-</span><span class="line">    return 0;
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">ffurl_register_protocol</span><span class="p">(</span><span class="n">URLProtocol</span> <span class="o">*</span><span class="n">protocol</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">URLProtocol</span> <span class="o">**</span><span class="n">p</span><span class="p">;</span>
+</span><span class="line">    <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">first_protocol</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="o">*</span><span class="n">p</span>             <span class="o">=</span> <span class="n">protocol</span><span class="p">;</span>
+</span><span class="line">    <span class="n">protocol</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 </div>
 
