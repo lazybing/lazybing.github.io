@@ -48,14 +48,15 @@ void av_register_all(void)
 
 ### 注册一次  
 
-```
+{% codeblock lang:c initialized_once %}
 static int initialized;
 
 if (initialized)
     return;
 initialized = 1;
-```
-该段代码可以看出，当调用过该函数一次后，再次调用时，该函数直接返回。
+{% endcodeblock %}
+
+该段代码可以看出，当调用过该函数一次后，再次调用时，该函数直接返回。  
 注意，这种方法在 FFMEPG 源码中非常常见。
 
 ### 注册 codec 
@@ -68,14 +69,15 @@ avcodec_register_all();
 
 ### 注册复用器
 
-```
+{% codeblock lang:c REGISTER_MUXER %}
 #define REGISTER_MUXER(X, x)                                            \
     {                                                                   \
         extern AVOutputFormat ff_##x##_muxer;                           \
         if (CONFIG_##X##_MUXER)                                         \
             av_register_output_format(&ff_##x##_muxer);                 \
     }
-```
+{% endcodeblock %}
+
 以`MP4`为例，`REGISTER_MUXER(MP4, mp4)`展开如下：  
 ```
 extern AVOutpusFormat ff_mp4_muxer;
@@ -83,9 +85,9 @@ if(CONFIG_MP4_MUXER)
     av_register_output_format(&ff_mp4_muxer);
 ```
 
-`av_register_input_format(&ff_mp4_muxer)`展开如下：  
+`av_register_output_format(&ff_mp4_muxer)`展开如下：  
 
-```
+{% codeblock lang:c av_register_output_format %}
 void av_register_output_format(AVOutputFormat *format)
 {
     AVOutputFormat **p = last_oformat;
@@ -95,21 +97,22 @@ void av_register_output_format(AVOutputFormat *format)
         p = &(*p)->next;
     last_oformat = &format->next;
 }
-
-```
+{% endcodeblock %}
 
 ### 注册解复用器 
 
-```
+{% codeblock lang:c REGISTER_MUXER %}
 #define REGISTER_DEMUXER(X, x)                                          \
     {                                                                   \
         extern AVInputFormat ff_##x##_demuxer;                          \
         if (CONFIG_##X##_DEMUXER)                                       \
             av_register_input_format(&ff_##x##_demuxer);                \
     }
-```
+{% endcodeblock %}
 
-```
+`av_register_input_format(&ff_mp4_muxer)`展开如下：  
+
+{% codeblock lang:c av_register_output_format %}
 void av_register_input_format(AVInputFormat *format)
 {
     AVInputFormat **p = last_iformat;
@@ -119,9 +122,9 @@ void av_register_input_format(AVInputFormat *format)
         p = &(*p)->next;
     last_iformat = &format->next;
 }
-```
+{% endcodeblock %}
 
-```
+{% codeblock lang:c avpriv_atomic_ptr_cas %}
 void *avpriv_atomic_ptr_cas(void * volatile *ptr, void *oldval, void *newval)
 {
     void *ret;
@@ -132,22 +135,34 @@ void *avpriv_atomic_ptr_cas(void * volatile *ptr, void *oldval, void *newval)
     pthread_mutex_unlock(&atomic_lock);
     return ret;
 }
-```
+{% endcodeblock %}
 
-```
+{% codeblock lang:c REGISTER_MUXDEMUX %}
 #define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)
-```
+{% endcodeblock %}
 
 ### 注册协议
 
-```
+{% codeblock lang:c REGISTER_PROTOCOL %}
 #define REGISTER_PROTOCOL(X, x)                                         \
     {                                                                   \
         extern URLProtocol ff_##x##_protocol;                           \
         if (CONFIG_##X##_PROTOCOL)                                      \
             ffurl_register_protocol(&ff_##x##_protocol);                \
     }
+{% endcodeblock %}
 
+以`TCP`为例，`REGISTER_PROTOCOL(TCP,tcp)`展开如下：  
+
+```
+extern URLProtocol ff_tcp_protocol;
+if(CONFIG_TCP_PROTOCOL)
+    ffurl_register_protocol(&ff_tcp_protocol);
+```
+
+`ffurl_register_protocol(&ff_tcp_protocol)`展开如下：  
+
+{% codeblock lang:c ffurl_register_protocol %}
 int ffurl_register_protocol(URLProtocol *protocol)
 {
     URLProtocol **p;
@@ -158,5 +173,5 @@ int ffurl_register_protocol(URLProtocol *protocol)
     protocol->next = NULL;
     return 0;
 }
-```
+{% endcodeblock %}
 
