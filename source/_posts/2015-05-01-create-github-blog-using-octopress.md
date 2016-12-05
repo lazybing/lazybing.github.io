@@ -11,6 +11,32 @@ categories: 总结积累
 详细记录使用`Octopress`的搭建和使用过程中遇到的问题。
 <!--more-->
 
+##发布新帖
+
+发布新帖的两种方法:  
+方法一是在命令行下执行如下命令：  
+```
+cd octopress
+rake new_post["Post Title"]
+```
+其中的`Post Title`就是你想要的文章标题，然后会有一个名为`yyyy-mm-dd-Post_Title.markdown`的文件在`octopress/source_posts`目录下生成，其中`yyy-mm-dd`是当时的日期。之后打开文件，即可编辑博客。
+
+方法二是直接在`octopress/source_posts`文件下，生成一个格式相同的文件即可。
+
+生成的文件格式头如下  
+```
+---
+layout: post
+title: "使用Octopress 搭建个人博客"
+date: 2015-05-01 19:47:37 -0700
+comments: true
+categories: 总结积累
+---
+
+```
+
+
+
 ##添加图片
 在写 blog 的过程中，经常需要用到插入图片。示例如下：
 
