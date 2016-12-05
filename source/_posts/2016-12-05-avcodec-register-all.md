@@ -13,7 +13,8 @@ avcodec_register_all 提供注册`codec``parsers``filters`的功能。
 
 <!--more-->
 
-## avcodec_register_all 框架
+## avcodec_register_all 框架  
+
 {% codeblock lang:c avcodec_register_all %}
 void avcodec_register_all(void)
 {
@@ -41,7 +42,9 @@ void avcodec_register_all(void)
     REGISTER_BSF(HEVC_MP4TOANNEXB,hevc_mp4toannexb);
 }
 {% endcodeblock %}
-## 调用关系
+
+## 调用关系  
+
 <img src="/images/avcodec_register_all/avcodec_register_all.png">
 
 ## 源码分析
