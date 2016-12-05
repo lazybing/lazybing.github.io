@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="av_register_all 框架 源码分析 注册一次 注册 codec 注册复用器 注册解复用器 注册协议 av_register_all()几乎是所有使用 FFMPEG 编程调用的第一个函数。av_register_all()的主要功能是注册所有的 formats 和 protocols &hellip;">
+  <meta name="description" content="av_register_all 框架 调用关系 源码分析 注册一次 注册 codec 注册复用器 注册解复用器 注册协议 av_register_all()几乎是所有使用 FFMPEG 编程调用的第一个函数。av_register_all()的主要功能是注册所有的 formats 和 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -101,12 +101,13 @@
 
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#avregisterall-" id="markdown-toc-avregisterall-">av_register_all 框架</a></li>
-  <li><a href="#section" id="markdown-toc-section">源码分析</a>    <ul>
-      <li><a href="#section-1" id="markdown-toc-section-1">注册一次</a></li>
+  <li><a href="#section" id="markdown-toc-section">调用关系</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">源码分析</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">注册一次</a></li>
       <li><a href="#codec" id="markdown-toc-codec">注册 codec</a></li>
-      <li><a href="#section-2" id="markdown-toc-section-2">注册复用器</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">注册解复用器</a></li>
-      <li><a href="#section-4" id="markdown-toc-section-4">注册协议</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">注册复用器</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">注册解复用器</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">注册协议</a></li>
     </ul>
   </li>
 </ul>
@@ -171,9 +172,12 @@
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<h2 id="section">源码分析</h2>
+<h2 id="section">调用关系</h2>
+<p><img src="/images/av_register_all/av_register_all.png" /></p>
 
-<h3 id="section-1">注册一次</h3>
+<h2 id="section-1">源码分析</h2>
+
+<h3 id="section-2">注册一次</h3>
 
 <figure class="code"><figcaption><span>initialized_once </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -198,7 +202,7 @@
 <p>该函数的作用为注册<code>codecs</code><code>parsers</code>和<code>filters</code>。<br />
 该函数的源码，还请访问<code>avcodec_register_all</code>函数。</p>
 
-<h3 id="section-2">注册复用器</h3>
+<h3 id="section-3">注册复用器</h3>
 
 <figure class="code"><figcaption><span>REGISTER_MUXER </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -246,7 +250,7 @@
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-3">注册解复用器</h3>
+<h3 id="section-4">注册解复用器</h3>
 
 <figure class="code"><figcaption><span>REGISTER_MUXER </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -314,7 +318,7 @@
 </pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-4">注册协议</h3>
+<h3 id="section-5">注册协议</h3>
 
 <figure class="code"><figcaption><span>REGISTER_PROTOCOL </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
