@@ -47,7 +47,7 @@ void av_register_all(void)
 ## 调用关系  
 <img src="/images/av_register_all/av_register_all.png">
 
-从调用关系图可以看出，通过调用`avcodec_register_all`注册了和编解码器有关的组件；硬件加速器、解码器、编码器、Parser、Bistream Filter等，以及复用器、解复用器、协议处理。  
+从调用关系图可以看出，通过调用[avcodec_register_all](http://lazybing.github.io/blog/2016/12/05/av-register-all/)注册了和编解码器有关的组件；硬件加速器、解码器、编码器、Parser、Bistream Filter等，以及复用器、解复用器、协议处理。  
 
 ## 源码分析
 
@@ -70,7 +70,7 @@ initialized = 1;
 avcodec_register_all();
 ```
 该函数的作用为注册`codecs``parsers`和`filters`。  
-该函数的源码，还请访问`avcodec_register_all`函数。  
+该函数的源码，还请访问[avcodec_register_all](http://lazybing.github.io/blog/2016/12/05/av-register-all/)函数。  
 
 ### 注册复用器
 
