@@ -5,12 +5,22 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Avcodec_register_all - 懒人李冰</title>
+  <title>FFMPEG 源码分析：avcodec_register_all - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="
-avcodec_register_all provides registration of all codecs, parsers and bitstream filters for libavcodec。 ">
+  <meta name="description" content="avcodec_register_all 框架 源码分析 avcodec_register_all 提供注册codecparsersfilters的功能。 avcodec_register_all 框架
+avcodec_register_all 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -83,7 +93,7 @@ avcodec_register_all provides registration of all codecs, parsers and bitstream 
   
   <header>
     
-      <h1 class="entry-title">Avcodec_register_all</h1>
+      <h1 class="entry-title">FFMPEG 源码分析：avcodec_register_all</h1>
     
     
       <p class="meta">
@@ -100,10 +110,72 @@ avcodec_register_all provides registration of all codecs, parsers and bitstream 
   </header>
 
 
-<div class="entry-content">
-<p>avcodec_register_all provides registration of all codecs, parsers and bitstream filters for libavcodec。</p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#avcodecregisterall-" id="markdown-toc-avcodecregisterall-">avcodec_register_all 框架</a></li>
+  <li><a href="#section" id="markdown-toc-section">源码分析</a></li>
+</ul>
+
+<p>avcodec_register_all 提供注册<code>codec</code><code>parsers</code><code>filters</code>的功能。</p>
 
 <!--more-->
+
+<h2 id="avcodecregisterall-">avcodec_register_all 框架</h2>
+<figure class="code"><figcaption><span>avcodec_register_all </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">avcodec_register_all</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">static</span> <span class="kt">int</span> <span class="n">initialized</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">initialized</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span><span class="p">;</span>
+</span><span class="line">    <span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* hardwar accelerators */</span>
+</span><span class="line">    <span class="n">REGISTER_HWACCEL</span><span class="p">(</span><span class="n">H264_MMAL</span><span class="p">,</span><span class="n">h264_mmal</span><span class="p">);</span>
+</span><span class="line">    <span class="p">......</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* video codecs */</span>
+</span><span class="line">    <span class="n">REGISTER_DECODER</span><span class="p">(</span><span class="n">HEVC</span><span class="p">,</span><span class="n">hevc</span><span class="p">);</span>
+</span><span class="line">    <span class="p">......</span>
+</span><span class="line">    <span class="n">REGISTER_ENCDEC</span> <span class="p">(</span><span class="n">MPEG4</span><span class="p">,</span><span class="n">mpeg4</span><span class="p">);</span>
+</span><span class="line">    <span class="p">......</span>
+</span><span class="line">    <span class="cm">/* audio codecs */</span>
+</span><span class="line">    <span class="n">REGISTER_ENCDEC</span> <span class="p">(</span><span class="n">AAC</span><span class="p">,</span><span class="n">aac</span><span class="p">);</span>
+</span><span class="line">    <span class="p">......</span>
+</span><span class="line">    <span class="cm">/* parsers */</span>
+</span><span class="line">    <span class="n">REGISTER_PARSER</span><span class="p">(</span><span class="n">HEVC</span><span class="p">,</span><span class="n">hevc</span><span class="p">);</span>
+</span><span class="line">    <span class="cm">/* bitstream filters */</span>
+</span><span class="line">    <span class="n">REGISTER_BSF</span><span class="p">(</span><span class="n">HEVC_MP4TOANNEXB</span><span class="p">,</span><span class="n">hevc_mp4toannexb</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+<p>## 调用关系
+<img src="/images/avcodec_register_all/avcodec_register_all.png" /></p>
+
+<h2 id="section">源码分析</h2>
 
 </div>
 
@@ -125,7 +197,7 @@ avcodec_register_all provides registration of all codecs, parsers and bitstream 
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/ffmepgyuan-ma-fen-xi/'>ffmepg源码分析</a>
+    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
   
 </span>
 
@@ -143,7 +215,7 @@ avcodec_register_all provides registration of all codecs, parsers and bitstream 
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/12/05/av-register-all/" title="Previous Post: FFMEPG 源码分析：av_register_all">&laquo; FFMEPG 源码分析：av_register_all</a>
+        <a class="basic-alignment left" href="/blog/2016/12/05/av-register-all/" title="Previous Post: FFMPEG 源码分析：av_register_all">&laquo; FFMPEG 源码分析：av_register_all</a>
       
       
     </p>
@@ -154,7 +226,7 @@ avcodec_register_all provides registration of all codecs, parsers and bitstream 
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/12/05/avcodec-register-all" data-title="avcodec_register_all" data-url="http://lazybing.github.io/blog/2016/12/05/avcodec-register-all//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/12/05/avcodec-register-all" data-title="FFMPEG 源码分析：avcodec_register_all" data-url="http://lazybing.github.io/blog/2016/12/05/avcodec-register-all//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
@@ -180,8 +252,7 @@ var duoshuoQuery = {short_name:"lazybing"};
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmepgyuan-ma-fen-xi/'>ffmepg源码分析 (1)</a></li>
-<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (10)</a></li>
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (11)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (3)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
@@ -196,11 +267,11 @@ var duoshuoQuery = {short_name:"lazybing"};
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2016/12/05/avcodec-register-all/">Avcodec_register_all</a>
+        <a href="/blog/2016/12/05/avcodec-register-all/">FFMPEG 源码分析：avcodec_register_all</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/05/av-register-all/">FFMEPG 源码分析：av_register_all</a>
+        <a href="/blog/2016/12/05/av-register-all/">FFMPEG 源码分析：av_register_all</a>
       </li>
     
       <li class="post">
