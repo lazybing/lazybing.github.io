@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "FFMEPG 源码分析：av_register_all"
+title: "FFMPEG 源码分析：av_register_all"
 date: 2016-12-05 04:45:48 -0800
 comments: true
 categories: FFMPEG源码分析
