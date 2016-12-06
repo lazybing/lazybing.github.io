@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-12-05T09:38:47-08:00</updated>
+  <updated>2016-12-05T16:41:48-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -21,7 +21,12 @@
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#avcodecregisterall-" id="markdown-toc-avcodecregisterall-">avcodec_register_all 框架</a></li>
   <li><a href="#section" id="markdown-toc-section">调用关系</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">源码分析</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">源码分析</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">注册一次</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">注册硬件加速器</a></li>
+      <li><a href="#codec" id="markdown-toc-codec">注册codec</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>avcodec_register_all 提供注册<code>codec</code><code>parsers</code><code>filters</code>的功能。</p>
@@ -87,7 +92,78 @@
 
 <p><img src="http://lazybing.github.io/images/avcodec_register_all/avcodec_register_all.png" /></p>
 
+<p>从<code>avcodec_register_all</code>的框架和调用关系图可以看出，该函数主要注册硬件加速器、codec、parsers、比特流过滤器等。</p>
+
 <h2 id="section-1">源码分析</h2>
+
+<h3 id="section-2">注册一次</h3>
+
+<figure class="code"><figcaption><span>initialized_once </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">int</span> <span class="n">initialized</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">initialized</span><span class="p">)</span>
+</span><span class="line">    <span class="k">return</span><span class="p">;</span>
+</span><span class="line"><span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>该段代码可以看出，当调用过该函数一次后，再次调用时，该函数直接返回。<br />
+注意，这种方法在 FFMEPG 源码中非常常见。</p>
+
+<h3 id="section-3">注册硬件加速器</h3>
+
+<figure class="code"><figcaption><span>REGISTER_HWACCEL </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_HWACCEL(X, x)                                          \</span>
+</span><span class="line"><span class="cp">    {                                                                   \</span>
+</span><span class="line"><span class="cp">        extern AVHWAccel ff_##x##_hwaccel;                              \</span>
+</span><span class="line"><span class="cp">        if (CONFIG_##X##_HWACCEL)                                       \</span>
+</span><span class="line"><span class="cp">            av_register_hwaccel(&amp;ff_##x##_hwaccel);                     \</span>
+</span><span class="line"><span class="cp">    }</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>以<code>H264</code>为例，<code>REGISTER_HWACCEL(H264_MMAL, h264_mmal)</code>展开如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">extern AVHWAccel ff_h264_mmal_hwaccel;
+</span><span class="line">if(CONFIG_H264_MMAL_HWACCEL)
+</span><span class="line">    av_register_hwaccel(&amp;ff_h264_mmal_hwaccel);</span></code></pre></td></tr></table></div></figure>
+
+<p><code>av_register_hwaccel(&amp;ff_h264_mmal_hwaccel)</code> 展开如下：</p>
+
+<figure class="code"><figcaption><span>REGISTER_HWACCEL </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">av_register_hwaccel</span><span class="p">(</span><span class="n">AVHWAccel</span> <span class="o">*</span><span class="n">hwaccel</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">AVHWAccel</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_hwaccel</span><span class="p">;</span>
+</span><span class="line">    <span class="n">hwaccel</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">hwaccel</span><span class="p">))</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="n">last_hwaccel</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">hwaccel</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="codec">注册codec</h3>
+<p>### 注册parser
+### 注册bitstream filters</p>
 
 ]]></content>
   </entry>
