@@ -16,7 +16,7 @@ avcodec_find_decoder 和 avcodec_find_encoder 主要是利用 AVCodecID 来查�
 
 avcodec_find_decoder 定义如下：  
 
-{% codeblock [lang:c] avcodec_find_decoder %}
+{% codeblock lang:c avcodec_find_decoder %}
 AVCodec *avcodec_find_decoder(enum AVCodecID id)
 {
     return find_encdec(id, 0);
@@ -25,7 +25,8 @@ AVCodec *avcodec_find_decoder(enum AVCodecID id)
 
 由定义可以看出，该函数利用 AVCodecID 查找 AVCodec，并将找到的 AVCodec 返回。
 `find_encdec`定义如下：  
-{% codeblock [lang:c] find_encdec %}
+
+{% codeblock lang:c find_encdec %}
 static AVCodec *find_encdec(enum AVCodecID id, int encoder)
 {
     AVCodec *p, *experimental = NULL;
@@ -46,7 +47,8 @@ static AVCodec *find_encdec(enum AVCodecID id, int encoder)
 {% endcodeblock %}
 
 其中`av_codec_is_decoder`定义如下：  
-{% codeblock [lang:c] av_codec_is_decoder %}
+
+{% codeblock lang:c av_codec_is_decoder %}
 int av_codec_is_decoder(const AVCodec *codec)
 {
     return codec && codec->decode;
@@ -54,7 +56,8 @@ int av_codec_is_decoder(const AVCodec *codec)
 {% endcodeblock %}
 
 `av_codec_is_encoder`定义如下：  
-{% codeblock [lang:c] av_codec_is_decoder %}
+
+{% codeblock lang:c av_codec_is_decoder %}
 int av_codec_is_encoder(const AVCodec *codec)
 {
     return codec && (codec->encode_sub || codec->encode2);
@@ -62,7 +65,5 @@ int av_codec_is_encoder(const AVCodec *codec)
 {% endcodeblock %}
 
 查找编解码器除了上述的`avcodec_find_decoder`和`avcodec_find_encoder`外，还可以利用编解码器名字来查找函数为：avcodec_find_encoder_by_name 和 avcodec_find_decoder_by_name，在此不再赘述。
-
-
 
 
