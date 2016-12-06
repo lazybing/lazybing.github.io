@@ -96,9 +96,13 @@ void av_register_hwaccel(AVHWAccel *hwaccel)
 }
 {% endcodeblock %}
 
-### 注册codec
-### 注册parser
-### 注册bitstream filters
+### 注册codec  
+
+### 注册parser  
+
+### 注册bitstream filters 
+
+
 
 
 
