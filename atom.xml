@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-12-07T05:22:50-08:00</updated>
+  <updated>2016-12-07T07:06:21-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -42,10 +42,198 @@
 <p>与<code>avio_open2</code>相似的还有<code>avio_open</code>函数，<code>avio_open</code>会调用<code>avio_open2</code>,并将 int_cb 和 options 设置为 NULL。</p>
 
 <h3 id="avioopen2--1">avio_open2 调动关系</h3>
-<p><code>avio_open2</code>的调用函数关系如下：<br />
-<img src="http://lazybing.github.io/images/avio_open2/avio_open2.png" /></p>
+<p><code>avio_open2</code>的调用函数关系如下：</p>
+
+<p><img src="http://lazybing.github.io/images/avio_open2/avio_open2.png" /></p>
 
 <h3 id="avioopen2--2">avio_open2 源码分析</h3>
+
+<p><code>avio_open2</code>函数的定义如下：</p>
+
+<figure class="code"><figcaption><span>avio_open2 </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">avio_open2</span><span class="p">(</span><span class="n">AVIOContext</span> <span class="o">**</span><span class="n">s</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span>
+</span><span class="line">               <span class="k">const</span> <span class="n">AVIOInterruptCB</span> <span class="o">*</span><span class="n">int_cb</span><span class="p">,</span> <span class="n">AVDictionary</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">URLContext</span> <span class="o">*</span><span class="n">h</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">err</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">err</span> <span class="o">=</span> <span class="n">ffurl_open</span><span class="p">(</span><span class="o">&amp;</span><span class="n">h</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">int_cb</span><span class="p">,</span> <span class="n">options</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">er</span> <span class="o">=</span> <span class="n">ffio_fdopen</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">h</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ffurl_close</span><span class="p">(</span><span class="n">h</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>avio_open2</code>调用的两个函数，<code>ffurl_open</code>和<code>ffio_fdopen</code>。<code>ffurl_open</code>用于初始化<code>URLContext</code>,<code>ffio_fdopen</code>用于根据<code>URLContext</code>初始化<code>AVIOContext</code>。</p>
+
+<p>其中的<code>ffurl_open</code>函数定义如下：</p>
+
+<figure class="code"><figcaption><span>ffurl_open </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">ffurl_open</span><span class="p">(</span><span class="n">URLContext</span> <span class="o">**</span><span class="n">puc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span>
+</span><span class="line">               <span class="k">const</span> <span class="n">AVIOInterruptCB</span> <span class="o">*</span><span class="n">int_cb</span><span class="p">,</span> <span class="n">AVDictionary</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">ffurl_alloc</span><span class="p">(</span><span class="n">puc</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">int_cb</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">options</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="o">*</span><span class="n">puc</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">prot</span><span class="o">-&gt;</span><span class="n">priv_data_class</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">       <span class="p">(</span><span class="n">ret</span> <span class="o">=</span> <span class="n">av_opt_set_dict</span><span class="p">((</span><span class="o">*</span><span class="n">puc</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">priv_data</span><span class="p">,</span> <span class="n">options</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">        <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">((</span><span class="n">ret</span> <span class="o">=</span> <span class="n">av_opt_set_dict</span><span class="p">(</span><span class="o">*</span><span class="n">puc</span><span class="p">,</span> <span class="n">options</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">        <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">ret</span> <span class="o">=</span> <span class="n">ffurl_connect</span><span class="p">(</span><span class="o">*</span><span class="n">puc</span><span class="p">,</span> <span class="n">options</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">ret</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="nl">fail</span><span class="p">:</span>
+</span><span class="line">    <span class="n">ffurl_close</span><span class="p">(</span><span class="o">*</span><span class="n">puc</span><span class="p">);</span>
+</span><span class="line">    <span class="o">*</span><span class="n">puc</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>ffurl_open</code>主要调用两个函数<code>ffurl_alloc</code>和<code>ffurl_connect</code>。<code>ffurl_alloc</code>用于查找合适的<code>URLProtocol</code>,并创建一个<code>URLContext</code>;<code>ffurl_connect</code>用于打开获得的<code>URLProtocol</code>.</p>
+
+<figure class="code"><figcaption><span>ffurl_alloc </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">ffurl_alloc</span><span class="p">(</span><span class="n">URLContext</span> <span class="o">**</span><span class="n">puc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVIOInterruptCB</span> <span class="o">*</span><span class="n">int_cb</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">URLProtocol</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="err">……</span>
+</span><span class="line">    <span class="n">p</span> <span class="o">=</span> <span class="n">url_find_protocol</span><span class="p">(</span><span class="n">filename</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span> <span class="n">url_alloc_for_protocol</span><span class="p">(</span><span class="n">puc</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">int_cb</span><span class="p">);</span>
+</span><span class="line">    <span class="err">……</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>ffurl_alloc</code>调用两个函数：<code>url_find_protocol</code>根据文件路径查找合适的<code>URLProtocol</code>,<code>url_alloc_for_protocol</code>为查找到的<code>URLProtocol</code>创建<code>URLContext</code>。</p>
+
+<figure class="code"><figcaption><span>ffurl_connect </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">ffurl_connect</span><span class="p">(</span><span class="n">URLContext</span> <span class="o">*</span><span class="n">uc</span><span class="p">,</span> <span class="n">AVDictionary</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">err</span> <span class="o">=</span> <span class="n">uc</span><span class="o">-&gt;</span><span class="n">prot</span><span class="o">-&gt;</span><span class="n">url_open2</span> <span class="o">?</span> <span class="n">uc</span><span class="o">-&gt;</span><span class="n">prot</span><span class="o">-&gt;</span><span class="n">url_open2</span><span class="p">(</span><span class="n">uc</span><span class="p">,</span> <span class="n">uc</span><span class="o">-&gt;</span><span class="n">filename</span><span class="p">,</span> <span class="n">uc</span><span class="o">-&gt;</span><span class="n">flags</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span><span class="o">:</span>
+</span><span class="line">        <span class="n">uc</span><span class="o">-&gt;</span><span class="n">prot</span><span class="o">-&gt;</span><span class="n">url_open</span><span class="p">(</span><span class="n">uc</span><span class="p">,</span> <span class="n">uc</span><span class="o">-&gt;</span><span class="n">filename</span><span class="p">,</span> <span class="n">uc</span><span class="o">-&gt;</span><span class="n">flags</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>ffurl_connect</code>用于打开获得的<code>URLProtocol</code>.如果以<code>UDP</code>为例的话，它的<code>URLProtocol</code>定义如下,打开<code>URLProtocol</code>时，会调用到<code>udp_open</code>函数。</p>
+
+<figure class="code"><figcaption><span>ff_udp_protocol </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">URLProtocol</span> <span class="n">ff_udp_protocol</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class="line">    <span class="p">.</span><span class="n">name</span>                <span class="o">=</span> <span class="s">&quot;udp&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">url_open</span>            <span class="o">=</span> <span class="n">udp_open</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">url_read</span>            <span class="o">=</span> <span class="n">udp_read</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">url_write</span>           <span class="o">=</span> <span class="n">udp_write</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">url_close</span>           <span class="o">=</span> <span class="n">udp_close</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">url_get_file_handle</span> <span class="o">=</span> <span class="n">udp_get_file_handle</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_data_size</span>      <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">UDPContext</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_data_class</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">udp_class</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">flags</span>               <span class="o">=</span> <span class="n">URL_PROTOCOL_FLAG_NETWORK</span><span class="p">,</span>
+</span><span class="line"><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>ffio_fdopen</code>函数定义如下：</p>
+<figure class="code"><figcaption><span>ffio_fdopen </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">ffio_fdopen</span><span class="p">(</span><span class="n">AVIOContext</span> <span class="o">**</span><span class="n">s</span><span class="p">,</span> <span class="n">URLContext</span> <span class="o">*</span><span class="n">h</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+</span><span class="line">    <span class="err">……</span>
+</span><span class="line">    <span class="n">buffer</span> <span class="o">=</span> <span class="n">av_malloc</span><span class="p">(</span><span class="n">buffer_size</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="o">*</span><span class="n">s</span> <span class="o">=</span> <span class="n">avio_alloc_context</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AVIO_FLAG_WRITE</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span>
+</span><span class="line">                            <span class="p">(</span><span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="p">,</span> <span class="kt">int</span><span class="p">))</span><span class="n">ffurl_read</span><span class="p">,</span>
+</span><span class="line">                            <span class="p">(</span><span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="p">,</span> <span class="kt">int</span><span class="p">))</span><span class="n">ffurl_write</span><span class="p">,</span>
+</span><span class="line">                            <span class="p">(</span><span class="kt">int64_t</span> <span class="p">(</span><span class="o">*</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">,</span> <span class="kt">uint64_t</span><span class="p">,</span> <span class="kt">int</span><span class="p">))</span><span class="n">ffurl_ffurl_seek</span><span class="p">).</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>ffio_fdopen</code>会调用<code>avio_alloc_context</code>初始化一个<code>AVIOContext</code>, <code>avio_alloc_context</code>函数成功执行后会返回一个创建好的<code>AVIOContext</code>。</p>
 
 ]]></content>
   </entry>
