@@ -5,11 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: 项目实践 - 懒人李冰</title>
+  <title>FFMPEG源码分析：avio_open2 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Category: 项目实践">
+  <meta name="description" content="avio_open2 声明和定义 avio_open2 调动关系 avio_open2 源码分析 avio_open2 主要实现创建并初始化一个 AVIOContext，用于访问由 url 指定文件。 avio_open2 声明和定义
+1
+2
+int avio_open2(AVIOContext &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/07/avio-open2/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -78,36 +81,123 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: 项目实践</h1>
+    
+      <h1 class="entry-title">FFMPEG源码分析：avio_open2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-12-07T04:21:48-08:00'><span class='date'>2016 年 12 月 07 日</span> <span class='time'>4:21 am</span></time>
+        
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#avioopen2-" id="markdown-toc-avioopen2-">avio_open2 声明和定义</a></li>
+  <li><a href="#avioopen2--1" id="markdown-toc-avioopen2--1">avio_open2 调动关系</a></li>
+  <li><a href="#avioopen2--2" id="markdown-toc-avioopen2--2">avio_open2 源码分析</a></li>
+</ul>
 
-  
-  <h2>2016</h2>
+<p>avio_open2 主要实现创建并初始化一个 AVIOContext，用于访问由 url 指定文件。
+<!--more--></p>
 
-<article>
-  
-<h1><a href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/">FFmpeg 和 SDL 使用教程（一）</a></h1>
-<time datetime="2016-05-10T16:45:03-07:00" pubdate><span class='month'>05 月</span> <span class='day'>10 日</span> <span class='year'>2016</span></time>
+<h3 id="avioopen2-">avio_open2 声明和定义</h3>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int avio_open2(AVIOContext **s, const char *url, int flags,
+</span><span class="line">               const  AVIOInterruptCB *int_cb, AVDictionary **options);</span></code></pre></td></tr></table></div></figure>
+<p>各个参数的含义如下：<br />
+<code>AVIOContext **s</code>:函数调用成功后，创建并初始化该<code>AVIOContext</code>结构体。<br />
+<code>const char *url</code>:输入输出协议的地址。<br />
+<code>int flags</code>:打开地址的方式(只读、只写、读写)。AVIO_FLAG_READ/AVIO_FLAG_WRITE/AVIO_FLAG_READ_WRITE.<br />
+<code>const AVIOInterruptCB *int_cb</code>: 调用函数。<br />
+<code>AVDictionary **options</code>: 一般为NULL。</p>
 
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/xiang-mu-shi-jian/'>项目实践</a></span>
-</footer>
+<p>与<code>avio_open2</code>相似的还有<code>avio_open</code>函数，<code>avio_open</code>会调用<code>avio_open2</code>,并将 int_cb 和 options 设置为 NULL。</p>
 
+<h3 id="avioopen2--1">avio_open2 调动关系</h3>
+<p><code>avio_open2</code>的调用函数关系如下：<br />
+<img src="/images/avio_open2/avio_open2.png" /></p>
 
-</article>
+<h3 id="avioopen2--2">avio_open2 源码分析</h3>
 
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-12-07T04:21:48-08:00'><span class='date'>2016 年 12 月 07 日</span> <span class='time'>4:21 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/07/avio-open2/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/07/avio-open2/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/12/06/av-find-encdec/" title="Previous Post: FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder">&laquo; FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2016/12/07/avio-open2" data-title="FFMPEG源码分析：avio_open2" data-url="http://lazybing.github.io/blog/2016/12/07/avio-open2//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
 
 </div>
 

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Ffmpeg源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-12-06T07:39:58-08:00</updated>
+  <updated>2016-12-07T05:22:50-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,43 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[FFMPEG源码分析：avio_open2]]></title>
+    <link href="http://lazybing.github.io/blog/2016/12/07/avio-open2/"/>
+    <updated>2016-12-07T04:21:48-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/12/07/avio-open2</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#avioopen2-" id="markdown-toc-avioopen2-">avio_open2 声明和定义</a></li>
+  <li><a href="#avioopen2--1" id="markdown-toc-avioopen2--1">avio_open2 调动关系</a></li>
+  <li><a href="#avioopen2--2" id="markdown-toc-avioopen2--2">avio_open2 源码分析</a></li>
+</ul>
+
+<p>avio_open2 主要实现创建并初始化一个 AVIOContext，用于访问由 url 指定文件。
+<!--more--></p>
+
+<h3 id="avioopen2-">avio_open2 声明和定义</h3>
+<p><code>
+int avio_open2(AVIOContext **s, const char *url, int flags,
+               const  AVIOInterruptCB *int_cb, AVDictionary **options);
+</code>
+各个参数的含义如下：<br />
+<code>AVIOContext **s</code>:函数调用成功后，创建并初始化该<code>AVIOContext</code>结构体。<br />
+<code>const char *url</code>:输入输出协议的地址。<br />
+<code>int flags</code>:打开地址的方式(只读、只写、读写)。AVIO_FLAG_READ/AVIO_FLAG_WRITE/AVIO_FLAG_READ_WRITE.<br />
+<code>const AVIOInterruptCB *int_cb</code>: 调用函数。<br />
+<code>AVDictionary **options</code>: 一般为NULL。</p>
+
+<p>与<code>avio_open2</code>相似的还有<code>avio_open</code>函数，<code>avio_open</code>会调用<code>avio_open2</code>,并将 int_cb 和 options 设置为 NULL。</p>
+
+<h3 id="avioopen2--1">avio_open2 调动关系</h3>
+<p><code>avio_open2</code>的调用函数关系如下：<br />
+<img src="http://lazybing.github.io/images/avio_open2/avio_open2.png" /></p>
+
+<h3 id="avioopen2--2">avio_open2 源码分析</h3>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder]]></title>
@@ -874,63 +911,6 @@ ffplay [options] bitstream_file
 </span><span class='line'>    <span class="p">.</span><span class="n">flags</span>             <span class="o">=</span> <span class="n">AVFMT_NOTIMESTAMPS</span><span class="p">,</span>
 </span><span class='line'><span class="p">};</span>
 </span></code></pre></td></tr></table></div></figure></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[AVPacket 结构体解析]]></title>
-    <link href="http://lazybing.github.io/blog/2016/07/03/avpacket-structure/"/>
-    <updated>2016-07-03T08:19:32-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/07/03/avpacket-structure</id>
-    <content type="html"><![CDATA[<p>AVPacket是存储压缩编码数据相关信息的结构体。
-<!--more--></p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVPacket</span><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int64_t</span> <span class="n">pts</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int64_t</span> <span class="n">dts</span><span class="p">;</span>
-</span><span class='line'><span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span>   <span class="n">size</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span>   <span class="n">stream_index</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span>   <span class="n">flags</span><span class="p">;</span>
-</span><span class='line'><span class="n">AVPacketSideData</span> <span class="o">*</span><span class="n">side_data</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">side_data_elems</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span>   <span class="n">duration</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int64_t</span> <span class="n">pos</span><span class="p">;</span>                            <span class="c1">///&amp;lt; byte position in stream, -1 if unknown</span>
-</span><span class='line'><span class="kt">int64_t</span> <span class="n">convergence_duration</span><span class="p">;</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>其中<code>pts</code>代表显示时间戳(单位是AVStream-&gt;time_base units)、<code>dts</code>代表解码时间戳(单位是AVStream-&gt;time_base units)、<code>stream_index</code>标识该<code>AVPacket</code>所属的视频音频流。</p>
 
 ]]></content>
   </entry>
