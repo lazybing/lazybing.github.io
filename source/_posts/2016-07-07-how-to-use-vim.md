@@ -58,9 +58,9 @@ vim 在多窗口打开。
 :sv path/file       //在新的水平分屏中打开文件
 ```
 
-多窗口间切换的3方法：`Ctrl+w+方向键` `Ctrl+w+h/j/k/l` `Ctrl+ww`。
+多窗口间切换的3方法：`Ctrl+w+方向键``Ctrl+w+h/j/k/l``Ctrl+ww`。  
 
-移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。
+移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。  
 
 ## vim 插件安装 
 
@@ -117,9 +117,10 @@ filetype plugin indent on`
 :PluginInstall
 ```
 
-## vim 浏览代码
+## vim 浏览代码  
 
-## vim 浏览代码
+## vim 浏览代码  
 
-vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。
+vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。  
+
 
