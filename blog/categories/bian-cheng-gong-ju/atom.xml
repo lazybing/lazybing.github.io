@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-12-22T08:05:16-08:00</updated>
+  <updated>2016-12-22T08:06:09-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,53 +12,6 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[Addr2line Using]]></title>
-    <link href="http://lazybing.github.io/blog/2016/12/22/addr2line-using/"/>
-    <updated>2016-12-22T08:03:12-08:00</updated>
-    <id>http://lazybing.github.io/blog/2016/12/22/addr2line-using</id>
-    <content type="html"><![CDATA[<p><code>addr2line</code>的作用是将地址转化为文件名和行号。<br />
-<!--more--></p>
-
-<p>在编写程序时，经常会遇到出现程序 crax 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。</p>
-
-<p>{% codecblock lang:c %}
-#include <stdio.h></stdio.h></p>
-
-<p>int div(int numerator, int denominator)
-{
-    return numerator / denominator;
-}</p>
-
-<p>int main(int argc, char **argv)
-{
-    int numerator   = 10;
-    int denominator = 0;</p>
-
-<pre><code>return div(numerator, denominator); } {% endcodeblock %}
-</code></pre>
-
-<p>编译：gcc -o div -g div.c
-生成可执行文件<code>div</code>后，执行该文件：./div 得到如下error:<br />
-<code>
-Floating point exception (core dumped)
-</code></p>
-
-<p>此时并没有任何其他提示信息，我们可以通过<code>dmesg</code>查看信息：<br />
-<code>
-[ 4709.210137] traps: div[2500] trap divide error ip:400524 sp:7ffcd27fd630 error:0 in div[400000+1000]
-</code>
-通过该信息可以看出，ip 指向的地址为<code>400524</code>，得到该地址后，我们就可以使用 addr2line 来定位出错的位置。 
-<code>addr2line -e div 400524</code> 得到结果如下：<br />
-<code>
-/home/bing/work/study/div.c:5
-</code></p>
-
-<p>可以很直观的显示，该 core  dump 信息是在<code>div.c</code>的 line 5。</p>
-
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[Addr2line 的介绍与使用]]></title>
