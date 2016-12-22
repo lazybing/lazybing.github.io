@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-12-22T08:06:09-08:00</updated>
+  <updated>2016-12-22T08:07:49-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -23,20 +23,33 @@
 
 <p>在编写程序时，经常会遇到出现程序 crax 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。</p>
 
-<p>{% codecblock lang:c %}
-#include <stdio.h></stdio.h></p>
-
-<p>int div(int numerator, int denominator)
-{
-    return numerator / denominator;
-}</p>
-
-<p>int main(int argc, char **argv)
-{
-    int numerator   = 10;
-    int denominator = 0;</p>
-
-<pre><code>return div(numerator, denominator); } {% endcodeblock %}
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">div</span><span class="p">(</span><span class="kt">int</span> <span class="n">numerator</span><span class="p">,</span> <span class="kt">int</span> <span class="n">denominator</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">numerator</span>   <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">denominator</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">div</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">);</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
 <p>编译：gcc -o div -g div.c
@@ -87,36 +100,67 @@ Floating point exception (core dumped)
 <p>根据产生的 profile ，可以产生各种不同实行的分析输出。如 The Flat Profile、The Call Graph、The Annotated Source Listing。</p>
 
 <p>示例分析：
-{% codeblock lang:c %}</p>
-
-<h1 id="include-stdioh">include <stdio.h></stdio.h></h1>
-<p>#include <stdlib.h>
-#include <time.h></time.h></stdlib.h></p>
-
-<p>void fun2()
-{
-    sleep(3);
-}</p>
-
-<p>void fun1()
-{
-    int index = 0;</p>
-
-<pre><code>sleep(10);
-for(index = 0; index &lt; 5; index++)
-    fun2(); }
-</code></pre>
-
-<p>int main(int argc, char **argv)
-{
-    int index = 0;
-    for(index = 0; index &lt; 10; index++)
-    {
-        fun1(); 
-    }
-}</p>
-
-<p>{% endcodeblock %}</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;include-stdioh&quot;</span><span class="o">&gt;</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdlib</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;&lt;/time.h&gt;&lt;/stdlib.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">fun2</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">fun1</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">5</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">fun2</span><span class="p">();</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">10</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">fun1</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>编译，注意要添加<code>-pg</code>选项，这样才能与后面的 gprof 结合使用。</p>
 
@@ -165,9 +209,8 @@ gprof test gmon.out &gt; analysis.txt
 
 <h2 id="mac-osx--gvim">Mac OSX 下安装 gvim</h2>
 
-<p>{% codeblock %}
-brew install macvim
-{% endcodeblock %}</p>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install macvim</span></code></pre></td></tr></table></div></figure></p>
 
 <h2 id="section">基本设置</h2>
 
@@ -240,17 +283,17 @@ brew install macvim
 
 vim 同时打开多个文件。
 
-```
-vim -o file1 file2              //小写 o 参数来水平分屏
-vim -O file1 file2              //大写 O 参数来垂直分屏
-```
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vim -o file1 file2              //小写 o 参数来水平分屏
+</span><span class='line'>vim -O file1 file2              //大写 O 参数来垂直分屏</span></code></pre></td></tr></table></div></figure>
 
 vim 在多窗口打开。
 
-```
-:vs path/file       //在新的垂直分屏中打开文件
-:sv path/file       //在新的水平分屏中打开文件
-```
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>:vs path/file       //在新的垂直分屏中打开文件
+</span><span class='line'>:sv path/file       //在新的水平分屏中打开文件</span></code></pre></td></tr></table></div></figure>
 
 多窗口间切换的3方法：`Ctrl+w+方向键``Ctrl+w+h/j/k/l``Ctrl+ww`。  
 
@@ -260,56 +303,88 @@ vim 在多窗口打开。
 
 首先安装插件管理插件
 
-```
-git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-```
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim</span></code></pre></td></tr></table></div></figure>
 
 其次在`.vimrc`下增加配置信息如下。
 
-```
-" vundle 环境设置
-filetype off
-set rtp+=~/.vim/bundle/Vundle.vim
-" vundle 管理的插件列表必须位于 vundle#begin() 和 vundle#end() 之间
-call vundle#begin()
-Plugin 'VundleVim/Vundle.vim'
-Plugin 'altercation/vim-colors-solarized'
-Plugin 'tomasr/molokai'
-Plugin 'vim-scripts/phd'
-Plugin 'Lokaltog/vim-powerline'
-Plugin 'octol/vim-cpp-enhanced-highlight'
-Plugin 'nathanaelkane/vim-indent-guides'
-Plugin 'derekwyatt/vim-fswitch'
-Plugin 'kshenoy/vim-signature'
-Plugin 'vim-scripts/BOOKMARKS—Mark-and-Highlight-Full-Lines'
-Plugin 'majutsushi/tagbar'
-Plugin 'vim-scripts/indexer.tar.gz'
-Plugin 'vim-scripts/DfrankUtil'
-Plugin 'vim-scripts/vimprj'
-Plugin 'dyng/ctrlsf.vim'
-Plugin 'terryma/vim-multiple-cursors'
-Plugin 'scrooloose/nerdcommenter'
-Plugin 'vim-scripts/DrawIt'
-Plugin 'SirVer/ultisnips'
-Plugin 'Valloric/YouCompleteMe'
-Plugin 'derekwyatt/vim-protodef'
-Plugin 'scrooloose/nerdtree'
-Plugin 'fholgado/minibufexpl.vim'
-Plugin 'gcmt/wildfire.vim'
-Plugin 'sjl/gundo.vim'
-Plugin 'Lokaltog/vim-easymotion'
-Plugin 'suan/vim-instant-markdown'
-Plugin 'lilydjwg/fcitx.vim'
-" 插件列表结束
-call vundle#end()
-filetype plugin indent on`
-```
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>" vundle 环境设置
+</span><span class='line'>filetype off
+</span><span class='line'>set rtp+=~/.vim/bundle/Vundle.vim
+</span><span class='line'>" vundle 管理的插件列表必须位于 vundle#begin() 和 vundle#end() 之间
+</span><span class='line'>call vundle#begin()
+</span><span class='line'>Plugin 'VundleVim/Vundle.vim'
+</span><span class='line'>Plugin 'altercation/vim-colors-solarized'
+</span><span class='line'>Plugin 'tomasr/molokai'
+</span><span class='line'>Plugin 'vim-scripts/phd'
+</span><span class='line'>Plugin 'Lokaltog/vim-powerline'
+</span><span class='line'>Plugin 'octol/vim-cpp-enhanced-highlight'
+</span><span class='line'>Plugin 'nathanaelkane/vim-indent-guides'
+</span><span class='line'>Plugin 'derekwyatt/vim-fswitch'
+</span><span class='line'>Plugin 'kshenoy/vim-signature'
+</span><span class='line'>Plugin 'vim-scripts/BOOKMARKS—Mark-and-Highlight-Full-Lines'
+</span><span class='line'>Plugin 'majutsushi/tagbar'
+</span><span class='line'>Plugin 'vim-scripts/indexer.tar.gz'
+</span><span class='line'>Plugin 'vim-scripts/DfrankUtil'
+</span><span class='line'>Plugin 'vim-scripts/vimprj'
+</span><span class='line'>Plugin 'dyng/ctrlsf.vim'
+</span><span class='line'>Plugin 'terryma/vim-multiple-cursors'
+</span><span class='line'>Plugin 'scrooloose/nerdcommenter'
+</span><span class='line'>Plugin 'vim-scripts/DrawIt'
+</span><span class='line'>Plugin 'SirVer/ultisnips'
+</span><span class='line'>Plugin 'Valloric/YouCompleteMe'
+</span><span class='line'>Plugin 'derekwyatt/vim-protodef'
+</span><span class='line'>Plugin 'scrooloose/nerdtree'
+</span><span class='line'>Plugin 'fholgado/minibufexpl.vim'
+</span><span class='line'>Plugin 'gcmt/wildfire.vim'
+</span><span class='line'>Plugin 'sjl/gundo.vim'
+</span><span class='line'>Plugin 'Lokaltog/vim-easymotion'
+</span><span class='line'>Plugin 'suan/vim-instant-markdown'
+</span><span class='line'>Plugin 'lilydjwg/fcitx.vim'
+</span><span class='line'>" 插件列表结束
+</span><span class='line'>call vundle#end()
+</span><span class='line'>filetype plugin indent on`</span></code></pre></td></tr></table></div></figure>
 
 最后，进入`vim`执行
 
-```
-:PluginInstall
-```
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>:PluginInstall</span></code></pre></td></tr></table></div></figure>
 
 ## vim 浏览代码  
 
