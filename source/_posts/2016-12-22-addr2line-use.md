@@ -11,7 +11,7 @@ categories: 编程工具
 
 在编写程序时，经常会遇到出现程序 crax 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。  
 
-{% codecblock lang:c %}
+{% codeblock lang:c %}
 #include <stdio.h>
 
 int div(int numerator, int denominator)
