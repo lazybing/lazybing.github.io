@@ -5,12 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>HM源码分析（一）：HEVC编码结构 - 懒人李冰</title>
+  <title>Code Complete - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。 编码分层处理架构
-GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视频序列分割成的图像组就为 GOP。GOP 分为封闭式 GOP 和 开放式 GOP,其中封闭式 GOP &hellip;">
+  <meta name="description" content="打好基础 创建高质量的代码 (待续) 变量 语句 组织直线型代码 (待续) if 语句 case 语句 为 case 选择最有效的排列顺序 使用 case 语句的诀窍 控制循环（待续） 代码改善 系统考虑 软件工艺 打好基础
+## 欢迎进入软件构建的世界 (待续)
+## &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +20,7 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/23/code-complete/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +84,7 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
   
   <header>
     
-      <h1 class="entry-title">HM源码分析（一）：HEVC编码结构</h1>
+      <h1 class="entry-title">Code Complete</h1>
     
     
       <p class="meta">
@@ -92,7 +93,7 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
 
 
 
-<time class='entry-date' datetime='2015-09-04T09:57:17-07:00'><span class='date'>2015 年 09 月 04 日</span> <span class='time'>9:57 am</span></time>
+<time class='entry-date' datetime='2016-12-23T18:50:56-08:00'><span class='date'>2016 年 12 月 23 日</span> <span class='time'>6:50 pm</span></time>
         
         
       </p>
@@ -100,37 +101,107 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
   </header>
 
 
-<div class="entry-content"><p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
-<!--more--></p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">打好基础</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">创建高质量的代码  (待续)</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">变量</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">语句</a>    <ul>
+      <li><a href="#section-4" id="markdown-toc-section-4">组织直线型代码 (待续)</a>        <ul>
+          <li><a href="#if-" id="markdown-toc-if-">if 语句</a></li>
+          <li><a href="#case-" id="markdown-toc-case-">case 语句</a>            <ul>
+              <li><a href="#case--1" id="markdown-toc-case--1">为 case 选择最有效的排列顺序</a></li>
+              <li><a href="#case--" id="markdown-toc-case--">使用 case  语句的诀窍</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><a href="#section-5" id="markdown-toc-section-5">控制循环（待续）</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-6" id="markdown-toc-section-6">代码改善</a></li>
+  <li><a href="#section-7" id="markdown-toc-section-7">系统考虑</a></li>
+  <li><a href="#section-8" id="markdown-toc-section-8">软件工艺</a></li>
+</ul>
 
-<h2 id="section">编码分层处理架构</h2>
-<p>GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视频序列分割成的图像组就为 GOP。GOP 分为封闭式 GOP 和 开放式 GOP,其中封闭式 GOP 其第一帧为 IDR, GOP内的图像不会参考到其他 GOP 内图像;开放式 GOP 只有第一个 GOP 内的第一帧才是 IDR，后续的 GOP 中的第一个帧内编码图像为 non-IDR，会参考前一个 GOP 中的已编码图像做参考图像。</p>
+<h1 id="section">打好基础</h1>
+<p>## 欢迎进入软件构建的世界 (待续)
+## 用隐喻来更充分地理解软件开发 (待续) 
+## 三思而后行：前期准备  (待续)
+## 关键地”构建”决策  (待续)</p>
 
-<p><img src="/images/HM/gop_type.png" /></p>
+<h1 id="section-1">创建高质量的代码  (待续)</h1>
+<p>## 软件构建中的设计  (待续)
+## 可以工作的类  (待续)
+## 高质量的子程序  (待续)
+## 防御式编程  (待续)
+## 伪代码编码过程  (待续)</p>
 
-<p>Slice,每个 GOP 又被划分为多个 Slice 片，每个片由一个或多个片段(Slice Segment, SS) 组成。</p>
+<h1 id="section-2">变量</h1>
+<p>## 使用变量的一般事项 (待续)
+## 变量名的力量 (待续)
+## 基本数据类型 (待续)
+## 不常见的数据类型 (待续)</p>
 
-<p>CTU(Coding Tree Unit, CTU):每个 CTU 包括一个亮度树形编码块(Coding Tree Block, CTB) 和两个色差树形编码块。</p>
+<h1 id="section-3">语句</h1>
 
-<p>一个 SS 在编码时，先被分割为相同大小的 CTU ，每个CTU 按照四叉树分割方式被划分为不同类型的编码单元(Coding Unit, CU)。</p>
+<h2 id="section-4">组织直线型代码 (待续)</h2>
+<p>## 使用条件语句</p>
 
-<p><img src="/images/HM/slice_cu.png" /></p>
+<h3 id="if-">if 语句</h3>
 
-<h2 id="section-1">码流的语法架构</h2>
-<p>VPS(Video Parameter Set):视频参数集，主要用于传输视频分级信息，包含多个子层和操作点共享的语法元素、会话所需要的有关操作的关键信息（档次/级别等）、其他不属于 SPS 的操作点特性信息（如HRD）。</p>
+<p>首先写正常代码路径；再处理不常见情况。<br />
+确保对于等量的分支是正确的。<br />
+把正常情况的处理放在 if 后面而不要放在 else 后面。<br />
+让 if 字句后面跟随一个有意义的语句。<br />
+考虑 else 字句。<br />
+测试 else 字句的正确性。<br />
+检查 if 和 else 字句是不是弄反了。<br />
+利用布尔函数调用简化负责的检测。 <br />
+把最常见的情况放在最前面。<br />
+确保所有的情况都考虑到。</p>
 
-<p>SPS(Sequence Parameter Set):序列参数集，主要包含一个 CVS 中所有编码图像的共享编码参数。如图像格式信息（采样格式/图像分辨率/量化深度/Crop信息）、编码参数信息（编码块/变换块的尺寸等）、与参考图像相关的信息、可视话可用性信息(VUI)等。</p>
+<h3 id="case-">case 语句</h3>
 
-<p>PPS(Picture Parameter Set):图像参数集。主要包括编码工具的可用性标志、量化过程相关的句法元素、Tile 相关句法元素、去方块滤波相关句法元素、片头中的控制信息。</p>
+<h4 id="case--1">为 case 选择最有效的排列顺序</h4>
 
-<p><img src="/images/HM/vps_sps_pps.png" /></p>
+<p>按照字母顺序或数组顺序排列各种重要性相同的情况。<br />
+把正常的情况放在前面。<br />
+按照执行频率排列 case  字句。</p>
 
-<p>由上图可看出，SPS 会根据 parse 出来的<code>VPS index</code>来引用 VPS 的信息，同样的 PPS 会根据 parse 出来的<code>SPS index</code>来引用 PPS 的信息。当 SPS 中包含有 VPS 的信息时，使用 SPS 的信息，VPS内的信息失效，同样的当 PPS 中含有 SPS 的信息时，使用 PPS 中的信息，SPS 中的信息失效。</p>
+<h4 id="case--">使用 case  语句的诀窍</h4>
 
-<p>参考内容：<a href="https://www.amazon.cn/%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81H-265-HEVC-%E5%8E%9F%E7%90%86-%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E4%B8%87%E5%B8%85/dp/B00QXIN7B2/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1473127274&amp;sr=1-1&amp;keywords=%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81h.265+hevc+%E5%8E%9F%E7%90%86+%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0">新一代高效视频编码H.265/HEVC:原理、标准与实现</a>第三章编码结构。</p>
+<p>简化每种情况对应的操作。<br />
+不要为了使用 case 语句而刻意制造一个变量。<br />
+把 default 子句只用于检查真正的默认情况。<br />
+利用 default 子句来检查错误。<br />
+避免代码执行越过一条 case 子句的末尾。</p>
 
-<p><a href="https://hevc.hhi.fraunhofer.de/">HM</a>中关于<code>VPS</code> <code>SPS</code> <code>PPS</code>编码结构的介绍主要在<code>lib\tlibcommon\TComSlice.h</code>内，稍后会对它们进行详细分析。</p>
+<h2 id="section-5">控制循环（待续）</h2>
+<p>## 不常见的控制结构(待续)<br />
+## 表驱动法（待续）<br />
+## 一般控制问题(待续)</p>
 
+<h1 id="section-6">代码改善</h1>
+<p>## 软件质量概述(待续)<br />
+## 协同构建(待续) <br />
+## 开发者测试(待续)<br />
+## 调试(待续)<br />
+## 重构(待续)<br />
+## 代码调试策略(待续)<br />
+## 代码调整技术（待续）</p>
+
+<h1 id="section-7">系统考虑</h1>
+<p>## 程序规模对构建的影响(待续)<br />
+## 管理构建（待续）
+## 集成（待续）
+## 编程工具(待续)</p>
+
+<h1 id="section-8">软件工艺</h1>
+<p>## 布局与风格(待续)<br />
+## 自说明代码（待续）<br />
+## 个人性格（待续）<br />
+## 软件工艺的话题(待续)<br />
+## 何处有更多信息(待续)</p>
 </div>
 
 
@@ -146,12 +217,12 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
 
 
 
-<time class='entry-date' datetime='2015-09-04T09:57:17-07:00'><span class='date'>2015 年 09 月 04 日</span> <span class='time'>9:57 am</span></time>
+<time class='entry-date' datetime='2016-12-23T18:50:56-08:00'><span class='date'>2016 年 12 月 23 日</span> <span class='time'>6:50 pm</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析</a>
+    <a class='category' href='/blog/categories/du-shu-bi-ji/'>读书笔记</a>
   
 </span>
 
@@ -160,7 +231,7 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/" data-via="" data-counturl="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/23/code-complete/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/23/code-complete/" >Tweet</a>
   
   
   
@@ -169,10 +240,8 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2015/07/01/how-to-boot-up-system/" title="Previous Post: UBoot 源码分析">&laquo; UBoot 源码分析</a>
+        <a class="basic-alignment left" href="/blog/2016/12/22/addr2line-use/" title="Previous Post: addr2line 的介绍与使用">&laquo; addr2line 的介绍与使用</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2015/09/07/intra-prcture-prediction/" title="Next Post: HM源码分析之帧内编码（一）：帧内编码的原理">HM源码分析之帧内编码（一）：帧内编码的原理 &raquo;</a>
       
     </p>
   </footer>
@@ -182,7 +251,7 @@ GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视�
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2015/09/04/the-hierarchical-of-coding-structure" data-title="HM源码分析（一）：HEVC编码结构" data-url="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/12/23/code-complete" data-title="code complete" data-url="http://lazybing.github.io/blog/2016/12/23/code-complete//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
