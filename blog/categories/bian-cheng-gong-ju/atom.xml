@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2016-12-23T19:50:43-08:00</updated>
+  <updated>2017-01-08T01:29:17-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -229,19 +229,38 @@ gprof test gmon.out &gt; analysis.txt
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Vim 使用技巧]]></title>
+    <title type="html"><![CDATA[将vim打造成IDE]]></title>
     <link href="http://lazybing.github.io/blog/2016/07/07/how-to-use-vim/"/>
     <updated>2016-07-07T08:17:10-07:00</updated>
     <id>http://lazybing.github.io/blog/2016/07/07/how-to-use-vim</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#mac-osx--gvim" id="markdown-toc-mac-osx--gvim">Mac OSX 下安装 gvim</a></li>
   <li><a href="#section" id="markdown-toc-section">基本设置</a></li>
-  <li><a href="#vim-" id="markdown-toc-vim-">vim 寄存器</a></li>
-  <li><a href="#vim--1" id="markdown-toc-vim--1">vim 分屏功能</a></li>
+  <li><a href="#vim-" id="markdown-toc-vim-">vim 对单个字符的操作</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">删除某个字符</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">替换某个字符</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">移动到某个字符</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--1" id="markdown-toc-vim--1">vim 对单字的操作</a>    <ul>
+      <li><a href="#section-4" id="markdown-toc-section-4">删除某个单字</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">修改某个单字</a></li>
+      <li><a href="#section-6" id="markdown-toc-section-6">移动到某个单字</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--2" id="markdown-toc-vim--2">vim 对整行的操作</a>    <ul>
+      <li><a href="#section-7" id="markdown-toc-section-7">移动到行首或行尾</a></li>
+      <li><a href="#section-8" id="markdown-toc-section-8">移动到指定行</a></li>
+      <li><a href="#section-9" id="markdown-toc-section-9">使用标签记录并跳转到某行</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--3" id="markdown-toc-vim--3">vim 寄存器</a></li>
+  <li><a href="#vim--4" id="markdown-toc-vim--4">vim 分屏功能</a></li>
 </ul>
 
-<p>Vim 是一个学习成本比较高的编辑器。
-<!--more--></p>
+<p><code>Vim</code> 是一个学习成本比较高的编辑器。本文主要记录对于编辑浏览代码时，如何配置<code>vim</code>才能更高效的编辑、浏览代码。</p>
+
+<!--more-->
 
 <h2 id="mac-osx--gvim">Mac OSX 下安装 gvim</h2>
 
@@ -250,9 +269,160 @@ gprof test gmon.out &gt; analysis.txt
 
 <h2 id="section">基本设置</h2>
 
-<p>显示行号，在<code>.vimrc</code>中添加<code>set nu</code></p>
+<p>配置信息都放到了<code>~/.vimrc</code>文件中：<br />
+显示行号，在<code>.vimrc</code>中添加<code>set nu</code>  <br />
+开启文件类型侦测, <code>filetype on</code><br />
+根据侦测到的不同类型加载对应的插件， <code>filetype plugin on</code><br />
+开启实时搜索功能，</p>
 
-<h2 id="vim-">vim 寄存器</h2>
+<h2 id="vim-">vim 对单个字符的操作</h2>
+
+<blockquote>
+  <p>To err is human. To really foul up you need a computer.</p>
+</blockquote>
+
+<h3 id="section-1">删除某个字符</h3>
+
+<p>删除字符命令非常简单，就是单个字符<code>x</code>,例如上面的一行code，如果将光标至于<code>really</code>的<code>r</code>处执行<code>x</code>命令，就会将 <code>r</code> 删除。</p>
+
+<h3 id="section-2">替换某个字符</h3>
+
+<p>替换字符的命令<code>rx</code>将光标下的字符 replace 成字符<code>x</code>。如果发现连个相邻的字符颠倒了，可以直接在前一个字符处执行<code>xp</code>命令即可，其中的<code>x</code>时删除光标下的字符，<code>p</code>时黏贴。</p>
+
+<h3 id="section-3">移动到某个字符</h3>
+
+<p><code>fx</code>命令在一行中向前搜索单个字符<code>x</code>。速记：<code>f</code>此处是<code>Find</code>的简写。</p>
+
+<p>例如，你现在处于上面 code 的开头处，假设你想将光标移动到<code>human</code>中的<code>h</code>字符处。此时你只需要简单的执行<code>fh</code>，光标将会跳转到<code>h</code>:</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+----------&gt;---------------&gt;
+    fh		 fy
+</code></pre>
+
+<p>上面命令也显示了<code>fy</code>移动光标到<code>really</code>的<code>y</code>处。当然，此时你也可以在命令前添加执行次数，可以用<code>3fl</code>命令跳转光标到<code>foult</code>的<code>l</code>处：</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+	  ---------------------&gt;
+		   3fl
+</code></pre>
+
+<p>与<code>f</code>相对应的<code>F</code>命令会向左搜索：</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+	  &lt;---------------------
+		    Fh
+</code></pre>
+
+<p>除了<code>fx</code>命令用于搜索一行中的某个特定字符外，还有<code>tx</code>命令，<code>tx</code>命令会停在搜索的字符<code>x</code>前。速记：<code>t</code>时<code>To</code>的简写。与<code>Fx</code>相对应的是<code>Tx</code>。</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+	   &lt;------------  -------------&gt;
+		Th		tn
+</code></pre>
+
+<p><code>fx</code><code>Fx</code><code>tx</code><code>Tx</code>这四个命令可以用<code>;</code>命令重复，<code>,</code>向相反的方向执行。</p>
+
+<p>上面的移动命令虽然很好用，但有如果一行中存在多个我们想要查找的字符，我们要么人肉看一下搜索的字符位于第几个位置，要么要一直重复执行相同的移动命令。非常影响思维连贯性。例如想要从上面一行的开头找到<code>computer</code>中的<code>o</code>。
+此时我们可以借助插件来完成，<code>easymotion</code>即可帮助我们，它会把所有满足条件的位置用[A-Za-z]间的标签字符标出来，找到你想要去的位置再键入对应标签字符即可快速到达。
+比如，上面的例子，假设关闭在行首，我只需要键入<Leader><Leader>fo,所有字符a都被重新标记成a、b、c、d等等标签（原始内容不变），直接键入标签字母即可到达需要到达的地方。</Leader></Leader></p>
+
+<h2 id="vim--1">vim 对单字的操作</h2>
+
+<h3 id="section-4">删除某个单字</h3>
+
+<p>删除某个单字非常简单，只需要在单字的开始执行<code>dw</code>即可。速记：<code>d</code>是<code>deleate</code>的简写。</p>
+
+<h3 id="section-5">修改某个单字</h3>
+
+<p>修改某个单字时，只需要在单字的开始执行<code>cxxxxx</code>即可，<code>c</code>是<code>change</code>的简写，<code>xxxxx</code>即代表要修改的单字。</p>
+
+<h3 id="section-6">移动到某个单字</h3>
+
+<p>想要移动光标大下一个单字，使用<code>w</code>命令。跟很多<code>vim</code>命令一样，可以在命令前添加一个执行次数。比如,<code>3w</code>就是移动 3 个单字。下面展示它是如何工作的：</p>
+
+<pre><code>This is a line with example text ~
+  ---&gt;--&gt;-&gt;-----------------&gt;
+   w  w  w    3w
+</code></pre>
+
+<p>注意，<code>w</code>命令会移动到下一个单字的起始处。<br />
+<code>b</code>命令向前移动到前一个单字的起始处。</p>
+
+<pre><code>This is a line with example text ~
+&lt;----&lt;--&lt;-&lt;---------&lt;---
+   b   b b    2b      b
+</code></pre>
+
+<p>与<code>w</code><code>b</code>对应的有<code>e</code>和<code>ge</code>命令分别向后和向前移动到单字的末尾：</p>
+
+<pre><code>This is a line with example text ~
+   &lt;-   &lt;--- -----&gt;   ----&gt;
+   ge    ge     e       e
+</code></pre>
+
+<p>如果光标位于一行的最后一个单字，<code>w</code>命令会带你到下一行的第一个单字处。因此你可以使用<code>w</code>命令来在一行中移动。</p>
+
+<h2 id="vim--2">vim 对整行的操作</h2>
+
+<h3 id="section-7">移动到行首或行尾</h3>
+
+<p><code>$</code>命令移动光标到一行的结尾，与<code>&lt;End&gt;</code>键作用相同。<code>^</code>命令移动到一行的第一个非空白字符处。<code>0</code>命令移动到一行的最前面第一个字符处，与<code>&lt;Home&gt;</code>键作用相同。</p>
+
+<pre><code>	  ^
+     &lt;------------
+.....This is a line with example text ~
+&lt;-----------------   ---------------&gt;
+	0		   $
+</code></pre>
+
+<p>(….指空白符)</p>
+
+<h3 id="section-8">移动到指定行</h3>
+
+<p>C/C++ 程序员应该经常能遇到程序出错时，会有类似如下的提示信息：</p>
+
+<pre><code>prog.c:33: j   undeclared (first use in this function) ~
+</code></pre>
+
+<p>这就提示我们该跳转到 33 行 fix 掉错误，此时可以使用<code>G</code>命令：<code>33G</code>即可跳转到 33 行。
+另一种方法是在<code>shell</code>命令行下执行<code>:33&lt;Enter&gt;</code>。
+上面的两种方法都是假设你想要移动到某个特定的行，而不管该行是否可见。假如你想要移动到屏幕的中间或者起始行时，该如何操作呢？</p>
+
+<pre><code>		+---------------------------+
+	H --&gt;	| text sample text	    |
+		| sample text		    |
+		| text sample text	    |
+		| sample text		    |
+	M --&gt;	| text sample text	    |
+		| sample text		    |
+		| text sample text	    |
+		| sample text		    |
+	L --&gt;	| text sample text	    |
+		+---------------------------+
+</code></pre>
+
+<p>速记：<code>H</code>是<code>Home</code>的简写，<code>M</code>是<code>Middle</code>的简写，<code>L</code>是<code>Last</code>的简写。</p>
+
+<h3 id="section-9">使用标签记录并跳转到某行</h3>
+
+<p>在介绍标签之前，先了解另外两个命令<code>CTRL-O</code>和<code>CTRL-I</code>，其中<code>CTRL-O</code>是回到之前的位置，<code>CTRL-I</code>是回到下一个位置。例如：</p>
+
+<pre><code>     |	example text   ^	     |
+33G  |	example text   |  CTRL-O     | CTRL-I
+     |	example text   |	     |
+     V	line 33 text   ^	     V
+     |	example text   |	     |
+   /^The |	example text   |  CTRL-O     | CTRL-I
+     V	There you are  |	     V
+	example text
+</code></pre>
+
+<p>注意：CTRL-I 是和 <Tab> 相同的。</Tab></p>
+
+<p><code>vim</code>可以使你定义自己的标签。命令<code>ma</code>标记当前光标所在的位置。<code>{mark} 和 '{mark}都可以跳回到标签处。不同的是</code>{mark}跳回的是光标所在行的原来那一列，而’{mark}跳回的是光标所在哪一行的起始位置。</p>
+
+<h2 id="vim--3">vim 寄存器</h2>
 
 <p>使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。</p>
 
@@ -313,7 +483,7 @@ gprof test gmon.out &gt; analysis.txt
   </tbody>
 </table>
 
-<h2 id="vim--1">vim 分屏功能</h2>
+<h2 id="vim--4">vim 分屏功能</h2>
 
 <image src="http://lazybing.github.io/images/vim_split_screen.png">
 
@@ -335,7 +505,7 @@ vim 在多窗口打开。
 
 移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。  
 
-## vim 插件安装 
+## vim 插件安装
 
 首先安装插件管理插件
 
@@ -422,9 +592,7 @@ vim 在多窗口打开。
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class=''><span class='line'>:PluginInstall</span></code></pre></td></tr></table></div></figure>
 
-## vim 浏览代码  
-
-## vim 浏览代码  
+## vim 浏览代码
 
 vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。  
 
