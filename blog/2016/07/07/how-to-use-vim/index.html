@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Mac OSX 下安装 gvim 基本设置 vim 对单个字符的操作 删除某个字符 替换某个字符 移动到某个字符 vim 对单字的操作 删除某个单字 修改某个单字 移动到某个单字 vim 对整行的操作 移动到行首或行尾 移动到指定行 使用标签记录并跳转到某行 vim 寄存器 vim 分屏功能 &hellip;">
+  <meta name="description" content="Mac OSX 下安装 gvim 基本设置 vim 对单个字符的操作 删除某个字符 替换某个字符 移动到某个字符 vim 对单字的操作 删除某个单字 修改某个单字 移动到某个单字 vim 对整行的操作 移动到行首或行尾 移动到指定行 使用标签记录并跳转到某行 vim 对单个文件的浏览 vim &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -120,8 +120,18 @@
       <li><a href="#section-9" id="markdown-toc-section-9">使用标签记录并跳转到某行</a></li>
     </ul>
   </li>
-  <li><a href="#vim--3" id="markdown-toc-vim--3">vim 寄存器</a></li>
-  <li><a href="#vim--4" id="markdown-toc-vim--4">vim 分屏功能</a></li>
+  <li><a href="#vim--3" id="markdown-toc-vim--3">vim 对单个文件的浏览</a>    <ul>
+      <li><a href="#vim--4" id="markdown-toc-vim--4">vim 滚动屏幕命令</a></li>
+      <li><a href="#vim--5" id="markdown-toc-vim--5">vim 切分窗口</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--6" id="markdown-toc-vim--6">vim 对多个文件的操作</a>    <ul>
+      <li><a href="#section-10" id="markdown-toc-section-10">工程文件浏览</a></li>
+      <li><a href="#section-11" id="markdown-toc-section-11">多文档编辑</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--7" id="markdown-toc-vim--7">vim 寄存器</a></li>
+  <li><a href="#vim--8" id="markdown-toc-vim--8">vim 分屏功能</a></li>
 </ul>
 
 <p><code>Vim</code> 是一个学习成本比较高的编辑器。本文主要记录对于编辑浏览代码时，如何配置<code>vim</code>才能更高效的编辑、浏览代码。</p>
@@ -288,7 +298,46 @@
 
 <p><code>vim</code>可以使你定义自己的标签。命令<code>ma</code>标记当前光标所在的位置。`{mark} 和 ‘{mark}都可以跳回到标签处。不同的是`{mark} 跳回的是光标所在行的原来那一列，’{mark}跳回的是光标所在哪一行的起始位置。</p>
 
-<h2 id="vim--3">vim 寄存器</h2>
+<h2 id="vim--3">vim 对单个文件的浏览</h2>
+
+<h3 id="vim--4">vim 滚动屏幕命令</h3>
+
+<p><code>CTRL-U</code>和<code>CTRL-D</code>命令向上或向下滚动半个屏幕。<br />
+<code>CTRL-E</code>和<code>CTRL-Y</code>分别向上和向下滚动一行。<br />
+<code>CTRL-F</code>和<code>CTRL-B</code>分别向前和向后滚动整个屏幕。
+有时当执行多个<code>j</code>命令时，光标会在屏幕的最底部，此时如果想让光标所在行位于中间位置，可以使用<code>zz</code>命令,<code>zt</code>命令将光标所在行至于顶部，<code>zb</code>命令将光标所在行至于底部。</p>
+
+<h3 id="vim--5">vim 切分窗口</h3>
+
+<p>切分新窗口最简单的命令是<code>:split</code>，该命令可以使我们在两个窗口中查看同一个文件，比如可以使用第一个窗口显示变量声明，另一个窗口展示该变量的使用。
+<code>CTRL-W w</code>命令可用于两个窗口间的跳转。垂直切分窗口命令是<code>:vsplitw</code>。窗口直接的切换命令如下：</p>
+
+<pre><code>CTRL-W h	move to the window on the left
+CTRL-W j	move to the window below
+CTRL-W k	move to the window above
+CTRL-W l	move to the window on the right
+
+CTRL-W t	move to the TOP window
+CTRL-W b	move to the BOTTOM window
+</code></pre>
+
+<h2 id="vim--6">vim 对多个文件的操作</h2>
+
+<h3 id="section-10">工程文件浏览</h3>
+
+<p>在项目工程中，经常要用到插件，此处介绍一个插件<code>NERDTree</code>，通过<code>NERDtree</code>插件可以查看文件列表，要打开哪个文件，
+光标选中后回车即可在新<code>buffer</code>中打开。</p>
+
+<p>常用操作：回车，打开选中文件;<code>r</code>刷新工程目录文件列表；<code>I</code>显示/影藏文件；<code>m</code>出现创建/删除/剪切/拷贝操作列表。键入<leader>fl后，右边子窗口为工程项目文件列表。</leader></p>
+
+<h3 id="section-11">多文档编辑</h3>
+<p><code>vim</code>的多文档编辑涉及三个概念:buffer、window、tab。vim把加载进内存的文件叫做buffer,buffer不一定可见；
+若要buffer可见，则必须通过window作为载体呈现；同个看面上的多个window组合成一个tab。</p>
+
+<p>vim中每打开一个文件，vim就对应的创建一个buffer,多个文件就有多个 buffer, 但默认你只能看到最后buffer对应
+window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列出来，并且可以显示多个 buffer 对应的Window。</p>
+
+<h2 id="vim--7">vim 寄存器</h2>
 
 <p>使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。</p>
 
@@ -349,7 +398,7 @@
   </tbody>
 </table>
 
-<h2 id="vim--4">vim 分屏功能</h2>
+<h2 id="vim--8">vim 分屏功能</h2>
 
 <image src="/images/vim_split_screen.png">
 
