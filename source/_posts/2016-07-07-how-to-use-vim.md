@@ -164,6 +164,44 @@ C/C++ 程序员应该经常能遇到程序出错时，会有类似如下的提�
 
 `vim`可以使你定义自己的标签。命令`ma`标记当前光标所在的位置。\`{mark} 和 '{mark}都可以跳回到标签处。不同的是\`{mark} 跳回的是光标所在行的原来那一列，'{mark}跳回的是光标所在哪一行的起始位置。
 
+## vim 对单个文件的浏览
+
+### vim 滚动屏幕命令
+
+`CTRL-U`和`CTRL-D`命令向上或向下滚动半个屏幕。  
+`CTRL-E`和`CTRL-Y`分别向上和向下滚动一行。  
+`CTRL-F`和`CTRL-B`分别向前和向后滚动整个屏幕。
+有时当执行多个`j`命令时，光标会在屏幕的最底部，此时如果想让光标所在行位于中间位置，可以使用`zz`命令,`zt`命令将光标所在行至于顶部，`zb`命令将光标所在行至于底部。  
+
+### vim 切分窗口
+
+切分新窗口最简单的命令是`:split`，该命令可以使我们在两个窗口中查看同一个文件，比如可以使用第一个窗口显示变量声明，另一个窗口展示该变量的使用。
+`CTRL-W w`命令可用于两个窗口间的跳转。垂直切分窗口命令是`:vsplitw`。窗口直接的切换命令如下：
+
+	CTRL-W h	move to the window on the left
+	CTRL-W j	move to the window below
+	CTRL-W k	move to the window above
+	CTRL-W l	move to the window on the right
+
+	CTRL-W t	move to the TOP window
+	CTRL-W b	move to the BOTTOM window
+
+
+## vim 对多个文件的操作
+
+### 工程文件浏览
+
+在项目工程中，经常要用到插件，此处介绍一个插件`NERDTree`，通过`NERDtree`插件可以查看文件列表，要打开哪个文件，
+光标选中后回车即可在新`buffer`中打开。  
+
+常用操作：回车，打开选中文件;`r`刷新工程目录文件列表；`I`显示/影藏文件；`m`出现创建/删除/剪切/拷贝操作列表。键入<leader>fl后，右边子窗口为工程项目文件列表。
+
+### 多文档编辑
+`vim`的多文档编辑涉及三个概念:buffer、window、tab。vim把加载进内存的文件叫做buffer,buffer不一定可见；
+若要buffer可见，则必须通过window作为载体呈现；同个看面上的多个window组合成一个tab。  
+
+vim中每打开一个文件，vim就对应的创建一个buffer,多个文件就有多个 buffer, 但默认你只能看到最后buffer对应
+window，通过插件`MiniBufExplorer`可以把所有 buffer 罗列出来，并且可以显示多个 buffer 对应的Window。  
 
 ## vim 寄存器
 
