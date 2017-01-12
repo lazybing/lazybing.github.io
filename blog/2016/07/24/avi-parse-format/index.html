@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AVI 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。 ">
+  <meta name="description" content="基本数据结构 AVI 文件类型 AVI 文件布局 MainAVIHeader(avih) Stream Header List Stream Header List Element(strh) Stream Header List Element(strf) Stream Header List &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,8 +99,200 @@
   </header>
 
 
-<div class="entry-content"><p><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">AVI</a> 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">基本数据结构</a></li>
+  <li><a href="#avi-" id="markdown-toc-avi-">AVI 文件类型</a></li>
+  <li><a href="#avi--1" id="markdown-toc-avi--1">AVI 文件布局</a>    <ul>
+      <li><a href="#mainaviheaderavih" id="markdown-toc-mainaviheaderavih">MainAVIHeader(avih)</a></li>
+      <li><a href="#stream-header-list" id="markdown-toc-stream-header-list">Stream Header List</a></li>
+      <li><a href="#stream-header-list-elementstrh" id="markdown-toc-stream-header-list-elementstrh">Stream Header List Element(strh)</a></li>
+      <li><a href="#stream-header-list-elementstrf" id="markdown-toc-stream-header-list-elementstrf">Stream Header List Element(strf)</a></li>
+      <li><a href="#stream-header-list-elementindx" id="markdown-toc-stream-header-list-elementindx">Stream Header List Element(indx)</a></li>
+      <li><a href="#stream-header-list-elementstrn" id="markdown-toc-stream-header-list-elementstrn">Stream Header List Element(strn)</a></li>
+    </ul>
+  </li>
+  <li><a href="#avi-indexes" id="markdown-toc-avi-indexes">AVI Indexes</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">AVI</a> 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。
 <!--more--></p>
+
+<h2 id="section">基本数据结构</h2>
+
+<p>AVI 文件中有两种类型结构:Chunks 和 Lists。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">//Chunks
+</span><span class="line">typedef struct {
+</span><span class="line">    DWORD dwFourCC;
+</span><span class="line">    DWORD dwSize;
+</span><span class="line">    BYTE  data[dwSize];
+</span><span class="line">}CHUNK;
+</span><span class="line">//Lists
+</span><span class="line">typedef struct{
+</span><span class="line">    DWORD dwList;
+</span><span class="line">    DWORD dwSize;
+</span><span class="line">    DWORD dwFourCC;
+</span><span class="line">    BYTE  data[dwSize - 4];
+</span><span class="line">}LIST;</span></code></pre></td></tr></table></div></figure>
+
+<p>一个包含了<code>video</code>、<code>audio</code>或<code>subtitle</code>数据的<code>chunk</code>使用一个<code>dwFourCC</code>，
+<code>dwFourCC</code>包含 2 个十六进制数字表示 stream number，2 个字母表示数据类型( dc 表示 video， wb 表示 audio, tx 表示 text)。
+<code>dwFourCC</code>和<code>dwSize</code>在<code>Chunks</code>和<code>Lists</code>中有相同的含义。</p>
+
+<p><code>dwFourCC</code>描述chunk 的类型（如<code>hdrl</code>表示 <code>header list</code>），<code>dwSize</code>表示该 chunk 或 list 的大小，
+包含<code>dwSize</code>后的所有 byte。在 List 中，<code>dwSize</code>包含了<code>dwFourCC</code>所占有的4 bytes.</p>
+
+<p><code>dwList</code>的值可以是<code>RIFF（RIFF-List</code>或<code>LIST(List)</code>。</p>
+
+<h2 id="avi-">AVI 文件类型</h2>
+
+<p>通常来讲，有 3 种类型的 AVI 文件：</p>
+
+<ul>
+  <li>AVI 1.0, 最初始的 AVI 文件类型。</li>
+  <li>Open-DML, AVI 文件格式的扩展。1.02版本相对于1.0版本有两个提高：基本没有文件大小的限制、负载降低了33%。</li>
+  <li>Hybride-Files，Open-DML 文件因为兼容的原因有个额外的限制，Hybride-Files 虽然不是官方致命的文件类型，但确实是一个不错的类型。</li>
+</ul>
+
+<h2 id="avi--1">AVI 文件布局</h2>
+<p>一个<code>dwFourCC=AVI</code>的<code>RIFF-List</code>称为<code>RIFF-AVI-List</code>，
+一个<code>dwFourCC=AVIX</code>的<code>RIFF-List</code>称为<code>RIFF-AVIX-List</code>。</p>
+
+<p>每个 AVI 文件都有如下布局：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">RIFF AVI    //mandatory
+</span><span class="line">{RIFF AVIX} //only for Open-DML files</span></code></pre></td></tr></table></div></figure>
+
+<p>并非之受限于 uint32 的限制，文件大小的极限并非 4G,而是<br />
+* 对于 AVI 1.0: sizeof(RIFF-AVI) &lt; 2G
+* 对于 Open-DML, sizeof(RIFF-AVI) &lt; 1G(!!), sizeof(RIFF-AVIX) &lt; 2G<br />
+一般来讲，RIFF-AVI-Lists被创建的越小越好。</p>
+
+<h3 id="mainaviheaderavih">MainAVIHeader(avih)</h3>
+
+<p><code>avih</code>结构定义如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct
+</span><span class="line">{
+</span><span class="line">    DWORD dwMicroSecPerFrame;   //frame display rate(or 0)
+</span><span class="line">    DWORD dwMaxBytesPerSec;     //max transfer rate
+</span><span class="line">    DWORD dwPaddingGranularity; //pad to multiples of this size
+</span><span class="line">    DWORD dwFlags               //the ever-present flags
+</span><span class="line">    DWORD dwTotalFrames;        //frames in file
+</span><span class="line">    DWORD dwInitialFrames;
+</span><span class="line">    DWORD dwStreams;
+</span><span class="line">    DWORD dwSuggestedBufferSize;
+</span><span class="line">
+</span><span class="line">    DWORD dwWidth;
+</span><span class="line">    DWORD dwHeight;
+</span><span class="line">
+</span><span class="line">    DWORD dwReserved[4];
+</span><span class="line">}MainAVIHeader;</span></code></pre></td></tr></table></div></figure>
+<ul>
+  <li>dwMicroSecPerFrame 以微妙为单位，包含了一个视频帧的持续时间。该值可以被忽略。注意，某些程序中可能会把它写成 framerate 值，因此 dwMicroSecPerFrame 并不可靠。</li>
+  <li>dwMaxBytesPerSec 文件中最大的数据率，该值同样的不是特别重要。</li>
+  <li>dwPaddingGranularity 填充的数据。</li>
+  <li>dwFlags <code>AVIF_HASINDEX</code>（该文件有index）、<code>AVIF_MUSTUSEINDEX</code>（）、<code>AVIF_ISINTERLEAVED</code> <code>AVIF_WASCAPTUREFILE</code> <code>AVIF_COPYRIGHTED</code> <code>AVIF_TRUSTCKTYPE</code>。</li>
+  <li>dwTotalFrames 包含了<code>RIFF-AVI list</code>中视频帧数。如果文件中包含<code>RIFF-AVIX-Lists</code>，它不会包含其中的视频帧。因为某些<code>muxer</code>会写一些错误的值，因此该值同样的不可靠。</li>
+  <li>dwInitialFrames 忽略</li>
+  <li>dwStreams 文件中<code>streams</code>的数量。</li>
+  <li>dwSuggestedBufferSize 文件chunks 所需要的内存大小。同样不要高估它的可靠性。</li>
+  <li>dwWidth 视频的宽。</li>
+  <li>dwHeight 视频的高。</li>
+</ul>
+
+<h3 id="stream-header-list">Stream Header List</h3>
+
+<p>针对每个<code>stream</code>都有一个<code>strl</code>，如果<code>strl</code>的数量与<code>MainAVIHeader::dwStreams</code>不同，就需要发出一个<code>fatal error report</code>。</p>
+
+<h3 id="stream-header-list-elementstrh">Stream Header List Element(strh)</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct{
+</span><span class="line">    FOURCC fccType;
+</span><span class="line">    FOURCC fccHandler;
+</span><span class="line">    DWORD  dwFlags;
+</span><span class="line">    WORD   wPriority;
+</span><span class="line">    WORD   wLanguage;
+</span><span class="line">    DWORD  dwInitialFrames;
+</span><span class="line">    DWORD  dwScale;
+</span><span class="line">    DWORD  dwRate;  // dwRate / dwScale == samples /second
+</span><span class="line">    DWORD  dwStart;
+</span><span class="line">    DWORD  dwLength;  //In units above
+</span><span class="line">    DWORD  dwSuggestedBufferSize;
+</span><span class="line">    DWORD  dwQuality;
+</span><span class="line">    DWORD  dwSampleSize;
+</span><span class="line">    RECT   rcFrame;
+</span><span class="line">}AVIStreamHeader;</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>fccType <code>vids</code>代表 video, <code>auds</code>代表 audio, <code>txts</code>代表 subtitle。</li>
+  <li>fccHandler</li>
+  <li>dwFlags <code>AVISF_DISABLED</code> <code>AVISF_VIDEO_PALCHANGES</code></li>
+  <li>dwInitialFrames</li>
+  <li>dwRate / dwScale = samples / second(audio) or frames / second(video)</li>
+  <li>dwStart</li>
+  <li>dwLength</li>
+  <li>dwSuggestedBufferSize</li>
+  <li>dwQuality</li>
+  <li>dwSampleSize</li>
+</ul>
+
+<h3 id="stream-header-list-elementstrf">Stream Header List Element(strf)</h3>
+
+<p><code>strf</code>的结构依据媒体类型。对于 video，使用<code>BITMAPINFOHEADER</code>结构，而 audion，使用<code>WAVEFORMATEX</code>结构。</p>
+
+<h3 id="stream-header-list-elementindx">Stream Header List Element(indx)</h3>
+
+<p>该结构请看下面的<code>AVI index</code>小结。</p>
+
+<h3 id="stream-header-list-elementstrn">Stream Header List Element(strn)</h3>
+
+<h2 id="avi-indexes">AVI Indexes</h2>
 
 </div>
 
