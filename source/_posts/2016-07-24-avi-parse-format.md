@@ -60,9 +60,11 @@ RIFF AVI    //mandatory
 {RIFF AVIX} //only for Open-DML files
 ```
 
-并非之受限于 uint32 的限制，文件大小的极限并非 4G,而是  
-* 对于 AVI 1.0: sizeof(RIFF-AVI) < 2G
-* 对于 Open-DML, sizeof(RIFF-AVI) < 1G(!!), sizeof(RIFF-AVIX) < 2G  
+并非之受限于 uint32 的限制，文件大小的极限并非 4G,而是
+
+*  对于 AVI 1.0: sizeof(RIFF-AVI) < 2G  
+*  对于 Open-DML, sizeof(RIFF-AVI) < 1G(!!), sizeof(RIFF-AVIX) < 2G  
+
 一般来讲，RIFF-AVI-Lists被创建的越小越好。  
 
 ### MainAVIHeader(avih)
@@ -137,12 +139,118 @@ typedef struct{
 
 `strf`的结构依据媒体类型。对于 video，使用`BITMAPINFOHEADER`结构，而 audion，使用`WAVEFORMATEX`结构。  
 
+```
+typedef struct tagBITMAPINFOHEADER{
+    DWORD biSize;
+    LONG  biWidth;
+    LONG  biHeight;
+    WORD  biPlanes;
+    WORD  biBitCount;
+    DWORD biCompression;
+    DWORD biSizeImage;
+    LONG  biXPelsPerMeter;
+    LONG  biYPelsPerMeter;
+    DWORD biClrUsed;
+    DWORD biClrImportant;
+}BITMAPINFOHEADER, *PBITMAPINFOHEADER;
+```
+
+* biSize  该结构体所需要的 byte 大小。
+* biWidth 图像的宽度。如果`biCompression`是`BI_JPEG`或`BI_PNG`，`biWidth`成员相应的指解压缩后的`JPEG`或`PNG`图像文件的宽。
+* biHeight 位图的高度。如果`biHeight`是正数，位图是自底向上的`DIB`,它的原点是右下角地点；。如果`biHeight`是正数，位图是自顶向下的`DIB`,它的原点是右上角地点；
+如果`biHeight`是负数，`biCompression`要么是`BI_RGB`或`BI_BITFIELDS`，自顶向下的`DIB`不能被压缩。
+如果`biCompression`是`BI_JPEG`或`BI_PNG`，则`biHeight`程序分别指解压缩后的`JPEG`或`PNG`图像的高。
+* biPlanes 目标设备的`planes`的数量，该值必须是1。
+* biBitCount 每个像素所用的 bit 数，`BITMAPINFOHEADER`的成员`biBitCount`决定了每个 pixel 所占的 bit 数、以及位图中表示颜色所能用到的最大数。该值可以是`0/1/4/8/16/24/32`。  
+* biCompression 压缩的自底向上的位图的压缩类型，可以是`BI_RGB``BI_RLE8``BI_RLE4``BI_BITFIELDS``BI_JPEG``BI_PNG`.  
+* biSizeImage 图像的大小，单位 byte。如果是`BI_RGB`位图，该值被设置为0。如果`biCompression`是`BI_JPEG`或`BI_PNG`，该值分别指示 JPEG 或 PNG 图像的大小。  
+* biXPelsPerMeter 水平分辨率。  
+* biYPelsPerMeter 垂直分辨率。  
+* biClrUsed 颜色表中该位图实际使用的颜色指针。
+* biClrImportant   
+
+```
+typedef struct{
+    WORD  wFormatTag;
+    WORD  nChannels;
+    DWORD nSamplesPerSec;
+    DWORD nAvgBytesPerSec;
+    WORD  nBlocAlign;
+    WORD  wBitsPerSample;
+    WORD  cbSize;
+}WAVEFORMATEX;
+```
+(待续...)
+
 ### Stream Header List Element(indx)
 
 该结构请看下面的`AVI index`小结。  
 
 ### Stream Header List Element(strn)
 
+该部分包含了`stream`的的名字。该名字只能使用标准的`ASCII`，尤其不能使用`UTF-8`。  
+
 ## AVI Indexes
+
+### old style index
+
+```
+AVIINDEXENTRY index_entry[n]  
+typedef struct{
+    DWORD ckid;
+    DWORD dwFlags;
+    DWORD dwChunkOffset;
+    DWORD dwChunkLength;
+}AVIINDEXENTRY;
+```
+
+### Open-DML Index
+
+```
+typedef struct _aviindex_chunk{
+    FOURCC fcc;
+    DWORD  cb;
+    WORD   wLongsPerEntry;
+    BYTE   bIndexSubType;
+    BYTE   bIndexType;
+    DWORD  nEntriesInUse;
+    DWORD  dwChunkId;
+    DWORD  dwReserved[3];
+    struct _aviindex_entry{
+        DWORD adw[wLongsPerEntry];
+    }aIndex[];
+}AVIINDEXCHUNK;
+```
+
+### Using the Open-DML index
+
+## The movi - Lists
+
+`Movi-List`包含`Video``Audio``Subtitle`和`index data`。它们可以打包进`rec-List`。如：
+
+```
+LIST movi
+    LIST rec
+        01wb
+        02wb
+        03dc
+    LIST rec
+        01wb
+        02wb
+    LIST rec
+        ...
+        ...
+        ix01
+        ix02
+        ...
+```
+其中的`chunks` ID 分别定义如下： 
+
+*  ..wb : audio chunk  
+*  ..dc : video chunk  
+*  ..tx : subtitle chunk  
+*  ix.. : standard index block  
+
+
 
 
