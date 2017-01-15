@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-01-12T07:54:01-08:00</updated>
+  <updated>2017-01-14T23:46:51-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1478,7 +1478,13 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
       <li><a href="#stream-header-list-elementstrn" id="markdown-toc-stream-header-list-elementstrn">Stream Header List Element(strn)</a></li>
     </ul>
   </li>
-  <li><a href="#avi-indexes" id="markdown-toc-avi-indexes">AVI Indexes</a></li>
+  <li><a href="#avi-indexes" id="markdown-toc-avi-indexes">AVI Indexes</a>    <ul>
+      <li><a href="#old-style-index" id="markdown-toc-old-style-index">old style index</a></li>
+      <li><a href="#open-dml-index" id="markdown-toc-open-dml-index">Open-DML Index</a></li>
+      <li><a href="#using-the-open-dml-index" id="markdown-toc-using-the-open-dml-index">Using the Open-DML index</a></li>
+    </ul>
+  </li>
+  <li><a href="#the-movi---lists" id="markdown-toc-the-movi---lists">The movi - Lists</a></li>
 </ul>
 
 <p><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">AVI</a> 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。
@@ -1544,10 +1550,14 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 </pre></td><td class="code"><pre><code class=""><span class="line">RIFF AVI    //mandatory
 </span><span class="line">{RIFF AVIX} //only for Open-DML files</span></code></pre></td></tr></table></div></figure>
 
-<p>并非之受限于 uint32 的限制，文件大小的极限并非 4G,而是<br />
-* 对于 AVI 1.0: sizeof(RIFF-AVI) &lt; 2G
-* 对于 Open-DML, sizeof(RIFF-AVI) &lt; 1G(!!), sizeof(RIFF-AVIX) &lt; 2G<br />
-一般来讲，RIFF-AVI-Lists被创建的越小越好。</p>
+<p>并非之受限于 uint32 的限制，文件大小的极限并非 4G,而是</p>
+
+<ul>
+  <li>对于 AVI 1.0: sizeof(RIFF-AVI) &lt; 2G</li>
+  <li>对于 Open-DML, sizeof(RIFF-AVI) &lt; 1G(!!), sizeof(RIFF-AVIX) &lt; 2G</li>
+</ul>
+
+<p>一般来讲，RIFF-AVI-Lists被创建的越小越好。</p>
 
 <h3 id="mainaviheaderavih">MainAVIHeader(avih)</h3>
 
@@ -1653,13 +1663,167 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 
 <p><code>strf</code>的结构依据媒体类型。对于 video，使用<code>BITMAPINFOHEADER</code>结构，而 audion，使用<code>WAVEFORMATEX</code>结构。</p>
 
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct tagBITMAPINFOHEADER{
+</span><span class="line">    DWORD biSize;
+</span><span class="line">    LONG  biWidth;
+</span><span class="line">    LONG  biHeight;
+</span><span class="line">    WORD  biPlanes;
+</span><span class="line">    WORD  biBitCount;
+</span><span class="line">    DWORD biCompression;
+</span><span class="line">    DWORD biSizeImage;
+</span><span class="line">    LONG  biXPelsPerMeter;
+</span><span class="line">    LONG  biYPelsPerMeter;
+</span><span class="line">    DWORD biClrUsed;
+</span><span class="line">    DWORD biClrImportant;
+</span><span class="line">}BITMAPINFOHEADER, *PBITMAPINFOHEADER;</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>biSize  该结构体所需要的 byte 大小。</li>
+  <li>biWidth 图像的宽度。如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，<code>biWidth</code>成员相应的指解压缩后的<code>JPEG</code>或<code>PNG</code>图像文件的宽。</li>
+  <li>biHeight 位图的高度。如果<code>biHeight</code>是正数，位图是自底向上的<code>DIB</code>,它的原点是右下角地点；。如果<code>biHeight</code>是正数，位图是自顶向下的<code>DIB</code>,它的原点是右上角地点；
+如果<code>biHeight</code>是负数，<code>biCompression</code>要么是<code>BI_RGB</code>或<code>BI_BITFIELDS</code>，自顶向下的<code>DIB</code>不能被压缩。
+如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，则<code>biHeight</code>程序分别指解压缩后的<code>JPEG</code>或<code>PNG</code>图像的高。</li>
+  <li>biPlanes 目标设备的<code>planes</code>的数量，该值必须是1。</li>
+  <li>biBitCount 每个像素所用的 bit 数，<code>BITMAPINFOHEADER</code>的成员<code>biBitCount</code>决定了每个 pixel 所占的 bit 数、以及位图中表示颜色所能用到的最大数。该值可以是<code>0/1/4/8/16/24/32</code>。</li>
+  <li>biCompression 压缩的自底向上的位图的压缩类型，可以是<code>BI_RGB</code><code>BI_RLE8</code><code>BI_RLE4</code><code>BI_BITFIELDS</code><code>BI_JPEG</code><code>BI_PNG</code>.</li>
+  <li>biSizeImage 图像的大小，单位 byte。如果是<code>BI_RGB</code>位图，该值被设置为0。如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，该值分别指示 JPEG 或 PNG 图像的大小。</li>
+  <li>biXPelsPerMeter 水平分辨率。</li>
+  <li>biYPelsPerMeter 垂直分辨率。</li>
+  <li>biClrUsed 颜色表中该位图实际使用的颜色指针。</li>
+  <li>biClrImportant</li>
+</ul>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct{
+</span><span class="line">    WORD  wFormatTag;
+</span><span class="line">    WORD  nChannels;
+</span><span class="line">    DWORD nSamplesPerSec;
+</span><span class="line">    DWORD nAvgBytesPerSec;
+</span><span class="line">    WORD  nBlocAlign;
+</span><span class="line">    WORD  wBitsPerSample;
+</span><span class="line">    WORD  cbSize;
+</span><span class="line">}WAVEFORMATEX;</span></code></pre></td></tr></table></div></figure>
+<p>(待续…)</p>
+
 <h3 id="stream-header-list-elementindx">Stream Header List Element(indx)</h3>
 
 <p>该结构请看下面的<code>AVI index</code>小结。</p>
 
 <h3 id="stream-header-list-elementstrn">Stream Header List Element(strn)</h3>
 
+<p>该部分包含了<code>stream</code>的的名字。该名字只能使用标准的<code>ASCII</code>，尤其不能使用<code>UTF-8</code>。</p>
+
 <h2 id="avi-indexes">AVI Indexes</h2>
+
+<h3 id="old-style-index">old style index</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">AVIINDEXENTRY index_entry[n]  
+</span><span class="line">typedef struct{
+</span><span class="line">    DWORD ckid;
+</span><span class="line">    DWORD dwFlags;
+</span><span class="line">    DWORD dwChunkOffset;
+</span><span class="line">    DWORD dwChunkLength;
+</span><span class="line">}AVIINDEXENTRY;</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="open-dml-index">Open-DML Index</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct _aviindex_chunk{
+</span><span class="line">    FOURCC fcc;
+</span><span class="line">    DWORD  cb;
+</span><span class="line">    WORD   wLongsPerEntry;
+</span><span class="line">    BYTE   bIndexSubType;
+</span><span class="line">    BYTE   bIndexType;
+</span><span class="line">    DWORD  nEntriesInUse;
+</span><span class="line">    DWORD  dwChunkId;
+</span><span class="line">    DWORD  dwReserved[3];
+</span><span class="line">    struct _aviindex_entry{
+</span><span class="line">        DWORD adw[wLongsPerEntry];
+</span><span class="line">    }aIndex[];
+</span><span class="line">}AVIINDEXCHUNK;</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="using-the-open-dml-index">Using the Open-DML index</h3>
+
+<h2 id="the-movi---lists">The movi - Lists</h2>
+
+<p><code>Movi-List</code>包含<code>Video</code><code>Audio</code><code>Subtitle</code>和<code>index data</code>。它们可以打包进<code>rec-List</code>。如：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">LIST movi
+</span><span class="line">    LIST rec
+</span><span class="line">        01wb
+</span><span class="line">        02wb
+</span><span class="line">        03dc
+</span><span class="line">    LIST rec
+</span><span class="line">        01wb
+</span><span class="line">        02wb
+</span><span class="line">    LIST rec
+</span><span class="line">        ...
+</span><span class="line">        ...
+</span><span class="line">        ix01
+</span><span class="line">        ix02
+</span><span class="line">        ...</span></code></pre></td></tr></table></div></figure>
+<p>其中的<code>chunks</code> ID 分别定义如下：</p>
+
+<ul>
+  <li>..wb : audio chunk</li>
+  <li>..dc : video chunk</li>
+  <li>..tx : subtitle chunk</li>
+  <li>ix.. : standard index block</li>
+</ul>
 
 ]]></content>
   </entry>
