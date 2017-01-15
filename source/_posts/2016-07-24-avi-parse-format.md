@@ -251,6 +251,15 @@ LIST movi
 *  ..tx : subtitle chunk  
 *  ix.. : standard index block  
 
+## 参考文献
+
+1. [What is avi?](http://www.ezr8.com/avi.html)
+2. [BETA DOCUMENTATION OF RIFF-AVI FILE FORMAT](http://pvdtools.sourceforge.net/aviformat.txt)  
+3. [Audio Video Interleave](https://en.wikipedia.org/wiki/Audio_Video_Interleave)  
+4. [AVI 文件格式](http://blog.csdn.net/jszj/article/category/614875)  
+5. [AVI 文件解析](http://blog.csdn.net/njuitjf/article/details/5680632)  
+6. [FFmpeg AVI](https://www.ffmpeg.org/doxygen/0.6/avidec_8c-source.html)
+
 
 
 
