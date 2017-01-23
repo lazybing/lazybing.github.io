@@ -9,8 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="
-">
+  <meta name="description" content="Profile、Tier 和 Level 的概念 Profile、Tier 和 Level 的概念 HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。
+Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -100,7 +100,143 @@
   </header>
 
 
-<div class="entry-content">
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
+</ul>
+
+<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
+
+<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
+Profile 指出码流中使用了哪些编码工具和算法。</p>
+
+<p>Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
+值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。</p>
+
+<p>在 HEVC 的设计中，应用可以只依据最大的码率和 CPB 大小就可以区分。为了解决这个问题，有些 Level 定义了
+两个 Tier——Main Tier 用于大多数应用，High Tier 用于那些最苛刻的应用。</p>
+
+<p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
+<code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
+
+<p>HM 中关于 ProfileTierLevel 的定义如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">namespace Profile
+</span><span class="line">{
+</span><span class="line">    enum Name
+</span><span class="line">    {
+</span><span class="line">        NONE               = 0,
+</span><span class="line">        MAIN               = 1,
+</span><span class="line">        MAIN10             = 2,
+</span><span class="line">        MAINSTILLPICTURE   = 3,
+</span><span class="line">        MAINREXT           = 4,
+</span><span class="line">        HIGHTHROUGHPUTREXT = 5
+</span><span class="line">    };
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">namespace Level
+</span><span class="line">{
+</span><span class="line">    enum Tier
+</span><span class="line">    {
+</span><span class="line">        MAIN = 0,
+</span><span class="line">        HIGH = 1,
+</span><span class="line">    };
+</span><span class="line">
+</span><span class="line">    enum Name
+</span><span class="line">    {
+</span><span class="line">        NONE       = 0,
+</span><span class="line">        LEVEL1     = 30,
+</span><span class="line">        LEVEL2     = 60,
+</span><span class="line">        LEVEL2_1   = 63,
+</span><span class="line">        LEVEL3     = 90,
+</span><span class="line">        LEVEL3_1   = 93,
+</span><span class="line">        LEVEL4     = 120,
+</span><span class="line">        LEVEL4_1   = 123,
+</span><span class="line">        LEVEL5     = 150,
+</span><span class="line">        LEVEL5_1   = 153,
+</span><span class="line">        LEVEL5_2   = 156,
+</span><span class="line">        LEVEL6     = 180,
+</span><span class="line">        LEVEL6_1   = 183,
+</span><span class="line">        LEVEL6_2   = 186,
+</span><span class="line">        LEVEL8_5   = 255,
+</span><span class="line">    };
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">class ProfileTierLevel
+</span><span class="line">{
+</span><span class="line">    Int            m_profileSpace;
+</span><span class="line">    Level::Tier    m_tierFlag;
+</span><span class="line">    Profile::Name  m_profileIdc;
+</span><span class="line">    Bool           m_profileCompatibilityFlag[32];
+</span><span class="line">    Level::Name    m_levelIdc;
+</span><span class="line">
+</span><span class="line">    Bool           m_progressiveSourceFlag;
+</span><span class="line">    Bool           m_interlacedSourceFlag;
+</span><span class="line">    Bool           m_nonPackedConstraintFlag;
+</span><span class="line">    Bool           m_frameOnlyConstraintFlag;
+</span><span class="line">    UInt           m_bitDepthConstraintValue;
+</span><span class="line">    ChromaFormat   m_chromaFormatConstraintValue;
+</span><span class="line">    Bool           m_intraConstraintFlag;
+</span><span class="line">    Bool           m_lowerBitRateConstraintFlag;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
