@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "How To Use GDB"
+title: "如何使用 GDB"
 date: 2016-04-01 07:48:51 -0700
 commit: true
 categories: 编程工具
@@ -12,6 +12,13 @@ categories: 编程工具
 [GDB](https://www.gnu.org/software/gdb/), The GNU Project debugger, allows you to see what is going on inside another program while it executes -- or what another program was doing at the moment it crashed.
 
 <!--more-->
+
+GDB 主要完成以下四件事：  
+
+1. 启动程序，指定影响程序运行的条件。  
+2. 使程序在特定的条件下停止。  
+3. 程序停止时，检查程序锁发生的事。  
+4. 动态的改变程序的执行环境。  
 
 ### 前期准备
 
