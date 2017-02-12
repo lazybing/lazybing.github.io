@@ -9,11 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="发布新帖 添加图片 添加文章目录 多台Mac上同时使用 在新的Mac上创建 ssh key 并添加到 github 中。 配置环境。 使用技巧 详细记录使用Octopress的搭建和使用过程中遇到的问题。 发布新帖 发布新帖的两种方法:
-方法一是在命令行下执行如下命令：
-1
-2
-cd &hellip;">
+  <meta name="description" content="安装octorpess 部署octopress 发布新帖 添加图片 添加文章目录 多台Mac上同时使用 在新的Mac上创建 ssh key 并添加到 github 中。 配置环境。 使用技巧 详细记录使用Octopress的搭建和使用过程中遇到的问题。 安装octorpess 首先， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -104,6 +100,8 @@ cd &hellip;">
 
 
 <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#octorpess" id="markdown-toc-octorpess">安装octorpess</a></li>
+  <li><a href="#octopress" id="markdown-toc-octopress">部署octopress</a></li>
   <li><a href="#section" id="markdown-toc-section">发布新帖</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">添加图片</a></li>
   <li><a href="#section-2" id="markdown-toc-section-2">添加文章目录</a></li>
@@ -117,6 +115,56 @@ cd &hellip;">
 
 <p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
 <!--more--></p>
+
+<h2 id="octorpess">安装octorpess</h2>
+
+<p>首先，安装<code>git</code><code>ruby</code>,注册 github 账号。</p>
+
+<p>然后，在终端(Terminal)下执行如下命令：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">git clone git://github.com/imathis/octopress.git octopress
+</span><span class="line">cd octopress
+</span><span class="line">gem install bundler
+</span><span class="line">bundle install
+</span><span class="line">rake install // 安装默认主题</span></code></pre></td></tr></table></div></figure>
+<p>本地安装完毕后，通过<code>rake preview</code>预览安装效果。执行完<code>rake preview</code>后，在浏览器
+中输入<code>http://localhost:4000</code>即可查看搭建效果。</p>
+
+<h2 id="octopress">部署octopress</h2>
+
+<p>登录注册的 github 账号，选择<code>New Repository</code>,进入新建库页面后，
+在<code>Repository name</code>一栏填<code>[your_username].github.io</code>,[your_username]
+是 github 上的用户名，此处的格式一定要正确，否则部署会失败。
+之后点击<code>Create repository</code>按钮提交。</p>
+
+<p>如果创建仓库成功，会有一个 SSH 地址，形如<code>git@github.com:[your_name]/[your_name].github.io.git</code>,后面会用到该地址。</p>
+
+<p>终端下执行如下命令:</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">cd octopress
+</span><span class="line">rake setup_github_pages</span></code></pre></td></tr></table></div></figure>
+<p>执行完上面两条命令后，需要把刚刚生成的 SSH 地址粘贴到此处。
+继续执行：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">rake generate
+</span><span class="line">rake deploy</span></code></pre></td></tr></table></div></figure>
+<p>其中<code>rake generate</code>用来生成页面，<code>rake deploy</code>用来部署页面。上述完成后，
+即可使用<code>http://[your_username].github.io</code>来访问页面。</p>
+
+<p>最后要记得把源文件全部发布到<code>source</code>分支下面。通过下面命令完成:</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">git add .
+</span><span class="line">git commit -m "commit message"
+</span><span class="line">git push origin source</span></code></pre></td></tr></table></div></figure>
 
 <h2 id="section">发布新帖</h2>
 
