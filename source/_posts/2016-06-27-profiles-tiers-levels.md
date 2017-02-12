@@ -14,6 +14,8 @@ categories: 总结积累
 HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。  
 Profile 指出码流中使用了哪些编码工具和算法。  
 
+<!--more-->
+
 Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
 值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。  
 

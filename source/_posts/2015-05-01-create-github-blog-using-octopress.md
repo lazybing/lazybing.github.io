@@ -11,6 +11,52 @@ categories: 总结积累
 详细记录使用`Octopress`的搭建和使用过程中遇到的问题。
 <!--more-->
 
+##安装octorpess
+
+首先，安装`git``ruby`,注册 github 账号。  
+
+然后，在终端(Terminal)下执行如下命令：  
+```
+git clone git://github.com/imathis/octopress.git octopress
+cd octopress
+gem install bundler
+bundle install
+rake install // 安装默认主题
+```
+本地安装完毕后，通过`rake preview`预览安装效果。执行完`rake preview`后，在浏览器
+中输入`http://localhost:4000`即可查看搭建效果。  
+
+##部署octopress
+
+登录注册的 github 账号，选择`New Repository`,进入新建库页面后，
+在`Repository name`一栏填`[your_username].github.io`,[your_username]
+是 github 上的用户名，此处的格式一定要正确，否则部署会失败。
+之后点击`Create repository`按钮提交。  
+
+如果创建仓库成功，会有一个 SSH 地址，形如`git@github.com:[your_name]/[your_name].github.io.git`,后面会用到该地址。  
+
+终端下执行如下命令:  
+```
+cd octopress
+rake setup_github_pages
+```
+执行完上面两条命令后，需要把刚刚生成的 SSH 地址粘贴到此处。
+继续执行：  
+
+```
+rake generate
+rake deploy
+```
+其中`rake generate`用来生成页面，`rake deploy`用来部署页面。上述完成后，
+即可使用`http://[your_username].github.io`来访问页面。  
+
+最后要记得把源文件全部发布到`source`分支下面。通过下面命令完成:  
+```
+git add .
+git commit -m "commit message"
+git push origin source
+```
+
 ##发布新帖
 
 发布新帖的两种方法:  
