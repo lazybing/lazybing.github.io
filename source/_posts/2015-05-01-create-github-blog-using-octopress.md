@@ -80,6 +80,40 @@ categories: 总结积累
 ---
 
 ```
+##基本配置
+
+`_config.yml`用于基本配置，包括域名、网站标题、作者等等信息。
+
+{% codeblock _config.yml %}
+url: http://yhoursite.com
+title: My Octopress Blog
+subtitle: A blogging framework for hackeers.
+author: Your Name
+simple_search: https://www.google.com/search
+description: 
+{% endcodeblock %}
+
+汉化"Categories", 在`_config.yml`文件中，添加下面一行代码：
+```
+category_tile_prefix: “分类：”
+```
+
+
+汉化“Read On->”按钮:当文章只是显示摘要，点击"Read on->"
+后才可查看全文时，可以通过在文章中插入如下内容：
+```
+<!--more-->
+```
+
+在文章中找到如下一行，把其中的"Read on"改为"继续阅读"。
+```
+excerpt_link:"Read on"
+```
+
+##主题修改
+
+网站底部：一般来讲网站底部会有一些网站的描述信息，比如版权声明、网站
+主题，网站使用的系统等等，要修改这部分内容，直接打开`source/_includes/custom/foot.html`修改相应部分即可。
 
 
 
