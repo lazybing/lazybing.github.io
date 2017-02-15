@@ -6,6 +6,9 @@ comments: true
 categories: HM源码分析
 ---
 
+* list element with functor item
+{:toc}
+
 本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
 <!--more-->
 
@@ -37,3 +40,40 @@ PPS(Picture Parameter Set):图像参数集。主要包括编码工具的可用�
 
 [HM](https://hevc.hhi.fraunhofer.de/)中关于`VPS` `SPS` `PPS`编码结构的介绍主要在`lib\tlibcommon\TComSlice.h`内，稍后会对它们进行详细分析。
 
+### VPS syntax 分析
+
+VPS 中有关于 timing info 的信息，其中的 syntax `vps_timing_info_present_flag`表示是否含有 timing info 信息。
+其中的`vps_num_units_in_tick``vps_time_scale`可以用于计算 FPS，`FPS = vps_time_scale / vps_num_units_in_tick`,其实FPS的计算，除了在 VPS 中
+有这样的信息外，还在 SPS 中同样有类似的信息`FPS = sps_vui_time_scale/sps_vui_num_units_in_tick`。
+
+VPS 中有关 timing info 的信息，除了可以计算 FPS 外，还有`hrd_parameters`和`profile_tier_level`等信息。  
+
+### SPS syntax 分析
+
+跟 VPS 一样，SPS 中同样包含了`profile_tier_level`的信息。除此之外，还有`pic_width_in_luma_samples`和
+`pic_height_in_luma_samples`分别代表了视频的宽高信息，例如(1920x1080)。代表对解码图像裁剪输出的
+ conformance_window 信息，包括`conf_win_left_offset``conf_win_right_offset``conf_win_top_offset`
+ `conf_win_bottom_offset`。代表码流 bit_depth 的`bit_depth_luma_minus8``bit_depth_chroma_minus8`等。
+ 还包括`scaling_list_data`,表示参考帧信息的`short_term_ref_pic_set`和`long_term_ref_pics`。可视化可用信息
+ `vui_parameters`等等。  
+
+### PPS syntax 分析
+
+PPS 中同样包含了`scaling_list_data`、QP信息(如`init_qp_minus26``pps_cb_qp_offset``pps_cr_qp_offset`)、Tile 相关信息（如`num_tile_columns_minus1``num_tile_rows_minus1`）、
+与去方块滤波相关信息(如`deblocking_filter_override_enabled_flag`)。  
+
+### SEI syntax 分析
+
+目前遇到的 SEI 信息包括`pic_timing``hdr_compatibility_info``content_light_level_info`等。  
+
+### Slice Segment Header syntax 分析
+
+Slice Header 里  
+
+### Profile Tier And Level syntax 分析
+
+包含了用于指示图片是 progressive 和 interlaced 的`general_progressive_source_flag`和`general_interlaced_$  source_flag`.
+
+### Scaling List Data syntax 分析
+
+`scaling_list_delta_coef`.  
