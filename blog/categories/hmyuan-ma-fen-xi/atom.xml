@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hm源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hmyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-13T06:30:25-08:00</updated>
+  <updated>2017-02-15T07:39:20-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -342,7 +342,21 @@
     <link href="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/"/>
     <updated>2015-09-04T09:57:17-07:00</updated>
     <id>http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure</id>
-    <content type="html"><![CDATA[<p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">编码分层处理架构</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">码流的语法架构</a>    <ul>
+      <li><a href="#vps-syntax-" id="markdown-toc-vps-syntax-">VPS syntax 分析</a></li>
+      <li><a href="#sps-syntax-" id="markdown-toc-sps-syntax-">SPS syntax 分析</a></li>
+      <li><a href="#pps-syntax-" id="markdown-toc-pps-syntax-">PPS syntax 分析</a></li>
+      <li><a href="#sei-syntax-" id="markdown-toc-sei-syntax-">SEI syntax 分析</a></li>
+      <li><a href="#slice-segment-header-syntax-" id="markdown-toc-slice-segment-header-syntax-">Slice Segment Header syntax 分析</a></li>
+      <li><a href="#profile-tier-and-level-syntax-" id="markdown-toc-profile-tier-and-level-syntax-">Profile Tier And Level syntax 分析</a></li>
+      <li><a href="#scaling-list-data-syntax-" id="markdown-toc-scaling-list-data-syntax-">Scaling List Data syntax 分析</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
 <!--more--></p>
 
 <h2 id="section">编码分层处理架构</h2>
@@ -373,6 +387,43 @@
 
 <p><a href="https://hevc.hhi.fraunhofer.de/">HM</a>中关于<code>VPS</code> <code>SPS</code> <code>PPS</code>编码结构的介绍主要在<code>lib\tlibcommon\TComSlice.h</code>内，稍后会对它们进行详细分析。</p>
 
+<h3 id="vps-syntax-">VPS syntax 分析</h3>
+
+<p>VPS 中有关于 timing info 的信息，其中的 syntax <code>vps_timing_info_present_flag</code>表示是否含有 timing info 信息。
+其中的<code>vps_num_units_in_tick</code><code>vps_time_scale</code>可以用于计算 FPS，<code>FPS = vps_time_scale / vps_num_units_in_tick</code>,其实FPS的计算，除了在 VPS 中
+有这样的信息外，还在 SPS 中同样有类似的信息<code>FPS = sps_vui_time_scale/sps_vui_num_units_in_tick</code>。</p>
+
+<p>VPS 中有关 timing info 的信息，除了可以计算 FPS 外，还有<code>hrd_parameters</code>和<code>profile_tier_level</code>等信息。</p>
+
+<h3 id="sps-syntax-">SPS syntax 分析</h3>
+
+<p>跟 VPS 一样，SPS 中同样包含了<code>profile_tier_level</code>的信息。除此之外，还有<code>pic_width_in_luma_samples</code>和
+<code>pic_height_in_luma_samples</code>分别代表了视频的宽高信息，例如(1920x1080)。代表对解码图像裁剪输出的
+ conformance_window 信息，包括<code>conf_win_left_offset</code><code>conf_win_right_offset</code><code>conf_win_top_offset</code>
+ <code>conf_win_bottom_offset</code>。代表码流 bit_depth 的<code>bit_depth_luma_minus8</code><code>bit_depth_chroma_minus8</code>等。
+ 还包括<code>scaling_list_data</code>,表示参考帧信息的<code>short_term_ref_pic_set</code>和<code>long_term_ref_pics</code>。可视化可用信息
+ <code>vui_parameters</code>等等。</p>
+
+<h3 id="pps-syntax-">PPS syntax 分析</h3>
+
+<p>PPS 中同样包含了<code>scaling_list_data</code>、QP信息(如<code>init_qp_minus26</code><code>pps_cb_qp_offset</code><code>pps_cr_qp_offset</code>)、Tile 相关信息（如<code>num_tile_columns_minus1</code><code>num_tile_rows_minus1</code>）、
+与去方块滤波相关信息(如<code>deblocking_filter_override_enabled_flag</code>)。</p>
+
+<h3 id="sei-syntax-">SEI syntax 分析</h3>
+
+<p>目前遇到的 SEI 信息包括<code>pic_timing</code><code>hdr_compatibility_info</code><code>content_light_level_info</code>等。</p>
+
+<h3 id="slice-segment-header-syntax-">Slice Segment Header syntax 分析</h3>
+
+<p>Slice Header 里</p>
+
+<h3 id="profile-tier-and-level-syntax-">Profile Tier And Level syntax 分析</h3>
+
+<p>包含了用于指示图片是 progressive 和 interlaced 的<code>general_progressive_source_flag</code>和<code>general_interlaced_$  source_flag</code>.</p>
+
+<h3 id="scaling-list-data-syntax-">Scaling List Data syntax 分析</h3>
+
+<p><code>scaling_list_delta_coef</code>.</p>
 ]]></content>
   </entry>
   
