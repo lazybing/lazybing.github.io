@@ -40,6 +40,16 @@ PPS(Picture Parameter Set):图像参数集。主要包括编码工具的可用�
 
 [HM](https://hevc.hhi.fraunhofer.de/)中关于`VPS` `SPS` `PPS`编码结构的介绍主要在`lib\tlibcommon\TComSlice.h`内，稍后会对它们进行详细分析。
 
+官方参考 code 中，有定义如下的类结构。
+
+`TComReferencePictureSet``TComRPSList``TComScalingList``ProfileTierLevel`
+`TComPTL``HrdSubLayerInfo``TComHRD``TimingInfo``TComVPS``Window``TComVUI`
+`TComSPS``TComRefPicListModification``TComPPS``TComSlice`。
+
+它们之间的结构关系如下：  
+
+{% img /images/HM/HEVC.png %}
+
 ### VPS syntax 分析
 
 VPS 中有关于 timing info 的信息，其中的 syntax `vps_timing_info_present_flag`表示是否含有 timing info 信息。
