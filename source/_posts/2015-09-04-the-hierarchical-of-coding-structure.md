@@ -76,14 +76,10 @@ PPS 中同样包含了`scaling_list_data`、QP信息(如`init_qp_minus26``pps_cb
 
 目前遇到的 SEI 信息包括`pic_timing``hdr_compatibility_info``content_light_level_info`等。  
 
-### Slice Segment Header syntax 分析
-
-Slice Header 里  
-
 ### Profile Tier And Level syntax 分析
 
-包含了用于指示图片是 progressive 和 interlaced 的`general_progressive_source_flag`和`general_interlaced_$  source_flag`.
+包含了用于指示图片是 progressive 和 interlaced 的`general_progressive_source_flag`和`general_interlaced_$  source_flag`。其中的
+`Profile`包括 Main、Main10、STILLPICTURE等。`Tier`包括 Main、HIGH。`Level`又包括`LEVLE1`、`LEVLE2`...`LEVLE6`等，不同的tier和level对应不同的
+`Max luma sample rate``Max luma picture size``Max bit rate`和`picture resolution`等信息。  
 
-### Scaling List Data syntax 分析
 
-`scaling_list_delta_coef`.  
