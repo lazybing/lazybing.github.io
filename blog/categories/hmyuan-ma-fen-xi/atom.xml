@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hm源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hmyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-16T06:24:27-08:00</updated>
+  <updated>2017-02-17T05:36:40-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -204,6 +204,13 @@
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
+<p>关于<code>read</code>函数其实主要分为两大来，一类是 numberofbits &lt; num_held_bits，此时
+只要通过简单的将 held_bits 左右移外加mark动作就能够把该syntax的值获得。如图1.
+另一类则是 numberofbits &gt; num_held_bits 时，需要重新加载新的bitstream进来，并根据 numberofbits 和 num_held_bits 差值的大小决定
+加载几个 byte。</p>
+
+<p><img src="/images/HM/syntax_read.png"></p>
+
 <p><figure class='code'><figcaption><span>SyntaxElementParser.cpp </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -322,6 +329,26 @@
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
 </span></code></pre></td></tr></table></div></figure></p>
+
+<p>其中的<code>xReadCode</code><code>xReadFlag</code>很好理解，此处不在说明，<code>xReadUvlc</code>和<code>xReadSvlc</code>分别是处理0阶指数哥伦布编码中对 ue(n) he 
+ se(n) 解析。该部分主要在 SPEC 的9.2 节。</p>
+
+<p>```
+leadingZeroBits = -1;
+for(b = 0; !b; leadingZeroBits++)
+    b = read_bits(1);</p>
+
+<p>codeNum = 2^leadingZeroBits -1 + read_bits(leadingZeroBits);
+```</p>
+
+<p>spec 中关于 ue 和 se 的计算有如下描述：<br />
+&gt; Depending on the descriptor, the value of a syntax element is derived as follows:
+&gt; If the syntax element is coded as ue(v), the value of the syntax element is equal to codeNum.
+&gt; Otherwise , the value of the syntax element is derived by invoking the mapping process for signed Exp-Golomb codes as specified in clause 9.2.2 with codeNum as input.</p>
+
+<p>关于 UE 和 SE 中关于 bit 和 syntax value 的对应关系如下：</p>
+
+<p><img src="/images/HM/goloboencode.png"></p>
 
 <p>与<code>SyntaxElementParser</code>相对应的是<code>SyntaxElementWrite</code>，其中包含了<code>xWriteCode</code> <code>xWriteUvlc</code> <code>xWriteSvlc</code> <code>xWriteFlag</code>四个函数。此处不在分析。</p>
 
