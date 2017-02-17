@@ -104,6 +104,12 @@ Void TcomInputBitstream::read (UInt uiNumberOfBits, UInt& ruiBits)
 }
 {% endcodeblock %}
 
+关于`read`函数其实主要分为两大来，一类是 numberofbits < num_held_bits，此时
+只要通过简单的将 held_bits 左右移外加mark动作就能够把该syntax的值获得。如图1.
+另一类则是 numberofbits > num_held_bits 时，需要重新加载新的bitstream进来，并根据 numberofbits 和 num_held_bits 差值的大小决定
+加载几个 byte。  
+
+{% img /images/HM/syntax_read.png %}
 
 {% codeblock lang:C++ SyntaxElementParser.cpp %}
 Void SyntaxElementParser::xReadCode (UInt uiLength, UInt& ruiCode)
@@ -168,6 +174,26 @@ Void SyntaxElementParser::xReadFlag (UInt& ruiCode)
 }
 
 {% endcodeblock %}
+
+其中的`xReadCode``xReadFlag`很好理解，此处不在说明，`xReadUvlc`和`xReadSvlc`分别是处理0阶指数哥伦布编码中对 ue(n) he 
+ se(n) 解析。该部分主要在 SPEC 的9.2 节。  
+
+```
+leadingZeroBits = -1;
+for(b = 0; !b; leadingZeroBits++)
+    b = read_bits(1);
+
+codeNum = 2^leadingZeroBits -1 + read_bits(leadingZeroBits);
+```
+
+spec 中关于 ue 和 se 的计算有如下描述：  
+> Depending on the descriptor, the value of a syntax element is derived as follows:
+> If the syntax element is coded as ue(v), the value of the syntax element is equal to codeNum.
+> Otherwise , the value of the syntax element is derived by invoking the mapping process for signed Exp-Golomb codes as specified in clause 9.2.2 with codeNum as input.
+
+关于 UE 和 SE 中关于 bit 和 syntax value 的对应关系如下：  
+
+{% img /images/HM/goloboencode.png %}
 
 与`SyntaxElementParser`相对应的是`SyntaxElementWrite`，其中包含了`xWriteCode` `xWriteUvlc` `xWriteSvlc` `xWriteFlag`四个函数。此处不在分析。
 
