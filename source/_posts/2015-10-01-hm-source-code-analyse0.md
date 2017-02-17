@@ -187,6 +187,7 @@ codeNum = 2^leadingZeroBits -1 + read_bits(leadingZeroBits);
 ```
 
 spec 中关于 ue 和 se 的计算有如下描述：  
+
 > Depending on the descriptor, the value of a syntax element is derived as follows:
 > If the syntax element is coded as ue(v), the value of the syntax element is equal to codeNum.
 > Otherwise , the value of the syntax element is derived by invoking the mapping process for signed Exp-Golomb codes as specified in clause 9.2.2 with codeNum as input.
