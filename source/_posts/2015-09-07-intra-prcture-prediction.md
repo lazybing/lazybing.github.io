@@ -55,7 +55,45 @@ Planar 模式适用于像素值缓慢变化的区域，它使用水平和垂直�
 
 ### 亮度模式的编码
 
+HEVC 标准建立了一个帧内预测模式候选列表 candModeList，表中有 3 个候选预测模式，用于存储相邻 PU 的预测
+模式。相邻 PU 的位置如下图所示。设 A 的预测模式为 ModeA, B 的预测模式为 ModeB。候选列表具体建立过程如下：  
+
+{% img /images/HM/candidate_mode_list.png %}
+
+(1) 若 ModeA 与 ModeB 相同，则分以下两种情况进行。  
+
+* 若 ModeA 和 ModeB 都为 Planar 或 DC 模式，则：`candModeList[0]`为 Planar 模式，`candModeList[1]`为 DC 模式，`candModeList[2]`为模式 26（垂直模式）。  
+* 若 ModeA 和 ModeB 都为角度模式，则：`candModeList[0]`为 ModeA，`candModeList[1]`和`candModeList[2]`为与 ModeA 相邻的两个模式。  
+
+(2)  若 ModeA 与 ModeB 不同，则：`candModeList[0]`为 ModeA,`candModeList[1]`为 ModeB,`candModeList[2]`分为以下几种情况  
+
+* 若 ModeA 和 ModeB 都不是 Planar 模式，则`candModeList[2]`为 Planar 模式。  
+* 若 ModeA 和 ModeB 都不是 DC 模式，则`candModeList[2]`为 DC 模式。  
+* 否则`candModeList[2]`为模式 26(垂直模式)。  
+
+当`candModeList`建立完成后，可利用该列表对当前 PU 模式信息进行编码，具体如下：  
+
+(1) 若当前 PU 最优模式(记为 ModeC)在`candModeList`中出现，则只需要编码 ModeC 在`candModeList`中的位置即可。  
+(2) 若 ModeC 未在`candModeList`中出现，则按以下步骤编码 ModeC。  
+
+* 将`candModeList`中的候选模式按从小到大的顺序重新排列。  
+* 遍历重新排列后的 3 个候选模式，分别于 ModeC 进行比较，若`ModeC >= candModeList[i]`则令 ModeC 自减1。遍历结束后对 ModeC 最终的值进行编码。  
+
 ### 色度模式的编码
+
+HEVC 色度分量帧内预测一共有5种模式： Planar 模式、垂直模式、水平模式、DC模式以及UI应亮度分量的预测模式。若对应亮度预测模式为前4种模式种的一种，则将其替换为角度预测模式种的模式34.  
+HEVC 直接对色度模式编号进行编码，具体方法如下：  
+
+表 色度模式编号  
+
+| 色度模式 | 亮度模式 |
+|          | :--------: |
+|          |  模式0（Planar） | 模式26（垂直） |  模式10（水平） |  模式1（DC） |
+| :------: | :------: | :------: | :------: | :------: |
+|     0    |   34  | 0 | 0 | 0 |
+|     1    |   26  | 34 | 26 | 26 |
+|     2    |   10  | 10 | 34 | 10 |
+|     3    |   1   | 1 | 1 | 34 |
 
 ## 帧内预测的过程
 
