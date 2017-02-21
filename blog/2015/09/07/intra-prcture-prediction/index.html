@@ -180,7 +180,93 @@ p(n) 想家即可得到当前像素的重建值 x’(n)。</p>
 
 <h3 id="section-2">亮度模式的编码</h3>
 
+<p>HEVC 标准建立了一个帧内预测模式候选列表 candModeList，表中有 3 个候选预测模式，用于存储相邻 PU 的预测
+模式。相邻 PU 的位置如下图所示。设 A 的预测模式为 ModeA, B 的预测模式为 ModeB。候选列表具体建立过程如下：</p>
+
+<p><img src="/images/HM/candidate_mode_list.png" /></p>
+
+<p>(1) 若 ModeA 与 ModeB 相同，则分以下两种情况进行。</p>
+
+<ul>
+  <li>若 ModeA 和 ModeB 都为 Planar 或 DC 模式，则：<code>candModeList[0]</code>为 Planar 模式，<code>candModeList[1]</code>为 DC 模式，<code>candModeList[2]</code>为模式 26（垂直模式）。</li>
+  <li>若 ModeA 和 ModeB 都为角度模式，则：<code>candModeList[0]</code>为 ModeA，<code>candModeList[1]</code>和<code>candModeList[2]</code>为与 ModeA 相邻的两个模式。</li>
+</ul>
+
+<p>(2)  若 ModeA 与 ModeB 不同，则：<code>candModeList[0]</code>为 ModeA,<code>candModeList[1]</code>为 ModeB,<code>candModeList[2]</code>分为以下几种情况</p>
+
+<ul>
+  <li>若 ModeA 和 ModeB 都不是 Planar 模式，则<code>candModeList[2]</code>为 Planar 模式。</li>
+  <li>若 ModeA 和 ModeB 都不是 DC 模式，则<code>candModeList[2]</code>为 DC 模式。</li>
+  <li>否则<code>candModeList[2]</code>为模式 26(垂直模式)。</li>
+</ul>
+
+<p>当<code>candModeList</code>建立完成后，可利用该列表对当前 PU 模式信息进行编码，具体如下：</p>
+
+<p>(1) 若当前 PU 最优模式(记为 ModeC)在<code>candModeList</code>中出现，则只需要编码 ModeC 在<code>candModeList</code>中的位置即可。<br />
+(2) 若 ModeC 未在<code>candModeList</code>中出现，则按以下步骤编码 ModeC。</p>
+
+<ul>
+  <li>将<code>candModeList</code>中的候选模式按从小到大的顺序重新排列。</li>
+  <li>遍历重新排列后的 3 个候选模式，分别于 ModeC 进行比较，若<code>ModeC &gt;= candModeList[i]</code>则令 ModeC 自减1。遍历结束后对 ModeC 最终的值进行编码。</li>
+</ul>
+
 <h3 id="section-3">色度模式的编码</h3>
+
+<p>HEVC 色度分量帧内预测一共有5种模式： Planar 模式、垂直模式、水平模式、DC模式以及UI应亮度分量的预测模式。若对应亮度预测模式为前4种模式种的一种，则将其替换为角度预测模式种的模式34.<br />
+HEVC 直接对色度模式编号进行编码，具体方法如下：</p>
+
+<p>表 色度模式编号</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">色度模式</th>
+      <th>亮度模式</th>
+      <th> </th>
+      <th> </th>
+      <th> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"> </td>
+      <td>模式0（Planar）</td>
+      <td>模式26（垂直）</td>
+      <td>模式10（水平）</td>
+      <td>模式1（DC）</td>
+    </tr>
+  </tbody>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td>34</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td>26</td>
+      <td>34</td>
+      <td>26</td>
+      <td>26</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td>10</td>
+      <td>10</td>
+      <td>34</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>34</td>
+    </tr>
+  </tbody>
+</table>
 
 <h2 id="section-4">帧内预测的过程</h2>
 
