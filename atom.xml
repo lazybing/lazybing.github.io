@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-23T20:41:10-08:00</updated>
+  <updated>2017-02-24T04:45:25-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1913,7 +1913,64 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 <h2 id="flv-header">FLV Header</h2>
 <p>以 FLV Header <code>46 4C 56 01 05 00 00 00 09</code>为例：</p>
 
-<p><img src="http://lazybing.github.io/images/flvparse/flv_header.png" /></p>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">UI8</td>
+      <td style="text-align: center">Signature byte always ‘F’(0x46)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">UI8</td>
+      <td style="text-align: center">Signature byte always ‘L’(0x4C)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">UI8</td>
+      <td style="text-align: center">Signature byte always ‘V’(0x56)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Version</td>
+      <td style="text-align: center">UI8</td>
+      <td style="text-align: center">File version(0x01 for FLV version 1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsReserved</td>
+      <td style="text-align: center">UB[5]</td>
+      <td style="text-align: center">Must be 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsAudio</td>
+      <td style="text-align: center">UB[1]</td>
+      <td style="text-align: center">Audio tags are present</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsReserved</td>
+      <td style="text-align: center">UB[1]</td>
+      <td style="text-align: center">Must be 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsVideo</td>
+      <td style="text-align: center">UB[1]</td>
+      <td style="text-align: center">Video tags are present</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">DataOffset</td>
+      <td style="text-align: center">UI32</td>
+      <td style="text-align: center">Offset in bytes from start of file to start of body(that is size of header)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code>DataOffset</code>字段在 FLV 1 时，通常是 9。</p>
 
 <p>FLV Header 的前三个字节是固定的<code>FLV</code>的 ASCII 码的值<code>0x46 0x4C 0x56</code>; 接下来的一个字节表示 FLV 的版本号,例如 0x01 代表 FLV 版本号为 1。第 5 个字节中的第0位和第2位分别表示video和audio的存在情况（1表示存在，0表示不存在）,其余6位必须为0.最后的4字节表示FLV Header的长度，对于version 1，此处为9.</p>
 
@@ -1953,6 +2010,86 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 <p>Video Tag 与 SWF 文件格式中的 VideoFrame Tag 类似，它们的 Payload 数据是同一的。关于 SWF 文件格式的介绍，请看<a href="www.adobe.com/go/swf_file_format">SWF(File Format Specification)</a>。</p>
 
 <p>以<code>09 00 00 2D 00 00 00 00 00 00 00 17 00 00 00 00 01 4D 40 1F FF E1 00 19 67 4D 40 ……</code>为例，<code>09</code>表示 Tag Type 为 Video Tag;<code>00 00 2D</code>表示 DataSize 为 45；<code>00 00 00</code>表示 Timestamp 为 0；<code>00</code>表示 TimestampExtended 为 0；<code>00 00 00</code>表示 StreamID 为 0；<code>17</code>中的 8 bit，其中前 4 bit<code>1</code>表示 FrameType 为 keyframe,后 4 bit<code>7</code>表示 CodecID 为 AVC；之后的 45 byte 为 VideoData;</p>
+
+<h3 id="video-data">Video Data</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">FrameType</td>
+      <td style="text-align: center">UB[4]</td>
+      <td style="text-align: center">1.keyframe(for AVC, a seekable frame) 2.inter frame(for AVC, a non-seekable frame) 3.disposable inter frame(H.263 only) 4.generated keyframe(reserved for serve use only) 5.video info/command frame</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">CodeID</td>
+      <td style="text-align: center">UB[4]</td>
+      <td style="text-align: center">1:JPEG(currently unused) 2:Sorenson H.263 3:Screen video 4:On2 VP6 5:On2 VP6 with alpha channel 6:Screen video version 2 7:AVC</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">VideoData</td>
+      <td style="text-align: center">if CodecID == 7 AVCVIDEOPACKET</td>
+      <td style="text-align: center">Video frame payload or UI8(see note following table)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>如果 FrameType = 5,此时的 VideoData 含义如下：</p>
+
+<ul>
+  <li>0 = Start of client-side seeking video frame sequence</li>
+  <li>1 = End of client-side seeking video frame sequence</li>
+</ul>
+
+<h3 id="avcvideopacket">AVCVIDEOPACKET</h3>
+
+<p>AVCVIDEOPACKET 携带一个AVC video data。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">AVCPacketType</td>
+      <td style="text-align: center">UI8</td>
+      <td style="text-align: center">0:AVC sequence header 1:AVC NALU 2:AVC end of sequence</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">CompositionTime</td>
+      <td style="text-align: center">SI24</td>
+      <td style="text-align: center">if AVCPacketType == 1 CompositionTime offset else 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Data</td>
+      <td style="text-align: center">UI8[n]</td>
+      <td style="text-align: center">if AVCPacketType == 0 AVCDecoderConfigurationRecord else if AVCPacketType == 1 one or more NALUs</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="onmetadata">onMetaData</h3>
+<ul>
+  <li>duration : 一个 DOUBLE 指定了整个文件的总时长，单位 seconds</li>
+  <li>width : 一个 DOUBLE 指定了视频的宽，单位 pixel</li>
+  <li>height : 一个 DOUBLE 指定了视频的高,danwei pixel</li>
+  <li>videodatarate : 一个DOUBLE 指定了 video bit rate，单位 kilobits per second</li>
+  <li>framerate : 一个DOUBLE 指定了每秒的 frame 数</li>
+  <li>videocodeid : 一个DOUBLE 指定了 video codec ID</li>
+  <li>audiosamplerate : 一个 DOUBLE 指定了音频采样的分辨率</li>
+  <li>stereo : 一个 BOOL 指定了data 是否是stereo</li>
+  <li>filesize : 一个 DOUBLE 指定了文件的总大小，单位 byte.</li>
+</ul>
 
 ]]></content>
   </entry>
