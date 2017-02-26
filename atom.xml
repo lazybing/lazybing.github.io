@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-26T06:09:00-08:00</updated>
+  <updated>2017-02-26T08:05:35-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1517,6 +1517,24 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
     <id>http://lazybing.github.io/blog/2016/07/26/mp4-parse-format</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#box" id="markdown-toc-box">最小组单元 BOX</a></li>
+  <li><a href="#mp4-" id="markdown-toc-mp4-">MP4 文件整体结构</a>    <ul>
+      <li><a href="#file-type-box" id="markdown-toc-file-type-box">File Type Box</a></li>
+      <li><a href="#movie-box" id="markdown-toc-movie-box">Movie Box</a>        <ul>
+          <li><a href="#movie-header-box" id="markdown-toc-movie-header-box">Movie Header Box</a></li>
+        </ul>
+      </li>
+      <li><a href="#track-box" id="markdown-toc-track-box">Track Box</a>        <ul>
+          <li><a href="#track-header-box" id="markdown-toc-track-header-box">Track Header Box</a></li>
+        </ul>
+      </li>
+      <li><a href="#media-box" id="markdown-toc-media-box">Media Box</a>        <ul>
+          <li><a href="#media-header-box" id="markdown-toc-media-header-box">Media Header Box</a></li>
+          <li><a href="#handler-reference-box" id="markdown-toc-handler-reference-box">Handler Reference Box</a></li>
+          <li><a href="#media-informatino-box" id="markdown-toc-media-informatino-box">Media Informatino Box</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
 </ul>
 
 <p><a href="https://en.wikipedia.org/wiki/MPEG-4_Part_14">MP4</a>是由许多 Box 和 FullBox 组成的，每个 Box 是由 Header 和 Data 组成的，FullBox 是 Box 的扩展，Box 结构的基础上在 Header 中增加 8bits version 和 24bits flags。
@@ -1532,7 +1550,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 <p><img src="http://lazybing.github.io/images/MP4/mp4_box.png" /></p>
 
 <ul>
-  <li>size：致命了整个 box 所占用的大小，包括 header 部分。</li>
+  <li>size：指明了 box 所占用的大小，包括 header 部分。</li>
   <li>type: 表示这个 box 的类型。</li>
   <li>largesize: 如果 box 很大超过 uint32 的最大数值,size 就被设置为 1,并用接下来的 largesize 来存放大小。</li>
 </ul>
@@ -1546,6 +1564,384 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
   <li>sample table 指明 sample 时序和物理布局的表。</li>
   <li>chunk 一个track的几个 sample 组成的单元。</li>
 </ul>
+
+<h2 id="mp4-">MP4 文件整体结构</h2>
+
+<p><img src="http://lazybing.github.io/images/MP4/box.png" /></p>
+
+<h3 id="file-type-box">File Type Box</h3>
+
+<p><code>ftyp</code>类型会出现在 MP4 文件的开头，作为 MP4 容器格式的可表示信息。<code>ftyp box</code>内容结构如下：</p>
+
+<p><img src="http://lazybing.github.io/images/MP4/filetypebox.png" /></p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">class FileTypeBox
+</span><span class="line">extends Box('ftyp'){
+</span><span class="line">unsigned int(32) major_brand;
+</span><span class="line">unsigned int(32) minor_version;
+</span><span class="line">unsigned int(32) compatible_brands[];
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="movie-box">Movie Box</h3>
+
+<p><code>moov</code>里面包含了很多个 box,一般情况下 moov 会紧跟着 ftype。moov 里面包含着 MP4 文件中的 metedata。音视频相关
+的基础信息。</p>
+
+<h4 id="movie-header-box">Movie Header Box</h4>
+
+<p><img src="http://lazybing.github.io/images/MP4/movie_header.png" /></p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">class MovieHeader extends FullBox('mvhd', version, 0)
+</span><span class="line">{
+</span><span class="line">    if(version == 1)
+</span><span class="line">    {
+</span><span class="line">        unsinged int(64) creation_time;
+</span><span class="line">        unsinged int(64) modification_time;
+</span><span class="line">        unsinged int(64) timescale;
+</span><span class="line">        unsinged int(64) duration;
+</span><span class="line">    }else{
+</span><span class="line">        unsinged int(32) creation_time;
+</span><span class="line">        unsinged int(32) modification_time;
+</span><span class="line">        unsinged int(32) timescale;
+</span><span class="line">        unsinged int(32) duration;
+</span><span class="line">    }
+</span><span class="line">
+</span><span class="line">    template int(32) rate = 0x00010000;
+</span><span class="line">    template int(16) volume = 0x0100;
+</span><span class="line">    const bit(16) reserved = 0;
+</span><span class="line">    const ungigned int(32)[2] reserved = 0;
+</span><span class="line">    template int(32)[9] matrix = 
+</span><span class="line">    { 0x0001000, 0, 0, 0, 0x0001000, 0, 0, 0, 0x40000000};
+</span><span class="line">    bit(32)[6] pre_defined = 0;
+</span><span class="line">    unsigned int(32) next_track_ID;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<p>各个 Field 含义表格：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">box 版本</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">flags</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">creation time</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">创建时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">modification time</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">修改时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">time scale</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">文件媒体在 1s 时间内的刻度值，可以理解为 1s 长度的时间单元数，一般情况下视频都是90000</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">duration</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">该 track 的时间长度，用 duration 和 time scale 值可以计算 track 时长</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">rate</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">推荐播放速率</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">volume</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">与 rate 类似</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">matrix</td>
+      <td style="text-align: center">36</td>
+      <td style="text-align: center">视频变化矩阵</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">pre-defined</td>
+      <td style="text-align: center">24</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">nex track id</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">下一个 track 使用过的id 号</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="track-box">Track Box</h3>
+
+<p>在<code>moov</code>这个box中会含有若干个track box每个track都是相对独立，track box里面会包含很多别的box，有2个很关键
+<code>Track Header Box</code><code>Media Box</code>。</p>
+
+<h4 id="track-header-box">Track Header Box</h4>
+
+<p><img src="http://lazybing.github.io/images/MP4/movie_header.png" /></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">box版本</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">按位或操作结果值，预定义如下：0x000001 track_enabled,否则该track不被播放；0x000002 track_in_movie，表示该track在播放中被引用。</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">track id</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">id号</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">duration</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">track的时间长度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">8</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">layer</td>
+      <td style="text-align: center">2 视频层，默认为0， 值小的在上层</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">alternate group</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">track 分组信息，默认为0表示该track未与其他track组有关系</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">volume</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">[8.8]格式，如果为音频track,1.0表示最大音量，否则为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">matrix</td>
+      <td style="text-align: center">36</td>
+      <td style="text-align: center">视频变化矩阵</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">width</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">宽</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">height</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">高</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="media-box">Media Box</h3>
+
+<h4 id="media-header-box">Media Header Box</h4>
+
+<p><img src="http://lazybing.github.io/images/MP4/media_header_box.png" /></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Field</td>
+      <td>Type</td>
+      <td>Comment</td>
+    </tr>
+    <tr>
+      <td>box size</td>
+      <td>4</td>
+      <td>box 大小</td>
+    </tr>
+    <tr>
+      <td>box type</td>
+      <td>4</td>
+      <td>box 类型</td>
+    </tr>
+    <tr>
+      <td>version</td>
+      <td>1</td>
+      <td>box 版本</td>
+    </tr>
+    <tr>
+      <td>creation_time</td>
+      <td>4</td>
+      <td>创建时间</td>
+    </tr>
+    <tr>
+      <td>modification_time</td>
+      <td>4</td>
+      <td>修改时间</td>
+    </tr>
+    <tr>
+      <td>time scale</td>
+      <td>4</td>
+      <td>文件媒体在1s内的刻度值</td>
+    </tr>
+    <tr>
+      <td>duration</td>
+      <td>4</td>
+      <td>该 track 的时间长度</td>
+    </tr>
+    <tr>
+      <td>langurage</td>
+      <td>2</td>
+      <td>媒体语言码</td>
+    </tr>
+    <tr>
+      <td>pre_defined</td>
+      <td>2</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="handler-reference-box">Handler Reference Box</h4>
+
+<p><img src="http://lazybing.github.io/images/MP4/media_header_box.png" /></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Field</td>
+      <td>Type</td>
+      <td>Comment</td>
+    </tr>
+    <tr>
+      <td>box size</td>
+      <td>4</td>
+      <td>box 大小</td>
+    </tr>
+    <tr>
+      <td>box type</td>
+      <td>4</td>
+      <td>box 类型</td>
+    </tr>
+    <tr>
+      <td>flags</td>
+      <td>3</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>pre_defined</td>
+      <td>4</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>handler_type</td>
+      <td>4</td>
+      <td>Video track(vide)/Audio track(soun)/Hint track(hint)a</td>
+    </tr>
+    <tr>
+      <td>reserved</td>
+      <td>12</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>string</td>
+      <td>字符串 tracke type name</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="media-informatino-box">Media Informatino Box</h4>
+
+<p><code>minf</code>里面包含着一系列的box，里面是track相关的特征信息。一般
+情况minf包含:Media Information Header Boxes、Data Information Box(dinf)、Sample Table Box。</p>
+
+<p>Media Information Header Boxes 根据类型分为 vmhd、smhd、hmhd、nmhd。</p>
 
 ]]></content>
   </entry>

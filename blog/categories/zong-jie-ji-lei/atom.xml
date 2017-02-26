@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-26T07:26:26-08:00</updated>
+  <updated>2017-02-26T08:05:35-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -31,15 +31,15 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 
 <p>PAR 示例如下：</p>
 
-<p>{% img /images/PAR_DAR_SAR/220px-PAR-1to1.svg.png ‘1to1_PAR’ %}</p>
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-1to1.svg.png" title="‘1to1_PAR’" ></p>
 
-<p>{% img /images/PAR_DAR_SAR/220px-PAR-2to1.svg.png ‘2to1_PAR’ %}</p>
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-2to1.svg.png" title="‘2to1_PAR’" ></p>
 
 <p>DAR 示例如下：</p>
 
-<p>{% img /images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg ‘16to9_DAR’ %}</p>
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="‘16to9_DAR’" ></p>
 
-<p>{% img /images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg ‘4to3_DAR’ %}</p>
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="‘4to3_DAR’" ></p>
 
 ]]></content>
   </entry>
@@ -72,6 +72,12 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
           <li><a href="#track-header-box" id="markdown-toc-track-header-box">Track Header Box</a></li>
         </ul>
       </li>
+      <li><a href="#media-box" id="markdown-toc-media-box">Media Box</a>        <ul>
+          <li><a href="#media-header-box" id="markdown-toc-media-header-box">Media Header Box</a></li>
+          <li><a href="#handler-reference-box" id="markdown-toc-handler-reference-box">Handler Reference Box</a></li>
+          <li><a href="#media-informatino-box" id="markdown-toc-media-informatino-box">Media Informatino Box</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
 </ul>
@@ -86,7 +92,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
  一个<code>ftype</code>类型的 box,作为 MP4 格式的标志并包含关于文件的一些信息，之后会有且只有一个<code>moov</code>类型的box(Movie Box)，她是一种 container box,
  可以有多个，也可以没有，媒体数据的结构由 metadata 进行描述。</p>
 
-<p>{% img /images/MP4/mp4_box.png %}</p>
+<p><img src="/images/MP4/mp4_box.png"></p>
 
 <ul>
   <li>size：指明了 box 所占用的大小，包括 header 部分。</li>
@@ -106,13 +112,13 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 
 <h2 id="mp4-">MP4 文件整体结构</h2>
 
-<p>{% img /images/MP4/box.png}</p>
+<p><img src="/images/MP4/box.png"></p>
 
 <h3 id="file-type-box">File Type Box</h3>
 
 <p><code>ftyp</code>类型会出现在 MP4 文件的开头，作为 MP4 容器格式的可表示信息。<code>ftyp box</code>内容结构如下：</p>
 
-<p>{% img /images/MP4/filetypebox.png}</p>
+<p><img src="/images/MP4/filetypebox.png"></p>
 
 <p><code>
 class FileTypeBox
@@ -130,7 +136,7 @@ unsigned int(32) compatible_brands[];
 
 <h4 id="movie-header-box">Movie Header Box</h4>
 
-<p>{% img /images/MP4/movie_header.png}</p>
+<p><img src="/images/MP4/movie_header.png"></p>
 
 <p>```
 class MovieHeader extends FullBox(‘mvhd’, version, 0)
@@ -155,28 +161,92 @@ const ungigned int(32)[2] reserved = 0;
 template int(32)[9] matrix = 
 { 0x0001000, 0, 0, 0, 0x0001000, 0, 0, 0, 0x40000000};
 bit(32)[6] pre_defined = 0;
-unsigned int(32) next_track_ID; }
+unsigned int(32) next_track_ID; } ```
 </code></pre>
 
 <p>各个 Field 含义表格：</p>
 
-<p>| Field    | Type | Comment |
-| :—:    | :—: | :—:  |
-| box size | 4 | box 大小 |
-| box type | 4 | box 类型 |
-| version | 1 | box 版本 | 
-| flags | 3 | flags |
-| creation time | 4 | 创建时间 | 
-| modification time | 4 | 修改时间 |
-| time scale | 4 | 文件媒体在 1s 时间内的刻度值，可以理解为 1s 长度的时间单元数，一般情况下视频都是90000 |
-| duration | 4 | 该 track 的时间长度，用 duration 和 time scale 值可以计算 track 时长 | 
-| rate | 4 | 推荐播放速率 |
-| volume | 2 | 与 rate 类似|
-| reserved | 10 | 保留位 |
-| matrix | 36 | 视频变化矩阵 | 
-| pre-defined | 24 |  |
-| nex track id | 4 | 下一个 track 使用过的id 号|
-```</p>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">box 版本</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">flags</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">creation time</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">创建时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">modification time</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">修改时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">time scale</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">文件媒体在 1s 时间内的刻度值，可以理解为 1s 长度的时间单元数，一般情况下视频都是90000</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">duration</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">该 track 的时间长度，用 duration 和 time scale 值可以计算 track 时长</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">rate</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">推荐播放速率</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">volume</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">与 rate 类似</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">matrix</td>
+      <td style="text-align: center">36</td>
+      <td style="text-align: center">视频变化矩阵</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">pre-defined</td>
+      <td style="text-align: center">24</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">nex track id</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">下一个 track 使用过的id 号</td>
+    </tr>
+  </tbody>
+</table>
 
 <h3 id="track-box">Track Box</h3>
 
@@ -185,7 +255,7 @@ unsigned int(32) next_track_ID; }
 
 <h4 id="track-header-box">Track Header Box</h4>
 
-<p>{% img /images/MP4/movie_header.png}</p>
+<p><img src="/images/MP4/movie_header.png"></p>
 
 <table>
   <thead>
@@ -273,6 +343,123 @@ unsigned int(32) next_track_ID; }
     </tr>
   </tbody>
 </table>
+
+<h3 id="media-box">Media Box</h3>
+
+<h4 id="media-header-box">Media Header Box</h4>
+
+<p><img src="/images/MP4/media_header_box.png"></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Field</td>
+      <td>Type</td>
+      <td>Comment</td>
+    </tr>
+    <tr>
+      <td>box size</td>
+      <td>4</td>
+      <td>box 大小</td>
+    </tr>
+    <tr>
+      <td>box type</td>
+      <td>4</td>
+      <td>box 类型</td>
+    </tr>
+    <tr>
+      <td>version</td>
+      <td>1</td>
+      <td>box 版本</td>
+    </tr>
+    <tr>
+      <td>creation_time</td>
+      <td>4</td>
+      <td>创建时间</td>
+    </tr>
+    <tr>
+      <td>modification_time</td>
+      <td>4</td>
+      <td>修改时间</td>
+    </tr>
+    <tr>
+      <td>time scale</td>
+      <td>4</td>
+      <td>文件媒体在1s内的刻度值</td>
+    </tr>
+    <tr>
+      <td>duration</td>
+      <td>4</td>
+      <td>该 track 的时间长度</td>
+    </tr>
+    <tr>
+      <td>langurage</td>
+      <td>2</td>
+      <td>媒体语言码</td>
+    </tr>
+    <tr>
+      <td>pre_defined</td>
+      <td>2</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="handler-reference-box">Handler Reference Box</h4>
+
+<p><img src="/images/MP4/media_header_box.png"></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Field</td>
+      <td>Type</td>
+      <td>Comment</td>
+    </tr>
+    <tr>
+      <td>box size</td>
+      <td>4</td>
+      <td>box 大小</td>
+    </tr>
+    <tr>
+      <td>box type</td>
+      <td>4</td>
+      <td>box 类型</td>
+    </tr>
+    <tr>
+      <td>flags</td>
+      <td>3</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>pre_defined</td>
+      <td>4</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>handler_type</td>
+      <td>4</td>
+      <td>Video track(vide)/Audio track(soun)/Hint track(hint)a</td>
+    </tr>
+    <tr>
+      <td>reserved</td>
+      <td>12</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>string</td>
+      <td>字符串 tracke type name</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="media-informatino-box">Media Informatino Box</h4>
+
+<p><code>minf</code>里面包含着一系列的box，里面是track相关的特征信息。一般
+情况minf包含:Media Information Header Boxes、Data Information Box(dinf)、Sample Table Box。</p>
+
+<p>Media Information Header Boxes 根据类型分为 vmhd、smhd、hmhd、nmhd。</p>
 
 ]]></content>
   </entry>
