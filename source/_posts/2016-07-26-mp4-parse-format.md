@@ -35,13 +35,13 @@ MP4 是由一些列的 box 组成，它的最小组成单元是 box。MP4 文件
 
 ## MP4 文件整体结构
 
-{% img /images/MP4/box.png}
+{% img /images/MP4/box.png %}
 
 ### File Type Box
 
 `ftyp`类型会出现在 MP4 文件的开头，作为 MP4 容器格式的可表示信息。`ftyp box`内容结构如下：  
 
-{% img /images/MP4/filetypebox.png}
+{% img /images/MP4/filetypebox.png %}
 
 ```
 class FileTypeBox
@@ -59,7 +59,7 @@ unsigned int(32) compatible_brands[];
 
 #### Movie Header Box
 
-{% img /images/MP4/movie_header.png}
+{% img /images/MP4/movie_header.png %}
 
 ```
 class MovieHeader extends FullBox('mvhd', version, 0)
@@ -86,6 +86,7 @@ class MovieHeader extends FullBox('mvhd', version, 0)
     bit(32)[6] pre_defined = 0;
     unsigned int(32) next_track_ID;
 }
+```
 
 各个 Field 含义表格：  
 
@@ -105,7 +106,6 @@ class MovieHeader extends FullBox('mvhd', version, 0)
 | matrix | 36 | 视频变化矩阵 | 
 | pre-defined | 24 |  |
 | nex track id | 4 | 下一个 track 使用过的id 号|
-```
 
 ### Track Box
 
@@ -114,7 +114,7 @@ class MovieHeader extends FullBox('mvhd', version, 0)
 
 #### Track Header Box
 
-{% img /images/MP4/movie_header.png}
+{% img /images/MP4/movie_header.png %}
 
 | Field | Type | Comment | 
 | :---: | :---: | :---:  |
@@ -134,4 +134,40 @@ class MovieHeader extends FullBox('mvhd', version, 0)
 | width | 4 | 宽 | 
 | height | 4 | 高 |
 
+### Media Box
+
+#### Media Header Box
+
+{% img /images/MP4/media_header_box.png %}
+
+| Field | Type | Comment | 
+| box size | 4 | box 大小|
+| box type | 4 | box 类型 | 
+| version | 1 | box 版本 |
+| creation_time | 4 | 创建时间 |
+| modification_time | 4 | 修改时间 |
+| time scale | 4 | 文件媒体在1s内的刻度值 | 
+| duration | 4 | 该 track 的时间长度 |
+| langurage | 2 | 媒体语言码 |
+| pre_defined | 2 | |
+
+#### Handler Reference Box
+ 
+{% img /images/MP4/media_header_box.png %}
+
+| Field | Type | Comment | 
+| box size | 4 | box 大小|
+| box type | 4 | box 类型 | 
+| flags | 3 |  |
+| pre_defined | 4 | |
+| handler_type | 4 | Video track(vide)/Audio track(soun)/Hint track(hint)a | 
+| reserved | 12 | 0 |
+| name | string | 字符串 tracke type name |
+
+#### Media Informatino Box
+
+`minf`里面包含着一系列的box，里面是track相关的特征信息。一般
+情况minf包含:Media Information Header Boxes、Data Information Box(dinf)、Sample Table Box。
+
+Media Information Header Boxes 根据类型分为 vmhd、smhd、hmhd、nmhd。  
 
