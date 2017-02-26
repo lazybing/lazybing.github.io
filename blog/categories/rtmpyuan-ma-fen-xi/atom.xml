@@ -4,7 +4,7 @@
   <title><![CDATA[分类:rtmp源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-24T04:52:48-08:00</updated>
+  <updated>2017-02-26T07:26:26-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -38,60 +38,35 @@
 
 <p>下面逐个记录各个步骤的功能。
 在了解具体步骤之前，先了解结构重要的Structure:
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct RTMP
-</span><span class='line'>{
-</span><span class='line'>    int m_inChunkSize;
-</span><span class='line'>    int m_outChunkSize;
-</span><span class='line'>    int m_nBWCheckCounter;
-</span><span class='line'>    int m_nBytesIn;
-</span><span class='line'>    int m_nBytesInSent;
-</span><span class='line'>    int m_nBufferMS;
-</span><span class='line'>    int m_stream_id;
-</span><span class='line'>    int m_mediaChannel;
-</span><span class='line'>    uint32_t m_mediaStamp;
-</span><span class='line'>    uint32_t m_pauseStamp;
-</span><span class='line'>    int m_pausing;
-</span><span class='line'>    int m_nServerBW;
-</span><span class='line'>    int m_nClientBW;
-</span><span class='line'>    uint8_t m_nClientBW2;
-</span><span class='line'>    uint8_t m_bPlaying;
-</span><span class='line'>    uint8_t m_bSendEncoding;
-</span><span class='line'>    uint8_t m_bSendCounter;&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;pre&gt;&lt;code&gt;int m_numInvokes;
-</span><span class='line'>int m_numCalls;
-</span><span class='line'>RTMP_METHOD *m_methodCalls; } ```
-</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;h3 id="initsocket"&gt;InitSocket()&lt;/h3&gt;
-</span><span class='line'>&lt;p&gt;初始化 Socket ,代码非常简单。</span></code></pre></td></tr></table></div></figure>
+```
+typedef struct RTMP
+{
+    int m_inChunkSize;
+    int m_outChunkSize;
+    int m_nBWCheckCounter;
+    int m_nBytesIn;
+    int m_nBytesInSent;
+    int m_nBufferMS;
+    int m_stream_id;
+    int m_mediaChannel;
+    uint32_t m_mediaStamp;
+    uint32_t m_pauseStamp;
+    int m_pausing;
+    int m_nServerBW;
+    int m_nClientBW;
+    uint8_t m_nClientBW2;
+    uint8_t m_bPlaying;
+    uint8_t m_bSendEncoding;
+    uint8_t m_bSendCounter;</p>
+
+<pre><code>int m_numInvokes;
+int m_numCalls;
+RTMP_METHOD *m_methodCalls; } ```
+</code></pre>
+
+<h3 id="initsocket">InitSocket()</h3>
+<p>初始化 Socket ,代码非常简单。
+```
 int InitSockets()
 {
 #ifdef WIN32
@@ -201,7 +176,7 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
 
 <h5 id="handshake-diagram">握手框图(HandShake Diagram)</h5>
 
-<p><img src="/images/RTMPProtocol/HandShake_Diagram.png"></p>
+<p>{% img /images/RTMPProtocol/HandShake_Diagram.png %}</p>
 
 <hr />
 

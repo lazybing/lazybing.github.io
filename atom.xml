@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-24T04:52:48-08:00</updated>
+  <updated>2017-02-26T06:09:00-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1515,8 +1515,37 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
     <link href="http://lazybing.github.io/blog/2016/07/26/mp4-parse-format/"/>
     <updated>2016-07-26T04:31:32-07:00</updated>
     <id>http://lazybing.github.io/blog/2016/07/26/mp4-parse-format</id>
-    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/MPEG-4_Part_14">MP4</a>是由许多 Box 和 FullBox 组成的，每个 Box 是由 Header 和 Data 组成的，FullBox 是 Box 的扩展，Box 结构的基础上在 Header 中增加 8bits version 和 24bits flags。
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#box" id="markdown-toc-box">最小组单元 BOX</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/MPEG-4_Part_14">MP4</a>是由许多 Box 和 FullBox 组成的，每个 Box 是由 Header 和 Data 组成的，FullBox 是 Box 的扩展，Box 结构的基础上在 Header 中增加 8bits version 和 24bits flags。
 <!--more--></p>
+
+<h2 id="box">最小组单元 BOX</h2>
+
+<p>MP4 是由一些列的 box 组成，它的最小组成单元是 box。MP4 文件中的所有数据都装在 box 中，即 MP4 文件由若干个 box 组成，每个
+ box 有类型和长度，可以将 box 理解为一个数据对象块。box 中可以包含另一个 box，这种 box 称为 container box。一个 MP4 文件首先会有且仅有
+ 一个<code>ftype</code>类型的 box,作为 MP4 格式的标志并包含关于文件的一些信息，之后会有且只有一个<code>moov</code>类型的box(Movie Box)，她是一种 container box,
+ 可以有多个，也可以没有，媒体数据的结构由 metadata 进行描述。</p>
+
+<p><img src="http://lazybing.github.io/images/MP4/mp4_box.png" /></p>
+
+<ul>
+  <li>size：致命了整个 box 所占用的大小，包括 header 部分。</li>
+  <li>type: 表示这个 box 的类型。</li>
+  <li>largesize: 如果 box 很大超过 uint32 的最大数值,size 就被设置为 1,并用接下来的 largesize 来存放大小。</li>
+</ul>
+
+<p>一些基本概念：</p>
+
+<ul>
+  <li>track 表示一些 sample 的集合，对于媒体数据来说， track 表示一个视频或音频序列。</li>
+  <li>hint track 这个特殊的 track 并不包含媒体数据，而是包含了一些将其他数据 track 打包成流媒体的指示信息。</li>
+  <li>sample 对于非 hint track 来说， video  sample 即为一帧视频，或一组连续视频帧，audio sample 即为一段连续的压缩音频，统称为 sample。对于 hint track，sample 定义一个或多个流媒体包的格式。</li>
+  <li>sample table 指明 sample 时序和物理布局的表。</li>
+  <li>chunk 一个track的几个 sample 组成的单元。</li>
+</ul>
 
 ]]></content>
   </entry>
