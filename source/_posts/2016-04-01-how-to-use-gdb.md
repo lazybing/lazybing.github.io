@@ -68,3 +68,16 @@ info break n //查看 n 断点号的信息
 
 可以使用 examine 命令查看内存地址中的值。格式是`x /<n/f/u> <addr>`，其中`<addr>`是内存地址。
 
+
+### 参考文献
+
+1.[GNU Debugger Tutorial](http://www.tutorialspoint.com/gnu_debugger/index.htm)
+2.[GDB: The GNU Project Debugger](https://sourceware.org/gdb/)
+3.[GNU Debugger](https://en.wikipedia.org/wiki/GNU_Debugger)
+4.[How to Debug Using GDB](http://cs.baylor.edu/~donahoo/tools/gdb/tutorial.html)
+5.[Debugging with GDB](http://web.mit.edu/gnu/doc/html/gdb_toc.html)
+6.[用GDB调试程序](http://blog.csdn.net/haoel/article/details/2879)
+7.[Debugging with GDB: The GNU Source-Level Debugger](https://www.amazon.com/Debugging-GDB-GNU-Source-Level-Debugger/dp/1882114884/httpwwwtuto0a-20)
+8.[GDB Pocket Reference: Debugging Quickly & Painlessly with GDB](https://www.amazon.com/GDB-Pocket-Reference-OReilly/dp/0596100272/httpwwwtuto0a-20)
+9.[The Art of Debugging with GDB, DDD, and Eclipse](https://www.amazon.com/Art-Debugging-GDB-DDD-Eclipse/dp/1593271743/ref=sr_1_fkmr1_1?s=books&ie=UTF8&qid=1488032361&sr=1-1-fkmr1&keywords=3.%09The+Art+of+Debugging+with+GDB%2C+DDD%2C+and+Eclipse)
+
