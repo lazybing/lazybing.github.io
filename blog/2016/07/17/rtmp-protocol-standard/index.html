@@ -119,10 +119,19 @@
           </li>
         </ul>
       </li>
-      <li><a href="#protocol-control-message" id="markdown-toc-protocol-control-message">3.4 协议控制消息(Protocol Control Message)</a></li>
+      <li><a href="#protocol-control-message" id="markdown-toc-protocol-control-message">3.4 协议控制消息(Protocol Control Message)</a>        <ul>
+          <li><a href="#set-chunk-size-1" id="markdown-toc-set-chunk-size-1">设置块大小1(Set Chunk Size 1)</a></li>
+          <li><a href="#acknowledgement-3" id="markdown-toc-acknowledgement-3">确认消息3(Acknowledgement 3)</a></li>
+          <li><a href="#window-acknowledgement-size-5" id="markdown-toc-window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</a></li>
+          <li><a href="#set-peer-bandwidth-6" id="markdown-toc-set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
-  <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a></li>
+  <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a>    <ul>
+      <li><a href="#message-header" id="markdown-toc-message-header">4.1 消息头部(Message Header)</a></li>
+    </ul>
+  </li>
   <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a></li>
   <li><a href="#section-4" id="markdown-toc-section-4">6. 参考文献</a></li>
 </ul>
@@ -279,7 +288,60 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <h4 id="protocol-control-message">3.4 协议控制消息(Protocol Control Message)</h4>
 
+<p>RTMP 块流使用消息类型ID为1/2/3/5/6的消息作为协议控制消息，这些消息中包含了 RTMP 块流协议所需要的信息。这些协议控制消息的消息流ID必须
+为0（控制流），而他们的块流ID必须为2。协议控制消息一旦接受即刻生效，它们的时间戳会被忽略。</p>
+
+<h5 id="set-chunk-size-1">设置块大小1(Set Chunk Size 1)</h5>
+
+<p>协议控制消息1，设置块大小，用于通知另一端最大块大小。默认的最大块大小为 128 字节，但客户端和服务器端可以使用该消息来更新最大块大小的值到对端。
+例如，假设客户端想要发送 131 字节的音频数据，而最大块大小为 128，此时客户端会发送消息到服务端并通知它，当前最大块为 131 字节。此时客户端
+只用一个块即可发送这些音频数据。</p>
+
+<p>最大块大小通常不会小于 128 字节，最小不能小于1 字节。最大块大小是双向独立的。</p>
+
+<p><img src="/images/RTMPProtocol/set_chunk_size.png" /></p>
+
+<p>0:该 bit 必须为0.<br />
+块大小(chunk size)：该字段以字节形式保存新的最大块大小，该值将用于后续所有发送块。取值范围为1——2147483647（0X7FFFFFFF）,然而所有大于0XFFFFFF的值都是等同的。</p>
+
+<h5 id="acknowledgement-3">确认消息3(Acknowledgement 3)</h5>
+
+<p>协议控制消息2，终止消息，被用于通知对端，可以丢弃通过指定块流接收到的部分数据.</p>
+
+<p><img src="/images/RTMPProtocol/abort_message.png" /></p>
+
+<p>块流ID(32bit)：该字段表示块流ID，它的当前消息可被丢弃。</p>
+
+<h5 id="window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</h5>
+
+<p>在接受到与窗口大小相等的消息后，客户端或服务端必须发送一个确认消息给对端。窗口大小是发送端发送的最大字节数，无论有没有收到接收端发送的确认消息。该消息指明序列号，代表目前为止接收到的字节数。</p>
+
+<p><img src="/images/RTMPProtocol/acknowledgement.png" /></p>
+
+<p>序列号(32bit)：该字段表示目前为止已接收到字节总数。</p>
+
+<h5 id="set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</h5>
+
+<p>客户端或服务端发送该消息来限制对端的输出带宽。接收端收到消息后，通过将已发送但尚未被确认的数据总数限制为该消息指定的视窗大小，来
+实现限制输出带宽的目的。如果视窗大小与上一个视窗大小不同，则该消息的接收端应该向该消息的发送端发送视窗大小确认消息。</p>
+
+<p><img src="/images/RTMPProtocol/set_peer_bandwidth.png" /></p>
+
+<p>Limit Type(显示类型)有以下可选值：</p>
+
+<ul>
+  <li>0-Hard：消息接收端应该将输出带宽限制为指定视窗大小。</li>
+  <li>1-Soft:消息接收端应该将输出带宽限制为指定视窗大小和当前视窗大小中较小值。</li>
+  <li>2-Dynamic：如果上一个消息的限制类型为Hard,则该消息同样为 Hard，否则抛弃该消息。</li>
+</ul>
+
 <h3 id="rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</h3>
+
+<p>服务端和客户端通过网络发送 RTMP 消息来进行通讯，消息包好视频、音频、数据和其他信息。RTMP 消息包含两部分：头部和负载。</p>
+
+<h4 id="message-header">4.1 消息头部(Message Header)</h4>
+
+<p>消息头部包含：消息类型、长度、时间戳和消息流ID。</p>
 
 <h3 id="rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</h3>
 
