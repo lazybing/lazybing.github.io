@@ -4,7 +4,7 @@
   <title><![CDATA[分类:rtmp源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-02-26T08:09:04-08:00</updated>
+  <updated>2017-02-27T07:27:28-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -139,7 +139,35 @@ int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port
     <link href="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/"/>
     <updated>2016-07-17T08:17:38-07:00</updated>
     <id>http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard</id>
-    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">1. 几个概念</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">2.字节序、字节对齐和时间格式</a></li>
+  <li><a href="#rtmp-chunk-stream" id="markdown-toc-rtmp-chunk-stream">3. RTMP Chunk Stream</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">3.1 消息格式</a></li>
+      <li><a href="#handshake" id="markdown-toc-handshake">3.2 握手(HandShake)</a>        <ul>
+          <li><a href="#section-3" id="markdown-toc-section-3">握手序列:</a></li>
+          <li><a href="#c--s-" id="markdown-toc-c--s-">C 和 S 格式：</a></li>
+          <li><a href="#handshake-diagram" id="markdown-toc-handshake-diagram">握手框图(HandShake Diagram)</a></li>
+        </ul>
+      </li>
+      <li><a href="#chunking" id="markdown-toc-chunking">3.3 分块(Chunking)</a>        <ul>
+          <li><a href="#chunk-" id="markdown-toc-chunk-">Chunk 格式</a>            <ul>
+              <li><a href="#chunk-basic-header" id="markdown-toc-chunk-basic-header">Chunk Basic Header</a></li>
+              <li><a href="#chunk-message-header" id="markdown-toc-chunk-message-header">Chunk Message Header</a></li>
+              <li><a href="#extended-timestamp" id="markdown-toc-extended-timestamp">Extended Timestamp</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><a href="#protocol-control-message" id="markdown-toc-protocol-control-message">3.4 协议控制消息(Protocol Control Message)</a></li>
+    </ul>
+  </li>
+  <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a></li>
+  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">6. 参考文献</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
 <!--more--></p>
 
 <h3 id="section">1. 几个概念</h3>
@@ -212,7 +240,92 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
 确认阶段(ACK Sent):客户端和服务器端分别等待 S2 和 C2.    <br />
 握手结束(Handshake Done):客户端和服务器端交换消息.</p>
 
-<h3 id="chunking">Chunking</h3>
+<h4 id="chunking">3.3 分块(Chunking)</h4>
+
+<p>握手后，连接就会多路传输一个或多个 chunk streams。每个 chunk stream 携带来自一个消息流的一种类型的消息。每个 chunk stream 有一个独立的 chunk stream ID。
+chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chunk 前传输完成。接收端会根据 chunk stream ID 将 chunks 组合进消息。</p>
+
+<p>Chunk size 是可配置的。它可以使用一个控制消息来设置 chunk size。size 较大的chunk 降低 CPU 的使用，size 较小的 chunk 不适用于高比特流的码流。chunk size 的维护是双向独立的。</p>
+
+<h5 id="chunk-">Chunk 格式</h5>
+
+<p>每个 Chunk 包含一个 header 和 data 部分。Header 又包含：<code>Basic Header</code><code>Message Header</code><code>Extended Timestamp</code>三部分。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_format.png"></p>
+
+<ul>
+  <li>Basize Header : 1 到 3 byte,该字段编码了 chunk stream ID 和 chunk type。其中 chunk type 决定了编码的message header 的格式。它的长度完全由 chunk stream ID 来决定，它是一个变长字段。</li>
+  <li>Message Header : (0/3/7/11 byte)，该地段编码了关于发送的消息的信息。它的长度同样由 chunk header 里面的chunk type 指定。</li>
+  <li>Extended Timestamp : (0/4 byte)，该字段是否出现取决于 chunk message header 里面的 timestamp 或 timestamp delta 字段。</li>
+  <li>Chunk Data : 可变大小，chunk 的负载，最大值为配置的最大 chunk size。</li>
+</ul>
+
+<h6 id="chunk-basic-header">Chunk Basic Header</h6>
+
+<p>Chunk Basic Header 编码了chunk stream ID 和 chunk type(由 fmt 字段表示)。Chunk Basic Header 字段可能是0-3 byte，取决于 chunk stream ID。实现应该使用最小的size。<br />
+协议支持最大 65597 streams，对应的 ID 为 3-65599。值为 0/1/2 的 ID 保留。</p>
+
+<h6 id="chunk-message-header">Chunk Message Header</h6>
+
+<p>根据 chunk basic header 里的<code>fmt</code>字段的不同，chunk message header 有 4 种不同的格式。</p>
+
+<ul>
+  <li>Type 0</li>
+</ul>
+
+<p>Type 0 的 chunk header 是 11 byte 长。该类型只能在 chunk 流的开始使用。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_message_header_type0.png"></p>
+
+<p><code>timestamp</code>3 字节，对于 type 0 的 chunk,timestamp 的消息在此处发送。如果timestamp 大于或等于0xFFFFFF,该字段等于0XFFFFFF,指明extended timestamp字段被编码。</p>
+
+<ul>
+  <li>Type 1</li>
+</ul>
+
+<p>Type 1 的 chunk header 是7 byte 长，不包含 message stream ID，该 chunk 与上一个 chunk 有相同的 stream ID。变长消息的 stream 在第一个消息后，应该使用该格式作为第一个 chunk。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_message_header_type1.png"></p>
+
+<ul>
+  <li>Type 2</li>
+</ul>
+
+<p>Type 2 的 chunk header 是 3 byte 长，既不包含 stream ID，也不包含 message length，它与前一个 chunk 有相同的 stream ID 和 消息长度。固定大小的流应该使用这种格式。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_message_header_type2.png"></p>
+
+<ul>
+  <li>Type 3</li>
+</ul>
+
+<p>Type 3 chunk 没有 message header，stream ID 和 消息长度以及 timestamp delta 字段都未出现，该类型的 chunk 与之前的 chunk 有相同的 chunk stream ID。
+当一个单独的消息被分成不同的 chunk 时，该消息的所有 chunks 处理第一个都应该使用该类型。</p>
+
+<ul>
+  <li>共用 Header 字段</li>
+</ul>
+
+<p><code>timestamp delta</code>（3 字节）：对于type是1或2的chunk来说，该字段表示上一个chunk的timestamp和当前chunk的timestamp的差值。如果该字段值
+大于等于0XFFFFFF,该字段值必须为0XFFFFFF，表示Extended Timestamp字段被编码；否则表示实际的差值。<br />
+<code>message length</code>（3 字节）：对于type是0或1的chunk来说，消息的长度由此字段传送。注意它与chunk负载的长度不同。chunk负载的长度是对除最后一个chunk外的所有chunk的最大size。<br />
+<code>message type id</code>（1 字节）：对于type是0或1的chunk，消息的类型由该字段传送。<br />
+<code>message stream id</code>（4 字节）：对于type是0的chunk，message stream ID由该字段传送。</p>
+
+<h6 id="extended-timestamp">Extended Timestamp</h6>
+
+<p>上面我们提到在chunk中会有时间戳timestamp和时间戳差timestamp delta，并且它们不会同时存在，只有这两者之一大于3个字节能表示的最大数值0xFFFFFF＝16777215时，才会用这个字段来表示真正的时间戳，否则这个字段为0。扩展时间戳占4个字节，能表示的最大数值就是0xFFFFFFFF＝4294967295。当扩展时间戳启用时，timestamp字段或者timestamp delta要全置为1，表示应该去扩展时间戳字段来提取真正的时间戳或者时间戳差。注意扩展时间戳存储的是完整值，而不是减去时间戳或者时间戳差的值。</p>
+
+<h4 id="protocol-control-message">3.4 协议控制消息(Protocol Control Message)</h4>
+
+<h3 id="rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</h3>
+
+<h3 id="rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</h3>
+
+<h3 id="section-4">6. 参考文献</h3>
+
+<p>1.<a href="http://mingyangshang.github.io/2016/03/06/RTMP%E5%8D%8F%E8%AE%AE/">带你吃透RTMP</a><br />
+2.<a href="https://www.gitbook.com/book/chenlichao/rtmp-zh_cn/details">RTMP协议规范中文版</a></p>
 
 ]]></content>
   </entry>
