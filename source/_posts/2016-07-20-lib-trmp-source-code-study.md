@@ -10,6 +10,7 @@ categories: RTMP源码分析
 <!--more-->
 
 ### 大致流程
+
 使用RTMP下载流媒体的主要流程包括以下几个步骤：
 
 * InitSocket()
@@ -52,7 +53,9 @@ typedef struct RTMP
 ```
 
 ### InitSocket()
+
 初始化 Socket ,代码非常简单。
+
 ```
 int InitSockets()
 {
@@ -67,8 +70,11 @@ int InitSockets()
 #endif
 }
 ```
+
 ### RTMP_Init(Struct RTMP)
+
 初始化 RTMP 结构体。
+
 ```
 void RTMP_Init(RTMP *r)
 {
@@ -91,21 +97,31 @@ void RTMP_Init(RTMP *r)
     r->Link.swfAge    = 30;
 }
 ```
+
 ### RTMP_ParseURL
+
 URL 一般由三部分组成: 资源类型、存放资源的主机域名、资源文件名。
 语法格式为([]为可选项):protocol://hostname[:port]/path/[:parameters][?query]#fragment
 protocol(协议名称)、hostname(主机名)、port(端口号)、path(路径)、parameters(参数)。
 
 RTMP_ParseURL函数定义:
+
 ```
 int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port, AVal *playpath, AVal *app);
 ```
+
 从函数定义的几个参数可以看出，url 被定位为 const 型，即该参数在函数内部不可改变，而protocol、host、port、palypath、app 则是在函数内部根据url来进行解析，之后进行赋值的。
 
 ### RTMP_SetupStream
+
 ### fopen
+
 ### RTMP_Connect()
+
 ### RTMP_ConnectStream
+
 ### Download
+
 ### CleanUp:RTMP_Close(&rtmp); fclose(file); CleanupSockets();
+
 
