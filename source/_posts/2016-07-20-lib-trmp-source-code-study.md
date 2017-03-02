@@ -6,6 +6,9 @@ comments: true
 categories: RTMP源码分析
 ---
 
+* list element with functor item
+{:toc}
+
 了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
 <!--more-->
 
