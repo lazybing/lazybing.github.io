@@ -129,11 +129,20 @@
     </ul>
   </li>
   <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a>    <ul>
-      <li><a href="#message-header" id="markdown-toc-message-header">4.1 消息头部(Message Header)</a></li>
+      <li><a href="#rtmprtmp-message-format" id="markdown-toc-rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</a>        <ul>
+          <li><a href="#message-header" id="markdown-toc-message-header">消息头部(Message Header)</a></li>
+          <li><a href="#message-payload" id="markdown-toc-message-payload">消息负载(Message Payload)</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-4" id="markdown-toc-section-4">4.2 使用控制消息(4)</a></li>
     </ul>
   </li>
-  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">6. 参考文献</a></li>
+  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a>    <ul>
+      <li><a href="#types-of-message" id="markdown-toc-types-of-message">5.1 消息类型(Types of Message)</a></li>
+      <li><a href="#types-of-commands" id="markdown-toc-types-of-commands">5.2 指令类型(Types of Commands)</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">6. 参考文献</a></li>
 </ul>
 
 <p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
@@ -337,15 +346,59 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <h3 id="rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</h3>
 
+<p>本部分描述 RTMP 消息遵循底层协议在网络中断之间传输时的消息格式。</p>
+
+<p>尽管 RTMP 被设计成使用 RTMP 块流传输，但它可以使用其他传输协议来发送消息。RTMP 块流和 RTMP 非常适合
+音视频应用，包括单播、一对多实时直播、视频点播和视频会议等。</p>
+
+<h4 id="rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</h4>
+
 <p>服务端和客户端通过网络发送 RTMP 消息来进行通讯，消息包好视频、音频、数据和其他信息。RTMP 消息包含两部分：头部和负载。</p>
 
-<h4 id="message-header">4.1 消息头部(Message Header)</h4>
+<h5 id="message-header">消息头部(Message Header)</h5>
 
-<p>消息头部包含：消息类型、长度、时间戳和消息流ID。</p>
+<p>消息头部包含：消息类型、长度、时间戳和消息流ID.</p>
+
+<ul>
+  <li>消息类型(Message Type)：1 字节字段代表消息类型。类型ID(1-6)是为协议控制消息保留的。</li>
+  <li>长度(Length)：3 字节字段代表负载的大小，字节为单位，大端格式。</li>
+  <li>时间戳(Timestamp):4 字节字段代表消息的时间戳。同样为大端格式。</li>
+</ul>
+
+<p><img src="/images/RTMPProtocol/message_header.png" /></p>
+
+<h5 id="message-payload">消息负载(Message Payload)</h5>
+
+<p>消息头部后面的是消息的负载，它是消息内真实的数据。例如，它可能是某些音频样本或压缩的视频数据。</p>
+
+<h4 id="section-4">4.2 使用控制消息(4)</h4>
+
+<p>RTMP 协议将消息类型 4 作为用户层控制消息 ID。该消息包含了 RTMP 流所需要的信息。消息类型 ID 为
+1、2、3、5 和 6的协议消息被用作 RTMP 块流协议。</p>
+
+<p>用户控制消息应该使用 ID 为 0 的消息流(即控制流)，并且通过 RTMP 块流传输时使用 ID 为 2 的块流。
+用户控制消息收到后立即生效，它们的时间戳信息会被忽略。</p>
+
+<p>客户端或服务端通过发送该消息告知对方用户控制事件。该消息携带事件类型和事件数据两部分。</p>
+
+<p><img src="/images/RTMPProtocol/user_control_message.png" /></p>
+
+<p>消息数据的前 2 字节用于指定事件类型，紧跟着的是事件数据。事件数据字段长度可变。但如果使用 RTMP 块
+流传输，则消息总长度不能超过最大块大小，以使消息可以使用一个单独的块进行传输。</p>
 
 <h3 id="rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</h3>
 
-<h3 id="section-4">6. 参考文献</h3>
+<p>本部分描述了用于服务端和客户端通讯用到的消息类型和命令类型。</p>
+
+<p>服务端和客户端通过交换不同的消息类型来传送不同的消息：音频消息传送音频数据、视频消息传送视频数据、数据消息传送用户数据、共享
+对象消息和指令消息等。共享对象消息为管理分布与不同客户端和相同服务器的功效数据提供了规范途径。指令消息携带客户端与服务端
+之间的 AMF 编码指令，客户端或服务端也可以通过指令消息来实现远程过程调用(RPC)。</p>
+
+<h4 id="types-of-message">5.1 消息类型(Types of Message)</h4>
+
+<h4 id="types-of-commands">5.2 指令类型(Types of Commands)</h4>
+
+<h3 id="section-5">6. 参考文献</h3>
 
 <p>1.<a href="http://mingyangshang.github.io/2016/03/06/RTMP%E5%8D%8F%E8%AE%AE/">带你吃透RTMP</a><br />
 2.<a href="https://www.gitbook.com/book/chenlichao/rtmp-zh_cn/details">RTMP协议规范中文版</a></p>

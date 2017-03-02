@@ -261,7 +261,20 @@
   </header>
 
 
-  <div class="entry-content"><p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
+  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
+  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
+  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
+  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
+  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
+  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
+  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
+  <li><a href="#download" id="markdown-toc-download">Download</a></li>
+  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
+</ul>
+
+<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
 </div>
   
   
@@ -325,11 +338,20 @@
     </ul>
   </li>
   <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a>    <ul>
-      <li><a href="#message-header" id="markdown-toc-message-header">4.1 消息头部(Message Header)</a></li>
+      <li><a href="#rtmprtmp-message-format" id="markdown-toc-rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</a>        <ul>
+          <li><a href="#message-header" id="markdown-toc-message-header">消息头部(Message Header)</a></li>
+          <li><a href="#message-payload" id="markdown-toc-message-payload">消息负载(Message Payload)</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-4" id="markdown-toc-section-4">4.2 使用控制消息(4)</a></li>
     </ul>
   </li>
-  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">6. 参考文献</a></li>
+  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a>    <ul>
+      <li><a href="#types-of-message" id="markdown-toc-types-of-message">5.1 消息类型(Types of Message)</a></li>
+      <li><a href="#types-of-commands" id="markdown-toc-types-of-commands">5.2 指令类型(Types of Commands)</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">6. 参考文献</a></li>
 </ul>
 
 <p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
