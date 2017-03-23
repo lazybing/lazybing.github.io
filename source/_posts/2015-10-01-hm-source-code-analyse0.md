@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "HM 源码分析（一）"
+title: "HM 源码分析（一）: Syntax Parse 函数解析"
 date: 2015-10-01 07:48:51 -0700
 commit: true
 categories: HM源码分析
