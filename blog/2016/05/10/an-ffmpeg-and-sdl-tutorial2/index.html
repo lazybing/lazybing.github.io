@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Addr2line 的介绍与使用 - 懒人李冰</title>
+  <title>FFmpeg 和 SDL 使用教程（一） - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="addr2line 简介 addr2line 的使用示例 addr2line 的原理 addr2line的作用是将地址转化为文件名和行号。 addr2line 简介
-在编写程序时，经常会遇到出现程序 crax 的情况，此时如果有 core stack 打印出来还好，但如果没有 core &hellip;">
+  <meta name="description" content="SDL 和 Video 创建显示区域 显示图像 描绘图像 本文主要记录如何利用SDL，将上一节中解处数据显示到屏幕上。 SDL 和 Video 为将图像显示到屏幕上，我们将使用SDL,SDL是Simple DIrect Layer的简称，
+它是一个非常优秀的跨平台多媒体库。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/22/addr2line-use/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial2/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +83,7 @@
   
   <header>
     
-      <h1 class="entry-title">Addr2line 的介绍与使用</h1>
+      <h1 class="entry-title">FFmpeg 和 SDL 使用教程（一）</h1>
     
     
       <p class="meta">
@@ -92,7 +92,7 @@
 
 
 
-<time class='entry-date' datetime='2016-12-22T07:26:02-08:00'><span class='date'>2016 年 12 月 22 日</span> <span class='time'>7:26 am</span></time>
+<time class='entry-date' datetime='2016-05-10T16:45:03-07:00'><span class='date'>2016 年 05 月 10 日</span> <span class='time'>4:45 pm</span></time>
         
         
       </p>
@@ -101,28 +101,29 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#addr2line-" id="markdown-toc-addr2line-">addr2line 简介</a></li>
-  <li><a href="#addr2line--1" id="markdown-toc-addr2line--1">addr2line 的使用示例</a></li>
-  <li><a href="#addr2line--2" id="markdown-toc-addr2line--2">addr2line 的原理</a></li>
+  <li><a href="#sdl--video" id="markdown-toc-sdl--video">SDL 和 Video</a></li>
+  <li><a href="#section" id="markdown-toc-section">创建显示区域</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">显示图像</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">描绘图像</a></li>
 </ul>
 
-<p><code>addr2line</code>的作用是将地址转化为文件名和行号。<br />
-<!--more--></p>
+<p>本文主要记录如何利用<code>SDL</code>，将上一节中解处数据显示到屏幕上。</p>
 
-<h2 id="addr2line-">addr2line 简介</h2>
-<p>在编写程序时，经常会遇到出现程序 crax 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。</p>
+<h2 id="sdl--video">SDL 和 Video</h2>
 
-<p><code>addr2line</code>能够将地址转换为文件名和行号。给定一个可执行文件的地址或者一个可重定位目标的目标偏移，addr2line 就会利用 debug 信息来计算出与该地址关联的文件名和行号。</p>
+<p>为将图像显示到屏幕上，我们将使用<code>SDL</code>,<code>SDL</code>是<code>Simple DIrect Layer</code>的简称，
+它是一个非常优秀的跨平台多媒体库。我们可以在<a href="https://www.libsdl.org/">官网</a>上得到该库，
+或者可以直接下载开发包，想要使用该库，必须在对应的平台上编译它。</p>
 
-<p>使用的可执行文件或可重定位目标使用<code>-e</code>选项来指定、可重定位目标的部分使用<code>-j</code>选项来指定。</p>
+<p><code>SDL</code>有许多方法将图像描绘到屏幕上，其中一个称之为<code>YUV Overlay</code>。<code>YUV</code>即类似于<code>RGB</code>的
+图像数据。简单说，<code>Y</code>用于存储亮度分量，<code>U</code>和<code>V</code>是色度分量。（<code>YUV</code>比<code>RGB</code>要复杂，因为
+有的色度信息是丢失的，比如有的数据每 2 个<code>Y</code>，会有 1 个<code>U</code> 1 个<code>V</code>）<code>YUV Overlay</code>可以接受
+ 4 种不同的<code>YUV</code>格式，但<code>YV12</code>是最高效的。另外一种<code>YUV</code>格式称之为<code>YUV420P</code>，它与<code>YV12</code>类似，
+只是<code>U</code>和<code>V</code>交换了位置。</p>
 
-<p><code>addr2line</code>有两种操作模式：<br />
-1. 在命令行下，直接指定十六进制的地址，addr2line 为每个地址显示文件名和行号。<br />
-2. addr2line 从标准输入中读取十六进制地址，并且为每个地址输出文件名和行号到标准输出中。</p>
+<p>因此当前的任务就是将上一节中<code>tutorial 1</code>里的<code>SaveFrame()</code>去掉，替换成输出帧到屏幕即可。
+但首先看下如何使用<code>SDL</code>库。首先必须包含库并初始化<code>SDL</code>:</p>
 
-<p>输出格式为<code>FILENAME:LINENO</code>，默认情况下，每个输入地址对应一行输出。</p>
-
-<h2 id="addr2line--1">addr2line 的使用示例</h2>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
@@ -130,72 +131,38 @@
 <span class="line-number">5</span>
 <span class="line-number">6</span>
 <span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;SDL.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;SDL_thread.h&gt;</span>
 </span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">div</span><span class="p">(</span><span class="kt">int</span> <span class="n">numerator</span><span class="p">,</span> <span class="kt">int</span> <span class="n">denominator</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">numerator</span>   <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">denominator</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">return</span> <span class="n">div</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">SDL_Init</span><span class="p">(</span><span class="n">SDL_INIT_VIDEO</span> <span class="o">|</span> <span class="n">SDL_INIT_AUDIO</span> <span class="o">|</span><span class="n">SDL_INIT_TIMER</span><span class="p">)){</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Could not initialize SDL - %s </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">SDL_GetError</span><span class="p">());</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<p>编译：gcc -o div -g div.c
-生成可执行文件<code>div</code>后，执行该文件：./div 得到如下error:</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">Floating point exception (core dumped)</span></code></pre></td></tr></table></div></figure>
+<p>其中<code>SDL_Init</code>用于初始化<code>SDL</code>库，<code>SDL_GetError</code>是一个 debug 处理函数。</p>
 
-<p>此时并没有任何其他提示信息，我们可以通过<code>dmesg</code>查看信息：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">[ 4709.210137] traps: div[2500] trap divide error ip:400524 sp:7ffcd27fd630 error:0 in div[400000+1000]</span></code></pre></td></tr></table></div></figure>
-<p>通过该信息可以看出，ip 指向的地址为<code>400524</code>，得到该地址后，我们就可以使用 addr2line 来定位出错的位置。 
-<code>addr2line -e div 400524</code> 得到结果如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">/home/bing/work/study/div.c:5</span></code></pre></td></tr></table></div></figure>
+<h2 id="section">创建显示区域</h2>
 
-<p>可以很直观的显示，该 core  dump 信息是在<code>div.c</code>的 line 5。</p>
+<p>现在需要屏幕上的一个区域来显示图像。<code>SDL</code>中用于显示图像的区域称之为<code>surface</code>。</p>
 
-<h2 id="addr2line--2">addr2line 的原理</h2>
-<p><code>addr2line</code>之所以能够利用可执行文件将地址信息转换为行号，是因为在可执行 ELF 文件中存有这些对应的信息。可以使用<code>readelf</code>来查看这些信息。例如上面的<code>div</code>文件，通过readelf div 可以看到如下信息：</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
 <span class="line-number">5</span>
 <span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-</pre></td><td class="code"><pre><code class=""><span class="line"> Line Number Statements:
-</span><span class="line">  [0x00000026]  Extended opcode 2: set Address to 0x400516
-</span><span class="line">  [0x00000031]  Special opcode 8: advance Address by 0 to 0x400516 and Line by 3 to 4
-</span><span class="line">  [0x00000032]  Special opcode 146: advance Address by 10 to 0x400520 and Line by 1 to 5
-</span><span class="line">  [0x00000033]  Special opcode 104: advance Address by 7 to 0x400527 and Line by 1 to 6
-</span><span class="line">  [0x00000034]  Special opcode 36: advance Address by 2 to 0x400529 and Line by 3 to 9
-</span><span class="line">  [0x00000035]  Special opcode 216: advance Address by 15 to 0x400538 and Line by 1 to 10
-</span><span class="line">  [0x00000036]  Special opcode 104: advance Address by 7 to 0x40053f and Line by 1 to 11
-</span><span class="line">  [0x00000037]  Special opcode 105: advance Address by 7 to 0x400546 and Line by 2 to 13
-</span><span class="line">  [0x00000038]  Special opcode 216: advance Address by 15 to 0x400555 and Line by 1 to 14
-</span><span class="line">  [0x00000039]  Advance PC by 2 to 0x400557
-</span><span class="line">  [0x0000003b]  Extended opcode 1: End of Sequence</span></code></pre></td></tr></table></div></figure>
-<p>从上面可以看出到 addr 在 0x400520-0x400527之间时，行号为5.</p>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">SDL_Surface</span> <span class="o">*</span><span class="n">screen</span><span class="p">;</span>
+</span><span class="line"><span class="n">screen</span> <span class="o">=</span> <span class="n">SDL_SetVideoMode</span><span class="p">(</span><span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">screen</span><span class="p">){</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;SDL:could not set video mode -exiting </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
+<h2 id="section-1">显示图像</h2>
+
+<h2 id="section-2">描绘图像</h2>
 </div>
 
 
@@ -211,12 +178,12 @@
 
 
 
-<time class='entry-date' datetime='2016-12-22T07:26:02-08:00'><span class='date'>2016 年 12 月 22 日</span> <span class='time'>7:26 am</span></time>
+<time class='entry-date' datetime='2016-05-10T16:45:03-07:00'><span class='date'>2016 年 05 月 10 日</span> <span class='time'>4:45 pm</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a>
+    <a class='category' href='/blog/categories/xiang-mu-shi-jian/'>项目实践</a>
   
 </span>
 
@@ -225,7 +192,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/22/addr2line-use/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/22/addr2line-use/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial2/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial2/" >Tweet</a>
   
   
   
@@ -234,10 +201,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/12/07/avio-open2/" title="Previous Post: FFMPEG源码分析：avio_open2">&laquo; FFMPEG源码分析：avio_open2</a>
+        <a class="basic-alignment left" href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/" title="Previous Post: FFmpeg 和 SDL 使用教程（一）">&laquo; FFmpeg 和 SDL 使用教程（一）</a>
       
       
-        <a class="basic-alignment right" href="/blog/2016/12/23/code-complete/" title="Next Post: code complete">code complete &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2016/05/23/the-data-layout/" title="Next Post: YUV 数据分析">YUV 数据分析 &raquo;</a>
       
     </p>
   </footer>
@@ -247,7 +214,7 @@
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/12/22/addr2line-use" data-title="addr2line 的介绍与使用" data-url="http://lazybing.github.io/blog/2016/12/22/addr2line-use//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial2" data-title="FFmpeg 和 SDL 使用教程（一）" data-url="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial2//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
