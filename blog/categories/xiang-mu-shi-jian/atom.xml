@@ -4,7 +4,7 @@
   <title><![CDATA[分类:项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-03-24T17:53:54-07:00</updated>
+  <updated>2017-03-24T18:21:06-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -23,6 +23,7 @@
   <li><a href="#section" id="markdown-toc-section">创建显示区域</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">显示图像</a></li>
   <li><a href="#section-2" id="markdown-toc-section-2">描绘图像</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">程序编译</a></li>
 </ul>
 
 <p>本文主要记录如何利用<code>SDL</code>，将上一节中解处数据显示到屏幕上。</p>
@@ -147,7 +148,86 @@
 </span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
+<p>首先，先给<code>overlay</code>上锁，因为接下来要对它进行写操作。给代码加锁是一个非常好的习惯，
+它能够避免很多问题。如前面提到的，<code>AVPicture</code>有一个指针数组，它有 4 个指向数据的指针组成。
+因为我们要处理的是<code>YUV420P</code>的数据，只需要用到其中的3个指针即可。其他格式的数据可能会用到第 4 个
+指针。<code>linesize</code>就如同它的名字一样。</p>
+
 <h2 id="section-2">描绘图像</h2>
+
+<p>但我们要明确的告诉<code>SDL</code>时间显示的数据，即在何处显示、显示的宽高信息。之后，SDL 会帮助我们实现显示功能。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">SDL_Rect</span> <span class="n">rect</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">frameFinished</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* … code … */</span>
+</span><span class='line'>    <span class="c1">// Convert the image into YUV format that SDL uses</span>
+</span><span class='line'>    <span class="n">sws_scale</span><span class="p">(</span><span class="n">sws_ctx</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="k">const</span> <span class="o">*</span> <span class="k">const</span> <span class="o">*</span><span class="p">)</span><span class="n">pFrame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">,</span>
+</span><span class='line'>              <span class="n">pFrame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">linesize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">height</span><span class="p">,</span>
+</span><span class='line'>	      <span class="n">pict</span><span class="p">.</span><span class="n">data</span><span class="p">,</span> <span class="n">pict</span><span class="p">.</span><span class="n">linesize</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">SDL_UnlockYUVOverlay</span><span class="p">(</span><span class="n">bmp</span><span class="p">);</span>
+</span><span class='line'><span class="n">rect</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="n">rect</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="n">rect</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">pCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">width</span><span class="p">;</span>
+</span><span class='line'><span class="n">rect</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">pCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">height</span><span class="p">;</span>
+</span><span class='line'><span class="n">SDL_DisplayYUVOverlay</span><span class="p">(</span><span class="n">bmp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">rect</span><span class="p">);</span>   <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>至此，视频已经显示到桌面上了。</p>
+
+<p><code>SDL</code>还有另外一个功能：事件处理功能。<code>SDL</code>一旦建立，当接受到点击、移动鼠标、发送信号时，<code>SDL</code>就会产生一个事件。
+如果想要处理用户输入的事件，程序就可以检测这些时间。程序同样的可以制造一些事件，然后发给<code>SDL</code>的事件处理系统。
+这对于使用<code>SDL</code>的多线程程序尤为有用，后面会提到。此时，我们只要处理<code>SDL_QUIT</code>事件来退出：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">SDL_Event</span>       <span class="n">event</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class='line'><span class="n">SDL_PollEvent</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">event</span><span class="p">);</span>
+</span><span class='line'><span class="k">switch</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">type</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'><span class="k">case</span> <span class="nl">SDL_QUIT</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">SDL_Quit</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">break</span><span class="p">;</span>
+</span><span class='line'><span class="k">default</span><span class="o">:</span>
+</span><span class='line'>  <span class="k">break</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h2 id="section-3">程序编译</h2>
+
+<p><code>
+gcc -o tutorial02 tutorial02.c -lavformat -lavcodec -lswscale -lz -lm `sdl-config --cflags --libs`
+</code></p>
 
 ]]></content>
   </entry>
