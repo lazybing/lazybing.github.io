@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hm源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hmyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-03-24T18:21:06-07:00</updated>
+  <updated>2017-03-25T01:51:48-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -114,6 +114,32 @@ TAppDecoder -b str.bin -o dec.yuv [options]
   <li>环路滤波(Loop Filter)</li>
   <li>删除分配的内存并销毁内部类(delete buffers and destroy internal classes)</li>
 </ol>
+
+<p>创建和初始化类直接调用如下函数即可。<br />
+<code>
+xCreateDecLib();
+xInitDecLib();
+</code></p>
+
+<p>解码 NALU 包括解码<code>VPS</code><code>SPS</code><code>PPS</code><code>SEI</code>和<code>Slice</code>等 NALU 单元，注意其中Parse NALU 的函数最终调用的是
+<code>TDecCavlc</code>类<code>parseVPS</code><code>parseSPS</code><code>parsePPS</code><code>parseSliceHeader</code>来实现。</p>
+
+<p>环路滤波是调用<code>TDecTop</code>类的<code>executeLoopFilters</code>函数实现的。结束后会产生 decode 图像，之后就可将 decode 出的图像
+写到文件中。</p>
+
+<p>最后做一些清理工作：<br />
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  xFlushOutput( pcListPic );
+</span><span class='line'>  // delete buffers
+</span><span class='line'>  m_cTDecTop.deletePicBuffer();&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;// destroy internal classes
+</span><span class='line'>  xDestroyDecLib();</span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
   </entry>
