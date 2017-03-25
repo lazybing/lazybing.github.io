@@ -39,6 +39,9 @@ TAppDecoder -b str.bin -o dec.yuv [options]
 
 HM 中关于解码器 TAppDecoder 的函数调用关系如下图所示。参考[HEVC官方软件HM源代码简单分析-解码器TAppDecoder](http://blog.csdn.net/leixiaohua1020/article/details/49912013)。  
 
+<image src="/images/TAppDecoder/TAppDecoder_Function_Flow.png">  
+
+
 Decode 过程大致可分为如下几部分：  
 
 1. 创建 decoder 类(create application decoder class)
@@ -56,5 +59,27 @@ Decode 过程大致可分为如下几部分：
 2. 解码 NALU (call actual decoding function)
 3. 环路滤波(Loop Filter)
 4. 删除分配的内存并销毁内部类(delete buffers and destroy internal classes)
+
+创建和初始化类直接调用如下函数即可。  
+```
+xCreateDecLib();
+xInitDecLib();
+```
+
+解码 NALU 包括解码`VPS``SPS``PPS``SEI`和`Slice`等 NALU 单元，注意其中Parse NALU 的函数最终调用的是
+`TDecCavlc`类`parseVPS``parseSPS``parsePPS``parseSliceHeader`来实现。  
+
+环路滤波是调用`TDecTop`类的`executeLoopFilters`函数实现的。结束后会产生 decode 图像，之后就可将 decode 出的图像
+写到文件中。  
+
+最后做一些清理工作：  
+```
+  xFlushOutput( pcListPic );
+  // delete buffers
+  m_cTDecTop.deletePicBuffer();
+
+  // destroy internal classes
+  xDestroyDecLib();
+```
 
 
