@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="TAppDecoder 的使用 TAppDecoder 源码分析 本文主要从TAppDecoder的使用入手，之后进行源码分析。 TAppDecoder 的使用 TAppDecoder 的使用非常简单，在官方提供的参考文档software-manual.pdf里有提到 Using the &hellip;">
+  <meta name="description" content="TAppDecoder 的使用 TAppDecoder 源码分析 解码（call decoding function） 本文主要从TAppDecoder的使用入手，之后进行源码分析。 TAppDecoder 的使用 TAppDecoder 的使用非常简单，在官方提供的参考文档software- &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -101,7 +101,10 @@
 
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#tappdecoder-" id="markdown-toc-tappdecoder-">TAppDecoder 的使用</a></li>
-  <li><a href="#tappdecoder--1" id="markdown-toc-tappdecoder--1">TAppDecoder 源码分析</a></li>
+  <li><a href="#tappdecoder--1" id="markdown-toc-tappdecoder--1">TAppDecoder 源码分析</a>    <ul>
+      <li><a href="#call--decoding-function" id="markdown-toc-call--decoding-function">解码（call  decoding function）</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>本文主要从<code>TAppDecoder</code>的使用入手，之后进行源码分析。</p>
@@ -170,40 +173,42 @@
 
 <p>HM 中关于解码器 TAppDecoder 的函数调用关系如下图所示。参考<a href="http://blog.csdn.net/leixiaohua1020/article/details/49912013">HEVC官方软件HM源代码简单分析-解码器TAppDecoder</a>。</p>
 
-<image src="/images/TAppDecoder/TAppDecoder_Function_Flow.png">
+<p>Decode 过程大致可分为如下几部分：</p>
 
-Decode 过程大致可分为如下几部分：  
+<ol>
+  <li>创建 decoder 类(create application decoder class)</li>
+  <li>配置解析(parse configuration)</li>
+  <li>计算解码开始时间(starting time)</li>
+  <li>解码(call decoding function)</li>
+  <li>计算解码结束时间(ending time)</li>
+  <li>销毁 decoder 类(destroy application decoder class)</li>
+</ol>
 
-1. 创建 decoder 类(create application decoder class)
-2. 配置解析(parse configuration)
-3. 计算解码开始时间(starting time)
-4. 解码(call decoding function)
-5. 计算解码结束时间(ending time)
-6. 销毁 decoder 类(destroy application decoder class)
+<h3 id="call--decoding-function">解码（call  decoding function）</h3>
 
-### 解码（call  decoding function）
+<p>解码的过程又可以细分为如下步骤：</p>
 
-解码的过程又可以细分为如下步骤：  
+<ol>
+  <li>创建并初始化内部类(create &amp; initialize internal classes)</li>
+  <li>解码 NALU (call actual decoding function)</li>
+  <li>环路滤波(Loop Filter)</li>
+  <li>删除分配的内存并销毁内部类(delete buffers and destroy internal classes)</li>
+</ol>
 
-1. 创建并初始化内部类(create &amp; initialize internal classes)
-2. 解码 NALU (call actual decoding function)
-3. 环路滤波(Loop Filter)
-4. 删除分配的内存并销毁内部类(delete buffers and destroy internal classes)
-
-创建和初始化类直接调用如下函数即可。  
+<p>创建和初始化类直接调用如下函数即可。</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">xCreateDecLib();
 </span><span class="line">xInitDecLib();</span></code></pre></td></tr></table></div></figure>
 
-解码 NALU 包括解码`VPS``SPS``PPS``SEI`和`Slice`等 NALU 单元，注意其中Parse NALU 的函数最终调用的是
-`TDecCavlc`类`parseVPS``parseSPS``parsePPS``parseSliceHeader`来实现。  
+<p>解码 NALU 包括解码<code>VPS</code><code>SPS</code><code>PPS</code><code>SEI</code>和<code>Slice</code>等 NALU 单元，注意其中Parse NALU 的函数最终调用的是
+<code>TDecCavlc</code>类<code>parseVPS</code><code>parseSPS</code><code>parsePPS</code><code>parseSliceHeader</code>来实现。</p>
 
-环路滤波是调用`TDecTop`类的`executeLoopFilters`函数实现的。结束后会产生 decode 图像，之后就可将 decode 出的图像
-写到文件中。  
+<p>环路滤波是调用<code>TDecTop</code>类的<code>executeLoopFilters</code>函数实现的。结束后会产生 decode 图像，之后就可将 decode 出的图像
+写到文件中。</p>
 
-最后做一些清理工作：  
+<p>最后做一些清理工作：</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
@@ -217,8 +222,6 @@ Decode 过程大致可分为如下几部分：
 </span><span class="line">  // destroy internal classes
 </span><span class="line">  xDestroyDecLib();</span></code></pre></td></tr></table></div></figure>
 
-
-</image>
 </div>
 
 
