@@ -51,6 +51,104 @@ if(!screen){
 }
 {% endcodeblock %}
 
+上面的过程使用给定的宽高创建一个屏幕区域。下一个参数是屏幕的`bit depth`，0是一个特殊的值，
+代表`与当前显示相同`。  
+
+现在我们需要在该屏幕区域创建一个`YUV overlay`，以便于可以将视频输入进去。并且要创建`SWSContext`来
+转换图像数据到`YUV420`。   
+
+{% codeblock lang:c %}
+SDL_Overlay *bmp = NULL;
+struct SWSContext *sws_ctx = NULL;
+
+bmp = SDL_CreateYUVOverlay(pCodecCtx->width, pCodecCtx->height, SDL_YV12_OVERLAY, screen);
+
+//initialize SWS context for software scaling
+sws_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height, PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
+{% endcodeblock %}
+
+正如上面提到的，我们使用`YV12`来显示图像，从ffmpeg里得到`YUV420`数据。  
+
 ## 显示图像
 
+现在已经非常明显了，我们只需要显示图像。确定帧结束的位置后，只需要将`SaveFrame`替换
+成显示的代码即可。为例显示图像，我们将使用`AVPicture`结构并将它的数据指针和`linesize`指向
+`YUV Overlay`。  
+
+{% codeblock lang:c %}
+if(frameFinished) {
+    SDL_LockYUVOverlay(bmp);
+
+    AVPicture pict;
+    pict.data[0] = bmp->pixels[0];
+    pict.data[1] = bmp->pixels[2];
+    pict.data[2] = bmp->pixels[1];
+
+    pict.linesize[0] = bmp->pitches[0];
+    pict.linesize[1] = bmp->pitches[2];
+    pict.linesize[2] = bmp->pitches[1];
+
+    // Convert the image into YUV format that SDL uses
+    sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
+	      pFrame->linesize, 0, pCodecCtx->height,
+	      pict.data, pict.linesize);
+    
+    SDL_UnlockYUVOverlay(bmp);
+  } 
+{% endcodeblock %}
+
+首先，先给`overlay`上锁，因为接下来要对它进行写操作。给代码加锁是一个非常好的习惯，
+它能够避免很多问题。如前面提到的，`AVPicture`有一个指针数组，它有 4 个指向数据的指针组成。
+因为我们要处理的是`YUV420P`的数据，只需要用到其中的3个指针即可。其他格式的数据可能会用到第 4 个
+指针。`linesize`就如同它的名字一样。
+
 ## 描绘图像
+
+但我们要明确的告诉`SDL`时间显示的数据，即在何处显示、显示的宽高信息。之后，SDL 会帮助我们实现显示功能。  
+
+{% codeblock lang:c %}
+SDL_Rect rect;
+
+  if(frameFinished) {
+    /* ... code ... */
+    // Convert the image into YUV format that SDL uses
+    sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
+              pFrame->linesize, 0, pCodecCtx->height,
+	      pict.data, pict.linesize);
+    
+    SDL_UnlockYUVOverlay(bmp);
+	rect.x = 0;
+	rect.y = 0;
+	rect.w = pCodecCtx->width;
+	rect.h = pCodecCtx->height;
+	SDL_DisplayYUVOverlay(bmp, &rect);
+  }
+{% endcodeblock %}
+
+至此，视频已经显示到桌面上了。
+
+`SDL`还有另外一个功能：事件处理功能。`SDL`一旦建立，当接受到点击、移动鼠标、发送信号时，`SDL`就会产生一个事件。
+如果想要处理用户输入的事件，程序就可以检测这些时间。程序同样的可以制造一些事件，然后发给`SDL`的事件处理系统。
+这对于使用`SDL`的多线程程序尤为有用，后面会提到。此时，我们只要处理`SDL_QUIT`事件来退出：  
+
+{% codeblock lang:c %}
+SDL_Event       event;
+
+    av_free_packet(&packet);
+    SDL_PollEvent(&event);
+    switch(event.type) {
+    case SDL_QUIT:
+      SDL_Quit();
+      exit(0);
+      break;
+    default:
+      break;
+    }
+{% endcodeblock %}
+
+## 程序编译
+
+```
+gcc -o tutorial02 tutorial02.c -lavformat -lavcodec -lswscale -lz -lm `sdl-config --cflags --libs`
+```
+
