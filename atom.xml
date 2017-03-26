@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-03-26T02:54:27-07:00</updated>
+  <updated>2017-03-26T08:39:09-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -3674,6 +3674,7 @@ vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。
     <id>http://lazybing.github.io/blog/2016/07/03/avcodec-structure</id>
     <content type="html"><![CDATA[<p>AVCodec是存储编解码器信息的结构体。
 <!--more--></p>
+
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
@@ -3739,6 +3740,11 @@ vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。
 </span><span class="line">	
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<p>其中的<code>name</code>和<code>long_name</code>分别是简短和详细的描述了具体的 codec。而
+<code>type</code>是指媒体类型，如<code>AVMEDIA_TYPE_VIDEO</code><code>AVMEDIA_TYPE_AUDIO</code>等。<code>id</code>是指具体的 codec 类型，
+比如<code>AV_CODEC_ID_HEVC</code>。<code>supported_framerates</code>是指视频的帧率。<code>pix_fmts</code>是指视频图像对应的格式，比如<code>AV_PIX_FMT_YUV420P</code><code>AV_PIX_FMT_RGB24</code>等。
+·</p>
 
 <p>以 HEVC 为例。</p>
 
@@ -3824,6 +3830,15 @@ vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。
 </span><span class="line">        <span class="n">codec</span><span class="o">-&gt;</span><span class="n">init_static_data</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<p>下面简单介绍一下遍历ffmpeg中的解码器信息的方法（这些解码器以一个链表的形式存储）：</p>
+
+<ol>
+  <li>注册所有编解码器：av_register_all();</li>
+  <li>声明一个AVCodec类型的指针，比如说AVCodec* first_c;</li>
+  <li>调用av_codec_next()函数，即可获得指向链表下一个解码器的指针，循环往复可以获得所有解码器的信息。注意，如果想要获得指向第一个解码器的指针，则需要将该函数的参数设置为NULL。</li>
+</ol>
+
 ]]></content>
   </entry>
   
