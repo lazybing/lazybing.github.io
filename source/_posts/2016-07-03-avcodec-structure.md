@@ -7,6 +7,7 @@ categories: FFMPEG源码分析
 ---
 AVCodec是存储编解码器信息的结构体。
 <!--more-->
+
 {% codeblock lang:c %}
 typedef struct AVCodec{
     
@@ -41,6 +42,11 @@ typedef struct AVCodec{
 	
 }
 {% endcodeblock %}
+
+其中的`name`和`long_name`分别是简短和详细的描述了具体的 codec。而
+`type`是指媒体类型，如`AVMEDIA_TYPE_VIDEO``AVMEDIA_TYPE_AUDIO`等。`id`是指具体的 codec 类型，
+比如`AV_CODEC_ID_HEVC`。`supported_framerates`是指视频的帧率。`pix_fmts`是指视频图像对应的格式，比如`AV_PIX_FMT_YUV420P``AV_PIX_FMT_RGB24`等。
+·
 
 以 HEVC 为例。
 
@@ -92,3 +98,11 @@ av_cold void avcodec_register(AVCodec *codec)
         codec->init_static_data(codec);
 }
 {% endcodeblock %}
+
+
+下面简单介绍一下遍历ffmpeg中的解码器信息的方法（这些解码器以一个链表的形式存储）：
+
+1. 注册所有编解码器：av_register_all();
+2. 声明一个AVCodec类型的指针，比如说AVCodec* first_c;
+3. 调用av_codec_next()函数，即可获得指向链表下一个解码器的指针，循环往复可以获得所有解码器的信息。注意，如果想要获得指向第一个解码器的指针，则需要将该函数的参数设置为NULL。
+

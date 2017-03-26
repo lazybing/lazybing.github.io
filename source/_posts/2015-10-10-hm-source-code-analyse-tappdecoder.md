@@ -39,8 +39,7 @@ TAppDecoder -b str.bin -o dec.yuv [options]
 
 HM 中关于解码器 TAppDecoder 的函数调用关系如下图所示。参考[HEVC官方软件HM源代码简单分析-解码器TAppDecoder](http://blog.csdn.net/leixiaohua1020/article/details/49912013)。  
 
-<image src="/images/TAppDecoder/TAppDecoder_Function_Flow.png">  
-
+{% img /images/TAppDecoder/TAppDecoder_Function_Flow.png %}  
 
 Decode 过程大致可分为如下几部分：  
 
@@ -61,6 +60,7 @@ Decode 过程大致可分为如下几部分：
 4. 删除分配的内存并销毁内部类(delete buffers and destroy internal classes)
 
 创建和初始化类直接调用如下函数即可。  
+
 ```
 xCreateDecLib();
 xInitDecLib();

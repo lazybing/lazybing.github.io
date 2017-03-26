@@ -6,7 +6,8 @@ comments: true
 categories: FFMPEG源码分析
 ---
 
-
+* list element with functor item
+{:toc}
 
 [FFmpeg 官网](https://ffmpeg.org/)对 FFmpeg 的描述是这样的：
 
@@ -14,7 +15,9 @@ categories: FFMPEG源码分析
 A complete, cross-platform solution to record, convert and stream audio and video.
 ```
 <!--more-->
+
 ###介绍
+
 `FFmpeg` 是一个多媒体架构，能够用于解码、编码、转码、复用、解复用、滤波以及播放人类或机器制造出来的各种媒体文件。它能够支持最古老的、最前沿的媒体格式，不管这种格式是由官方标准社区制定还是由各大公司合作制定。
 
 `FFmpeg` 的使用非常广泛，几乎涵盖了所有的媒体相关的视频播放器、转码器等。例如使用 `FFmpeg` 作为内核的视频播放器有（Mplayer，射手影音，暴风影音，KMPlayer，QQ影音等）；使用 `FFmpeg` 作为内核的转码器有(格式工厂，狸窝视频转换器，暴风转码等)。

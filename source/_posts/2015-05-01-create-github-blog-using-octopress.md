@@ -80,6 +80,7 @@ categories: 总结积累
 ---
 
 ```
+
 ##基本配置
 
 `_config.yml`用于基本配置，包括域名、网站标题、作者等等信息。
@@ -115,9 +116,8 @@ excerpt_link:"Read on"
 网站底部：一般来讲网站底部会有一些网站的描述信息，比如版权声明、网站
 主题，网站使用的系统等等，要修改这部分内容，直接打开`source/_includes/custom/foot.html`修改相应部分即可。
 
-
-
 ##添加图片
+
 在写 blog 的过程中，经常需要用到插入图片。示例如下：
 
 1. 把图片 `meinv.png` copy 到 `source/images`下。

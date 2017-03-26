@@ -11,6 +11,8 @@ categories: 项目实践
 
 本文主要记录如何利用`SDL`，将上一节中解处数据显示到屏幕上。  
 
+<!--more-->
+
 ## SDL 和 Video
 
 为将图像显示到屏幕上，我们将使用`SDL`,`SDL`是`Simple DIrect Layer`的简称，
