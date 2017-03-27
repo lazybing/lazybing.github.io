@@ -11,22 +11,12 @@
   
   <meta name="description" content="AVFormatContext 是包含码流参数比较多的结构体，
 它是 FFmpeg 解封装(flv、mp4、rmvb、avi)功能的结构体。
-一般使用 avformat_alloc_context() 来创建该结构体。 1
+一般使用avformat_alloc_context()来创建该结构体,使用avformat_free_context释放该结构体。 1
 2
 3
 4
 5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16 &hellip;">
+6 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -118,7 +108,7 @@
 
 <div class="entry-content"><p>AVFormatContext 是包含码流参数比较多的结构体，
 它是 FFmpeg 解封装(flv、mp4、rmvb、avi)功能的结构体。
-一般使用 avformat_alloc_context() 来创建该结构体。
+一般使用<code>avformat_alloc_context()</code>来创建该结构体,使用<code>avformat_free_context</code>释放该结构体。
 <!--more--></p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -258,6 +248,13 @@
 </span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">open_cb</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="n">AVIOContext</span> <span class="o">**</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVIOInterruptCB</span> <span class="o">*</span><span class="n">int_cb</span><span class="p">,</span> <span class="n">AVDictionary</span> <span class="o">**</span><span class="n">options</span><span class="p">);</span>	
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>struct AVInputFormat *iformat; 输入数据的封装格式，由<code>avformat_open_input</code>设置，仅仅在<code>Demuxing</code>使用。</li>
+  <li>struct AVOutputFormat *oformat; 输出数据的封装格式，必须由使用者在<code>avformat_write_header</code>前设置，由<code>Muxing</code>使用。</li>
+  <li>priv_data，在<code>muxing</code>中，由<code>avformat_write_header</code>设置；在<code>demuxing</code>中，由<code>avformat_open_input</code>设置。</li>
+  <li>AVIOContext *pb;输入数据的缓存。</li>
+</ul>
 
 </div>
 
