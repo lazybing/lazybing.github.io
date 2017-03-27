@@ -253,7 +253,17 @@
   <li>struct AVInputFormat *iformat; 输入数据的封装格式，由<code>avformat_open_input</code>设置，仅仅在<code>Demuxing</code>使用。</li>
   <li>struct AVOutputFormat *oformat; 输出数据的封装格式，必须由使用者在<code>avformat_write_header</code>前设置，由<code>Muxing</code>使用。</li>
   <li>priv_data，在<code>muxing</code>中，由<code>avformat_write_header</code>设置；在<code>demuxing</code>中，由<code>avformat_open_input</code>设置。</li>
-  <li>AVIOContext *pb;输入数据的缓存。</li>
+  <li>AVIOContext *pb;输入数据的缓存。如果<code>iformat/oformat.flags</code>设置为<code>AVFMT_NOFILE</code>的话，该字段不需要设置。对于<code>Demuxing</code>
+,需要在<code>avformat_open_input</code>前设置，或由<code>avformat_open_input</code>设置；对于<code>Muxing</code>,在<code>avformat_write_header</code>前设置。</li>
+  <li>ctx_flags,码流的信息，表明码流属性的的信号。由<code>libavformat</code>设置，例如<code>AVFMTCTX_NOHEADER</code>。</li>
+  <li>nb_streams 指<code>AVFormatContext.streams</code>的数量，必须由<code>avformat_new_stream</code>设置，不能由其他代码改动。</li>
+  <li>AVStream **streams;文件中所有码流的列表，新的码流创建使用<code>avformat_new_stream</code>函数。<code>Demuxing</code>中，码流由<code>avformat_open_input</code>创建。
+如果<code>AVFMTCTX_NOHEADER</code>被设置，新的码流可以出现在<code>av_read_frame</code>中。<code>Muxing</code>中，码流在<code>avformat_write_header</code>之前由用户创建。它的释放是由<code>avformat_free_context</code>完成的。</li>
+  <li>filename,输入或输出的文件名，<code>Demuxing</code>中由<code>avformat_open_input</code>设置，<code>Muxing</code>中在使用<code>avformat_write_header</code>前由调用者设置。</li>
+  <li>int64_t duration;码流的时长。</li>
+  <li>bit_rate,比特率。</li>
+  <li>enum AVCodecID video_codec_id;</li>
+  <li>AVDictionary *metadata; 元数据，适用于整个文件。</li>
 </ul>
 
 </div>
