@@ -5,7 +5,9 @@ date: 2016-06-30 07:42:13 -0700
 comments: true
 categories: FFMPEG源码分析
 ---
-AVFormatContext 是包含码流参数比较多的结构体，它是 FFmpege 解封装(flv、mp4、rmvb、avi)功能的结构体。一般使用 avformat_alloc_context() 来创建该结构体。
+AVFormatContext 是包含码流参数比较多的结构体，
+它是 FFmpeg 解封装(flv、mp4、rmvb、avi)功能的结构体。
+一般使用`avformat_alloc_context()`来创建该结构体,使用`avformat_free_context`释放该结构体。
 <!--more-->
 
 {% codeblock lang:c %}
@@ -78,3 +80,23 @@ typedef struct AVFormatContext {
     int (*open_cb)(struct AVFormatContext *s, AVIOContext **p, const char *url, int flags, const AVIOInterruptCB *int_cb, AVDictionary **options);	
 }
 {% endcodeblock lang:c %}
+
+* struct AVInputFormat *iformat; 输入数据的封装格式，由`avformat_open_input`设置，仅仅在`Demuxing`使用。  
+* struct AVOutputFormat *oformat; 输出数据的封装格式，必须由使用者在`avformat_write_header`前设置，由`Muxing`使用。  
+* priv_data，在`muxing`中，由`avformat_write_header`设置；在`demuxing`中，由`avformat_open_input`设置。
+* AVIOContext *pb;输入数据的缓存。如果`iformat/oformat.flags`设置为`AVFMT_NOFILE`的话，该字段不需要设置。对于`Demuxing`
+,需要在`avformat_open_input`前设置，或由`avformat_open_input`设置；对于`Muxing`,在`avformat_write_header`前设置。  
+* ctx_flags,码流的信息，表明码流属性的的信号。由`libavformat`设置，例如`AVFMTCTX_NOHEADER`。  
+* nb_streams 指`AVFormatContext.streams`的数量，必须由`avformat_new_stream`设置，不能由其他代码改动。  
+* AVStream **streams;文件中所有码流的列表，新的码流创建使用`avformat_new_stream`函数。`Demuxing`中，码流由`avformat_open_input`创建。
+如果`AVFMTCTX_NOHEADER`被设置，新的码流可以出现在`av_read_frame`中。`Muxing`中，码流在`avformat_write_header`之前由用户创建。它的释放是由`avformat_free_context`完成的。  
+* filename,输入或输出的文件名，`Demuxing`中由`avformat_open_input`设置，`Muxing`中在使用`avformat_write_header`前由调用者设置。  
+* int64_t duration;码流的时长。  
+* bit_rate,比特率。  
+* enum AVCodecID video_codec_id;  
+* AVDictionary *metadata; 元数据，适用于整个文件。  
+
+
+
+
+
