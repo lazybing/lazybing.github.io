@@ -9,23 +9,13 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AVPacket是存储压缩编码数据相关信息的结构体。 1
+  <meta name="description" content="AVPacket是存储压缩编码数据相关信息的结构体。 AVPacket作为 demuxer 的输出，并作为 decoder 的输入；或者作为 encoder 的输出，muxer 的输入。
+对于 video,它一般包含一个压缩帧；对于 audio，它可能包含多个压缩音频帧。 1
 2
 3
 4
 5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-typedef struct AVPacket{ AVBufferRef *buf; int64_t pts; int64_t dts; uint8_t *data &hellip;">
+6 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -118,6 +108,9 @@ typedef struct AVPacket{ AVBufferRef *buf; int64_t pts; int64_t dts; uint8_t *da
 <div class="entry-content"><p>AVPacket是存储压缩编码数据相关信息的结构体。
 <!--more--></p>
 
+<p><code>AVPacket</code>作为 demuxer 的输出，并作为 decoder 的输入；或者作为 encoder 的输出，muxer 的输入。
+对于 video,它一般包含一个压缩帧；对于 audio，它可能包含多个压缩音频帧。</p>
+
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
@@ -152,7 +145,11 @@ typedef struct AVPacket{ AVBufferRef *buf; int64_t pts; int64_t dts; uint8_t *da
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<p>其中<code>pts</code>代表显示时间戳(单位是AVStream-&gt;time_base units)、<code>dts</code>代表解码时间戳(单位是AVStream-&gt;time_base units)、<code>stream_index</code>标识该<code>AVPacket</code>所属的视频音频流。</p>
+<ul>
+  <li><code>pts</code>代表显示时间戳(单位是AVStream-&gt;time_base units).</li>
+  <li><code>dts</code>代表解码时间戳(单位是AVStream-&gt;time_base units).</li>
+  <li><code>stream_index</code>标识该<code>AVPacket</code>所属的视频音频流。</li>
+</ul>
 
 </div>
 
