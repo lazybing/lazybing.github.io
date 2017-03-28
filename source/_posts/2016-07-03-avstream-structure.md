@@ -82,3 +82,11 @@ typedef struct AVStream{
 
 }
 {% endcodeblock %}
+
+* int index;标识该视频、音频流。  
+* AVCodecContext *codec;指向该视频、音频流的内容。  
+* AVRational time_base;时基，通过该值可以把PTS，DTS转化为真正的时间。
+* int64_t duration;该视频、音频流长度。  
+* AVDictionary *metadata;元数据信息。  
+* AVRational avg_frame_rate;帧率。  
+
