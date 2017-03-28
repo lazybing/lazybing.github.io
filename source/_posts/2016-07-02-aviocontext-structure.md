@@ -44,4 +44,8 @@ typedef struct AVIOContext{
 
 {% endcodeblock %}
 
+* unsigned char *buffer;缓存开始位置。  
+* int buffer_size;缓存大小。  
+* unsigned char *buf_ptr;当前指针读取到的位置。  
+* unsigned char *buf_end;缓存结束的位置。  
 

@@ -196,3 +196,14 @@ typedef struct AVCodecContext{
 		
 }
 {% endcodeblock %}
+
+`AVCodecContext`使用`avcodec_alloc_context3`分配。  
+
+* AVMediaType codec_type;编解码器的类型,如音频、视频。  
+* AVCodec *codec;采用的解码器AVCodec。  
+* bit_rate;平均比特率。  
+* int width, height;视频的宽和高。  
+* int refs;运动估计参考帧的个数。  
+* int sample_rate;采样率。  
+* int channels;省道数。  
+

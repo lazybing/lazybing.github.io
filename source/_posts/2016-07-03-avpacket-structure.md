@@ -9,6 +9,9 @@ categories: FFMPEG源码分析
 AVPacket是存储压缩编码数据相关信息的结构体。
 <!--more-->
 
+`AVPacket`作为 demuxer 的输出，并作为 decoder 的输入；或者作为 encoder 的输出，muxer 的输入。
+对于 video,它一般包含一个压缩帧；对于 audio，它可能包含多个压缩音频帧。
+
 {% codeblock lang:c %}
 
 typedef struct AVPacket{
@@ -30,5 +33,7 @@ typedef struct AVPacket{
 
 {% endcodeblock %}
 
-其中`pts`代表显示时间戳(单位是AVStream->time_base units)、`dts`代表解码时间戳(单位是AVStream->time_base units)、`stream_index`标识该`AVPacket`所属的视频音频流。  
+* `pts`代表显示时间戳(单位是AVStream->time_base units).  
+* `dts`代表解码时间戳(单位是AVStream->time_base units).
+* `stream_index`标识该`AVPacket`所属的视频音频流。  
 
