@@ -28,7 +28,8 @@ categories: RTMP源码分析
 
 下面逐个记录各个步骤的功能。
 在了解具体步骤之前，先了解结构重要的Structure:
-```
+
+{% codeblock lang:c %}
 typedef struct RTMP
 {
     int m_inChunkSize;
@@ -53,7 +54,7 @@ typedef struct RTMP
     int m_numCalls;
     RTMP_METHOD *m_methodCalls;
 }
-```
+{% endcodeblock %}
 
 ### InitSocket()
 
