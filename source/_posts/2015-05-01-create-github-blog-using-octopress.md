@@ -225,7 +225,7 @@ $ ssh-add ~/.ssh/id_rsa
 ```
 $ git clone -b source git@github.com:lazybing/lazybing.github.io octopress
 $ cd octopress
-$ git clone git @github.com:lazybing/lazybing.github.io _deploy
+$ git clone git@github.com:lazybing/lazybing.github.io _deploy
 ```
 参见 github 官方[帮助文档](https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac)。
 
