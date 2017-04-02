@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Profiles-Tiers-Levels - 懒人李冰</title>
+  <title>FFMPEG 源码分析：avcodec_open2 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Profile、Tier 和 Level 的概念 Profile、Tier 和 Level 的概念 HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。
-Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
+  <meta name="description" content="avcodec_open2函数实现的功能为 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +18,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/10/avcodec-open2/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +82,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Profiles-Tiers-Levels</h1>
+      <h1 class="entry-title">FFMPEG 源码分析：avcodec_open2</h1>
     
     
       <p class="meta">
@@ -92,7 +91,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
 
 
 
-<time class='entry-date' datetime='2016-06-27T07:52:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>7:52 am</span></time>
+<time class='entry-date' datetime='2016-12-10T06:18:07-08:00'><span class='date'>2016 年 12 月 10 日</span> <span class='time'>6:18 am</span></time>
         
         
       </p>
@@ -100,144 +99,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
   </header>
 
 
-<div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
-</ul>
-
-<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
-
-<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
-Profile 指出码流中使用了哪些编码工具和算法。</p>
-
-<!--more-->
-
-<p>Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
-值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。</p>
-
-<p>在 HEVC 的设计中，应用可以只依据最大的码率和 CPB 大小就可以区分。为了解决这个问题，有些 Level 定义了
-两个 Tier——Main Tier 用于大多数应用，High Tier 用于那些最苛刻的应用。</p>
-
-<p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
-<code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
-
-<p>HM 中关于 ProfileTierLevel 的定义如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-<span class="line-number">42</span>
-<span class="line-number">43</span>
-<span class="line-number">44</span>
-<span class="line-number">45</span>
-<span class="line-number">46</span>
-<span class="line-number">47</span>
-<span class="line-number">48</span>
-<span class="line-number">49</span>
-<span class="line-number">50</span>
-<span class="line-number">51</span>
-<span class="line-number">52</span>
-<span class="line-number">53</span>
-<span class="line-number">54</span>
-<span class="line-number">55</span>
-<span class="line-number">56</span>
-<span class="line-number">57</span>
-<span class="line-number">58</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">namespace Profile
-</span><span class="line">{
-</span><span class="line">    enum Name
-</span><span class="line">    {
-</span><span class="line">        NONE               = 0,
-</span><span class="line">        MAIN               = 1,
-</span><span class="line">        MAIN10             = 2,
-</span><span class="line">        MAINSTILLPICTURE   = 3,
-</span><span class="line">        MAINREXT           = 4,
-</span><span class="line">        HIGHTHROUGHPUTREXT = 5
-</span><span class="line">    };
-</span><span class="line">}
-</span><span class="line">
-</span><span class="line">namespace Level
-</span><span class="line">{
-</span><span class="line">    enum Tier
-</span><span class="line">    {
-</span><span class="line">        MAIN = 0,
-</span><span class="line">        HIGH = 1,
-</span><span class="line">    };
-</span><span class="line">
-</span><span class="line">    enum Name
-</span><span class="line">    {
-</span><span class="line">        NONE       = 0,
-</span><span class="line">        LEVEL1     = 30,
-</span><span class="line">        LEVEL2     = 60,
-</span><span class="line">        LEVEL2_1   = 63,
-</span><span class="line">        LEVEL3     = 90,
-</span><span class="line">        LEVEL3_1   = 93,
-</span><span class="line">        LEVEL4     = 120,
-</span><span class="line">        LEVEL4_1   = 123,
-</span><span class="line">        LEVEL5     = 150,
-</span><span class="line">        LEVEL5_1   = 153,
-</span><span class="line">        LEVEL5_2   = 156,
-</span><span class="line">        LEVEL6     = 180,
-</span><span class="line">        LEVEL6_1   = 183,
-</span><span class="line">        LEVEL6_2   = 186,
-</span><span class="line">        LEVEL8_5   = 255,
-</span><span class="line">    };
-</span><span class="line">}
-</span><span class="line">
-</span><span class="line">class ProfileTierLevel
-</span><span class="line">{
-</span><span class="line">    Int            m_profileSpace;
-</span><span class="line">    Level::Tier    m_tierFlag;
-</span><span class="line">    Profile::Name  m_profileIdc;
-</span><span class="line">    Bool           m_profileCompatibilityFlag[32];
-</span><span class="line">    Level::Name    m_levelIdc;
-</span><span class="line">
-</span><span class="line">    Bool           m_progressiveSourceFlag;
-</span><span class="line">    Bool           m_interlacedSourceFlag;
-</span><span class="line">    Bool           m_nonPackedConstraintFlag;
-</span><span class="line">    Bool           m_frameOnlyConstraintFlag;
-</span><span class="line">    UInt           m_bitDepthConstraintValue;
-</span><span class="line">    ChromaFormat   m_chromaFormatConstraintValue;
-</span><span class="line">    Bool           m_intraConstraintFlag;
-</span><span class="line">    Bool           m_lowerBitRateConstraintFlag;
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+<div class="entry-content"><p><code>avcodec_open2</code>函数实现的功能为</p>
 
 </div>
 
@@ -254,12 +116,12 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 
 
 
-<time class='entry-date' datetime='2016-06-27T07:52:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>7:52 am</span></time>
+<time class='entry-date' datetime='2016-12-10T06:18:07-08:00'><span class='date'>2016 年 12 月 10 日</span> <span class='time'>6:18 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
   
 </span>
 
@@ -268,7 +130,7 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/10/avcodec-open2/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/10/avcodec-open2/" >Tweet</a>
   
   
   
@@ -277,10 +139,10 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/06/19/ffmpeg-basics/" title="Previous Post: FFmpeg 使用">&laquo; FFmpeg 使用</a>
+        <a class="basic-alignment left" href="/blog/2016/12/07/avio-open2/" title="Previous Post: FFMPEG源码分析：avio_open2">&laquo; FFMPEG源码分析：avio_open2</a>
       
       
-        <a class="basic-alignment right" href="/blog/2016/06/28/avframe-structure/" title="Next Post: AVFrame 结构体解析">AVFrame 结构体解析 &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2016/12/22/addr2line-use/" title="Next Post: addr2line 的介绍与使用">addr2line 的介绍与使用 &raquo;</a>
       
     </p>
   </footer>
@@ -290,7 +152,7 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/06/27/profiles-tiers-levels" data-title="Profiles-Tiers-Levels" data-url="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/12/10/avcodec-open2" data-title="FFMPEG 源码分析：avcodec_open2" data-url="http://lazybing.github.io/blog/2016/12/10/avcodec-open2//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
