@@ -1,0 +1,799 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:hm源码分析 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/hmyuan-ma-fen-xi/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2017-03-28T23:41:02-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[HM 源码分析（二）: 解码器 TAppDecoder 分析]]></title>
+    <link href="http://lazybing.github.io/blog/2015/10/10/hm-source-code-analyse-tappdecoder/"/>
+    <updated>2015-10-10T07:48:51-07:00</updated>
+    <id>http://lazybing.github.io/blog/2015/10/10/hm-source-code-analyse-tappdecoder</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#tappdecoder-" id="markdown-toc-tappdecoder-">TAppDecoder 的使用</a></li>
+  <li><a href="#tappdecoder--1" id="markdown-toc-tappdecoder--1">TAppDecoder 源码分析</a>    <ul>
+      <li><a href="#call--decoding-function" id="markdown-toc-call--decoding-function">解码（call  decoding function）</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>本文主要从<code>TAppDecoder</code>的使用入手，之后进行源码分析。</p>
+
+<!--more-->
+
+<h2 id="tappdecoder-">TAppDecoder 的使用</h2>
+
+<p>TAppDecoder 的使用非常简单，在官方提供的参考文档<code>software-manual.pdf</code>里有提到 Using the decoder. 其使用命令为</p>
+
+<p><code>
+TAppDecoder -b str.bin -o dec.yuv [options]
+</code></p>
+
+<p>其中的<code>option</code>主要分为以下几种：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Option</th>
+      <th style="text-align: center">Default</th>
+      <th style="text-align: center">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">(-help)</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">Prints usage information</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">BitStreamFile(-b)</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">Defines the input bitstream file name.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">ReconFile(-o)</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">Defines reconstructed YUV file name . If empty, no file is generated.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">SkipFrames(-s)</td>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">Defines the number of pictures in decoding order to skip.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">MaxTemporalLayer(-t)</td>
+      <td style="text-align: center">-1</td>
+      <td style="text-align: center">Define the maximum temporal layer ot be decoded. If -1, then all layers are decoded.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">OutputBitDepth(-d)</td>
+      <td style="text-align: center">0(Native)</td>
+      <td style="text-align: center">Specifies the luma bit-depth of the reconstructed YUV file(the value 0 in-dicates that the native bit-depth is used)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">OutputBitDepthC(-d)</td>
+      <td style="text-align: center">0(Native)</td>
+      <td style="text-align: center">Specifies the chroma bit-depth of the reconstructed YUV file(the value 0 in-dicates that the native bit-depth is used)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>除上面列出的几个参数外，还有与 SEI 和 ColourSpace 相关的几个参数，再此并未列出。</p>
+
+<h2 id="tappdecoder--1">TAppDecoder 源码分析</h2>
+
+<p>HM 中关于解码器 TAppDecoder 的函数调用关系如下图所示。参考<a href="http://blog.csdn.net/leixiaohua1020/article/details/49912013">HEVC官方软件HM源代码简单分析-解码器TAppDecoder</a>。</p>
+
+<p><img src="/images/TAppDecoder/TAppDecoder_Function_Flow.png"></p>
+
+<p>Decode 过程大致可分为如下几部分：</p>
+
+<ol>
+  <li>创建 decoder 类(create application decoder class)</li>
+  <li>配置解析(parse configuration)</li>
+  <li>计算解码开始时间(starting time)</li>
+  <li>解码(call decoding function)</li>
+  <li>计算解码结束时间(ending time)</li>
+  <li>销毁 decoder 类(destroy application decoder class)</li>
+</ol>
+
+<h3 id="call--decoding-function">解码（call  decoding function）</h3>
+
+<p>解码的过程又可以细分为如下步骤：</p>
+
+<ol>
+  <li>创建并初始化内部类(create &amp; initialize internal classes)</li>
+  <li>解码 NALU (call actual decoding function)</li>
+  <li>环路滤波(Loop Filter)</li>
+  <li>删除分配的内存并销毁内部类(delete buffers and destroy internal classes)</li>
+</ol>
+
+<p>创建和初始化类直接调用如下函数即可。</p>
+
+<p><code>
+xCreateDecLib();
+xInitDecLib();
+</code></p>
+
+<p>解码 NALU 包括解码<code>VPS</code><code>SPS</code><code>PPS</code><code>SEI</code>和<code>Slice</code>等 NALU 单元，注意其中Parse NALU 的函数最终调用的是
+<code>TDecCavlc</code>类<code>parseVPS</code><code>parseSPS</code><code>parsePPS</code><code>parseSliceHeader</code>来实现。</p>
+
+<p>环路滤波是调用<code>TDecTop</code>类的<code>executeLoopFilters</code>函数实现的。结束后会产生 decode 图像，之后就可将 decode 出的图像
+写到文件中。</p>
+
+<p>最后做一些清理工作：<br />
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  xFlushOutput( pcListPic );
+</span><span class='line'>  // delete buffers
+</span><span class='line'>  m_cTDecTop.deletePicBuffer();&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;// destroy internal classes
+</span><span class='line'>  xDestroyDecLib();</span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HM 源码分析（一）: Syntax Parse 函数解析]]></title>
+    <link href="http://lazybing.github.io/blog/2015/10/01/hm-source-code-analyse0/"/>
+    <updated>2015-10-01T07:48:51-07:00</updated>
+    <id>http://lazybing.github.io/blog/2015/10/01/hm-source-code-analyse0</id>
+    <content type="html"><![CDATA[<p>在 HM 的源码分析中，经常会用到读取 syntax 值，此时用到 <code>xReadCode</code> <code>xReadUvlc</code> <code>xReadSvlc</code> <code>xReadFlag</code> 的函数，这篇就主要分析这几个函数的源码。
+<!--more--></p>
+
+<p>对 syntax 的分析，主要是由<code>SyntaxElementParser</code>完成，位于<code>lib\libdecoder\SyntaxElementParser.h</code>中。
+<figure class='code'><figcaption><span>syntaxelementparser.h </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='C++'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-readcodelength-code-name-----xreadcode--length-code-&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">READ_CODE</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>     <span class="n">xReadCode</span> <span class="p">(</span> <span class="n">length</span><span class="p">,</span> <span class="n">code</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">READ_UVLC</span><span class="p">(</span>        <span class="n">code</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>     <span class="n">xReadUvlc</span> <span class="p">(</span>         <span class="n">code</span> <span class="p">)</span>
+</span><span class='line'><span class="cp">#define READ_SVLC(        code, name)     xReadSvlc (         code )</span>
+</span><span class='line'><span class="cp">#define READ_FLAG(        code, name)     xReadFlag (         code )&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">class</span> <span class="nc">SyntaxElementParser</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">protected</span><span class="o">:</span>
+</span><span class='line'>	<span class="n">TComInputBitstream</span> <span class="o">*</span> <span class="n">m_pcBitstream</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">SyntaxElementParser</span><span class="p">()</span>
+</span><span class='line'><span class="o">:</span> <span class="n">m_pcBitstream</span><span class="p">(</span><span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'><span class="p">{};</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">virtual</span> <span class="o">~</span><span class="n">SyntaxElementParser</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadCode</span><span class="p">(</span><span class="n">UInt</span> <span class="n">length</span><span class="p">,</span> <span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadUvlc</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadSvlc</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">xReadFlag</span><span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">val</span><span class="p">);</span> <span class="k">public</span><span class="o">:</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">setBitstream</span><span class="p">(</span><span class="n">TComInputBitstream</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span> <span class="n">m_pcBitstream</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="n">TComInputBitstream</span><span class="o">*</span> <span class="n">getBitstream</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">m_pcBitstream</span><span class="p">;</span> <span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>其实读取 syntax 值的这几个函数，主要是 SPEC 中第 9 部分的代码实现。这几个函数共同调用了<code>Read</code>函数。
+<figure class='code'><figcaption><span>TcomBitStream.cpp </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+</pre></td><td class='code'><pre><code class='C++'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">Void</span> <span class="n">TcomInputBitstream</span><span class="o">::</span><span class="n">read</span> <span class="p">(</span><span class="n">UInt</span> <span class="n">uiNumberOfBits</span><span class="p">,</span> <span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ruiBits</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">assert</span><span class="p">(</span> <span class="n">uiNumberOfBits</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mi">32</span> <span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">m_numBitsRead</span> <span class="o">+=</span> <span class="n">uiNumberOfBits</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* NB, bits are extracted from the MSB of each byte. &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">  UInt retval = 0;</span>
+</span><span class='line'><span class="cm">  if (uiNumberOfBits &amp;lt;= m_num_held_bits)</span>
+</span><span class='line'><span class="cm">  {</span>
+</span><span class='line'><span class="cm">    /&lt;/em&gt; n=1, len(H)=7:   -VHH HHHH, shift_down=6, mask=0xfe</span>
+</span><span class='line'><span class="cm">     * n=3, len(H)=7:   -VVV HHHH, shift_down=4, mask=0xf8</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="n">retval</span> <span class="o">=</span> <span class="n">m_held_bits</span><span class="err"> »</span> <span class="p">(</span><span class="n">m_num_held_bits</span> <span class="o">-</span> <span class="n">uiNumberOfBits</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">retval</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xff</span> <span class="err">« </span><span class="n">uiNumberOfBits</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">m_num_held_bits</span> <span class="o">-=</span> <span class="n">uiNumberOfBits</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">ruiBits</span> <span class="o">=</span> <span class="n">retval</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* all num_held_bits will go into retval</span>
+</span><span class='line'><span class="cm">   *   =&amp;gt; need to mask leftover bits from previous extractions</span>
+</span><span class='line'><span class="cm">   *   =&amp;gt; align retval with top of extracted word &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">  /&lt;/em&gt; n=5, len(H)=3: —- -VVV, mask=0x07, shift_up=5-3=2,</span>
+</span><span class='line'><span class="cm">   * n=9, len(H)=3: —- -VVV, mask=0x07, shift_up=9-3=6 */</span>
+</span><span class='line'>  <span class="n">uiNumberOfBits</span> <span class="o">-=</span> <span class="n">m_num_held_bits</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">retval</span> <span class="o">=</span> <span class="n">m_held_bits</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xff</span> <span class="err">« </span><span class="n">m_num_held_bits</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">retval</span> <span class="err">«</span><span class="o">=</span> <span class="n">uiNumberOfBits</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* number of whole bytes that need to be loaded to form retval &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">  /&lt;/em&gt; n=32, len(H)=0, load 4bytes, shift_down=0</span>
+</span><span class='line'><span class="cm">   * n=32, len(H)=1, load 4bytes, shift_down=1</span>
+</span><span class='line'><span class="cm">   * n=31, len(H)=1, load 4bytes, shift_down=1+1</span>
+</span><span class='line'><span class="cm">   * n=8,  len(H)=0, load 1byte,  shift_down=0</span>
+</span><span class='line'><span class="cm">   * n=8,  len(H)=3, load 1byte,  shift_down=3</span>
+</span><span class='line'><span class="cm">   * n=5,  len(H)=1, load 1byte,  shift_down=1+3</span>
+</span><span class='line'><span class="cm">   */</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">aligned_word</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">num_bytes_to_load</span> <span class="o">=</span> <span class="p">(</span><span class="n">uiNumberOfBits</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="err"> »</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">assert</span><span class="p">(</span><span class="n">m_fifo_idx</span> <span class="o">+</span> <span class="n">num_bytes_to_load</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">m_fifo</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">size</span><span class="p">());</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">switch</span> <span class="p">(</span><span class="n">num_bytes_to_load</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>  <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="n">aligned_word</span>  <span class="o">=</span> <span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">]</span> <span class="err">« </span><span class="mi">24</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">aligned_word</span> <span class="o">|=</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">]</span> <span class="err">« </span><span class="mi">16</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">aligned_word</span> <span class="o">|=</span> <span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">]</span> <span class="err">« </span> <span class="mi">8</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">aligned_word</span> <span class="o">|=</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">m_fifo</span><span class="p">)[</span><span class="n">m_fifo_idx</span><span class="o">++</span><span class="p">];</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* resolve remainder bits */</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">next_num_held_bits</span> <span class="o">=</span> <span class="p">(</span><span class="mi">32</span> <span class="o">-</span> <span class="n">uiNumberOfBits</span><span class="p">)</span> <span class="o">%</span> <span class="mi">8</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* copy required part of aligned_word into retval */</span>
+</span><span class='line'>  <span class="n">retval</span> <span class="o">|=</span> <span class="n">aligned_word</span><span class="err"> »</span> <span class="n">next_num_held_bits</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* store held bits */</span>
+</span><span class='line'>  <span class="n">m_num_held_bits</span> <span class="o">=</span> <span class="n">next_num_held_bits</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">m_held_bits</span> <span class="o">=</span> <span class="n">aligned_word</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">ruiBits</span> <span class="o">=</span> <span class="n">retval</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>关于<code>read</code>函数其实主要分为两大来，一类是 numberofbits &lt; num_held_bits，此时
+只要通过简单的将 held_bits 左右移外加mark动作就能够把该syntax的值获得。如图1.
+另一类则是 numberofbits &gt; num_held_bits 时，需要重新加载新的bitstream进来，并根据 numberofbits 和 num_held_bits 差值的大小决定
+加载几个 byte。</p>
+
+<p><img src="/images/HM/syntax_read.png"></p>
+
+<p><figure class='code'><figcaption><span>SyntaxElementParser.cpp </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+</pre></td><td class='code'><pre><code class='C++'><span class='line'><span class="n">Void</span> <span class="n">SyntaxElementParser</span><span class="o">::</span><span class="n">xReadCode</span> <span class="p">(</span><span class="n">UInt</span> <span class="n">uiLength</span><span class="p">,</span> <span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ruiCode</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">assert</span> <span class="p">(</span> <span class="n">uiLength</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span> <span class="p">);</span>
+</span><span class='line'>  <span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span> <span class="p">(</span><span class="n">uiLength</span><span class="p">,</span> <span class="n">ruiCode</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">Void</span> <span class="n">SyntaxElementParser</span><span class="o">::</span><span class="n">xReadUvlc</span><span class="p">(</span> <span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ruiVal</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">uiVal</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">uiCode</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">uiLength</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="n">uiCode</span> <span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">uiCode</span> <span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">uiLength</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span> <span class="o">!</span> <span class="p">(</span> <span class="n">uiCode</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">1</span> <span class="p">))</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="n">uiCode</span> <span class="p">);</span>
+</span><span class='line'>  <span class="n">uiLength</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span><span class="p">(</span> <span class="n">uiLength</span><span class="p">,</span> <span class="n">uiVal</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">uiVal</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">uiLength</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>   <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">ruiVal</span> <span class="o">=</span> <span class="n">uiVal</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">Void</span> <span class="n">SyntaxElementParser</span><span class="o">::</span><span class="n">xReadSvlc</span><span class="p">(</span> <span class="n">Int</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">riVal</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">uiBits</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="n">uiBits</span> <span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">uiBits</span> <span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">UInt</span> <span class="n">uiLength</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span> <span class="o">!</span> <span class="p">(</span> <span class="n">uiBits</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">1</span> <span class="p">))</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="n">uiBits</span> <span class="p">);</span>
+</span><span class='line'>  <span class="n">uiLength</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span><span class="p">(</span> <span class="n">uiLength</span><span class="p">,</span> <span class="n">uiBits</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">uiBits</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">uiLength</span><span class="p">);</span>
+</span><span class='line'><span class="n">riVal</span> <span class="o">=</span> <span class="p">(</span> <span class="n">uiBits</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="o">-</span><span class="p">(</span><span class="n">Int</span><span class="p">)(</span><span class="n">uiBits</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="mi">1</span><span class="p">)</span> <span class="o">:</span> <span class="p">(</span><span class="n">Int</span><span class="p">)(</span><span class="n">uiBits</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="mi">1</span><span class="p">);</span>   <span class="p">}</span>   <span class="k">else</span>   <span class="p">{</span>
+</span><span class='line'><span class="n">riVal</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>   <span class="p">}</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">Void</span> <span class="n">SyntaxElementParser</span><span class="o">::</span><span class="n">xReadFlag</span> <span class="p">(</span><span class="n">UInt</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ruiCode</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">m_pcBitstream</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">read</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ruiCode</span> <span class="p">);</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>其中的<code>xReadCode</code><code>xReadFlag</code>很好理解，此处不在说明，<code>xReadUvlc</code>和<code>xReadSvlc</code>分别是处理0阶指数哥伦布编码中对 ue(n) he 
+ se(n) 解析。该部分主要在 SPEC 的9.2 节。</p>
+
+<p>```
+leadingZeroBits = -1;
+for(b = 0; !b; leadingZeroBits++)
+    b = read_bits(1);</p>
+
+<p>codeNum = 2^leadingZeroBits -1 + read_bits(leadingZeroBits);
+```</p>
+
+<p>spec 中关于 ue 和 se 的计算有如下描述：</p>
+
+<blockquote>
+  <p>Depending on the descriptor, the value of a syntax element is derived as follows:
+If the syntax element is coded as ue(v), the value of the syntax element is equal to codeNum.
+Otherwise , the value of the syntax element is derived by invoking the mapping process for signed Exp-Golomb codes as specified in clause 9.2.2 with codeNum as input.</p>
+</blockquote>
+
+<p>关于 UE 和 SE 中关于 bit 和 syntax value 的对应关系如下：</p>
+
+<p><img src="/images/HM/goloboencode.png"></p>
+
+<p>与<code>SyntaxElementParser</code>相对应的是<code>SyntaxElementWrite</code>，其中包含了<code>xWriteCode</code> <code>xWriteUvlc</code> <code>xWriteSvlc</code> <code>xWriteFlag</code>四个函数。此处不在分析。</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HM 源码分析之帧内编码(二):帧内预测的实现]]></title>
+    <link href="http://lazybing.github.io/blog/2015/09/10/intra-prediction-coding/"/>
+    <updated>2015-09-10T07:29:40-07:00</updated>
+    <id>http://lazybing.github.io/blog/2015/09/10/intra-prediction-coding</id>
+    <content type="html"><![CDATA[
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HM源码分析之帧内编码（一）：帧内编码的原理]]></title>
+    <link href="http://lazybing.github.io/blog/2015/09/07/intra-prcture-prediction/"/>
+    <updated>2015-09-07T20:42:26-07:00</updated>
+    <id>http://lazybing.github.io/blog/2015/09/07/intra-prcture-prediction</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">预测编码的原理</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">帧内预测的模式</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">亮度模式的编码</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">色度模式的编码</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-4" id="markdown-toc-section-4">帧内预测的过程</a>    <ul>
+      <li><a href="#section-5" id="markdown-toc-section-5">相邻参考像素的获取</a></li>
+      <li><a href="#section-6" id="markdown-toc-section-6">参考像素的滤波</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">预测像素的计算</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>预测编码(Prediction Coding)是指利用已编码的一个或几个样本值，根据某种模型或方法，对
+当前的样本值进行预测，并对样本真实值和预测值之间的差值进行编码。</p>
+
+<!--more-->
+
+<h2 id="section">预测编码的原理</h2>
+
+<p>视频预测编码的主要思想是通过预测来消除像素间的相关性。根据参考像素位置的不同，视频
+预测编码技术主要分为两大类：</p>
+
+<ul>
+  <li>帧内预测，即利用当前图像内已编码像素生成预测值；</li>
+  <li>帧间预测，即利用当前图像之前已编码图像的重建像素生成预测值。</li>
+</ul>
+
+<p>预测编码的基本过程如下图所示：</p>
+
+<p>对于当前输入像素值 x(n), 首先，利用已编码像素的重建值得到当前像素的预测值 p(n).
+然后对二者的差值 e(n) 进行量化、熵编码，同时利用量化后的残差 e’(n) 与预测值 p(n) 得到
+当前像素的重建值 x’(n), 用于预测之后待编码的像素。</p>
+
+<p>对应的解码过程如右图所示，经过熵解码可得到当前像素预测误差的重建值 e’(n), 将其与预测值
+p(n) 想家即可得到当前像素的重建值 x’(n)。</p>
+
+<p><img src="/images/HM/prediction_coding.png"></p>
+
+<h2 id="section-1">帧内预测的模式</h2>
+
+<p>HEVC 亮度分量帧内预测支持 5 种大小的 PU: 4x4/8x8/16x16/32x32/64x64，其中每一种大小
+的 PU 都对应 35 种预测模式，包括 Planar 模式、DC 模式以及 33 种角度模式。所有预测模式
+都使用相同模板。如图。</p>
+
+<p><img src="/images/HM/hevc_prediction_model.png"></p>
+
+<p>表：帧内预测 35 种模式编号</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">帧内模式编号</th>
+      <th style="text-align: center">帧内模式名称</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">Planar 模式</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">DC 模式</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2~34</td>
+      <td style="text-align: center">33 种角度模式</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Planar 模式适用于像素值缓慢变化的区域，它使用水平和垂直方向的两个线性滤波器，并将二者
+的平均值作为当前块像素的预测值。DC 模式适用于大面积平坦区域，当前块预测值可由其左侧和上方
+参考像素的平均值得到。角度模式主要用于视频内容中不同方向的纹理。</p>
+
+<h3 id="section-2">亮度模式的编码</h3>
+
+<p>HEVC 标准建立了一个帧内预测模式候选列表 candModeList，表中有 3 个候选预测模式，用于存储相邻 PU 的预测
+模式。相邻 PU 的位置如下图所示。设 A 的预测模式为 ModeA, B 的预测模式为 ModeB。候选列表具体建立过程如下：</p>
+
+<p><img src="/images/HM/candidate_mode_list.png"></p>
+
+<p>(1) 若 ModeA 与 ModeB 相同，则分以下两种情况进行。</p>
+
+<ul>
+  <li>若 ModeA 和 ModeB 都为 Planar 或 DC 模式，则：<code>candModeList[0]</code>为 Planar 模式，<code>candModeList[1]</code>为 DC 模式，<code>candModeList[2]</code>为模式 26（垂直模式）。</li>
+  <li>若 ModeA 和 ModeB 都为角度模式，则：<code>candModeList[0]</code>为 ModeA，<code>candModeList[1]</code>和<code>candModeList[2]</code>为与 ModeA 相邻的两个模式。</li>
+</ul>
+
+<p>(2)  若 ModeA 与 ModeB 不同，则：<code>candModeList[0]</code>为 ModeA,<code>candModeList[1]</code>为 ModeB,<code>candModeList[2]</code>分为以下几种情况</p>
+
+<ul>
+  <li>若 ModeA 和 ModeB 都不是 Planar 模式，则<code>candModeList[2]</code>为 Planar 模式。</li>
+  <li>若 ModeA 和 ModeB 都不是 DC 模式，则<code>candModeList[2]</code>为 DC 模式。</li>
+  <li>否则<code>candModeList[2]</code>为模式 26(垂直模式)。</li>
+</ul>
+
+<p>当<code>candModeList</code>建立完成后，可利用该列表对当前 PU 模式信息进行编码，具体如下：</p>
+
+<p>(1) 若当前 PU 最优模式(记为 ModeC)在<code>candModeList</code>中出现，则只需要编码 ModeC 在<code>candModeList</code>中的位置即可。<br />
+(2) 若 ModeC 未在<code>candModeList</code>中出现，则按以下步骤编码 ModeC。</p>
+
+<ul>
+  <li>将<code>candModeList</code>中的候选模式按从小到大的顺序重新排列。</li>
+  <li>遍历重新排列后的 3 个候选模式，分别于 ModeC 进行比较，若<code>ModeC &gt;= candModeList[i]</code>则令 ModeC 自减1。遍历结束后对 ModeC 最终的值进行编码。</li>
+</ul>
+
+<h3 id="section-3">色度模式的编码</h3>
+
+<p>HEVC 色度分量帧内预测一共有5种模式： Planar 模式、垂直模式、水平模式、DC模式以及UI应亮度分量的预测模式。若对应亮度预测模式为前4种模式种的一种，则将其替换为角度预测模式种的模式34.<br />
+HEVC 直接对色度模式编号进行编码，具体方法如下：</p>
+
+<p>表 色度模式编号</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">色度模式</th>
+      <th style="text-align: center">亮度模式</th>
+      <th style="text-align: center"> </th>
+      <th style="text-align: center"> </th>
+      <th style="text-align: center"> </th>
+    </tr>
+    <tr>
+      <th style="text-align: center"> </th>
+      <th style="text-align: center">模式0（Planar）</th>
+      <th style="text-align: center">模式26（垂直）</th>
+      <th style="text-align: center">模式10（水平）</th>
+      <th style="text-align: center">模式1（DC）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">34</td>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">26</td>
+      <td style="text-align: center">34</td>
+      <td style="text-align: center">26</td>
+      <td style="text-align: center">26</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">34</td>
+      <td style="text-align: center">10</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">34</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="section-4">帧内预测的过程</h2>
+
+<p>HEVC 中，35 种预测模式是在 PU 的基础上定义的，而具体帧内预测过程的实现则是以 TU 为单位的。
+标准规定 PU 可以以四叉树的形式划分 TU，且一个 PU 内的所有 TU 共享同一种预测模式。HEVC 帧内预测可分为以下 3 个步骤：</p>
+
+<ul>
+  <li>判断当前 TU 相邻参考像素是否可用并做相对应的处理</li>
+  <li>对参考像素进行滤波</li>
+  <li>根据滤波后的参考像素计算当前 TU 的预测像素值</li>
+</ul>
+
+<h3 id="section-5">相邻参考像素的获取</h3>
+
+<p>当前 TU 大小为 NxN,其参考像素按区域可分为 5 部分:左下(A)、左侧(B)、左上(C)、上方(D)和右上(E)，一共 4N+1 个点。
+若当前 TU 位于图像边界，或 Slice、Tile的边界,则相邻参考像素可能会不存在或不可用。当参考像素不存在或不可用时,HEVC 标准
+会使用最邻近的像素进行填充。</p>
+
+<h3 id="section-6">参考像素的滤波</h3>
+
+<p>AVC 在帧内预测时对某些模式下的参考像素进行了滤波，以更好地利用邻近像素之间的相关性，提高预测精度。HEVC 对其进行了扩展：首先 HEVC针对不同
+大小的 TU 选择了不同数量的模式进行滤波；其次，在 AVC 滤波方法的基础上，HEVC 增加使用了一种强滤波方法。</p>
+
+<h3 id="section-7">预测像素的计算</h3>
+
+<p>对于不同的模式下，参考像素的计算方式不同，以 Planar 模式为例，预测像素可以看成是水平、垂直两个方向预测值得平均值。DC 模式、角度模式在此不在详述。</p>
+
+<p>参考文献:<a href="https://www.amazon.cn/%E5%9B%BE%E4%B9%A6/dp/B00QXIN7B2/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1487686378&amp;sr=1-1&amp;keywords=%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91">新一代高效视频编码H.265/HEVC:原理、标准与实现</a></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HM源码分析（一）：HEVC编码结构]]></title>
+    <link href="http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure/"/>
+    <updated>2015-09-04T09:57:17-07:00</updated>
+    <id>http://lazybing.github.io/blog/2015/09/04/the-hierarchical-of-coding-structure</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">编码分层处理架构</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">码流的语法架构</a>    <ul>
+      <li><a href="#vps-syntax-" id="markdown-toc-vps-syntax-">VPS syntax 分析</a></li>
+      <li><a href="#sps-syntax-" id="markdown-toc-sps-syntax-">SPS syntax 分析</a></li>
+      <li><a href="#pps-syntax-" id="markdown-toc-pps-syntax-">PPS syntax 分析</a></li>
+      <li><a href="#sei-syntax-" id="markdown-toc-sei-syntax-">SEI syntax 分析</a></li>
+      <li><a href="#profile-tier-and-level-syntax-" id="markdown-toc-profile-tier-and-level-syntax-">Profile Tier And Level syntax 分析</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
+<!--more--></p>
+
+<h2 id="section">编码分层处理架构</h2>
+<p>GOP(Group Of Pictures,GOP):若干时间连续的图像构成视频序列，视频序列分割成的图像组就为 GOP。GOP 分为封闭式 GOP 和 开放式 GOP,其中封闭式 GOP 其第一帧为 IDR, GOP内的图像不会参考到其他 GOP 内图像;开放式 GOP 只有第一个 GOP 内的第一帧才是 IDR，后续的 GOP 中的第一个帧内编码图像为 non-IDR，会参考前一个 GOP 中的已编码图像做参考图像。</p>
+
+<p><img src="/images/HM/gop_type.png"></p>
+
+<p>Slice,每个 GOP 又被划分为多个 Slice 片，每个片由一个或多个片段(Slice Segment, SS) 组成。</p>
+
+<p>CTU(Coding Tree Unit, CTU):每个 CTU 包括一个亮度树形编码块(Coding Tree Block, CTB) 和两个色差树形编码块。</p>
+
+<p>一个 SS 在编码时，先被分割为相同大小的 CTU ，每个CTU 按照四叉树分割方式被划分为不同类型的编码单元(Coding Unit, CU)。</p>
+
+<p><img src="/images/HM/slice_cu.png"></p>
+
+<h2 id="section-1">码流的语法架构</h2>
+<p>VPS(Video Parameter Set):视频参数集，主要用于传输视频分级信息，包含多个子层和操作点共享的语法元素、会话所需要的有关操作的关键信息（档次/级别等）、其他不属于 SPS 的操作点特性信息（如HRD）。</p>
+
+<p>SPS(Sequence Parameter Set):序列参数集，主要包含一个 CVS 中所有编码图像的共享编码参数。如图像格式信息（采样格式/图像分辨率/量化深度/Crop信息）、编码参数信息（编码块/变换块的尺寸等）、与参考图像相关的信息、可视话可用性信息(VUI)等。</p>
+
+<p>PPS(Picture Parameter Set):图像参数集。主要包括编码工具的可用性标志、量化过程相关的句法元素、Tile 相关句法元素、去方块滤波相关句法元素、片头中的控制信息。</p>
+
+<p><img src="/images/HM/vps_sps_pps.png"></p>
+
+<p>由上图可看出，SPS 会根据 parse 出来的<code>VPS index</code>来引用 VPS 的信息，同样的 PPS 会根据 parse 出来的<code>SPS index</code>来引用 PPS 的信息。当 SPS 中包含有 VPS 的信息时，使用 SPS 的信息，VPS内的信息失效，同样的当 PPS 中含有 SPS 的信息时，使用 PPS 中的信息，SPS 中的信息失效。</p>
+
+<p>参考内容：<a href="https://www.amazon.cn/%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81H-265-HEVC-%E5%8E%9F%E7%90%86-%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0-%E4%B8%87%E5%B8%85/dp/B00QXIN7B2/ref=sr_1_1?s=books&amp;ie=UTF8&amp;qid=1473127274&amp;sr=1-1&amp;keywords=%E6%96%B0%E4%B8%80%E4%BB%A3%E9%AB%98%E6%95%88%E8%A7%86%E9%A2%91%E7%BC%96%E7%A0%81h.265+hevc+%E5%8E%9F%E7%90%86+%E6%A0%87%E5%87%86%E4%B8%8E%E5%AE%9E%E7%8E%B0">新一代高效视频编码H.265/HEVC:原理、标准与实现</a>第三章编码结构。</p>
+
+<p><a href="https://hevc.hhi.fraunhofer.de/">HM</a>中关于<code>VPS</code> <code>SPS</code> <code>PPS</code>编码结构的介绍主要在<code>lib\tlibcommon\TComSlice.h</code>内，稍后会对它们进行详细分析。</p>
+
+<p>官方参考 code 中，有定义如下的类结构。</p>
+
+<p><code>TComReferencePictureSet</code><code>TComRPSList</code><code>TComScalingList</code><code>ProfileTierLevel</code>
+<code>TComPTL</code><code>HrdSubLayerInfo</code><code>TComHRD</code><code>TimingInfo</code><code>TComVPS</code><code>Window</code><code>TComVUI</code>
+<code>TComSPS</code><code>TComRefPicListModification</code><code>TComPPS</code><code>TComSlice</code>。</p>
+
+<p>它们之间的结构关系如下：</p>
+
+<p><img src="/images/HM/HEVC.png"></p>
+
+<h3 id="vps-syntax-">VPS syntax 分析</h3>
+
+<p>VPS 中有关于 timing info 的信息，其中的 syntax <code>vps_timing_info_present_flag</code>表示是否含有 timing info 信息。
+其中的<code>vps_num_units_in_tick</code><code>vps_time_scale</code>可以用于计算 FPS，<code>FPS = vps_time_scale / vps_num_units_in_tick</code>,其实FPS的计算，除了在 VPS 中
+有这样的信息外，还在 SPS 中同样有类似的信息<code>FPS = sps_vui_time_scale/sps_vui_num_units_in_tick</code>。</p>
+
+<p>VPS 中有关 timing info 的信息，除了可以计算 FPS 外，还有<code>hrd_parameters</code>和<code>profile_tier_level</code>等信息。</p>
+
+<h3 id="sps-syntax-">SPS syntax 分析</h3>
+
+<p>跟 VPS 一样，SPS 中同样包含了<code>profile_tier_level</code>的信息。除此之外，还有<code>pic_width_in_luma_samples</code>和
+<code>pic_height_in_luma_samples</code>分别代表了视频的宽高信息，例如(1920x1080)。代表对解码图像裁剪输出的
+ conformance_window 信息，包括<code>conf_win_left_offset</code><code>conf_win_right_offset</code><code>conf_win_top_offset</code>
+ <code>conf_win_bottom_offset</code>。代表码流 bit_depth 的<code>bit_depth_luma_minus8</code><code>bit_depth_chroma_minus8</code>等。
+ 还包括<code>scaling_list_data</code>,表示参考帧信息的<code>short_term_ref_pic_set</code>和<code>long_term_ref_pics</code>。可视化可用信息
+ <code>vui_parameters</code>等等。</p>
+
+<h3 id="pps-syntax-">PPS syntax 分析</h3>
+
+<p>PPS 中同样包含了<code>scaling_list_data</code>、QP信息(如<code>init_qp_minus26</code><code>pps_cb_qp_offset</code><code>pps_cr_qp_offset</code>)、Tile 相关信息（如<code>num_tile_columns_minus1</code><code>num_tile_rows_minus1</code>）、
+与去方块滤波相关信息(如<code>deblocking_filter_override_enabled_flag</code>)。</p>
+
+<h3 id="sei-syntax-">SEI syntax 分析</h3>
+
+<p>目前遇到的 SEI 信息包括<code>pic_timing</code><code>hdr_compatibility_info</code><code>content_light_level_info</code>等。</p>
+
+<h3 id="profile-tier-and-level-syntax-">Profile Tier And Level syntax 分析</h3>
+
+<p>包含了用于指示图片是 progressive 和 interlaced 的<code>general_progressive_source_flag</code>和<code>general_interlaced_$  source_flag</code>。其中的
+<code>Profile</code>包括 Main、Main10、STILLPICTURE等。<code>Tier</code>包括 Main、HIGH。<code>Level</code>又包括<code>LEVLE1</code>、<code>LEVLE2</code>…<code>LEVLE6</code>等，不同的tier和level对应不同的
+<code>Max luma sample rate</code><code>Max luma picture size</code><code>Max bit rate</code>和<code>picture resolution</code>等信息。</p>
+
+]]></content>
+  </entry>
+  
+</feed>

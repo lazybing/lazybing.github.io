@@ -1,0 +1,730 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>媒体文件格式分析之AVI - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="基本数据结构 AVI 文件类型 AVI 文件布局 MainAVIHeader(avih) Stream Header List Stream Header List Element(strh) Stream Header List Element(strf) Stream Header List &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/07/24/avi-parse-format/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">媒体文件格式分析之AVI</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-07-24T01:04:52-07:00'><span class='date'>2016 年 07 月 24 日</span> <span class='time'>1:04 am</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">基本数据结构</a></li>
+  <li><a href="#avi-" id="markdown-toc-avi-">AVI 文件类型</a></li>
+  <li><a href="#avi--1" id="markdown-toc-avi--1">AVI 文件布局</a>    <ul>
+      <li><a href="#mainaviheaderavih" id="markdown-toc-mainaviheaderavih">MainAVIHeader(avih)</a></li>
+      <li><a href="#stream-header-list" id="markdown-toc-stream-header-list">Stream Header List</a></li>
+      <li><a href="#stream-header-list-elementstrh" id="markdown-toc-stream-header-list-elementstrh">Stream Header List Element(strh)</a></li>
+      <li><a href="#stream-header-list-elementstrf" id="markdown-toc-stream-header-list-elementstrf">Stream Header List Element(strf)</a></li>
+      <li><a href="#stream-header-list-elementindx" id="markdown-toc-stream-header-list-elementindx">Stream Header List Element(indx)</a></li>
+      <li><a href="#stream-header-list-elementstrn" id="markdown-toc-stream-header-list-elementstrn">Stream Header List Element(strn)</a></li>
+    </ul>
+  </li>
+  <li><a href="#avi-indexes" id="markdown-toc-avi-indexes">AVI Indexes</a>    <ul>
+      <li><a href="#old-style-index" id="markdown-toc-old-style-index">old style index</a></li>
+      <li><a href="#open-dml-index" id="markdown-toc-open-dml-index">Open-DML Index</a></li>
+      <li><a href="#using-the-open-dml-index" id="markdown-toc-using-the-open-dml-index">Using the Open-DML index</a></li>
+    </ul>
+  </li>
+  <li><a href="#the-movi---lists" id="markdown-toc-the-movi---lists">The movi - Lists</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">参考文献</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">AVI</a> 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。
+<!--more--></p>
+
+<h2 id="section">基本数据结构</h2>
+
+<p>AVI 文件中有两种类型结构:Chunks 和 Lists。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">//Chunks
+</span><span class="line">typedef struct {
+</span><span class="line">    DWORD dwFourCC;
+</span><span class="line">    DWORD dwSize;
+</span><span class="line">    BYTE  data[dwSize];
+</span><span class="line">}CHUNK;
+</span><span class="line">//Lists
+</span><span class="line">typedef struct{
+</span><span class="line">    DWORD dwList;
+</span><span class="line">    DWORD dwSize;
+</span><span class="line">    DWORD dwFourCC;
+</span><span class="line">    BYTE  data[dwSize - 4];
+</span><span class="line">}LIST;</span></code></pre></td></tr></table></div></figure>
+
+<p>一个包含了<code>video</code>、<code>audio</code>或<code>subtitle</code>数据的<code>chunk</code>使用一个<code>dwFourCC</code>，
+<code>dwFourCC</code>包含 2 个十六进制数字表示 stream number，2 个字母表示数据类型( dc 表示 video， wb 表示 audio, tx 表示 text)。
+<code>dwFourCC</code>和<code>dwSize</code>在<code>Chunks</code>和<code>Lists</code>中有相同的含义。</p>
+
+<p><code>dwFourCC</code>描述chunk 的类型（如<code>hdrl</code>表示 <code>header list</code>），<code>dwSize</code>表示该 chunk 或 list 的大小，
+包含<code>dwSize</code>后的所有 byte。在 List 中，<code>dwSize</code>包含了<code>dwFourCC</code>所占有的4 bytes.</p>
+
+<p><code>dwList</code>的值可以是<code>RIFF（RIFF-List</code>或<code>LIST(List)</code>。</p>
+
+<h2 id="avi-">AVI 文件类型</h2>
+
+<p>通常来讲，有 3 种类型的 AVI 文件：</p>
+
+<ul>
+  <li>AVI 1.0, 最初始的 AVI 文件类型。</li>
+  <li>Open-DML, AVI 文件格式的扩展。1.02版本相对于1.0版本有两个提高：基本没有文件大小的限制、负载降低了33%。</li>
+  <li>Hybride-Files，Open-DML 文件因为兼容的原因有个额外的限制，Hybride-Files 虽然不是官方致命的文件类型，但确实是一个不错的类型。</li>
+</ul>
+
+<h2 id="avi--1">AVI 文件布局</h2>
+<p>一个<code>dwFourCC=AVI</code>的<code>RIFF-List</code>称为<code>RIFF-AVI-List</code>，
+一个<code>dwFourCC=AVIX</code>的<code>RIFF-List</code>称为<code>RIFF-AVIX-List</code>。</p>
+
+<p>每个 AVI 文件都有如下布局：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">RIFF AVI    //mandatory
+</span><span class="line">{RIFF AVIX} //only for Open-DML files</span></code></pre></td></tr></table></div></figure>
+
+<p>并非之受限于 uint32 的限制，文件大小的极限并非 4G,而是</p>
+
+<ul>
+  <li>对于 AVI 1.0: sizeof(RIFF-AVI) &lt; 2G</li>
+  <li>对于 Open-DML, sizeof(RIFF-AVI) &lt; 1G(!!), sizeof(RIFF-AVIX) &lt; 2G</li>
+</ul>
+
+<p>一般来讲，RIFF-AVI-Lists被创建的越小越好。</p>
+
+<h3 id="mainaviheaderavih">MainAVIHeader(avih)</h3>
+
+<p><code>avih</code>结构定义如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct
+</span><span class="line">{
+</span><span class="line">    DWORD dwMicroSecPerFrame;   //frame display rate(or 0)
+</span><span class="line">    DWORD dwMaxBytesPerSec;     //max transfer rate
+</span><span class="line">    DWORD dwPaddingGranularity; //pad to multiples of this size
+</span><span class="line">    DWORD dwFlags               //the ever-present flags
+</span><span class="line">    DWORD dwTotalFrames;        //frames in file
+</span><span class="line">    DWORD dwInitialFrames;
+</span><span class="line">    DWORD dwStreams;
+</span><span class="line">    DWORD dwSuggestedBufferSize;
+</span><span class="line">
+</span><span class="line">    DWORD dwWidth;
+</span><span class="line">    DWORD dwHeight;
+</span><span class="line">
+</span><span class="line">    DWORD dwReserved[4];
+</span><span class="line">}MainAVIHeader;</span></code></pre></td></tr></table></div></figure>
+<ul>
+  <li>dwMicroSecPerFrame 以微妙为单位，包含了一个视频帧的持续时间。该值可以被忽略。注意，某些程序中可能会把它写成 framerate 值，因此 dwMicroSecPerFrame 并不可靠。</li>
+  <li>dwMaxBytesPerSec 文件中最大的数据率，该值同样的不是特别重要。</li>
+  <li>dwPaddingGranularity 填充的数据。</li>
+  <li>dwFlags <code>AVIF_HASINDEX</code>（该文件有index）、<code>AVIF_MUSTUSEINDEX</code>（）、<code>AVIF_ISINTERLEAVED</code> <code>AVIF_WASCAPTUREFILE</code> <code>AVIF_COPYRIGHTED</code> <code>AVIF_TRUSTCKTYPE</code>。</li>
+  <li>dwTotalFrames 包含了<code>RIFF-AVI list</code>中视频帧数。如果文件中包含<code>RIFF-AVIX-Lists</code>，它不会包含其中的视频帧。因为某些<code>muxer</code>会写一些错误的值，因此该值同样的不可靠。</li>
+  <li>dwInitialFrames 忽略</li>
+  <li>dwStreams 文件中<code>streams</code>的数量。</li>
+  <li>dwSuggestedBufferSize 文件chunks 所需要的内存大小。同样不要高估它的可靠性。</li>
+  <li>dwWidth 视频的宽。</li>
+  <li>dwHeight 视频的高。</li>
+</ul>
+
+<h3 id="stream-header-list">Stream Header List</h3>
+
+<p>针对每个<code>stream</code>都有一个<code>strl</code>，如果<code>strl</code>的数量与<code>MainAVIHeader::dwStreams</code>不同，就需要发出一个<code>fatal error report</code>。</p>
+
+<h3 id="stream-header-list-elementstrh">Stream Header List Element(strh)</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct{
+</span><span class="line">    FOURCC fccType;
+</span><span class="line">    FOURCC fccHandler;
+</span><span class="line">    DWORD  dwFlags;
+</span><span class="line">    WORD   wPriority;
+</span><span class="line">    WORD   wLanguage;
+</span><span class="line">    DWORD  dwInitialFrames;
+</span><span class="line">    DWORD  dwScale;
+</span><span class="line">    DWORD  dwRate;  // dwRate / dwScale == samples /second
+</span><span class="line">    DWORD  dwStart;
+</span><span class="line">    DWORD  dwLength;  //In units above
+</span><span class="line">    DWORD  dwSuggestedBufferSize;
+</span><span class="line">    DWORD  dwQuality;
+</span><span class="line">    DWORD  dwSampleSize;
+</span><span class="line">    RECT   rcFrame;
+</span><span class="line">}AVIStreamHeader;</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>fccType <code>vids</code>代表 video, <code>auds</code>代表 audio, <code>txts</code>代表 subtitle。</li>
+  <li>fccHandler</li>
+  <li>dwFlags <code>AVISF_DISABLED</code> <code>AVISF_VIDEO_PALCHANGES</code></li>
+  <li>dwInitialFrames</li>
+  <li>dwRate / dwScale = samples / second(audio) or frames / second(video)</li>
+  <li>dwStart</li>
+  <li>dwLength</li>
+  <li>dwSuggestedBufferSize</li>
+  <li>dwQuality</li>
+  <li>dwSampleSize</li>
+</ul>
+
+<h3 id="stream-header-list-elementstrf">Stream Header List Element(strf)</h3>
+
+<p><code>strf</code>的结构依据媒体类型。对于 video，使用<code>BITMAPINFOHEADER</code>结构，而 audion，使用<code>WAVEFORMATEX</code>结构。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct tagBITMAPINFOHEADER{
+</span><span class="line">    DWORD biSize;
+</span><span class="line">    LONG  biWidth;
+</span><span class="line">    LONG  biHeight;
+</span><span class="line">    WORD  biPlanes;
+</span><span class="line">    WORD  biBitCount;
+</span><span class="line">    DWORD biCompression;
+</span><span class="line">    DWORD biSizeImage;
+</span><span class="line">    LONG  biXPelsPerMeter;
+</span><span class="line">    LONG  biYPelsPerMeter;
+</span><span class="line">    DWORD biClrUsed;
+</span><span class="line">    DWORD biClrImportant;
+</span><span class="line">}BITMAPINFOHEADER, *PBITMAPINFOHEADER;</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>biSize  该结构体所需要的 byte 大小。</li>
+  <li>biWidth 图像的宽度。如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，<code>biWidth</code>成员相应的指解压缩后的<code>JPEG</code>或<code>PNG</code>图像文件的宽。</li>
+  <li>biHeight 位图的高度。如果<code>biHeight</code>是正数，位图是自底向上的<code>DIB</code>,它的原点是右下角地点；。如果<code>biHeight</code>是正数，位图是自顶向下的<code>DIB</code>,它的原点是右上角地点；
+如果<code>biHeight</code>是负数，<code>biCompression</code>要么是<code>BI_RGB</code>或<code>BI_BITFIELDS</code>，自顶向下的<code>DIB</code>不能被压缩。
+如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，则<code>biHeight</code>程序分别指解压缩后的<code>JPEG</code>或<code>PNG</code>图像的高。</li>
+  <li>biPlanes 目标设备的<code>planes</code>的数量，该值必须是1。</li>
+  <li>biBitCount 每个像素所用的 bit 数，<code>BITMAPINFOHEADER</code>的成员<code>biBitCount</code>决定了每个 pixel 所占的 bit 数、以及位图中表示颜色所能用到的最大数。该值可以是<code>0/1/4/8/16/24/32</code>。</li>
+  <li>biCompression 压缩的自底向上的位图的压缩类型，可以是<code>BI_RGB</code><code>BI_RLE8</code><code>BI_RLE4</code><code>BI_BITFIELDS</code><code>BI_JPEG</code><code>BI_PNG</code>.</li>
+  <li>biSizeImage 图像的大小，单位 byte。如果是<code>BI_RGB</code>位图，该值被设置为0。如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，该值分别指示 JPEG 或 PNG 图像的大小。</li>
+  <li>biXPelsPerMeter 水平分辨率。</li>
+  <li>biYPelsPerMeter 垂直分辨率。</li>
+  <li>biClrUsed 颜色表中该位图实际使用的颜色指针。</li>
+  <li>biClrImportant</li>
+</ul>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct{
+</span><span class="line">    WORD  wFormatTag;
+</span><span class="line">    WORD  nChannels;
+</span><span class="line">    DWORD nSamplesPerSec;
+</span><span class="line">    DWORD nAvgBytesPerSec;
+</span><span class="line">    WORD  nBlocAlign;
+</span><span class="line">    WORD  wBitsPerSample;
+</span><span class="line">    WORD  cbSize;
+</span><span class="line">}WAVEFORMATEX;</span></code></pre></td></tr></table></div></figure>
+<p>(待续…)</p>
+
+<h3 id="stream-header-list-elementindx">Stream Header List Element(indx)</h3>
+
+<p>该结构请看下面的<code>AVI index</code>小结。</p>
+
+<h3 id="stream-header-list-elementstrn">Stream Header List Element(strn)</h3>
+
+<p>该部分包含了<code>stream</code>的的名字。该名字只能使用标准的<code>ASCII</code>，尤其不能使用<code>UTF-8</code>。</p>
+
+<h2 id="avi-indexes">AVI Indexes</h2>
+
+<h3 id="old-style-index">old style index</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">AVIINDEXENTRY index_entry[n]  
+</span><span class="line">typedef struct{
+</span><span class="line">    DWORD ckid;
+</span><span class="line">    DWORD dwFlags;
+</span><span class="line">    DWORD dwChunkOffset;
+</span><span class="line">    DWORD dwChunkLength;
+</span><span class="line">}AVIINDEXENTRY;</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="open-dml-index">Open-DML Index</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">typedef struct _aviindex_chunk{
+</span><span class="line">    FOURCC fcc;
+</span><span class="line">    DWORD  cb;
+</span><span class="line">    WORD   wLongsPerEntry;
+</span><span class="line">    BYTE   bIndexSubType;
+</span><span class="line">    BYTE   bIndexType;
+</span><span class="line">    DWORD  nEntriesInUse;
+</span><span class="line">    DWORD  dwChunkId;
+</span><span class="line">    DWORD  dwReserved[3];
+</span><span class="line">    struct _aviindex_entry{
+</span><span class="line">        DWORD adw[wLongsPerEntry];
+</span><span class="line">    }aIndex[];
+</span><span class="line">}AVIINDEXCHUNK;</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="using-the-open-dml-index">Using the Open-DML index</h3>
+
+<h2 id="the-movi---lists">The movi - Lists</h2>
+
+<p><code>Movi-List</code>包含<code>Video</code><code>Audio</code><code>Subtitle</code>和<code>index data</code>。它们可以打包进<code>rec-List</code>。如：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">LIST movi
+</span><span class="line">    LIST rec
+</span><span class="line">        01wb
+</span><span class="line">        02wb
+</span><span class="line">        03dc
+</span><span class="line">    LIST rec
+</span><span class="line">        01wb
+</span><span class="line">        02wb
+</span><span class="line">    LIST rec
+</span><span class="line">        ...
+</span><span class="line">        ...
+</span><span class="line">        ix01
+</span><span class="line">        ix02
+</span><span class="line">        ...</span></code></pre></td></tr></table></div></figure>
+<p>其中的<code>chunks</code> ID 分别定义如下：</p>
+
+<ul>
+  <li>..wb : audio chunk</li>
+  <li>..dc : video chunk</li>
+  <li>..tx : subtitle chunk</li>
+  <li>ix.. : standard index block</li>
+</ul>
+
+<h2 id="section-1">参考文献</h2>
+
+<ol>
+  <li><a href="http://www.ezr8.com/avi.html">What is avi?</a></li>
+  <li><a href="http://pvdtools.sourceforge.net/aviformat.txt">BETA DOCUMENTATION OF RIFF-AVI FILE FORMAT</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">Audio Video Interleave</a></li>
+  <li><a href="http://blog.csdn.net/jszj/article/category/614875">AVI 文件格式</a></li>
+  <li><a href="http://blog.csdn.net/njuitjf/article/details/5680632">AVI 文件解析</a></li>
+  <li><a href="https://www.ffmpeg.org/doxygen/0.6/avidec_8c-source.html">FFmpeg AVI</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-07-24T01:04:52-07:00'><span class='date'>2016 年 07 月 24 日</span> <span class='time'>1:04 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/07/24/avi-parse-format/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/07/24/avi-parse-format/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/07/24/flv-parse/" title="Previous Post: 媒体文件格式分析之FLV">&laquo; 媒体文件格式分析之FLV</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/07/26/mp4-parse-format/" title="Next Post: 媒体文件格式分析之MP4">媒体文件格式分析之MP4 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2016/07/24/avi-parse-format" data-title="媒体文件格式分析之AVI" data-url="http://lazybing.github.io/blog/2016/07/24/avi-parse-format//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/12/23/code-complete/">Code Complete</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/12/22/addr2line-use/">Addr2line 的介绍与使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/12/07/avio-open2/">FFMPEG源码分析：avio_open2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/12/06/av-find-encdec/">FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/12/05/avcodec-register-all/">FFMPEG 源码分析：avcodec_register_all</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
