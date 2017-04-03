@@ -9,7 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="avcodec_open2函数实现的功能为 ">
+  <meta name="description" content="avcodec_open2函数实现的功能为利用给定的AVCodec结构初始化AVCodecContext结构。 avcodec_open2的声明如下: 1
+int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,7 +100,55 @@
   </header>
 
 
-<div class="entry-content"><p><code>avcodec_open2</code>函数实现的功能为</p>
+<div class="entry-content"><p><code>avcodec_open2</code>函数实现的功能为利用给定的<code>AVCodec</code>结构初始化<code>AVCodecContext</code>结构。</p>
+
+<!--more-->
+
+<p><code>avcodec_open2</code>的声明如下:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);</span></code></pre></td></tr></table></div></figure>
+
+<p>该函数利用给定的<code>AVCodec</code>结构初始化<code>AVCodecContext</code>结构，在使用该函数之前，<code>AVCodecContext</code>
+必须已经用<code>avcodec_alloc_context3()</code>函数分配出来。</p>
+
+<p><code>AVCodec</code>结构在使用该函数之前，由<code>avcodec_find_decoder_by_name</code><code>avcodec_find_encoder_by_name</code>
+<code>avcodec_find_decoder</code>或<code>avcodec_find_encoder</code>提前得到。</p>
+
+<p>注意，在正式解码之前(比如使用<code>avcodec_decode_video2()</code>之前)，必须调用<code>avcodec_open2</code>函数。</p>
+
+<p>示例代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">avcodec_register_all</span><span class="p">();</span>
+</span><span class="line"><span class="n">av_dict_set</span><span class="p">(</span><span class="o">&amp;</span><span class="n">opt</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">,</span> <span class="s">&quot;2.5M&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line"><span class="n">codec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">AV_CODEC_ID_H264</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">codec</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="n">context</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>函数参数说明：</p>
+
+<ul>
+  <li>avctx:需要初始化的context.</li>
+  <li>codec:</li>
+  <li>options:</li>
+  <li>返回值：如果返回0，正确。失败则返回负数。</li>
+</ul>
 
 </div>
 
