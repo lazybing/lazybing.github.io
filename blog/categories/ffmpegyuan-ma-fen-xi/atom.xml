@@ -4,7 +4,7 @@
   <title><![CDATA[分类:ffmpeg源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-03T18:56:18-07:00</updated>
+  <updated>2017-04-04T17:32:45-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,19 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[FFMPEG 源码分析：av_read_frame]]></title>
+    <link href="http://lazybing.github.io/blog/2016/12/15/av_read_frame/"/>
+    <updated>2016-12-15T06:18:07-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/12/15/av_read_frame</id>
+    <content type="html"><![CDATA[
+<p><code>av_read_frame</code>函数实现的功能为利用给定的<code>AVCodec</code>结构初始化<code>AVCodecContext</code>结构。</p>
+
+<!--more-->
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[FFMPEG 源码分析：avcodec_open2]]></title>
@@ -913,282 +926,6 @@ if(CONFIG_HEVC_MP4TOANNEXB_BSF)
 </span><span class='line'>    <span class="n">hevc_mp4toannexb_filter</span><span class="p">,</span>
 </span><span class='line'>    <span class="n">hevc_mp4toannexb_close</span><span class="p">,</span>
 </span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[FFMPEG 源码分析：av_register_all]]></title>
-    <link href="http://lazybing.github.io/blog/2016/12/05/av-register-all/"/>
-    <updated>2016-12-05T04:45:48-08:00</updated>
-    <id>http://lazybing.github.io/blog/2016/12/05/av-register-all</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#avregisterall-" id="markdown-toc-avregisterall-">av_register_all 框架</a></li>
-  <li><a href="#section" id="markdown-toc-section">调用关系</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">源码分析</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">注册一次</a></li>
-      <li><a href="#codec" id="markdown-toc-codec">注册 codec</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">注册复用器</a></li>
-      <li><a href="#section-4" id="markdown-toc-section-4">注册解复用器</a></li>
-      <li><a href="#section-5" id="markdown-toc-section-5">注册协议</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p><code>av_register_all()</code>几乎是所有使用 FFMPEG 编程调用的第一个函数。<code>av_register_all()</code>的主要功能是注册所有的 formats 和 protocols。</p>
-
-<!--more-->
-
-<h2 id="avregisterall-">av_register_all 框架</h2>
-
-<p>首先列一下该函数的大体框架：<br />
-<figure class='code'><figcaption><span>av_register_all </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">av_register_all</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">static</span> <span class="kt">int</span> <span class="n">initialized</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">initialized</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
-</span><span class='line'><span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">avcodec_register_all</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/*(de)muxers*/</span>
-</span><span class='line'><span class="p">......</span>
-</span><span class='line'><span class="n">REGISTER_MUXER</span>   <span class="p">(</span><span class="n">F4V</span><span class="p">,</span>              <span class="n">f4v</span><span class="p">);</span>
-</span><span class='line'><span class="p">......</span>
-</span><span class='line'><span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">FLV</span><span class="p">,</span>              <span class="n">flv</span><span class="p">);</span>
-</span><span class='line'><span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">H264</span><span class="p">,</span>             <span class="n">h264</span><span class="p">);</span>
-</span><span class='line'><span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">HEVC</span><span class="p">,</span>             <span class="n">hevc</span><span class="p">);</span>
-</span><span class='line'><span class="n">REGISTER_MUXER</span>   <span class="p">(</span><span class="n">MP4</span><span class="p">,</span>              <span class="n">mp4</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/*protocols*/</span>
-</span><span class='line'><span class="n">REGISTER_PROTOCOL</span><span class="p">(</span><span class="n">RTMP</span><span class="p">,</span>             <span class="n">rtmp</span><span class="p">);</span>
-</span><span class='line'><span class="n">REGISTER_PROTOCOL</span><span class="p">(</span><span class="n">TCP</span><span class="p">,</span>              <span class="n">tcp</span><span class="p">);</span>
-</span><span class='line'><span class="n">REGISTER_PROTOCOL</span><span class="p">(</span><span class="n">UDP</span><span class="p">,</span>              <span class="n">udp</span><span class="p">);</span>
-</span><span class='line'><span class="p">......</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-</code></pre>
-
-<h2 id="section">调用关系</h2>
-<p><img src="http://lazybing.github.io/images/av_register_all/av_register_all.png" /></p>
-
-<p>从调用关系图可以看出，通过调用<a href="http://lazybing.github.io/blog/2016/12/05/avcodec-register-all/">avcodec_register_all</a>注册了和编解码器有关的组件；硬件加速器、解码器、编码器、Parser、Bistream Filter等，以及复用器、解复用器、协议处理。</p>
-
-<h2 id="section-1">源码分析</h2>
-
-<h3 id="section-2">注册一次</h3>
-
-<p><figure class='code'><figcaption><span>initialized_once </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="n">initialized</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span> <span class="p">(</span><span class="n">initialized</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
-</span><span class='line'><span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>该段代码可以看出，当调用过该函数一次后，再次调用时，该函数直接返回。<br />
-注意，这种方法在 FFMEPG 源码中非常常见。</p>
-
-<h3 id="codec">注册 codec</h3>
-
-<p><code>
-avcodec_register_all();
-</code>
-该函数的作用为注册<code>codecs</code><code>parsers</code>和<code>filters</code>。<br />
-该函数的源码，还请访问<a href="http://lazybing.github.io/blog/2016/12/05/avcodec-register-all/">avcodec_register_all</a>函数。</p>
-
-<h3 id="section-3">注册复用器</h3>
-
-<p><figure class='code'><figcaption><span>REGISTER_MUXER </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define REGISTER_MUXER(X, x)                                            \</span>
-</span><span class='line'><span class="cp">    {                                                                   \</span>
-</span><span class='line'><span class="cp">        extern AVOutputFormat ff_##x##&lt;em&gt;muxer;                           \</span>
-</span><span class='line'><span class="cp">        if (CONFIG&lt;/em&gt;##X##&lt;em&gt;MUXER)                                         \</span>
-</span><span class='line'><span class="cp">            av_register_output_format(&amp;amp;ff&lt;/em&gt;##x##_muxer);                 \</span>
-</span><span class='line'><span class="cp">    }</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>以<code>MP4</code>为例，<code>REGISTER_MUXER(MP4, mp4)</code>展开如下：<br />
-<code>
-extern AVOutpusFormat ff_mp4_muxer;
-if(CONFIG_MP4_MUXER)
-    av_register_output_format(&amp;ff_mp4_muxer);
-</code></p>
-
-<p><code>av_register_output_format(&amp;ff_mp4_muxer)</code>展开如下：</p>
-
-<p><figure class='code'><figcaption><span>av_register_output_format </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">av_register_output_format</span><span class="p">(</span><span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">AVOutputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_oformat</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
-</span><span class='line'>    <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'><span class="n">last_oformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-</code></pre>
-
-<h3 id="section-4">注册解复用器</h3>
-
-<p><figure class='code'><figcaption><span>REGISTER_MUXER </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define REGISTER_DEMUXER(X, x)                                          \</span>
-</span><span class='line'><span class="cp">    {                                                                   \</span>
-</span><span class='line'><span class="cp">        extern AVInputFormat ff_##x##&lt;em&gt;demuxer;                          \</span>
-</span><span class='line'><span class="cp">        if (CONFIG&lt;/em&gt;##X##&lt;em&gt;DEMUXER)                                       \</span>
-</span><span class='line'><span class="cp">            av_register_input_format(&amp;amp;ff&lt;/em&gt;##x##_demuxer);                \</span>
-</span><span class='line'><span class="cp">    }</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p><code>av_register_input_format(&amp;ff_mp4_muxer)</code>展开如下：</p>
-
-<p><figure class='code'><figcaption><span>av_register_output_format </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">av_register_input_format</span><span class="p">(</span><span class="n">AVInputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">AVInputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_iformat</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
-</span><span class='line'>    <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'><span class="n">last_iformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">format</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-</code></pre>
-
-<p><figure class='code'><figcaption><span>avpriv_atomic_ptr_cas </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="o">*</span><span class="nf">avpriv_atomic_ptr_cas</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">oldval</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">newval</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">ret</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">atomic_lock</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">ret</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">oldval</span><span class="p">)</span>
-</span><span class='line'>        <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">newval</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">atomic_lock</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p><figure class='code'><figcaption><span>REGISTER_MUXDEMUX </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="section-5">注册协议</h3>
-
-<p><figure class='code'><figcaption><span>REGISTER_PROTOCOL </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define REGISTER_PROTOCOL(X, x)                                         \</span>
-</span><span class='line'><span class="cp">    {                                                                   \</span>
-</span><span class='line'><span class="cp">        extern URLProtocol ff_##x##&lt;em&gt;protocol;                           \</span>
-</span><span class='line'><span class="cp">        if (CONFIG&lt;/em&gt;##X##&lt;em&gt;PROTOCOL)                                      \</span>
-</span><span class='line'><span class="cp">            ffurl_register_protocol(&amp;amp;ff&lt;/em&gt;##x##_protocol);                \</span>
-</span><span class='line'><span class="cp">    }</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>以<code>TCP</code>为例，<code>REGISTER_PROTOCOL(TCP,tcp)</code>展开如下：</p>
-
-<p><code>
-extern URLProtocol ff_tcp_protocol;
-if(CONFIG_TCP_PROTOCOL)
-    ffurl_register_protocol(&amp;ff_tcp_protocol);
-</code></p>
-
-<p><code>ffurl_register_protocol(&amp;ff_tcp_protocol)</code>展开如下：</p>
-
-<p><figure class='code'><figcaption><span>ffurl_register_protocol </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">ffurl_register_protocol</span><span class="p">(</span><span class="n">URLProtocol</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">protocol</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">URLProtocol</span> <span class="o">**</span><span class="n">p</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">first_protocol</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">p</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span>
-</span><span class='line'>    <span class="o">*</span><span class="n">p</span>             <span class="o">=</span> <span class="n">protocol</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">protocol</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
