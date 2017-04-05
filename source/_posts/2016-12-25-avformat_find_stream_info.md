@@ -26,5 +26,5 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options);
 
 ## 调用关系
 
-<img src="images/avformat_find_stream_info/avformat_find_stream_info.png">
+<img src="/images/avformat_find_stream_info/avformat_find_stream_info.png">
 
