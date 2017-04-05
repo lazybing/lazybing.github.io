@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "FFMPEG 源码分析：avcodec_decode_video"
+title: "FFMPEG 源码分析：avcodec_decode_video2"
 date: 2016-12-20 06:18:07 -0800
 comments: true
 categories: FFMPEG源码分析
