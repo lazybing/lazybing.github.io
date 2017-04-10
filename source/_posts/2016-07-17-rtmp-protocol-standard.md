@@ -239,18 +239,52 @@ RTMP 协议将消息类型 4 作为用户层控制消息 ID。该消息包含了
 
 本部分描述了用于服务端和客户端通讯用到的消息类型和命令类型。  
 
-服务端和客户端通过交换不同的消息类型来传送不同的消息：音频消息传送音频数据、视频消息传送视频数据、数据消息传送用户数据、共享
-对象消息和指令消息等。共享对象消息为管理分布与不同客户端和相同服务器的功效数据提供了规范途径。指令消息携带客户端与服务端
-之间的 AMF 编码指令，客户端或服务端也可以通过指令消息来实现远程过程调用(RPC)。  
+服务端和客户端通过交换不同的消息类型来传送不同的消息：音频消息传送音频数据、视频消息传送视频数据、数据消息传送用户数据、共享对象消息和指令消息等。共享对象消息为管理分布与不同客户端和相同服务器的功效数据提供了规范途径。指令消息携带客户端与服务端之间的 AMF 编码指令，客户端或服务端也可以通过指令消息来实现远程过程调用(RPC)。  
 
 #### 5.1 消息类型(Types of Message)
 
+服务端和客户端双方通过网络发送消息进行通信。消息可以是任意类型，包括音频消息、视频消息、命令消息、共享对象消息、数据消息和用户控制消息。  
+
+* 命令消息(Command Message, Message Type ID = 17或20)  
+命令消息携带`AMF`编码的命令用于客户端和服务器端的传递。如果消息采用AMF0编码，它的 Message Type ID = 20;如果消息采用AMF3编码，它的 Message Type ID=17。命令消息大致可分为两类：用于通知对方执行某些操作的消息，比如connect、createStream、publish、play、pause等;用于通知发送方请求命令状态的消息，比如onstatus、result等。
+一个命令消息包含如下：command name、transaction ID以及包含相关参数的command object。
+
+* 数据消息(Data Message, Message Type ID = 18或15)  
+客户端或服务端利用数据消息发送Metadata或其他用户数据给对端。Metadata 包含关于数据(例如音频或视频等)的一些描述，比如创建时间、持续时长、标题等。当消息采用AMF0编码时，其 Message Type ID=18;当消息采用AMF3编码时，其 Message Type ID=15。  
+
+* 共享消息(Shared Object Message Type ID = 19或16)  
+共享消息是一个 Flash 类型的对象，由键值对的集合组成，用于多客户端，多实例时使用。当消息使用AMF0编码时，Message Type ID = 19;当消息使用AMF3编码时，Message Type ID = 16。每个消息可以包含如下多个事件。
+
+{% img /images/RTMPProtocol/shared_object_message_format.png %}
+
+RTMP 协议支持如下事件类型：  
+
+| Event | Description |
+|:-----:|:-----------:|
+|Use(=1)|客户端发送该事件通知服务端创建共享对象|
+|Release(=2)|当共享对象在客户端侧删除时，客户端发送该事件到服务端|
+|Request Change(=3)|客户端发送该事件到服务端请求更改共享对象的某个给定参数名的值|
+|Change(=4)|服务端发送该事件来通知所有客户端，更改某个给定参数名的参数值|
+|Success(=5)|如果客户端发送的请求被服务端接受，服务端会发送该事件给到请求的客户端，最为请求的回应|
+|SendMessage(=6)|客户端向服务端发送该事件，用于广播一个消息。接收到该事件后，服务端广播一条消息到所有的客户端，包括发送的客户端|
+|Status(=7)|服务端发送一个事件通知客户端关于error condictions|
+|Clear(=8)|服务端发送该事件到客户端，用于清除一个共享对象。服务端同样会发送该事件用于回应客户端发送的Use事件|
+|Remove(=9)|服务端发送该事件请求客户端删除一个slot|
+|Request Remove(=10)|客户端发送该事件请求客户端删除一个slot|
+|Use Success(=11)|服务端发送该事件通知客户端建立成功|  
+
+
+* 音频消息(Audio Message, Message Type ID = 8)  
+客户端或服务端发送该消息用于发送音频数据给对端。
+
+* 视频消息(Video Message, Message Type ID = 9)
+客户端或服务端发送该消息用于发送视频数据给对端。
 
 #### 5.2 指令类型(Types of Commands)
 
 ### 6. 参考文献
 
 1.[带你吃透RTMP](http://mingyangshang.github.io/2016/03/06/RTMP%E5%8D%8F%E8%AE%AE/)  
-2.[RTMP协议规范中文版](https://www.gitbook.com/book/chenlichao/rtmp-zh_cn/details)
-
+2.[RTMP协议规范中文版](https://www.gitbook.com/book/chenlichao/rtmp-zh_cn/details)  
+3.[RTMP官方协议英文版](http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/rtmp/pdf/rtmp_specification_1.0.pdf)
 
