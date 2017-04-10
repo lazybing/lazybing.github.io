@@ -4,7 +4,7 @@
   <title><![CDATA[分类:rtmp源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-09T17:08:53-07:00</updated>
+  <updated>2017-04-09T18:00:01-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -477,6 +477,28 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 <h4 id="types-of-message">5.1 消息类型(Types of Message)</h4>
 
 <p>服务端和客户端双方通过网络发送消息进行通信。消息可以是任意类型，包括音频消息、视频消息、命令消息、共享对象消息、数据消息和用户控制消息。</p>
+
+<ul>
+  <li>
+    <p>命令消息(Command Message, Message Type ID = 17或20)<br />
+命令消息携带<code>AMF</code>编码的命令用于客户端和服务器端的传递。如果消息采用AMF0编码，它的 Message Type ID = 20;如果消息采用AMF3编码，它的 Message Type ID=17。命令消息大致可分为两类：用于通知对方执行某些操作的消息，比如connect、createStream、publish、play、pause等;用于通知发送方请求命令状态的消息，比如onstatus、result等。
+一个命令消息包含如下：command name、transaction ID以及包含相关参数的command object。</p>
+  </li>
+  <li>
+    <p>数据消息(Data Message, Message Type ID = 18或15)<br />
+客户端或服务端利用数据消息发送Metadata或其他用户数据给对端。Metadata 包含关于数据(例如音频或视频等)的一些描述，比如创建时间、持续时长、标题等。当消息采用AMF0编码时，其 Message Type ID=18;当消息采用AMF3编码时，其 Message Type ID=15。</p>
+  </li>
+  <li>
+    <p>共享消息(Shared Object Message Type ID = 19或16)<br />
+共享消息是一个 Flash 类型的对象，由键值对的集合组成，用于多客户端，多实例时使用。当消息使用AMF0编码时，Message Type ID = 19;当消息使用AMF3编码时，Message Type ID = 16。每个消息可以包含如下多个事件。</p>
+  </li>
+</ul>
+
+<p><img src="/images/RTMPProtocol/shared_object_message_format.png"></p>
+
+<ul>
+  <li></li>
+</ul>
 
 <h4 id="types-of-commands">5.2 指令类型(Types of Commands)</h4>
 
