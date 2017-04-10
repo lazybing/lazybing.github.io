@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-09T19:02:59-07:00</updated>
+  <updated>2017-04-10T06:53:19-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -40,17 +40,6 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 <p><img src="/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="‘16to9_DAR’" ></p>
 
 <p><img src="/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="‘4to3_DAR’" ></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[媒体文件格式分析之TS]]></title>
-    <link href="http://lazybing.github.io/blog/2016/07/26/ts-parse-format/"/>
-    <updated>2016-07-26T04:57:15-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/07/26/ts-parse-format</id>
-    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/MPEG_transport_stream">TS</a>是MPEG2-TS 的简称，是“Transport Stream”的缩写。一段 TS 流，必须包含 PAT 包、PMT 包、多个音频包、多个视频包、多个 PCR 包以及其他信息包。
-<!--more--></p>
 
 ]]></content>
   </entry>
@@ -948,6 +937,96 @@ LIST movi
   <li>stereo : 一个 BOOL 指定了data 是否是stereo</li>
   <li>filesize : 一个 DOUBLE 指定了文件的总大小，单位 byte.</li>
 </ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Profiles-Tiers-Levels]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/"/>
+    <updated>2016-06-27T07:52:00-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
+</ul>
+
+<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
+
+<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
+Profile 指出码流中使用了哪些编码工具和算法。</p>
+
+<!--more-->
+
+<p>Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
+值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。</p>
+
+<p>在 HEVC 的设计中，应用可以只依据最大的码率和 CPB 大小就可以区分。为了解决这个问题，有些 Level 定义了
+两个 Tier——Main Tier 用于大多数应用，High Tier 用于那些最苛刻的应用。</p>
+
+<p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
+<code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
+
+<p>HM 中关于 ProfileTierLevel 的定义如下：</p>
+
+<p>```
+namespace Profile
+{
+    enum Name
+    {
+        NONE               = 0,
+        MAIN               = 1,
+        MAIN10             = 2,
+        MAINSTILLPICTURE   = 3,
+        MAINREXT           = 4,
+        HIGHTHROUGHPUTREXT = 5
+    };
+}</p>
+
+<p>namespace Level
+{
+    enum Tier
+    {
+        MAIN = 0,
+        HIGH = 1,
+    };</p>
+
+<pre><code>enum Name
+{
+    NONE       = 0,
+    LEVEL1     = 30,
+    LEVEL2     = 60,
+    LEVEL2_1   = 63,
+    LEVEL3     = 90,
+    LEVEL3_1   = 93,
+    LEVEL4     = 120,
+    LEVEL4_1   = 123,
+    LEVEL5     = 150,
+    LEVEL5_1   = 153,
+    LEVEL5_2   = 156,
+    LEVEL6     = 180,
+    LEVEL6_1   = 183,
+    LEVEL6_2   = 186,
+    LEVEL8_5   = 255,
+}; }
+</code></pre>
+
+<p>class ProfileTierLevel
+{
+    Int            m_profileSpace;
+    Level::Tier    m_tierFlag;
+    Profile::Name  m_profileIdc;
+    Bool           m_profileCompatibilityFlag[32];
+    Level::Name    m_levelIdc;</p>
+
+<pre><code>Bool           m_progressiveSourceFlag;
+Bool           m_interlacedSourceFlag;
+Bool           m_nonPackedConstraintFlag;
+Bool           m_frameOnlyConstraintFlag;
+UInt           m_bitDepthConstraintValue;
+ChromaFormat   m_chromaFormatConstraintValue;
+Bool           m_intraConstraintFlag;
+Bool           m_lowerBitRateConstraintFlag; } ```
+</code></pre>
 
 ]]></content>
   </entry>
