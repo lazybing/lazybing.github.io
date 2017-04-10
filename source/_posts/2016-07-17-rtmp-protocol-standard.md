@@ -280,6 +280,21 @@ RTMP 协议支持如下事件类型：
 * 视频消息(Video Message, Message Type ID = 9)
 客户端或服务端发送该消息用于发送视频数据给对端。
 
+* 用户控制消息事件(User Control Message Event)
+客户端或服务端发送该消息来通知对端关于用户控制事件。RTMP 支持如下的用户控制事件类型：  
+
+|Event|Description|
+|:---:|:---------:|
+|Stream Begin(=0)|服务端发送该事件通知客户端，流功能已经完成，可以用于通信。默认情况下，应用连接命令成功接收到后，该事件的ID会被设置为0。事件数据为4字节|
+|Stream EOF(=1)|服务端发送该事件通知客户端，数据的播放已经结束。|
+|StreamDry(=2)||
+|SetBuffer Lenght(=3)||
+|StreamIsRecorded(=4)||
+|PingRequest(=6)||
+|PingResponse(=7)||
+
+* 聚集消息(Aggregate Message, Messaget Type ID=22)
+
 #### 5.2 指令类型(Types of Commands)
 
 ### 6. 参考文献
