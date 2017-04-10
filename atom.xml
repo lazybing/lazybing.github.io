@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-09T18:00:01-07:00</updated>
+  <updated>2017-04-09T18:33:43-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -3464,8 +3464,72 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p><img src="http://lazybing.github.io/images/RTMPProtocol/shared_object_message_format.png" /></p>
 
+<p>RTMP 协议支持如下事件类型：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Event</th>
+      <th style="text-align: center">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Use(=1)</td>
+      <td style="text-align: center">客户端发送该事件通知服务端创建共享对象</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Release(=2)</td>
+      <td style="text-align: center">当共享对象在客户端侧删除时，客户端发送该事件到服务端</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Request Change(=3)</td>
+      <td style="text-align: center">客户端发送该事件到服务端请求更改共享对象的某个给定参数名的值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Change(=4)</td>
+      <td style="text-align: center">服务端发送该事件来通知所有客户端，更改某个给定参数名的参数值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Success(=5)</td>
+      <td style="text-align: center">如果客户端发送的请求被服务端接受，服务端会发送该事件给到请求的客户端，最为请求的回应</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">SendMessage(=6)</td>
+      <td style="text-align: center">客户端向服务端发送该事件，用于广播一个消息。接收到该事件后，服务端广播一条消息到所有的客户端，包括发送的客户端</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Status(=7)</td>
+      <td style="text-align: center">服务端发送一个事件通知客户端关于error condictions</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Clear(=8)</td>
+      <td style="text-align: center">服务端发送该事件到客户端，用于清除一个共享对象。服务端同样会发送该事件用于回应客户端发送的Use事件</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Remove(=9)</td>
+      <td style="text-align: center">服务端发送该事件请求客户端删除一个slot</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Request Remove(=10)</td>
+      <td style="text-align: center">客户端发送该事件请求客户端删除一个slot</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Use Success(=11)</td>
+      <td style="text-align: center">服务端发送该事件通知客户端建立成功</td>
+    </tr>
+  </tbody>
+</table>
+
 <ul>
-  <li></li>
+  <li>
+    <p>音频消息(Audio Message, Message Type ID = 8)<br />
+客户端或服务端发送该消息用于发送音频数据给对端。</p>
+  </li>
+  <li>
+    <p>视频消息(Video Message, Message Type ID = 9)
+客户端或服务端发送该消息用于发送视频数据给对端。</p>
+  </li>
 </ul>
 
 <h4 id="types-of-commands">5.2 指令类型(Types of Commands)</h4>
