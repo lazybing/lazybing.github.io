@@ -171,3 +171,40 @@ class MovieHeader extends FullBox('mvhd', version, 0)
 
 Media Information Header Boxes 根据类型分为 vmhd、smhd、hmhd、nmhd。  
 
+其中 vmhd 格式如下：  
+
+| Field | Type | Comment |
+|:-----:|:----:|:-------:|
+|box size|4 bytes| box 大小 |
+| box type | 4 bytes | box 类型 |
+| version | 1 byte | box版本，通常为0|
+| flags | 3 bytes | |
+| graphics mode | 4 bytes | 视频合成模式，为0时拷贝原图像，否则与opcolor进行合成|
+| opcolor | 2x3|{red, green, blue}|
+
+smhd 格式如下:
+
+| Field | Type | Comment |
+|:-----:|:----:|:-------:|
+|box size|4 bytes| box 大小 |
+| box type | 4 bytes | box 类型 |
+| version | 1 byte | box版本，通常为0|
+| flags | 3 bytes | |
+| balance | 2 bytes | 立体声平衡，[8.8]格式|
+| reserved | 2 bytes | |
+
+#### Data Informatino Box(dinf)
+
+`dinf`解释如何定位媒体信息，是一个container box。`dinf`一般包含一个`dref`，即 data reference box；
+`dref`下会包含若干个`url`或`urn`，这些box组成一个表，用来定位track数据。   
+
+`dref`的结构如下表。  
+
+| Field | Type | Comment |
+|:-----:|:----:|:-------:|
+|box size|4 bytes| box 大小 |
+| box type | 4 bytes | box 类型 |
+| version | 1 byte | box版本，通常为0|
+| flags | 3 bytes | |
+| entry count | 4 bytes | `url`或`urn`表的元素个数|
+
