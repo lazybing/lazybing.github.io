@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-10T06:53:19-07:00</updated>
+  <updated>2017-04-10T18:15:18-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -2737,13 +2737,15 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
     <id>http://lazybing.github.io/blog/2016/07/24/flv-parse</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#flv-header" id="markdown-toc-flv-header">FLV Header</a></li>
-  <li><a href="#flv-file-body" id="markdown-toc-flv-file-body">FLV File Body</a></li>
-  <li><a href="#flv-tags" id="markdown-toc-flv-tags">FLV tags</a>    <ul>
-      <li><a href="#audio-tags" id="markdown-toc-audio-tags">Audio tags</a></li>
-      <li><a href="#video-tags" id="markdown-toc-video-tags">Video tags</a></li>
-      <li><a href="#video-data" id="markdown-toc-video-data">Video Data</a></li>
-      <li><a href="#avcvideopacket" id="markdown-toc-avcvideopacket">AVCVIDEOPACKET</a></li>
-      <li><a href="#onmetadata" id="markdown-toc-onmetadata">onMetaData</a></li>
+  <li><a href="#flv-file-body" id="markdown-toc-flv-file-body">FLV File Body</a>    <ul>
+      <li><a href="#flv-tags" id="markdown-toc-flv-tags">FLV tags</a>        <ul>
+          <li><a href="#audio-tags" id="markdown-toc-audio-tags">Audio tags</a></li>
+          <li><a href="#video-tags" id="markdown-toc-video-tags">Video tags</a></li>
+          <li><a href="#video-data" id="markdown-toc-video-data">Video Data</a></li>
+          <li><a href="#avcvideopacket" id="markdown-toc-avcvideopacket">AVCVIDEOPACKET</a></li>
+          <li><a href="#onmetadata" id="markdown-toc-onmetadata">onMetaData</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
 </ul>
@@ -2754,6 +2756,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 与 SWF 文件不同,FLV 文件以大字节序存储多字节。比如，0x300(0x12C) 在 SWF 文件中的字节序为 0x2C 0x01,在FLV 文件中则为 0x01 0x2C。</p>
 
 <h2 id="flv-header">FLV Header</h2>
+
 <p>以 FLV Header <code>46 4C 56 01 05 00 00 00 09</code>为例：</p>
 
 <table>
@@ -2768,74 +2771,115 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
     <tr>
       <td style="text-align: center">Signature</td>
       <td style="text-align: center">UI8</td>
-      <td style="text-align: center">Signature byte always ‘F’(0x46)</td>
+      <td style="text-align: center">必须为’F’(0x46)</td>
     </tr>
     <tr>
       <td style="text-align: center">Signature</td>
       <td style="text-align: center">UI8</td>
-      <td style="text-align: center">Signature byte always ‘L’(0x4C)</td>
+      <td style="text-align: center">必须为’L’(0x4C)</td>
     </tr>
     <tr>
       <td style="text-align: center">Signature</td>
       <td style="text-align: center">UI8</td>
-      <td style="text-align: center">Signature byte always ‘V’(0x56)</td>
+      <td style="text-align: center">必须为’V’(0x56)</td>
     </tr>
     <tr>
-      <td style="text-align: center">Version</td>
+      <td style="text-align: center">(版本)Version</td>
       <td style="text-align: center">UI8</td>
-      <td style="text-align: center">File version(0x01 for FLV version 1)</td>
+      <td style="text-align: center">通常为0x01</td>
     </tr>
     <tr>
       <td style="text-align: center">TypeFlagsReserved</td>
       <td style="text-align: center">UB[5]</td>
-      <td style="text-align: center">Must be 0</td>
+      <td style="text-align: center">必须为0</td>
     </tr>
     <tr>
       <td style="text-align: center">TypeFlagsAudio</td>
       <td style="text-align: center">UB[1]</td>
-      <td style="text-align: center">Audio tags are present</td>
+      <td style="text-align: center">表示是否含有音频</td>
     </tr>
     <tr>
       <td style="text-align: center">TypeFlagsReserved</td>
       <td style="text-align: center">UB[1]</td>
-      <td style="text-align: center">Must be 0</td>
+      <td style="text-align: center">必须为0</td>
     </tr>
     <tr>
       <td style="text-align: center">TypeFlagsVideo</td>
       <td style="text-align: center">UB[1]</td>
-      <td style="text-align: center">Video tags are present</td>
+      <td style="text-align: center">表示是否含有视频</td>
     </tr>
     <tr>
       <td style="text-align: center">DataOffset</td>
       <td style="text-align: center">UI32</td>
-      <td style="text-align: center">Offset in bytes from start of file to start of body(that is size of header)</td>
+      <td style="text-align: center">文件头部的大小(从文件开始位置到body的偏移量),通常为9</td>
     </tr>
   </tbody>
 </table>
-
-<p><code>DataOffset</code>字段在 FLV 1 时，通常是 9。</p>
 
 <p>FLV Header 的前三个字节是固定的<code>FLV</code>的 ASCII 码的值<code>0x46 0x4C 0x56</code>; 接下来的一个字节表示 FLV 的版本号,例如 0x01 代表 FLV 版本号为 1。第 5 个字节中的第0位和第2位分别表示video和audio的存在情况（1表示存在，0表示不存在）,其余6位必须为0.最后的4字节表示FLV Header的长度，对于version 1，此处为9.</p>
 
 <h2 id="flv-file-body">FLV File Body</h2>
-<p>FLV Header 之后，FLV 文件的剩余部分由tag组成，它们交替如下：</p>
+
+<p>FLV Header 之后，FLV 文件的剩余部分称为 Body，它是由tag组成，它们交替如下：</p>
 
 <table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
   <tbody>
     <tr>
-      <td>PreviousTagSize0</td>
-      <td>Tag1</td>
-      <td>PreviousTagSize1</td>
-      <td>Tag2</td>
-      <td>……</td>
-      <td>PreviousTagSizeN-1</td>
-      <td>TagN</td>
-      <td>PreviousTagSizeN</td>
+      <td style="text-align: center">PreviousTagSize0</td>
+      <td style="text-align: center">UI32</td>
+      <td style="text-align: center">总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Tag1</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">第一个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSize0</td>
+      <td style="text-align: center">UI32</td>
+      <td style="text-align: center">上一个tag的大小，包含了tag的头部。对FLV版本1来讲，它的值等于上一个tag的数据大小+11</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Tag2</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">第二个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSizeN - 1</td>
+      <td style="text-align: center">UI32</td>
+      <td style="text-align: center">倒数第二个tag的大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TagN</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">最后一个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSizeN</td>
+      <td style="text-align: center">UI32</td>
+      <td style="text-align: center">最后一个tag的大小</td>
     </tr>
   </tbody>
 </table>
 
-<h2 id="flv-tags">FLV tags</h2>
+<p>FLV 文件的整体结构如下图所示：</p>
+
+<p><img src="http://lazybing.github.io/images/flv/flv_structure.png" /></p>
+
+<h3 id="flv-tags">FLV tags</h3>
+
 <p>FLV tags 有以下几个字段构成：8bit的<code>TagType</code>、24bit的<code>DataSize</code>、24bit的<code>TimeStamp</code>、8bit的<code>TimeStampExtended</code>、24bit的<code>StreamID</code>以及最后的<code>Data</code>。</p>
 
 <p><code>TagType</code>指该Tag的类型，8 代表 Audio，9 代表 Video，18 代表 Script Data。</p>
@@ -2846,15 +2890,15 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 
 <p>播放过程中，FLV tag的时间信息完全依赖于 FLV 时间戳，内置的其他时间信息都被忽略掉。</p>
 
-<h3 id="audio-tags">Audio tags</h3>
+<h4 id="audio-tags">Audio tags</h4>
 
-<h3 id="video-tags">Video tags</h3>
+<h4 id="video-tags">Video tags</h4>
 
 <p>Video Tag 与 SWF 文件格式中的 VideoFrame Tag 类似，它们的 Payload 数据是同一的。关于 SWF 文件格式的介绍，请看<a href="www.adobe.com/go/swf_file_format">SWF(File Format Specification)</a>。</p>
 
 <p>以<code>09 00 00 2D 00 00 00 00 00 00 00 17 00 00 00 00 01 4D 40 1F FF E1 00 19 67 4D 40 ……</code>为例，<code>09</code>表示 Tag Type 为 Video Tag;<code>00 00 2D</code>表示 DataSize 为 45；<code>00 00 00</code>表示 Timestamp 为 0；<code>00</code>表示 TimestampExtended 为 0；<code>00 00 00</code>表示 StreamID 为 0；<code>17</code>中的 8 bit，其中前 4 bit<code>1</code>表示 FrameType 为 keyframe,后 4 bit<code>7</code>表示 CodecID 为 AVC；之后的 45 byte 为 VideoData;</p>
 
-<h3 id="video-data">Video Data</h3>
+<h4 id="video-data">Video Data</h4>
 
 <table>
   <thead>
@@ -2890,7 +2934,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
   <li>1 = End of client-side seeking video frame sequence</li>
 </ul>
 
-<h3 id="avcvideopacket">AVCVIDEOPACKET</h3>
+<h4 id="avcvideopacket">AVCVIDEOPACKET</h4>
 
 <p>AVCVIDEOPACKET 携带一个AVC video data。</p>
 
@@ -2921,7 +2965,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
   </tbody>
 </table>
 
-<h3 id="onmetadata">onMetaData</h3>
+<h4 id="onmetadata">onMetaData</h4>
 <ul>
   <li>duration : 一个 DOUBLE 指定了整个文件的总时长，单位 seconds</li>
   <li>width : 一个 DOUBLE 指定了视频的宽，单位 pixel</li>
