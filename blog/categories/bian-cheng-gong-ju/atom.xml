@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-10T22:15:28-07:00</updated>
+  <updated>2017-04-10T23:50:07-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -660,8 +660,10 @@ vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。
   <li><a href="#gdb" id="markdown-toc-gdb">启动GDB</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">查看源码</a></li>
   <li><a href="#break-" id="markdown-toc-break-">断点break 使用</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">查看运行时数据</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">参考文献</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">运行程序</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">查看运行时数据</a></li>
+  <li><a href="#gdb-1" id="markdown-toc-gdb-1">启动GDB方法</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">参考文献</a></li>
 </ul>
 
 <p><a href="https://www.gnu.org/software/gdb/">GDB</a>, The GNU Project debugger, allows you to see what is going on inside another program while it executes – or what another program was doing at the moment it crashed.</p>
@@ -717,7 +719,20 @@ info break    //查看所有 break 的信息
 info break n //查看 n 断点号的信息
 </code></p>
 
-<h3 id="section-2">查看运行时数据</h3>
+<h3 id="section-2">运行程序</h3>
+
+<p>运行程序如下
+<code>
+next //单步执行
+continue //继续执行程序，直到程序结束或遇到下一个断点
+</code></p>
+
+<h3 id="section-3">查看运行时数据</h3>
+
+<p><code>
+print parm //打印变量parm的值
+bt         //查看函数堆栈信息
+</code></p>
 
 <p>当运行程序到某个位置时，我们希望看看此时程序的状态，比如某个变量的值是否按照预期改变、某块内存的值是否被改。此时就需要用到查看程序运行数据的集中方法。</p>
 
@@ -725,7 +740,15 @@ info break n //查看 n 断点号的信息
 
 <p>可以使用 examine 命令查看内存地址中的值。格式是<code>x /&lt;n/f/u&gt; &lt;addr&gt;</code>，其中<code>&lt;addr&gt;</code>是内存地址。</p>
 
-<h3 id="section-3">参考文献</h3>
+<h3 id="gdb-1">启动GDB方法</h3>
+
+<ol>
+  <li>gdb <programe> program就是执行的文件，一般在当前目录下。</programe></li>
+  <li>gdb <programe> core 用GDB同事调试一个运行程序和 core 文件，core 是程序非法执行后 core dump 后产生的文件。</programe></li>
+  <li>gdb <programe> <PID> 如果程序是一个服务程序，则可以指定服务程序运行时的进程ID。gdb 自动 attach 上去，并调试它。 program 应该在 PATH 环境变量中搜索得到。</PID></programe></li>
+</ol>
+
+<h3 id="section-4">参考文献</h3>
 
 <ol>
   <li><a href="http://www.tutorialspoint.com/gnu_debugger/index.htm">GNU Debugger Tutorial</a></li>
