@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-10T18:59:14-07:00</updated>
+  <updated>2017-04-10T20:09:12-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -752,6 +752,7 @@ LIST movi
       </li>
     </ul>
   </li>
+  <li><a href="#ffmpeg-flv-demuxer" id="markdown-toc-ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</a></li>
 </ul>
 
 <p><a href="https://en.wikipedia.org/wiki/Flash_Video">FLV</a> 是 FLASH VIDEO 的简称，FLV 流媒体是随着Flash MX 的推出发展而来的视频格式。FLV 一般由文件头(FLV header) 和文件体(FLV body) 组成。其中文件体(FLV body)由一些列tag组成，tag又可分成三类:audio/video/script，分别代表音频流、视频流、脚本流(关键字或文件信息之类)。
@@ -1019,6 +1020,148 @@ LIST movi
   <li>stereo : 一个 BOOL 指定了data 是否是stereo</li>
   <li>filesize : 一个 DOUBLE 指定了文件的总大小，单位 byte.</li>
 </ul>
+
+<h2 id="ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</h2>
+
+<p>FFmpeg 中关于flv demuxer的定义如下：</p>
+
+<p><figure class='code'><figcaption><span>ff_flv_demuxer </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVInputFormat</span> <span class="n">ff_flv_demuxer</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">name</span>           <span class="o">=</span> <span class="err">“</span><span class="n">flv</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">long_name</span>      <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="err">“</span><span class="n">FLV</span> <span class="p">(</span><span class="n">Flash</span> <span class="n">Video</span><span class="p">)</span><span class="err">”</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">priv_data_size</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">FLVContext</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_probe</span>     <span class="o">=</span> <span class="n">flv_probe</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_header</span>    <span class="o">=</span> <span class="n">flv_read_header</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_packet</span>    <span class="o">=</span> <span class="n">flv_read_packet</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_seek</span>      <span class="o">=</span> <span class="n">flv_read_seek</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_close</span>     <span class="o">=</span> <span class="n">flv_read_close</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">extensions</span>     <span class="o">=</span> <span class="err">“</span><span class="n">flv</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">priv_class</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">flv_class</span><span class="p">,</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>其中的<code>flv_read_header</code>是分析 FLV 的header函数，分析代码如下：</p>
+
+<p>```
+static int flv_read_header(AVFormatContext *s)
+{
+    int offset, flags;</p>
+
+<pre><code>avio_skip(s-&gt;pb, 4); //将flv的头去掉
+flags = avio_r8(s-&gt;pb);//读取flv的video和audio flag信息
+
+s-&gt;ctx_flags |= AVFMTCTX_NOHEADER;
+
+if (flags &amp; FLV_HEADER_FLAG_HASVIDEO) //如果flv中包含video, 创建视频流
+    if (!create_stream(s, AVMEDIA_TYPE_VIDEO))
+        return AVERROR(ENOMEM);
+if (flags &amp; FLV_HEADER_FLAG_HASAUDIO) //如果flv中包含audio,创建音频流
+    if (!create_stream(s, AVMEDIA_TYPE_AUDIO))
+        return AVERROR(ENOMEM);
+
+offset = avio_rb32(s-&gt;pb);//获取文件头长度,通常为9
+avio_seek(s-&gt;pb, offset, SEEK_SET);//跳过DataOffset字段
+avio_skip(s-&gt;pb, 4);//跳过Body中的PreviousTagSize0字段，大小即为4bytes
+
+s-&gt;start_time = 0;
+
+return 0; } ```
+</code></pre>
+
+<p>FLV中关于tag的处理使用<code>flv_read_packet</code>,代码如下：</p>
+
+<p>```
+static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
+{
+    FLVContext *flv = s-&gt;priv_data;
+    int ret, i, size, flags;
+    enum FlvTagType type;
+    int stream_type=-1;
+    int64_t next, pos, meta_pos;
+    int64_t dts, pts = AV_NOPTS_VALUE;
+    int av_uninit(channels);
+    int av_uninit(sample_rate);
+    AVStream *st    = NULL;</p>
+
+<pre><code>/* pkt size is repeated at end. skip it */
+for (;; avio_skip(s-&gt;pb, 4)) {
+    pos  = avio_tell(s-&gt;pb);
+    type = (avio_r8(s-&gt;pb) &amp; 0x1F);//获取tag的类型，分为三种:0x08:AUDIO,0x09:VIDOE0x12:META
+    size = avio_rb24(s-&gt;pb);//tag的长度
+    dts  = avio_rb24(s-&gt;pb);//获取时间戳
+    dts |= avio_r8(s-&gt;pb) &lt;&lt; 24;//获取时间戳扩展
+    av_log(s, AV_LOG_TRACE, "type:%d, size:%d, dts:%"PRId64" pos:%"PRId64"\n", type, size, dts, avio_tell(s-&gt;pb));
+    if (avio_feof(s-&gt;pb))
+        return AVERROR_EOF;
+    avio_skip(s-&gt;pb, 3); /* stream id, always 0 */
+    flags = 0;
+
+    if (flv-&gt;validate_next &lt; flv-&gt;validate_count) {
+        int64_t validate_pos = flv-&gt;validate_index[flv-&gt;validate_next].pos;
+        if (pos == validate_pos) {
+            if (FFABS(dts - flv-&gt;validate_index[flv-&gt;validate_next].dts) &lt;=
+                VALIDATE_INDEX_TS_THRESH) {
+                flv-&gt;validate_next++;
+            } else {
+                clear_index_entries(s, validate_pos);
+                flv-&gt;validate_count = 0;
+            }
+        } else if (pos &gt; validate_pos) {
+            clear_index_entries(s, validate_pos);
+            flv-&gt;validate_count = 0;
+        }
+    }
+
+    if (size == 0)
+        continue;
+
+    next = size + avio_tell(s-&gt;pb);
+
+    if (type == FLV_TAG_TYPE_AUDIO) {
+        stream_type = FLV_STREAM_TYPE_AUDIO;
+        flags    = avio_r8(s-&gt;pb);
+        size--;
+    } else if (type == FLV_TAG_TYPE_VIDEO) {
+        stream_type = FLV_STREAM_TYPE_VIDEO;
+        flags    = avio_r8(s-&gt;pb);
+        size--;
+        if ((flags &amp; FLV_VIDEO_FRAMETYPE_MASK) == FLV_FRAME_VIDEO_INFO_CMD)
+            goto skip;
+    } else if (type == FLV_TAG_TYPE_META) {
+        stream_type=FLV_STREAM_TYPE_DATA;
+        if (size &gt; 13 + 1 + 4) { // Header-type metadata stuff
+            int type;
+            meta_pos = avio_tell(s-&gt;pb);
+            type = flv_read_metabody(s, next);
+            if (type == 0 &amp;&amp; dts == 0 || type &lt; 0 || type == TYPE_UNKNOWN) {
+                goto skip;
+            } else if (type == TYPE_ONTEXTDATA) {
+                avpriv_request_sample(s, "OnTextData packet");
+                return flv_data_packet(s, pkt, dts, next);
+            } else if (type == TYPE_ONCAPTION) {
+                return flv_data_packet(s, pkt, dts, next);
+            }
+            avio_seek(s-&gt;pb, meta_pos, SEEK_SET);
+        }
+    } else {
+        av_log(s, AV_LOG_DEBUG,
+               "Skipping flv packet: type %d, size %d, flags %d.\n",
+               type, size, flags);
+</code></pre>
+
+<p>```</p>
 
 ]]></content>
   </entry>
