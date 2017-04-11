@@ -244,11 +244,49 @@
 
 <h3 id="flv-tags">FLV tags</h3>
 
-<p>FLV tags 有以下几个字段构成：8bit的<code>TagType</code>、24bit的<code>DataSize</code>、24bit的<code>TimeStamp</code>、8bit的<code>TimeStampExtended</code>、24bit的<code>StreamID</code>以及最后的<code>Data</code>。</p>
+<p>FLV tag格式如下：</p>
 
-<p><code>TagType</code>指该Tag的类型，8 代表 Audio，9 代表 Video，18 代表 Script Data。</p>
-
-<p><code>DataSize</code>指定后面的<code>Data</code>字段的大小。</p>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Tag类型(TagType)</td>
+      <td style="text-align: center">1 bytes</td>
+      <td style="text-align: center">8：音频、9：视频、18：script数据</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">数据大小(DataSize)</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center">数据字段的长度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">时间戳(Timestamp)</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center">毫秒为单位，第一个tag时，该值总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">时间戳扩展(TimeStampExtended)</td>
+      <td style="text-align: center">1 bytes</td>
+      <td style="text-align: center">时间戳扩展为4bytes,代表高8位，很少用到</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">流ID</td>
+      <td style="text-align: center">3bytes</td>
+      <td style="text-align: center">总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">数据(Data)</td>
+      <td style="text-align: center">音频、视频或script</td>
+      <td style="text-align: center">数据实体</td>
+    </tr>
+  </tbody>
+</table>
 
 <p>以 Tag <code>12 00 12 A9 00 00 00 00 00 00 00 02 00 0A……</code>为例，<code>0x12</code>代表该 tag 为script data，<code>00 12 A9</code>代表该 tag 的 DataSize 为 681 byte，<code>00 00 00</code>代表该 tag 的 TimeStamp 为 0，<code>00</code>代表该 tag 的 TimeStampExtended 为 0，StreamID 总是 0，接下来的 681 byte 为script data 的内容。</p>
 
