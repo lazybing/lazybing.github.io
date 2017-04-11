@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-04-10T23:50:07-07:00</updated>
+  <updated>2017-04-11T07:28:40-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1936,6 +1936,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
           <li><a href="#media-header-box" id="markdown-toc-media-header-box">Media Header Box</a></li>
           <li><a href="#handler-reference-box" id="markdown-toc-handler-reference-box">Handler Reference Box</a></li>
           <li><a href="#media-informatino-box" id="markdown-toc-media-informatino-box">Media Informatino Box</a></li>
+          <li><a href="#data-informatino-boxdinf" id="markdown-toc-data-informatino-boxdinf">Data Informatino Box(dinf)</a></li>
         </ul>
       </li>
     </ul>
@@ -2347,6 +2348,138 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 情况minf包含:Media Information Header Boxes、Data Information Box(dinf)、Sample Table Box。</p>
 
 <p>Media Information Header Boxes 根据类型分为 vmhd、smhd、hmhd、nmhd。</p>
+
+<p>其中 vmhd 格式如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">graphics mode</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">视频合成模式，为0时拷贝原图像，否则与opcolor进行合成</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">opcolor</td>
+      <td style="text-align: center">2x3</td>
+      <td style="text-align: center">{red, green, blue}</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>smhd 格式如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">balance</td>
+      <td style="text-align: center">2 bytes</td>
+      <td style="text-align: center">立体声平衡，[8.8]格式</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">2 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="data-informatino-boxdinf">Data Informatino Box(dinf)</h4>
+
+<p><code>dinf</code>解释如何定位媒体信息，是一个container box。<code>dinf</code>一般包含一个<code>dref</code>，即 data reference box；
+<code>dref</code>下会包含若干个<code>url</code>或<code>urn</code>，这些box组成一个表，用来定位track数据。</p>
+
+<p><code>dref</code>的结构如下表。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">entry count</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center"><code>url</code>或<code>urn</code>表的元素个数</td>
+    </tr>
+  </tbody>
+</table>
 
 ]]></content>
   </entry>
