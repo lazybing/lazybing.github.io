@@ -3,7 +3,7 @@ layout: post
 title: "媒体文件格式分析之MP4"
 date: 2016-07-26 04:31:32 -0700
 comments: true
-categories: 总结积累
+categories: 视频基础
 ---
 
 * list element with functor item
