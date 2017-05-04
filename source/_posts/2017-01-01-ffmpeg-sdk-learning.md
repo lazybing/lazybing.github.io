@@ -17,11 +17,11 @@ categories: FFMPEG源码分析
 ##FFMpeg 编码实现
 
 本例子实现的是将视频域 YUV 数据编码为压缩域的帧数据，编码格式包含了 H.264/H.265/MPEG1/MPEG2 四种 CODEC 类型。
-实现的过程，可以大致用如下图表示。
+实现的过程，可以大致用如下图表示:  
 
-<image src="/images/ffmpeg_sdk/encoder.png">  
+{% img /images/ffmpeg_sdk/encoder.png %}
 
-从图中可以大致看出视频编码的流程：  
+从图中可以大致看出视频编码的流程:
 
 * 首先要有未压缩的 YUV 原始数据。
 * 其次要根据想要编码的格式选择特定的编码器。
@@ -152,11 +152,11 @@ if(got_output){
 
 完整实现请移步[编码实现](https://github.com/lazybing/ffmpeg-study-recording/blob/master/encoder.c)。  
 
-## FFMpeg 解码实现
+##FFMpeg 解码实现
 
 解码实现的是将压缩域的视频数据解码为像素域的 YUV 数据。实现的过程，可以大致用如下图所示。
 
-<image src="/images/ffmpeg_sdk/decoder.png">  
+{% img /images/ffmpeg_sdk/decoder.png %}
 
 从图中可以看出，大致可以分为下面三个步骤：  
 
@@ -170,7 +170,7 @@ if(got_output){
 * 关于解码器。首先，利用 CODEC_ID 来获取注册的解码器；之后，将预处理过得视频数据给到解码器进行解码。  
 * 关于输出。FFMpeg 中，解码后的数据存放在 AVFrame 中；之后就将 AVFrame 中的 data 字段的数据存放到输出文件中。  
   
-***  
+--- 
   
 对于输入数据，首先，通过 fread 函数实现将固定长度的输入文件的数据存放到一块 buffer 内。H.264中一个包的长度是不定的，读取固定长度的码流通常不可能刚好读出一个包的长度；对此，FFMpeg 提供了一个 AVCoderParserContext 结构用于解析读到 buffer 内的码流信息，直到能够取出一个完整的 H.264 包。为此，FFMpeg 提供的函数为`av_parser_parse2`，该函数比较复杂，定义如下：    
 
@@ -348,15 +348,15 @@ if(*got_picture_ptr){
 
 解码的大致流程已经完成了，剩余的是一些收尾工作，比如释放分配的内存、结构体等等。
 
-完整实现请移步[解码实现](https://github.com/lazybing/ffmpeg-study-recording/blob/master/decoder.c)。
-  
-## FFMpeg 封装实现
-  
-## FFMpeg 解封装实现
-  
-## FFMpeg 转码实现
-  
-## FFMpeg 视频缩放实现
-  
-## FFMpeg 添加水印实现
-  
+完整实现请移步[解码实现](https://github.com/lazybing/ffmpeg-study-recording/blob/master/decoder.c)。  
+
+##FFMpeg 封装实现
+
+##FFMpeg 解封在实现
+
+##FFMpeg 转码实现
+
+##FFMpeg 视频缩放实现
+
+##FFMpeg 添加水印实现
+
