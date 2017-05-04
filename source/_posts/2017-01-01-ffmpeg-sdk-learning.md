@@ -352,9 +352,14 @@ if(*got_picture_ptr){
 
 ##FFMpeg 封装实现
 
-##FFMpeg 解封在实现
+本例子实现的是将视频数据和音频数据，按照一定的格式封装为特定的容器，比如FLV、MKV、MP4、AVI等等。实现的过程，可以大致用如下图表示：  
 
-##FFMpeg 转码实现
+{% img /images/ffmpeg_sdk/muxer.png %}
+
+
+##FFMpeg 解封装实现
+
+##FFMpeg 转码的实现
 
 ##FFMpeg 视频缩放实现
 
