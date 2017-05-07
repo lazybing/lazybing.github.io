@@ -35,7 +35,7 @@ categories: FFMPEG源码分析
 
 *****
 
-AVFrame 结构体的分配使用`av_frame_alloc（）`函数，该函数会对 AVFrame 结构体的某些字段设置默认值，它会返回一个指向 AVFrame 的指针或 NULL指针(失败)。AVFrame 结构体的释放只能通过`av_frame_free()`来完成。注意，该函数只能分配 AVFrame 结构体本身，不能分配它的 data buffers 字段指向的内容，该字段的指向要根据视频的宽高、像素格式信息手动分配，本例使用的是`av_image_alloc()`函数。代码实现大致如下：
+AVFrame 结构体的分配使用`av_frame_alloc()`函数，该函数会对 AVFrame 结构体的某些字段设置默认值，它会返回一个指向 AVFrame 的指针或 NULL指针(失败)。AVFrame 结构体的释放只能通过`av_frame_free()`来完成。注意，该函数只能分配 AVFrame 结构体本身，不能分配它的 data buffers 字段指向的内容，该字段的指向要根据视频的宽高、像素格式信息手动分配，本例使用的是`av_image_alloc()`函数。代码实现大致如下：
 
 {% codeblock lang:c %}
 //allocate AVFrame struct
@@ -356,6 +356,103 @@ if(*got_picture_ptr){
 
 {% img /images/ffmpeg_sdk/muxer.png %}
 
+从图中可以大致看出视频封装的流程：
+
+* 首先要有编码好的视频、音频数据。
+* 其次要根据想要封装的格式选择特定的封装器。
+* 最后利用封装器进行封装。
+
+根据流程可以推倒出大致的代码实现：
+
+* 利用给定的YUV数据编码得到某种 CODEC 格式的编码视频（可以参见上面提到的[编码实现](http://lazybing.github.io/blog/2017/01/01/ffmpeg-sdk-learning/#ffmpeg-)），同样的方法得到音频数据。
+* 获取输出文件格式。获取输出文件格式可以直接指定文件格式，比如FLV/MKV/MP4/AVI等，也可以通过输出文件的后缀名来确定，或者也可以选择默认的输出格式。根据得到的文件格式，其中可能有视频、音频等，为此我们需要为格式添加视频、音频、并对格式中的一些信息进行设置（比如头）。
+* 利用设置好的音频、视频、头信息等，开始封装。
+
+---
+
+对于由 YUV 数据得到编码的视频数据部分，不再重复。直接看与 Muxer 相关的部分，与特定的 Muxer 相关的信息，FFMpeg 提供了一个 AVFormatContext 的结构体描述，并用`avformat_alloc_output_context2()`函数来分配它。该函数的声明如下：
+
+{% codeblock lang:c %}
+int avformat_alloc_output_context2(AVFormatContext **ctx, AVOutputFormat *oformat,
+                                   const char *format_name, const char *filename);
+{% endcodeblock %}  
+
+其中：
+
+* ctx:输出到 AVFormatContext 结构的指针，如果函数失败则返回给该指针为 NULL。
+* oformat：指定输出的 AVOutputFormat 类型，如果设为 NULL，则根据 format_name 和 filename 生成。
+* format_name:输出格式的名称，如果设为 NULL，则使用 filename 默认格式。
+* filename：目标文件名，如果不使用，可以设为 NULL。
+* 返回值：>=0 则成功，否则失败。
+
+代码如下：
+
+{% codeblock lang:c %}
+AVOutputFormat *fmt;
+AVFormatContext *oc;
+
+/* allocate the output media context */
+avformat_alloc_output_context2(&oc, NULL, NULL, filename);
+if (!oc) {
+    printf("Could not deduce output format from file extension: using MPEG.\n");
+    avformat_alloc_output_context2(&oc, NULL, "mpeg", filename);
+}
+if (!oc)
+    return 1;
+
+fmt = oc->oformat;
+{% endcodeblock %}
+
+有了表示媒体文件格式的 AVFormatContext 结构后，就需要根据媒体格式来判断是否需要往媒体文件中添加视频流、音频流（有的媒体文件，这两种流并不是必须的）；以 MP4 格式的媒体文件为例，我们需要一路视频流、一路音频流。因此需要创建一路流，FFMpeg 提供的创建流的函数为`avformat_new_stream()`，该函数完成向 AVFormatContext 结构体中所代码的媒体文件中添加数据流，函数声明如下：
+
+{% codeblock lang:c %}
+AVStream *avformat_new_stream(AVFormatContext *s, const AVCodec *c);
+{% endcodeblock %}
+
+其中：
+
+* s:AVFormatContext 结构，表示要封装生成的视频文件。
+* c：视频或音频流的编码器的指针。
+* 返回值：指向生成的 stream 对象的指针；失败则返回 NULL。
+
+注意：对于 Muxer，该函数必须在调用`avformat_write_header()`前调用。使用完成后，需要调用`avcodec_close()`和`avformat_free_context()`来清理由它分配的内容。
+
+该函数调用完成后，一个新的 AVStream 便已经加入到输出文件中，下面就需要设置 stream 的 id 和 codec 等参数。以视频流为例，代码如下：  
+
+{% codeblock lang:c %}
+OutputStream *ost;
+AVFormatContext *oc;
+AVCodec **codec;
+AVCodecContext *c;
+AVStream *st;
+
+st = avformat_new_stream(oc, *codec);
+if(!st){
+    fprintf(stderr, "Could not allocate stream\n");
+    exit(1);
+}
+st->id = oc->nb_streams-1;
+c = st->codec;
+{% endcodeblock %}
+
+参数设置完成后，就可以打开编码器并为编码器分配必要的内存。步骤跟之前的类似，以视频为例，示例代码如下：
+
+{% codeblock lang:c %}
+//open the codec
+ret = avcodec_open(c, codec, &opt);
+if(ret < 0){
+    fprintf(stderr, "Could not open video codec: %s\n", av_err2str(ret));
+    exit(1);
+}
+//allocate and init a re-usable frame
+ost->frame = alloc_picture(c->pix_fmt, c->width, c->height);
+{% endcodeblock %}
+
+接下来进行真正的封装：首先，为媒体文件添加头部信息,FFMpeg 为此提供的函数为`avformat_write_header()`。其次，将编码好的音视频 AVPacket 包添加到媒体文件中去，FFMpeg 为此提供的函数为`av_interleaved_write_frame()`。最后，写入文件尾的数据，FFMpeg 为此提供的函数为`av_write_trailer()`。
+
+封装的大致流程已经完成了，剩余的是一些收尾工作，比如释放分配的内存、结构体等等。
+
+完整实现请移步[封装实现](https://github.com/lazybing/ffmpeg-study-recording/blob/master/muxer.c)。
 
 ##FFMpeg 解封装实现
 
