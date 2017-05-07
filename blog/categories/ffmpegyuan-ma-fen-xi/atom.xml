@@ -4,7 +4,7 @@
   <title><![CDATA[分类:ffmpeg源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-05-07T09:10:09-07:00</updated>
+  <updated>2017-05-07T09:15:50-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -22,9 +22,10 @@
   <li><a href="#ffmpeg-" id="markdown-toc-ffmpeg-">FFMpeg 编码实现</a></li>
   <li><a href="#ffmpeg--1" id="markdown-toc-ffmpeg--1">FFMpeg 解码实现</a></li>
   <li><a href="#ffmpeg--2" id="markdown-toc-ffmpeg--2">FFMpeg 封装实现</a></li>
-  <li><a href="#ffmpeg--3" id="markdown-toc-ffmpeg--3">FFMpeg 转码的实现</a></li>
-  <li><a href="#ffmpeg--4" id="markdown-toc-ffmpeg--4">FFMpeg 视频缩放实现</a></li>
-  <li><a href="#ffmpeg--5" id="markdown-toc-ffmpeg--5">FFMpeg 添加水印实现</a></li>
+  <li><a href="#ffmpeg--3" id="markdown-toc-ffmpeg--3">FFMpeg 解封装实现</a></li>
+  <li><a href="#ffmpeg--4" id="markdown-toc-ffmpeg--4">FFMpeg 转码的实现</a></li>
+  <li><a href="#ffmpeg--5" id="markdown-toc-ffmpeg--5">FFMpeg 视频缩放实现</a></li>
+  <li><a href="#ffmpeg--6" id="markdown-toc-ffmpeg--6">FFMpeg 添加水印实现</a></li>
 </ul>
 
 <p><a href="&quot;https://ffmpeg.org/&quot;">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理，本文主要利用 FFMpeg 官方提供的 SDK 实现音视频最简单的几个实例：编码、解码、封装、解封装、转码、缩放以及添加水印。<br />
@@ -592,12 +593,15 @@
 </span><span class='line'>                                   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">format_name</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
-<p>其中：
-* ctx:输出到 AVFormatContext 结构的指针，如果函数失败则返回给该指针为 NULL。
-* oformat：指定输出的 AVOutputFormat 类型，如果设为 NULL，则根据 format_name 和 filename 生成。
-* format_name:输出格式的名称，如果设为 NULL，则使用 filename 默认格式。
-* filename：目标文件名，如果不使用，可以设为 NULL。
-* 返回值：&gt;=0 则成功，否则失败。</p>
+<p>其中：</p>
+
+<ul>
+  <li>ctx:输出到 AVFormatContext 结构的指针，如果函数失败则返回给该指针为 NULL。</li>
+  <li>oformat：指定输出的 AVOutputFormat 类型，如果设为 NULL，则根据 format_name 和 filename 生成。</li>
+  <li>format_name:输出格式的名称，如果设为 NULL，则使用 filename 默认格式。</li>
+  <li>filename：目标文件名，如果不使用，可以设为 NULL。</li>
+  <li>返回值：&gt;=0 则成功，否则失败。</li>
+</ul>
 
 <p>代码如下：
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -696,14 +700,15 @@
 
 <p>封装的大致流程已经完成了，剩余的是一些收尾工作，比如释放分配的内存、结构体等等。</p>
 
-<p>完整实现请移步<a href="">封装实现</a>。
-##FFMpeg 解封装实现</p>
+<p>完整实现请移步<a href="https://github.com/lazybing/ffmpeg-study-recording/blob/master/muxer.c">封装实现</a>。</p>
 
-<h2 id="ffmpeg--3">FFMpeg 转码的实现</h2>
+<h2 id="ffmpeg--3">FFMpeg 解封装实现</h2>
 
-<h2 id="ffmpeg--4">FFMpeg 视频缩放实现</h2>
+<h2 id="ffmpeg--4">FFMpeg 转码的实现</h2>
 
-<h2 id="ffmpeg--5">FFMpeg 添加水印实现</h2>
+<h2 id="ffmpeg--5">FFMpeg 视频缩放实现</h2>
+
+<h2 id="ffmpeg--6">FFMpeg 添加水印实现</h2>
 
 ]]></content>
   </entry>
