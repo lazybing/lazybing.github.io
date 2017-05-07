@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-05-04T11:10:49-07:00</updated>
+  <updated>2017-05-07T09:10:09-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -22,10 +22,9 @@
   <li><a href="#ffmpeg-" id="markdown-toc-ffmpeg-">FFMpeg 编码实现</a></li>
   <li><a href="#ffmpeg--1" id="markdown-toc-ffmpeg--1">FFMpeg 解码实现</a></li>
   <li><a href="#ffmpeg--2" id="markdown-toc-ffmpeg--2">FFMpeg 封装实现</a></li>
-  <li><a href="#ffmpeg--3" id="markdown-toc-ffmpeg--3">FFMpeg 解封装实现</a></li>
-  <li><a href="#ffmpeg--4" id="markdown-toc-ffmpeg--4">FFMpeg 转码的实现</a></li>
-  <li><a href="#ffmpeg--5" id="markdown-toc-ffmpeg--5">FFMpeg 视频缩放实现</a></li>
-  <li><a href="#ffmpeg--6" id="markdown-toc-ffmpeg--6">FFMpeg 添加水印实现</a></li>
+  <li><a href="#ffmpeg--3" id="markdown-toc-ffmpeg--3">FFMpeg 转码的实现</a></li>
+  <li><a href="#ffmpeg--4" id="markdown-toc-ffmpeg--4">FFMpeg 视频缩放实现</a></li>
+  <li><a href="#ffmpeg--5" id="markdown-toc-ffmpeg--5">FFMpeg 添加水印实现</a></li>
 </ul>
 
 <p><a href="&quot;https://ffmpeg.org/&quot;">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理，本文主要利用 FFMpeg 官方提供的 SDK 实现音视频最简单的几个实例：编码、解码、封装、解封装、转码、缩放以及添加水印。<br />
@@ -58,7 +57,7 @@
 
 <hr />
 
-<p>AVFrame 结构体的分配使用<code>av_frame_alloc（）</code>函数，该函数会对 AVFrame 结构体的某些字段设置默认值，它会返回一个指向 AVFrame 的指针或 NULL指针(失败)。AVFrame 结构体的释放只能通过<code>av_frame_free()</code>来完成。注意，该函数只能分配 AVFrame 结构体本身，不能分配它的 data buffers 字段指向的内容，该字段的指向要根据视频的宽高、像素格式信息手动分配，本例使用的是<code>av_image_alloc()</code>函数。代码实现大致如下：</p>
+<p>AVFrame 结构体的分配使用<code>av_frame_alloc()</code>函数，该函数会对 AVFrame 结构体的某些字段设置默认值，它会返回一个指向 AVFrame 的指针或 NULL指针(失败)。AVFrame 结构体的释放只能通过<code>av_frame_free()</code>来完成。注意，该函数只能分配 AVFrame 结构体本身，不能分配它的 data buffers 字段指向的内容，该字段的指向要根据视频的宽高、像素格式信息手动分配，本例使用的是<code>av_image_alloc()</code>函数。代码实现大致如下：</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -570,13 +569,144 @@
 
 <p><img src="http://lazybing.github.io/images/ffmpeg_sdk/muxer.png" /></p>
 
-<h2 id="ffmpeg--3">FFMpeg 解封装实现</h2>
+<p>从图中可以大致看出视频封装的流程：</p>
 
-<h2 id="ffmpeg--4">FFMpeg 转码的实现</h2>
+<ul>
+  <li>首先要有编码好的视频、音频数据。</li>
+  <li>其次要根据想要封装的格式选择特定的封装器。</li>
+  <li>最后利用封装器进行封装。</li>
+</ul>
 
-<h2 id="ffmpeg--5">FFMpeg 视频缩放实现</h2>
+<p>根据流程可以推倒出大致的代码实现：</p>
 
-<h2 id="ffmpeg--6">FFMpeg 添加水印实现</h2>
+<ul>
+  <li>利用给定的YUV数据编码得到某种 CODEC 格式的编码视频（可以参见上面提到的<a href="http://lazybing.github.io/blog/2017/01/01/ffmpeg-sdk-learning/#ffmpeg-">编码实现</a>），同样的方法得到音频数据。</li>
+  <li>获取输出文件格式。获取输出文件格式可以直接指定文件格式，比如FLV/MKV/MP4/AVI等，也可以通过输出文件的后缀名来确定，或者也可以选择默认的输出格式。根据得到的文件格式，其中可能有视频、音频等，为此我们需要为格式添加视频、音频、并对格式中的一些信息进行设置（比如头）。</li>
+  <li>利用设置好的音频、视频、头信息等，开始封装。</li>
+</ul>
+
+<hr />
+
+<p>对于由 YUV 数据得到编码的视频数据部分，不再重复。直接看与 Muxer 相关的部分，与特定的 Muxer 相关的信息，FFMpeg 提供了一个 AVFormatContext 的结构体描述，并用<code>avformat_alloc_output_context2()</code>函数来分配它。该函数的声明如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">avformat_alloc_output_context2</span><span class="p">(</span><span class="n">AVFormatContext</span> <span class="o">**</span><span class="n">ctx</span><span class="p">,</span> <span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">oformat</span><span class="p">,</span>
+</span><span class="line">                                   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">format_name</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中：
+* ctx:输出到 AVFormatContext 结构的指针，如果函数失败则返回给该指针为 NULL。
+* oformat：指定输出的 AVOutputFormat 类型，如果设为 NULL，则根据 format_name 和 filename 生成。
+* format_name:输出格式的名称，如果设为 NULL，则使用 filename 默认格式。
+* filename：目标文件名，如果不使用，可以设为 NULL。
+* 返回值：&gt;=0 则成功，否则失败。</p>
+
+<p>代码如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">fmt</span><span class="p">;</span>
+</span><span class="line"><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">oc</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="cm">/* allocate the output media context */</span>
+</span><span class="line"><span class="n">avformat_alloc_output_context2</span><span class="p">(</span><span class="o">&amp;</span><span class="n">oc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">filename</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">oc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Could not deduce output format from file extension: using MPEG.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">avformat_alloc_output_context2</span><span class="p">(</span><span class="o">&amp;</span><span class="n">oc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;mpeg&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">oc</span><span class="p">)</span>
+</span><span class="line">    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">fmt</span> <span class="o">=</span> <span class="n">oc</span><span class="o">-&gt;</span><span class="n">oformat</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>有了表示媒体文件格式的 AVFormatContext 结构后，就需要根据媒体格式来判断是否需要往媒体文件中添加视频流、音频流（有的媒体文件，这两种流并不是必须的）；以 MP4 格式的媒体文件为例，我们需要一路视频流、一路音频流。因此需要创建一路流，FFMpeg 提供的创建流的函数为<code>avformat_new_stream()</code>，该函数完成向 AVFormatContext 结构体中所代码的媒体文件中添加数据流，函数声明如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVStream</span> <span class="o">*</span><span class="nf">avformat_new_stream</span><span class="p">(</span><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">c</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中：</p>
+
+<ul>
+  <li>s:AVFormatContext 结构，表示要封装生成的视频文件。</li>
+  <li>c：视频或音频流的编码器的指针。</li>
+  <li>返回值：指向生成的 stream 对象的指针；失败则返回 NULL。</li>
+</ul>
+
+<p>注意：对于 Muxer，该函数必须在调用<code>avformat_write_header()</code>前调用。使用完成后，需要调用<code>avcodec_close()</code>和<code>avformat_free_context()</code>来清理由它分配的内容。</p>
+
+<p>该函数调用完成后，一个新的 AVStream 便已经加入到输出文件中，下面就需要设置 stream 的 id 和 codec 等参数。以视频流为例，代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">OutputStream</span> <span class="o">*</span><span class="n">ost</span><span class="p">;</span>
+</span><span class="line"><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">oc</span><span class="p">;</span>
+</span><span class="line"><span class="n">AVCodec</span> <span class="o">**</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line"><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">c</span><span class="p">;</span>
+</span><span class="line"><span class="n">AVStream</span> <span class="o">*</span><span class="n">st</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">st</span> <span class="o">=</span> <span class="n">avformat_new_stream</span><span class="p">(</span><span class="n">oc</span><span class="p">,</span> <span class="o">*</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">st</span><span class="p">){</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Could not allocate stream</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="n">st</span><span class="o">-&gt;</span><span class="n">id</span> <span class="o">=</span> <span class="n">oc</span><span class="o">-&gt;</span><span class="n">nb_streams</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="n">c</span> <span class="o">=</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>参数设置完成后，就可以打开编码器并为编码器分配必要的内存。步骤跟之前的类似，以视频为例，示例代码如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">//open the codec</span>
+</span><span class="line"><span class="n">ret</span> <span class="o">=</span> <span class="n">avcodec_open</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">opt</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Could not open video codec: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">av_err2str</span><span class="p">(</span><span class="n">ret</span><span class="p">));</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="c1">//allocate and init a re-usable frame</span>
+</span><span class="line"><span class="n">ost</span><span class="o">-&gt;</span><span class="n">frame</span> <span class="o">=</span> <span class="n">alloc_picture</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">pix_fmt</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>接下来进行真正的封装：首先，为媒体文件添加头部信息,FFMpeg 为此提供的函数为<code>avformat_write_header()</code>。其次，将编码好的音视频 AVPacket 包添加到媒体文件中去，FFMpeg 为此提供的函数为<code>av_interleaved_write_frame()</code>。最后，写入文件尾的数据，FFMpeg 为此提供的函数为<code>av_write_trailer()</code>。</p>
+
+<p>封装的大致流程已经完成了，剩余的是一些收尾工作，比如释放分配的内存、结构体等等。</p>
+
+<p>完整实现请移步<a href="">封装实现</a>。
+##FFMpeg 解封装实现</p>
+
+<h2 id="ffmpeg--3">FFMpeg 转码的实现</h2>
+
+<h2 id="ffmpeg--4">FFMpeg 视频缩放实现</h2>
+
+<h2 id="ffmpeg--5">FFMpeg 添加水印实现</h2>
 
 ]]></content>
   </entry>
