@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>FFmpeg结构体分析 - 懒人李冰</title>
+  <title>FFmpeg 常用结构体解析 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AVPacket结构体解析 AVFrame结构体解析 AVCodec结构体解析 AVCodecContext结构体解析 FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中，经常使用到的结构体的含义以及使用场景。 首先，我们从 &hellip;">
+  <meta name="description" content="AVPacket结构体解析 AVFrame结构体解析 AVCodec结构体解析 AVCodecContext结构体解析 AVStream结构体解析 FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">FFmpeg结构体分析</h1>
+      <h1 class="entry-title">FFmpeg 常用结构体解析</h1>
     
     
       <p class="meta">
@@ -104,6 +104,7 @@
   <li><a href="#avframe" id="markdown-toc-avframe">AVFrame结构体解析</a></li>
   <li><a href="#avcodec" id="markdown-toc-avcodec">AVCodec结构体解析</a></li>
   <li><a href="#avcodeccontext" id="markdown-toc-avcodeccontext">AVCodecContext结构体解析</a></li>
+  <li><a href="#avstream" id="markdown-toc-avstream">AVStream结构体解析</a></li>
 </ul>
 
 <p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中，经常使用到的结构体的含义以及使用场景。
@@ -121,7 +122,8 @@
 
 <p>对于视频数据，它只包含一帧压缩数据；对于音频数据，它可能包含多帧压缩数据。</p>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><figcaption><span>AVPacket </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -432,6 +434,67 @@
 
 <h2 id="avcodeccontext">AVCodecContext结构体解析</h2>
 
+<h2 id="avstream">AVStream结构体解析</h2>
+<p>AVStream用于存储一个视频流、音频流的结构体。</p>
+<figure class="code"><figcaption><span>AVStream </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVStream</span><span class="p">{</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">index</span><span class="p">;</span>	<span class="c1">//stream index in AVFormatContext</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">id</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">time_base</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">start_time</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">duration</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">nb_frames</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">disposition</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVDiscard</span> <span class="n">discard</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">avg_frame_rate</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVPacket</span> <span class="n">attached_pic</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVPacketSideData</span> <span class="o">*</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span>            <span class="n">nb_side_data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">event_flags</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">pts_wrap_bits</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">first_dts</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">cur_dts</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">last_IP_pts</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">last_IP_duration</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">probe_packets</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">codec_info_nb_frames</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="n">AVStream</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>index:标识该视频流、音频流，是 AVFormatContext 中的流索引。</li>
+  <li>id：</li>
+</ul>
 </div>
 
 
@@ -483,7 +546,7 @@
   <section>
     <h1>Comments</h1>
     <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi" data-title="FFmpeg结构体分析" data-url="http://lazybing.github.io/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi//"></div>
+<div class="ds-thread" data-thread-key="/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi" data-title="FFmpeg 常用结构体解析" data-url="http://lazybing.github.io/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi//"></div>
 <!-- Duoshuo Comment end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
