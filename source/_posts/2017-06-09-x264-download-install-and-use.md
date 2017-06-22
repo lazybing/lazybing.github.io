@@ -10,6 +10,7 @@ categories: x264 学习
 {:toc}
 
 [x264官网](http://www.videolan.org/developers/x264.html)对 x264 项目进行了简单的描述，包括
+<!--more-->
 
 ##x264 获取代码：
 
