@@ -5,11 +5,17 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>摄影 - 懒人李冰</title>
+  <title>X264 下载、安装和使用 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="摄影 2016 年 06 月 27 日 5:54 am 85°C里的甜点,姜小姐为了那 18 块钱减 4 块钱的优惠，愣是多花了 10 块钱买了两个。o(╯□╰)o 6.25晚，第一次用相机不会拍，拍的各种不好，姜小姐表示很生气…O(∩_∩)O~ 2016 年 06 月 27 日 5:54 am &hellip;">
+  <meta name="description" content="x264 获取代码： x264 的使用 x264官网对 x264 项目进行了简单的描述，包括 x264 获取代码： 1
+git clone http://git.videolan.org/git/x264.git
+##x264 编译和安装
+此处记录的是在Linux下的编译和安装： 1
+2
+3
+4 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +24,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/photography/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/06/09/x264-download-install-and-use/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -78,49 +84,121 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">摄影</h1>
-    <p class="meta">
-
-
-
-
-<time class='entry-date' datetime='2016-06-27T05:54:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>5:54 am</span></time></p>
-  </header>
-  
-  <p><img src="/images/85.C_tiandian.JPG" />
-85°C里的甜点,姜小姐为了那 18 块钱减 4 块钱的优惠，愣是多花了 10 块钱买了两个。o(╯□╰)o
-<img src="/images/Shanghai_6.25.JPG" />
-6.25晚，第一次用相机不会拍，拍的各种不好，姜小姐表示很生气…O(∩_∩)O~</p>
-
-
-  
-    <footer>
+    
+      <h1 class="entry-title">X264 下载、安装和使用</h1>
+    
+    
       <p class="meta">
         
+
+
+
+
+<time class='entry-date' datetime='2017-06-09T08:51:11-07:00'><span class='date'>2017 年 06 月 09 日</span> <span class='time'>8:51 am</span></time>
         
-
-
-
-
-<time class='entry-date' datetime='2016-06-27T05:54:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>5:54 am</span></time>
         
       </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#x264-" id="markdown-toc-x264-">x264 获取代码：</a></li>
+  <li><a href="#x264--1" id="markdown-toc-x264--1">x264 的使用</a></li>
+</ul>
+
+<p><a href="http://www.videolan.org/developers/x264.html">x264官网</a>对 x264 项目进行了简单的描述，包括</p>
+
+<h2 id="x264-">x264 获取代码：</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">git clone http://git.videolan.org/git/x264.git</span></code></pre></td></tr></table></div></figure>
+<p>##x264 编译和安装
+此处记录的是在Linux下的编译和安装：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">cd x264
+</span><span class="line">.configure
+</span><span class="line">sudo make
+</span><span class="line">sudo make install</span></code></pre></td></tr></table></div></figure>
+
+<p>注意，如果想要在 Linux 下使用 GDB 进行逐步调试，需要修改<code>.configure</code>后生成的<code>config.mak</code>文件，将里面的<code>CC=gcc</code>改为<code>CC=gcc -g</code>。</p>
+
+<p>之后就可以使用 X264 来进行编码 H264 格式的视频了。</p>
+
+<h2 id="x264--1">x264 的使用</h2>
+<p>x264 的使用可以通过命令行<code>x264 --help</code>来获取。格式一般为</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">x264 [options] -o outfile infile</span></code></pre></td></tr></table></div></figure>
+
+<p>其中的输入文件可以是<code>raw</code>文件、<code>.y4m</code>文件等，输出文件格式可以是<code>.264</code>、<code>.mkv</code>、<code>.flv</code>和<code>.mp4</code>；其中输入文件如果是<code>raw</code>文件，需要在 infile 后面通过输入参数（–input-res 640x360）来指定分辨率。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
       
-        <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/photography/index.html" data-via="" data-counturl="http://lazybing.github.io/photography/index.html" >Tweet</a>
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2017-06-09T08:51:11-07:00'><span class='date'>2017 年 06 月 09 日</span> <span class='time'>8:51 am</span></time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/06/09/x264-download-install-and-use/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/06/09/x264-download-install-and-use/" >Tweet</a>
   
   
   
 </div>
 
+    
+    <p class="meta">
       
-    </footer>
-  
+        <a class="basic-alignment left" href="/blog/2017/01/01/ffmpeg-sdk-learning/" title="Previous Post: FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放以及添加水印">&laquo; FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放以及添加水印</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2017/06/09/x264-download-install-and-use" data-title="x264 下载、安装和使用" data-url="http://lazybing.github.io/blog/2017/06/09/x264-download-install-and-use//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
 
 </div>
 
