@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>UBoot 源码分析 - 懒人李冰</title>
+  <title>SODB RBSP EBSP 的区别于联系 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。 ">
+  <meta name="description" content="简单总结 SODB、RBSP、EBSP、NALU 和 H.264 字节流的联系。 {!–more–} SODB：String of Data Bits，数据比特串，它是最原始的编码数据。 RBSP：Raw Byte Sequence Payload, 原始字节序列载荷，它是在 SODB &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/06/22/sodb-rbsp-ebsp/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">UBoot 源码分析</h1>
+      <h1 class="entry-title">SODB RBSP EBSP 的区别于联系</h1>
     
     
       <p class="meta">
@@ -91,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2015-07-01T07:48:51-07:00'><span class='date'>2015 年 07 月 01 日</span> <span class='time'>7:48 am</span></time>
+<time class='entry-date' datetime='2017-06-22T08:48:25-07:00'><span class='date'>2017 年 06 月 22 日</span> <span class='time'>8:48 am</span></time>
         
         
       </p>
@@ -99,9 +99,33 @@
   </header>
 
 
-<div class="entry-content"><p>公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。
-<!--more--></p>
+<div class="entry-content">
+<p>简单总结 SODB、RBSP、EBSP、NALU 和 H.264 字节流的联系。</p>
 
+<p>{!–more–}</p>
+
+<ul>
+  <li>SODB：String of Data Bits，数据比特串，它是最原始的编码数据。</li>
+  <li>RBSP：Raw Byte Sequence Payload, 原始字节序列载荷，它是在 SODB 的后面添加了结尾比特和若干比特<code>0</code>，以便字节对齐。</li>
+  <li>EBSP：Encapsulate Byte Sequence Payload，扩展字节序列载荷，它是在 RBSP 基础上添加了防校验字节<code>0x03</code>后得到的。</li>
+</ul>
+
+<p>关系大致如下：</p>
+
+<p><code>SODB</code>+<code>RBSP Stop bit</code>+<code>0 bits</code>= <code>RBSP</code></p>
+
+<p><code>RBSP part1</code>+<code>0x03</code>+<code>RBSP part2</code>+<code>0x03</code>+…+<code>RBSP partn</code> = <code>EBSP</code></p>
+
+<p><code>NALU Header</code>+<code>EBSP</code>=<code>NALU</code></p>
+
+<p><code>start code</code>+<code>NALU</code>+…+<code>start code</code>+<code>NALU</code>=<code>H.264 Byte Stream</code></p>
+
+<p>在 H264 SPEC 中，SODB 定义如下：
+&gt;3.149 string of data bits(SODB) : A sequence of some number of bits representing syntax elements present within a raw byte sequence payload prior to the raw byte sequnece payload stop bit.Within an SODB,the left-most bit is considered to be the first and most significant bit,and the right-most bit is considered to be the last and least significant bit。</p>
+
+<p>在 H264 SPEC 中，RBSP 定义如下：
+&gt;3.118 raw byte sequence payload(RBSP): A syntax structure containing an integer number of bytes that is encapsulated in a NAL unit.An RBSP is either empty or has the form of a string of data bits containing syntax elements followed by an RBSp stop bit and followed by zero or more subsequent bits equal to 0.
+&gt;3.119 raw byte sequence payload(RBSP) stop bit: A bit equal to 1 present within a raw byte sequence payload(RBSP) after a string of data bits.The location of the end of the string of data bits within an RBSP can be identified by searching from the end of the RBSP for the RBSP stop bit, which is the last non-zero bit in the RBSP.</p>
 </div>
 
 
@@ -117,12 +141,12 @@
 
 
 
-<time class='entry-date' datetime='2015-07-01T07:48:51-07:00'><span class='date'>2015 年 07 月 01 日</span> <span class='time'>7:48 am</span></time>
+<time class='entry-date' datetime='2017-06-22T08:48:25-07:00'><span class='date'>2017 年 06 月 22 日</span> <span class='time'>8:48 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+    <a class='category' href='/blog/categories/x264/'>x264</a>
   
 </span>
 
@@ -131,7 +155,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/" data-via="" data-counturl="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/06/22/sodb-rbsp-ebsp/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/06/22/sodb-rbsp-ebsp/" >Tweet</a>
   
   
   
@@ -140,15 +164,35 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2015/05/01/create-github-blog-using-octopress/" title="Previous Post: 使用Octopress 搭建个人博客">&laquo; 使用Octopress 搭建个人博客</a>
+        <a class="basic-alignment left" href="/blog/2017/06/09/x264-download-install-and-use/" title="Previous Post: x264 下载、安装和使用">&laquo; x264 下载、安装和使用</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2015/09/04/the-hierarchical-of-coding-structure/" title="Next Post: HM源码分析（一）：HEVC编码结构">HM源码分析（一）：HEVC编码结构 &raquo;</a>
       
     </p>
   </footer>
 </article>
 
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2017/06/22/sodb-rbsp-ebsp" data-title="SODB RBSP EBSP 的区别于联系" data-url="http://lazybing.github.io/blog/2017/06/22/sodb-rbsp-ebsp//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
 
 </div>
 
