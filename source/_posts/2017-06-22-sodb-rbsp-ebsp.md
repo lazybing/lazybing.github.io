@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "SODB RBSP EBSP 的区别于联系"
+title: "SODB RBSP EBSP 的区别与联系"
 date: 2017-06-22 08:48:25 -0700
 comments: true
 categories: x264
