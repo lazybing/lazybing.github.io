@@ -454,6 +454,7 @@ ost->frame = alloc_picture(c->pix_fmt, c->width, c->height);
 
 完整实现请移步[封装实现](https://github.com/lazybing/ffmpeg-study-recording/blob/master/muxer.c)。
 
+{% video https://github.com/lazybing/lazybing.github.io/blob/source/images/ffmpeg.mp4 640 320 %}
 
 ##FFMpeg 解封装实现
 
