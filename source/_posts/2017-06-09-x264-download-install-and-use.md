@@ -3,7 +3,7 @@ layout: post
 title: "x264 下载、安装和使用"
 date: 2017-06-09 08:51:11 -0700
 comments: true
-categories: x264 学习
+categories: x264
 ---
 
 * list element with functor item
