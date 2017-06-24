@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-06-23T08:05:02-07:00</updated>
+  <updated>2017-06-23T20:19:38-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,312 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264 Paraments Illustra]]></title>
+    <link href="http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra/"/>
+    <updated>2017-06-23T20:07:55-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">输入</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">预设值</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">帧类型</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">码率控制</a></li>
+</ul>
+
+<p>x264 中参数选项详解</p>
+
+<!--more-->
+
+<h2 id="section">输入</h2>
+<p>用1个绝对路径定义输入文件（或者2个，rawYUV文件）。如下例：</p>
+
+<blockquote>
+  <p>x264.exe -o NUL C:\input.avs<br />
+x264 -o /dev/null ~/input.y4m</p>
+</blockquote>
+
+<p>如果输入文件是rawYUV格式的，还要把分辨率一并输入。如果开启了比特率控制，还需要输入帧率。如下例：</p>
+
+<blockquote>
+  <p>x264.exe -o NUL –fps 25 D:\input.yuv 1280×720<br />
+x264 -o /dev/null –fps 30000/1001 ~/input.yuv 640×480</p>
+</blockquote>
+
+<h2 id="section-1">预设值</h2>
+<p>预设值是x264在r1177版本增加的一个方便的命令行选项。可以用x264.exe –fullhelp查看所有的命令行帮助。</p>
+
+<ul>
+  <li>
+    <p>profile<br />
+默认：无<br />
+说明：限制输出文件的profile。这个参数将覆盖其它所有值，此选项能保证输出profile兼容的视频流。如果使用了这个选项，将不能进行无损压缩（qp 0 or crf 0）。<br />
+可选：baseline，main，high<br />
+建议：不设置。除非解码环境只支持main或者baseline profile的解码。</p>
+  </li>
+  <li>
+    <p>preset<br />
+默认：medium<br />
+一些在压缩效率和运算时间中平衡的预设值。如果指定了一个预设值，它会在其它选项生效前生效。<br />
+可选：ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow and placebo.<br />
+建议：可接受的最慢的值</p>
+  </li>
+  <li>
+    <p>tune<br />
+默认：无<br />
+说明：在上一个选项基础上进一步优化输入。如果定义了一个tune值，它将在preset之后，其它选项之前生效。<br />
+可选：film, animation, grain, stillimage, psnr, ssim, fastdecode, zerolatency and touhou.<br />
+建议：根据输入选择。如果没有合适的就不要指定。</p>
+  </li>
+  <li>
+    <p>slow-firstpass<br />
+默认：无<br />
+说明：随着预设值机制在r1177版本的出现，使用–pass 1会在解析命令行时增加以下设置：<code>ref 1</code>
+<code>no-8x8dct</code><code>partitions i4x4 (if originally enabled, else none)</code><code>me dia</code><code>subme MIN( 2, subme )</code><code>trellis 0</code><br />
+如果设置preset=placebo则自动关闭此特性。如果想显式关闭此特性，使用slow-firstpass。</p>
+  </li>
+</ul>
+
+<h2 id="section-2">帧类型</h2>
+
+<ul>
+  <li>
+    <p>keyint<br />
+默认：250<br />
+说明：设置x264输出中最大的IDR帧（亦称关键帧）间距。<br />
+IDR帧是视频流的“分隔符”，所有帧都不可以使用越过关键帧的帧作为参考帧。IDR帧是I帧的一种，所以它们也不参照其它帧。这意味着它们可以作为视频的搜索（seek）点。<br />
+通过这个设置可以设置IDR帧的最大间隔帧数（亦称最大图像组长度）。较大的值将导致IDR帧减少（会用占用空间更少的P帧和B帧取代），也就同时减弱了参照帧选择的限制。较小的值导致减少搜索一个随机帧所需的平均时间。<br />
+建议：默认值（fps的10倍）对大多数视频都很好。如果在为蓝光、广播、直播流或者其它什么专业流编码，也许会需要更小的图像组长度（一般等于fps）。<br />
+参见：min-keyint, scenecut, intra-refresh</p>
+  </li>
+  <li>
+    <p>min-keyint<br />
+默认：auto（keyint/10）<br />
+说明：参见keyint的说明。过小的keyint范围会导致产生“错误的”IDR帧（比如说，一个闪屏场景，参见上一篇blog）。此选项限制了IDR帧之间的最小距离。<br />
+建议：默认，或者与fps相等<br />
+参见：keyint, scenecut</p>
+  </li>
+  <li>
+    <p>no-scenecut<br />
+默认：无<br />
+说明：完全关闭自适应I帧决策。<br />
+参见：scenecut</p>
+  </li>
+  <li>
+    <p>scenecut<br />
+默认：40<br />
+说明：设置决策使用I帧、IDR帧的阈值（场景变换检测）。<br />
+x264会计算每一帧与前一帧的不同程度并得出一个值。如果这个值低于scenecut，那么就算检测到一个“场景变换”。如果此时距离上一帧的距离小于 min-keyint则插入一个I帧，反之则插入一个IDR帧。较高的值会增加侦测到“场景变换”纪律。参见更详细的<a href="http://forum.doom9.org/showthread.PHP?t=121116">工作原理</a><br />
+设置scenecut=0与no-scenecut等效。<br />
+建议：使用默认值<br />
+参见：keyint, min-keyint, no-scenecut</p>
+  </li>
+  <li>
+    <p>intra-refresh<br />
+默认：off<br />
+说明：让x264为每keyint数量的帧使用宏块内部编码取代IDR帧。块以水平移动列的方式更新，也叫刷新波。对于低延迟的流，这样可以让帧的尺寸比使用标准的IDR帧更加保持恒定。而且这样可以增强视频流对丢包的容错能力。这个选项会降低压缩率，所以在确实需要的时候才选择它。<br />
+还有一些有意思的事情：1、第一帧依然是IDR帧。2、内部宏块只在P帧中存在，刷新波在一个或多个B帧后的P帧中广泛存在。3、主要的压缩率下降原因是在宏块中新（左边）的波并不能参考旧（右边）的波。<br />
+建议：使用默认值</p>
+  </li>
+  <li>
+    <p>bframes
+默认：3<br />
+说明：设置x264可使用的B帧的最大连续数量。<br />
+没有B帧时，一个典型的x264流帧类型是这样的：IPPPPP…PI。如果设置了-bframes 2，那么两个连续的P帧就可以用B帧替换，然后就像这样：IBPBBPBPPPB…PI。<br />
+B帧和P帧的区别在于它可以参照它之后的帧，这个特点让它可以显著地提升压缩率。他们的平均品质受 –pbratio选项的控制。<br />
+还有一些有意思的事情：<br />
+1、x264有2种B帧，一种可以作为参照帧，一种不能；<br />
+2、关于x264如何决策B帧或P帧，可以看看这个ffmpeg-devel<a href="http://article.gmane.org /gmane.comp.video.ffmpeg.devel/29064">邮件列表</a>。这种情况下帧类型看起来就像这样IBBBPBBBPBPI（假设设置 –bframes 3）。<br />
+参见：–no-b-adapt, –b-bias, –b-pyramid, –ref, –pbratio, –partitions, –weightb</p>
+  </li>
+  <li>
+    <p>b-adapt
+默认：1<br />
+说明：设置B帧决策算法，这个选项会影响到x264使用P帧或者B帧。<br />
+0 —— 关闭。总是使用B帧。和以前的 no-b-adapt选项效果相同；<br />
+1 —— ‘快速’算法。快速，–b-frames越大速度越快。推荐配合使用–bframes 16；<br />
+2 —— ‘最佳’算法，慢速，–b-frames越大速度越慢；<br />
+注意：多趟编码时，只有第一趟编码的此选项起效，因为第一趟编码结束时，帧类型就已经被决定了。</p>
+  </li>
+  <li>
+    <p>b-bias<br />
+默认：0<br />
+说明：调节使用B帧的力度。越大的值越偏向B帧，可以在-100和100之间选择。100或-100不能保证完全或是全是B帧（使用 –b-adapt 0）。请只在你认为你能做出比x264更好的码率控制时才使用这个选项。<br />
+参见： –b-frames, –ipratio</p>
+  </li>
+  <li>
+    <p>b-pyramid
+默认：normal<br />
+说明：允许B帧作为参照帧。如果关闭，那么只有I帧和P帧才能作为参照帧。可以作为参照帧的B帧的量化参数会介于P帧和普通B帧之间。只在–b-frames设置大于等于2时此选项才生效。如果是在为蓝光光盘编码，请使用none或者strict。<br />
+none —— 不允许B帧作为参照帧；<br />
+strict —— 一个图像组内只允许一个B帧参照帧，这是蓝光编码强制要求的标准；<br />
+normal —— 任意使用B帧参照帧；<br />
+参见：–bframes, –refs, –no-mixed-refs</p>
+  </li>
+  <li>
+    <p>open-gop
+默认：none<br />
+说明：Open-GOP是一个提升压缩效率的编码技术。它有以下选项：<br />
+none —— 关闭<br />
+normal —— 开启<br />
+bluray —— 开启。一个稍低效的open-GOP版本，因为normal模式不能用于蓝光编码<br />
+有些解码器不能完全支持open-GOP流，因此这个选项默认关闭。如果要用，请测试你的解码器。
+更多open-gop的资料参见该<a href="http://forum.doom9.org/showthread.php?p=1300124#post1300124">链接</a></p>
+  </li>
+  <li>
+    <p>no-cabac<br />
+默认：无<br />
+说明：关闭CABAC (Context Adaptive Binary Arithmetic Coder)压缩，使用较为低效的CAVLC (Context Adaptive Variable Length Coder)。这两者在压缩效率和解码效率上有10%-20%的差别。</p>
+  </li>
+  <li>
+    <p>ref<br />
+默认：3<br />
+说明：控制DPB (Decoded Picture Buffer)的大小。可以在0-16之间选择。简单地说，就是设置P帧可以选择它之前的多少帧作为参照帧（B帧的值要小1-2，取决于那个B帧能不能作为参照）。最小可以选择值1，只参照自己前面的那帧。注意H.264标准限制了每个level可以参照的帧的数量。如果选择level4.1，1080p最大选4，720p最大选9。<br />
+参照： –b-pyramid, –no-mixed-refs, –level</p>
+  </li>
+  <li>
+    <p>no-deblock<br />
+默认：无<br />
+说明：完全关闭内置去块滤镜。不推荐使用。<br />
+参见： –deblock</p>
+  </li>
+  <li>
+    <p>deblock<br />
+默认：0:0<br />
+说明：调节H.264标准中的内置去块滤镜。这是个性价比很高的选则。详解参见<a href="http://forum.doom9.org/showthread.php?t=109747">参数运作原理</a>。
+参见: –no-deblock</p>
+  </li>
+  <li>
+    <p>slices  　　
+默认：0  　　
+说明：设置每帧的分片数，强制使用矩形分片。（会被–slice-max-size 或 –slice-max-mbs选项覆盖)如果是在为蓝光光盘编码，设置为4。如果不是，不要使用这个选项，除非你确定你需要它。  　　
+参见：–slice-max-size, –slice-max-mbs  　　　　</p>
+  </li>
+  <li>
+    <p>slice-max-size  　　
+默认：0  　　
+说明：设置每个分块包括NAL头的最大大小（bytes）。 (目前与 –interlaced选项不兼容)  　　
+参见：–slices  　　</p>
+  </li>
+  <li>slice-max-mbs  　　
+默认：0  　　
+说明：设置每个分块包含的最大宏块数量。 (目前与 –interlaced选项不兼容)  　　
+参见：–slices 
+ 　　</li>
+  <li>
+    <p>tff<br />
+说明：开启隔行编码并设置上半场在前。x264的隔行编码使用MBAFF，因此效率不如逐行扫描。所以，仅在需要在隔行显示的设备上显示时才开启这个选项（或是送给x264之前无法进行反隔行扫描）。这个选项会触发 –pic-struct开启。</p>
+  </li>
+  <li>
+    <p>bff<br />
+说明：开启隔行编码并设置下半场在前。更多信息同–tff。</p>
+  </li>
+  <li>
+    <p>constrained-intra<br />
+默认：无<br />
+说明：开启SVC编码的底层要求的强制帧内预测。选择每个人都无视SVC了，你也可以忽略这个设置。</p>
+  </li>
+  <li>
+    <p>pulldown<br />
+默认：none<br />
+说明：为你的输入流（逐行扫描的，固定帧率的）使用一组预设的“软性电视模式”。“软性电视模式”在HandBrake Wiki里面有很好的解释。<br />
+可选的参数有：none、22、32、64、double、triple、euro。除了none之外的选项都会触发 –pic-struct开启。</p>
+  </li>
+  <li>fake-interlaced<br />
+默认：无<br />
+说明：把流标志为隔行的但不按隔行编码。用于编码25p和30p的蓝光兼容视频。</li>
+</ul>
+
+<h2 id="section-3">码率控制</h2>
+
+<ul>
+  <li>
+    <p>qp<br />
+默认：无<br />
+说明：三种可选的码率控制方法之一。设置x264使用固定量化参数模式。给定的数量将被作为P帧的量化参数，I帧和B帧的量化参数由–ipratio and –pbratio参数进一步算出。QP模式适用固定的量化参数，这意味着最终的文件大小是不可知的（可以通过一些其他方法预测）。设置为0将产出无损的输出。相同视觉质量时，QP模式产出的文件比crf模式大。QP模式将关闭自适应量化器，因为它是固定QP的。
+这个选项和 –bitrate和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。一般而言crf都能代替QP模式，不过QP因为完全不需要预测所以它会运行地更快些。<br />
+参见：–bitrate, –crf, –ipratio, –pbratio</p>
+  </li>
+  <li>
+    <p>bitrate<br />
+默认：无<br />
+说明：三种可选的码率控制方法之二。设置x264使用固定目标比特率模式。固定目标比特率意味着最终文件的大小是可知的，但是目标的质量是不可知的。 x264会试图让最终文件的整体码率与给定的码率相等。参数的量纲为kilobits/sec（8bit = 1byte）。通常这个选项和–pass选项配合进行2趟编码。
+这个选项和 –qp和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。<br />
+参见：–qp, –crf, –ratetol, –pass, –stats</p>
+  </li>
+  <li>
+    <p>crf
+默认：23.0<br />
+说明：三种可选的码率控制方法之二。固定ratefactor。QP是固定量化器，bitrate是固定文件大小，crf则是固定“质量”。crf可以提供跟QP一样的视觉的质量，但是文件更小。crf的单位是ratefactor。
+crf是通过降低那些“不那么重要”的帧的质量做到这一切的。“不那么重要”意思是过于耗费码率又难以用肉眼察觉的帧，比如复杂或者超高速运行的场景。省下来的码率会用在其它更有效的帧里。
+crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf的最终码率也是不可预测的。你应该根据应用场景来选择码率控制方式。这个选项和 –qp和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。<br />
+参见：–qp, –bitrate</p>
+  </li>
+  <li>
+    <p>rc-lookahead<br />
+默认：40<br />
+说明：为mb-tree ratecontrol（Macroblock Tree Ratecontrol）和vbv-lookahead设置可用的帧的数量。最大可设置为250。对于mb-tree而言，调大这个值会得到更准确地结果，但也会更慢。mb-tree能使用的最大值是–rc-lookahead和–keyint中较小的那一个。对于vbv-lookahead而言，调大这个值会得更稳定和精确的码率控制。vbv-lookahead能使用的最大值是如下公式算出来的：<code>MIN(rc-lookahead, MAX(–keyint, MAX(–vbv-maxrate, –bitrate) / –vbv-bufsize * –fps))</code><br />
+参见：–no-mbtree, –vbv-bufsize, –vbv-maxrate</p>
+  </li>
+  <li>
+    <p>vbv-maxrate<br />
+默认：0<br />
+说明：设置VBV（Video Buffering Verifier）可用的最大码率。使用VBV会降低视频质量，只在真正需要的才设定它。<br />
+参见：–vbv-bufsize, –vbv-init，<a href="http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding">详解</a></p>
+  </li>
+  <li>
+    <p>vbv-bufsize<br />
+默认：0<br />
+说明：设置VBV（Video Buffering Verifier）可用的最大缓冲区，单位是kilobits。使用VBV会降低视频质量，只在真正需要的才设定它。<br />
+参见：–vbv-maxsize, –vbv-init，<a href="http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding">详解</a></p>
+  </li>
+  <li>
+    <p>vbv-init<br />
+默认：0.9<br />
+说明：设置重放之前必须先载入多大的VBV缓冲。如果值小于1，那么大小就为 vbv-init * vbv-bufsize。如果大于1，则是以kbits为单位的值。<br />
+参见：–vbv-maxsize, –vbv-bufsize</p>
+  </li>
+  <li>
+    <p>crf-max<br />
+默认：无<br />
+说明：类似 –qp-max，但是设置的是最大的ratefactor值而不是量化参数。这个选项仅用于crf和vbv同时启用的时候。它阻止x264使用小于给定值的ratefactor（也就是“质量”），哪怕会违反vbv。一般用于流服务器。<a href="http://Git.videolan.org /gitweb.cgi/x264.git/?a=commit; h=81eee062a4ce9aae1eceb3befcae855c25e5ec52">更多的信息</a>。<br />
+参见：–crf, –vbv-maxrate, –vbv-bufsize</p>
+  </li>
+  <li>
+    <p>qpmin<br />
+默认：10<br />
+说明：设置x264可以使用的最小量化器。量化参数越小，输出越接近输入。使用某些值时，x264的输出可以和输入看起来完全一样，虽然其实并不是精确相同的，通常就够了没有必要使用更多比特在宏块上了。
+如果开启了自适应量化器（默认开启），则不鼓励提高qpmin的值，那样可能会降低帧的平坦部分的质量。<br />
+参见：–qpmax, –ipratio</p>
+  </li>
+  <li>
+    <p>qpmax<br />
+默认：51<br />
+说明：qpmin的反面，设置x264可以使用的最大量化器。默认值51是H.264标准中的最大值，质量非常低。默认值51其实相当于没有设置 qpmax。如果你想控制x264输出的最低品质，也许你想要把这个值调低一点（调到30-40最低了），但一般而言不推荐调节这个值。<br />
+参见：–qpmin, –pbratio, –crf-max</p>
+  </li>
+  <li>
+    <p>qpstep<br />
+默认：4<br />
+说明：设置2帧间量化器最大的可变值。</p>
+  </li>
+  <li>
+    <p>ratetol<br />
+默认：1.0<br />
+说明：这个参数有2个可能的含义：<br />
+1、在1趟bitrate编码时，这个参数控制x264可以偏离给定的平均目标比特率的百分比。可以设置为inf完全关闭码率溢出侦测。最低可以设置为 0.01。较高的值可以让x264更好地处理影片结束部分的复杂场景。对于这个目的而言单位是百分比（1.0意味着允许1%的bitrate偏差）。很多影片（比如说动作打斗片）在最后的片段里十分复杂。1趟编码并不知道哪里是最复杂的片断，往往到最后比特都已经用完了。把rateol设置为inf就能解决这个问题，它允许编码器用类似 –crf的方式工作，当然，文件大小会溢出。<br />
+2、当开启了vbv时（只要使用了任何–vbv-开头的选项就会开启），这个选项意味着vbv的强度。更高的值意味着允许更高的在设定的vbv值上下波动。在这个含义时，可以使用任意的度量单位。</p>
+  </li>
+  <li>
+    <p>ipratio<br />
+默认：1.40<br />
+说明：设置平均的I帧的量化器相比P帧量化器增值。更高的值意味着更高的I帧质量。<br />
+参见：–pbratio</p>
+  </li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[SODB RBSP EBSP 的区别与联系]]></title>
@@ -4381,456 +4687,6 @@ protocol(协议名称)、hostname(主机名)、port(端口号)、path(路径)、
 <h3 id="download">Download</h3>
 
 <h3 id="cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</h3>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[RTMP 协议学习（上）: 协议规范]]></title>
-    <link href="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/"/>
-    <updated>2016-07-17T08:17:38-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">1. 几个概念</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">2.字节序、字节对齐和时间格式</a></li>
-  <li><a href="#rtmp-chunk-stream" id="markdown-toc-rtmp-chunk-stream">3. RTMP Chunk Stream</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">3.1 消息格式</a></li>
-      <li><a href="#handshake" id="markdown-toc-handshake">3.2 握手(HandShake)</a>        <ul>
-          <li><a href="#section-3" id="markdown-toc-section-3">握手序列:</a></li>
-          <li><a href="#c--s-" id="markdown-toc-c--s-">C 和 S 格式：</a></li>
-          <li><a href="#handshake-diagram" id="markdown-toc-handshake-diagram">握手框图(HandShake Diagram)</a></li>
-        </ul>
-      </li>
-      <li><a href="#chunking" id="markdown-toc-chunking">3.3 分块(Chunking)</a>        <ul>
-          <li><a href="#chunk-" id="markdown-toc-chunk-">Chunk 格式</a>            <ul>
-              <li><a href="#chunk-basic-header" id="markdown-toc-chunk-basic-header">Chunk Basic Header</a></li>
-              <li><a href="#chunk-message-header" id="markdown-toc-chunk-message-header">Chunk Message Header</a></li>
-              <li><a href="#extended-timestamp" id="markdown-toc-extended-timestamp">Extended Timestamp</a></li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-      <li><a href="#protocol-control-message" id="markdown-toc-protocol-control-message">3.4 协议控制消息(Protocol Control Message)</a>        <ul>
-          <li><a href="#set-chunk-size-1" id="markdown-toc-set-chunk-size-1">设置块大小1(Set Chunk Size 1)</a></li>
-          <li><a href="#acknowledgement-3" id="markdown-toc-acknowledgement-3">确认消息3(Acknowledgement 3)</a></li>
-          <li><a href="#window-acknowledgement-size-5" id="markdown-toc-window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</a></li>
-          <li><a href="#set-peer-bandwidth-6" id="markdown-toc-set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</a></li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-  <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a>    <ul>
-      <li><a href="#rtmprtmp-message-format" id="markdown-toc-rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</a>        <ul>
-          <li><a href="#message-header" id="markdown-toc-message-header">消息头部(Message Header)</a></li>
-          <li><a href="#message-payload" id="markdown-toc-message-payload">消息负载(Message Payload)</a></li>
-        </ul>
-      </li>
-      <li><a href="#section-4" id="markdown-toc-section-4">4.2 使用控制消息(4)</a></li>
-    </ul>
-  </li>
-  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a>    <ul>
-      <li><a href="#types-of-message" id="markdown-toc-types-of-message">5.1 消息类型(Types of Message)</a></li>
-      <li><a href="#types-of-commands" id="markdown-toc-types-of-commands">5.2 指令类型(Types of Commands)</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-5" id="markdown-toc-section-5">6. 参考文献</a></li>
-</ul>
-
-<p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
-<!--more--></p>
-
-<h3 id="section">1. 几个概念</h3>
-<ul>
-  <li>负载(Payload): 分组中包含的数据，比如音频采样数据和视频压缩数据。</li>
-  <li>分组(Packet): 数据分组由固定头部和负载组成的。对于底层协议，可能需要定义分组的封装。</li>
-  <li>端口(Port): 用于区分不同的目标抽象，一般用整数表示，如TCP/IP中的端口号。</li>
-  <li>传输地址(Transport address): 网络地址和端口号的组合,用于标识一个传输层的端口。如IP地址+TCP端口号。</li>
-  <li>消息流(Message stream): 允许消息流动的逻辑上的通讯通道。</li>
-  <li>消息流ID(Message stream ID): 每隔消息都有与之关联的ID号，用于与其他消息流作区分。</li>
-  <li>块(Chunk): 一个消息片段。消息被放到网络上传输之前被切分成小的片段并被交错存取。分块确保跨流的所有消息按时间戳顺序被不断的传输。</li>
-  <li>块流(Chunk stream):</li>
-  <li>块流ID(Chunk stream ID): 每个块所关联的用于区分其他块流的ID。</li>
-  <li>复用(Multiplexing): 将音视频数据整合到一个数据流内,使得多个音视频数据流可以同步传输.</li>
-  <li>解复用(DeMultimplexing): 复用的反过程,交互的音视频数据被分成原始的音频数据和视频数据。</li>
-  <li>远程过程调用(Remote Procedure Call(RPC)):</li>
-  <li>元数据(Metadata): 数据的一个简单描述。如一部电影的电影名、时长、制作时间等等.</li>
-  <li>应用Instance（Application Instance): 对于服务器端的应用Instance，客户端就是通过连接该Instance来发送请求的.</li>
-  <li>Action Message Format(AMF):</li>
-</ul>
-
-<h3 id="section-1">2.字节序、字节对齐和时间格式</h3>
-<p>所有完整的字段都是按照网络字节序被承载的。即零字节是第一个字节，bit 0 是一个字段中的最高有效位。即所谓的大端。
-如无特殊说明，RTMP 中的所有字段都是字节对齐的。</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">#define ALIGN_16bit(value) (((value + 15) &gt;&gt; 4) &lt;&lt; 4)
-</span><span class="line">#define ALIGN_32bit(value) (((value + 31) &gt;&gt; 5) &lt;&lt; 5)
-</span><span class="line">#define ALIGN_64bit(value) (((value + 63) &gt;&gt; 6) &lt;&lt; 6)</span></code></pre></td></tr></table></div></figure>
-<p>RTMP 中的时间戳用整数来表示，它是以毫秒为单位的相对时间。典型的，码流中都是从时间戳为0开始的，但这不是必须的，只要通讯双方用统一的时间即可。注意，这就要求任何跨流的同步都需要 RTMP 外的额外机制。</p>
-
-<h3 id="rtmp-chunk-stream">3. RTMP Chunk Stream</h3>
-
-<h4 id="section-2">3.1 消息格式</h4>
-
-<p>根据上层协议，消息格式可以被分成多个块以支持复用。消息格式应包含如下字段，这对于创建块是必须的:</p>
-
-<ol>
-  <li>时间戳(TimeStamp)：消息的时间戳，占 4 个字节。</li>
-  <li>长度(Length): 消息的长度，包含头部。占头部中的3 个字节。</li>
-  <li>类型Id(Type Id): 消息的类型 Id,占 1 个字节。</li>
-  <li>消息流ID（Message Stream ID）:  每个消息的唯一标识，划分成 Chunk 和还原 Chunk 为 Message 时，
-都是根据这个 ID 来辨识是否是同一个消息的 Chunk 的，占 4 个字节，并且以小端格式存储。</li>
-</ol>
-
-<h4 id="handshake">3.2 握手(HandShake)</h4>
-
-<p>RTMP 协议开始于握手，这里的握手不同于其他协议的握手，它是由 3 个固定大小的块组成，而不是带有头部的可变大小的块。
-客户端和服务器端都会发送 3 个固定大小的块。客户端发送的称为 C0/C1/C2，服务器端发送的称为S0/S1/S2。</p>
-
-<h5 id="section-3">握手序列:</h5>
-
-<p>首先，握手必须是由客户端发送C0/C1开始的。 <br />
-其次，客户端必须接收到服务器端发送的S1后才能发送C2, 必须接收到服务器端发送的S2后才能发送其他数据。 <br />
-再次，服务器端必须等到客户端发送的C0后才能发送S0和S1,也可等到接收到C1后再发送。 <br />
-同样，服务器端必须等到客户端发送的C1后才能发送S1,必须等到客户端发送的C2后才能发送其他数据。</p>
-
-<h5 id="c--s-">C 和 S 格式：</h5>
-
-<p>C0 和 S0 是一个8-bit的整数字段： <br />
-C1 和 S1 是一个1536 byte 的序列，其中 4 byte 是表示时间，4 byte 全部填0，剩余部分填写其他值。 <br />
-C2 和 S2 是对 C1 和 S1 的一个对等。</p>
-
-<h5 id="handshake-diagram">握手框图(HandShake Diagram)</h5>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/HandShake_Diagram.png" /></p>
-
-<hr />
-
-<p>对上面的框图进行简单说明如下：</p>
-
-<p>未初始化阶段(Uninitialized):协议版本会在该阶段发送。客户端和服务器端都处于未初始化阶段。客户端在 C0 包里发送协议版本，如果服务器端支持该协议，就会发送 S0 和 S1 作为反馈，如果不支持，就会终止连接。 <br />
-版本发送阶段(Version Sent): Uninitialized 阶段后，客户端和服务器端都会进入 Version Sent 阶段。客户端等待服务器端发送的 S1 包，服务器端等待客户端发送的 C1 包。一旦等到回应后，客户端会发送 C2 包、服务器端会发送 S2 包。之后进入 Ack Sent 阶段。    <br />
-确认阶段(ACK Sent):客户端和服务器端分别等待 S2 和 C2.    <br />
-握手结束(Handshake Done):客户端和服务器端交换消息.</p>
-
-<h4 id="chunking">3.3 分块(Chunking)</h4>
-
-<p>握手后，连接就会多路传输一个或多个 chunk streams。每个 chunk stream 携带来自一个消息流的一种类型的消息。每个 chunk stream 有一个独立的 chunk stream ID。
-chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chunk 前传输完成。接收端会根据 chunk stream ID 将 chunks 组合进消息。</p>
-
-<p>Chunk size 是可配置的。它可以使用一个控制消息来设置 chunk size。size 较大的chunk 降低 CPU 的使用，size 较小的 chunk 不适用于高比特流的码流。chunk size 的维护是双向独立的。</p>
-
-<h5 id="chunk-">Chunk 格式</h5>
-
-<p>每个 Chunk 包含一个 header 和 data 部分。Header 又包含：<code>Basic Header</code><code>Message Header</code><code>Extended Timestamp</code>三部分。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/chunk_format.png" /></p>
-
-<ul>
-  <li>Basize Header : 1 到 3 byte,该字段编码了 chunk stream ID 和 chunk type。其中 chunk type 决定了编码的message header 的格式。它的长度完全由 chunk stream ID 来决定，它是一个变长字段。</li>
-  <li>Message Header : (0/3/7/11 byte)，该地段编码了关于发送的消息的信息。它的长度同样由 chunk header 里面的chunk type 指定。</li>
-  <li>Extended Timestamp : (0/4 byte)，该字段是否出现取决于 chunk message header 里面的 timestamp 或 timestamp delta 字段。</li>
-  <li>Chunk Data : 可变大小，chunk 的负载，最大值为配置的最大 chunk size。</li>
-</ul>
-
-<h6 id="chunk-basic-header">Chunk Basic Header</h6>
-
-<p>Chunk Basic Header 编码了chunk stream ID 和 chunk type(由 fmt 字段表示)。Chunk Basic Header 字段可能是0-3 byte，取决于 chunk stream ID。实现应该使用最小的size。<br />
-协议支持最大 65597 streams，对应的 ID 为 3-65599。值为 0/1/2 的 ID 保留。</p>
-
-<h6 id="chunk-message-header">Chunk Message Header</h6>
-
-<p>根据 chunk basic header 里的<code>fmt</code>字段的不同，chunk message header 有 4 种不同的格式。</p>
-
-<ul>
-  <li>Type 0</li>
-</ul>
-
-<p>Type 0 的 chunk header 是 11 byte 长。该类型只能在 chunk 流的开始使用。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/chunk_message_header_type0.png" /></p>
-
-<p><code>timestamp</code>3 字节，对于 type 0 的 chunk,timestamp 的消息在此处发送。如果timestamp 大于或等于0xFFFFFF,该字段等于0XFFFFFF,指明extended timestamp字段被编码。</p>
-
-<ul>
-  <li>Type 1</li>
-</ul>
-
-<p>Type 1 的 chunk header 是7 byte 长，不包含 message stream ID，该 chunk 与上一个 chunk 有相同的 stream ID。变长消息的 stream 在第一个消息后，应该使用该格式作为第一个 chunk。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/chunk_message_header_type1.png" /></p>
-
-<ul>
-  <li>Type 2</li>
-</ul>
-
-<p>Type 2 的 chunk header 是 3 byte 长，既不包含 stream ID，也不包含 message length，它与前一个 chunk 有相同的 stream ID 和 消息长度。固定大小的流应该使用这种格式。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/chunk_message_header_type2.png" /></p>
-
-<ul>
-  <li>Type 3</li>
-</ul>
-
-<p>Type 3 chunk 没有 message header，stream ID 和 消息长度以及 timestamp delta 字段都未出现，该类型的 chunk 与之前的 chunk 有相同的 chunk stream ID。
-当一个单独的消息被分成不同的 chunk 时，该消息的所有 chunks 处理第一个都应该使用该类型。</p>
-
-<ul>
-  <li>共用 Header 字段</li>
-</ul>
-
-<p><code>timestamp delta</code>（3 字节）：对于type是1或2的chunk来说，该字段表示上一个chunk的timestamp和当前chunk的timestamp的差值。如果该字段值
-大于等于0XFFFFFF,该字段值必须为0XFFFFFF，表示Extended Timestamp字段被编码；否则表示实际的差值。<br />
-<code>message length</code>（3 字节）：对于type是0或1的chunk来说，消息的长度由此字段传送。注意它与chunk负载的长度不同。chunk负载的长度是对除最后一个chunk外的所有chunk的最大size。<br />
-<code>message type id</code>（1 字节）：对于type是0或1的chunk，消息的类型由该字段传送。<br />
-<code>message stream id</code>（4 字节）：对于type是0的chunk，message stream ID由该字段传送。</p>
-
-<h6 id="extended-timestamp">Extended Timestamp</h6>
-
-<p>上面我们提到在chunk中会有时间戳timestamp和时间戳差timestamp delta，并且它们不会同时存在，只有这两者之一大于3个字节能表示的最大数值0xFFFFFF＝16777215时，才会用这个字段来表示真正的时间戳，否则这个字段为0。扩展时间戳占4个字节，能表示的最大数值就是0xFFFFFFFF＝4294967295。当扩展时间戳启用时，timestamp字段或者timestamp delta要全置为1，表示应该去扩展时间戳字段来提取真正的时间戳或者时间戳差。注意扩展时间戳存储的是完整值，而不是减去时间戳或者时间戳差的值。</p>
-
-<h4 id="protocol-control-message">3.4 协议控制消息(Protocol Control Message)</h4>
-
-<p>RTMP 块流使用消息类型ID为1/2/3/5/6的消息作为协议控制消息，这些消息中包含了 RTMP 块流协议所需要的信息。这些协议控制消息的消息流ID必须
-为0（控制流），而他们的块流ID必须为2。协议控制消息一旦接受即刻生效，它们的时间戳会被忽略。</p>
-
-<h5 id="set-chunk-size-1">设置块大小1(Set Chunk Size 1)</h5>
-
-<p>协议控制消息1，设置块大小，用于通知另一端最大块大小。默认的最大块大小为 128 字节，但客户端和服务器端可以使用该消息来更新最大块大小的值到对端。
-例如，假设客户端想要发送 131 字节的音频数据，而最大块大小为 128，此时客户端会发送消息到服务端并通知它，当前最大块为 131 字节。此时客户端
-只用一个块即可发送这些音频数据。</p>
-
-<p>最大块大小通常不会小于 128 字节，最小不能小于1 字节。最大块大小是双向独立的。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/set_chunk_size.png" /></p>
-
-<p>0:该 bit 必须为0.<br />
-块大小(chunk size)：该字段以字节形式保存新的最大块大小，该值将用于后续所有发送块。取值范围为1——2147483647（0X7FFFFFFF）,然而所有大于0XFFFFFF的值都是等同的。</p>
-
-<h5 id="acknowledgement-3">确认消息3(Acknowledgement 3)</h5>
-
-<p>协议控制消息2，终止消息，被用于通知对端，可以丢弃通过指定块流接收到的部分数据.</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/abort_message.png" /></p>
-
-<p>块流ID(32bit)：该字段表示块流ID，它的当前消息可被丢弃。</p>
-
-<h5 id="window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</h5>
-
-<p>在接受到与窗口大小相等的消息后，客户端或服务端必须发送一个确认消息给对端。窗口大小是发送端发送的最大字节数，无论有没有收到接收端发送的确认消息。该消息指明序列号，代表目前为止接收到的字节数。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/acknowledgement.png" /></p>
-
-<p>序列号(32bit)：该字段表示目前为止已接收到字节总数。</p>
-
-<h5 id="set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</h5>
-
-<p>客户端或服务端发送该消息来限制对端的输出带宽。接收端收到消息后，通过将已发送但尚未被确认的数据总数限制为该消息指定的视窗大小，来
-实现限制输出带宽的目的。如果视窗大小与上一个视窗大小不同，则该消息的接收端应该向该消息的发送端发送视窗大小确认消息。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/set_peer_bandwidth.png" /></p>
-
-<p>Limit Type(显示类型)有以下可选值：</p>
-
-<ul>
-  <li>0-Hard：消息接收端应该将输出带宽限制为指定视窗大小。</li>
-  <li>1-Soft:消息接收端应该将输出带宽限制为指定视窗大小和当前视窗大小中较小值。</li>
-  <li>2-Dynamic：如果上一个消息的限制类型为Hard,则该消息同样为 Hard，否则抛弃该消息。</li>
-</ul>
-
-<h3 id="rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</h3>
-
-<p>本部分描述 RTMP 消息遵循底层协议在网络中断之间传输时的消息格式。</p>
-
-<p>尽管 RTMP 被设计成使用 RTMP 块流传输，但它可以使用其他传输协议来发送消息。RTMP 块流和 RTMP 非常适合
-音视频应用，包括单播、一对多实时直播、视频点播和视频会议等。</p>
-
-<h4 id="rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</h4>
-
-<p>服务端和客户端通过网络发送 RTMP 消息来进行通讯，消息包好视频、音频、数据和其他信息。RTMP 消息包含两部分：头部和负载。</p>
-
-<h5 id="message-header">消息头部(Message Header)</h5>
-
-<p>消息头部包含：消息类型、长度、时间戳和消息流ID.</p>
-
-<ul>
-  <li>消息类型(Message Type)：1 字节字段代表消息类型。类型ID(1-6)是为协议控制消息保留的。</li>
-  <li>长度(Length)：3 字节字段代表负载的大小，字节为单位，大端格式。</li>
-  <li>时间戳(Timestamp):4 字节字段代表消息的时间戳。同样为大端格式。</li>
-</ul>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/message_header.png" /></p>
-
-<h5 id="message-payload">消息负载(Message Payload)</h5>
-
-<p>消息头部后面的是消息的负载，它是消息内真实的数据。例如，它可能是某些音频样本或压缩的视频数据。</p>
-
-<h4 id="section-4">4.2 使用控制消息(4)</h4>
-
-<p>RTMP 协议将消息类型 4 作为用户层控制消息 ID。该消息包含了 RTMP 流所需要的信息。消息类型 ID 为
-1、2、3、5 和 6的协议消息被用作 RTMP 块流协议。</p>
-
-<p>用户控制消息应该使用 ID 为 0 的消息流(即控制流)，并且通过 RTMP 块流传输时使用 ID 为 2 的块流。
-用户控制消息收到后立即生效，它们的时间戳信息会被忽略。</p>
-
-<p>客户端或服务端通过发送该消息告知对方用户控制事件。该消息携带事件类型和事件数据两部分。</p>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/user_control_message.png" /></p>
-
-<p>消息数据的前 2 字节用于指定事件类型，紧跟着的是事件数据。事件数据字段长度可变。但如果使用 RTMP 块
-流传输，则消息总长度不能超过最大块大小，以使消息可以使用一个单独的块进行传输。</p>
-
-<h3 id="rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</h3>
-
-<p>本部分描述了用于服务端和客户端通讯用到的消息类型和命令类型。</p>
-
-<p>服务端和客户端通过交换不同的消息类型来传送不同的消息：音频消息传送音频数据、视频消息传送视频数据、数据消息传送用户数据、共享对象消息和指令消息等。共享对象消息为管理分布与不同客户端和相同服务器的功效数据提供了规范途径。指令消息携带客户端与服务端之间的 AMF 编码指令，客户端或服务端也可以通过指令消息来实现远程过程调用(RPC)。</p>
-
-<h4 id="types-of-message">5.1 消息类型(Types of Message)</h4>
-
-<p>服务端和客户端双方通过网络发送消息进行通信。消息可以是任意类型，包括音频消息、视频消息、命令消息、共享对象消息、数据消息和用户控制消息。</p>
-
-<ul>
-  <li>
-    <p>命令消息(Command Message, Message Type ID = 17或20)<br />
-命令消息携带<code>AMF</code>编码的命令用于客户端和服务器端的传递。如果消息采用AMF0编码，它的 Message Type ID = 20;如果消息采用AMF3编码，它的 Message Type ID=17。命令消息大致可分为两类：用于通知对方执行某些操作的消息，比如connect、createStream、publish、play、pause等;用于通知发送方请求命令状态的消息，比如onstatus、result等。
-一个命令消息包含如下：command name、transaction ID以及包含相关参数的command object。</p>
-  </li>
-  <li>
-    <p>数据消息(Data Message, Message Type ID = 18或15)<br />
-客户端或服务端利用数据消息发送Metadata或其他用户数据给对端。Metadata 包含关于数据(例如音频或视频等)的一些描述，比如创建时间、持续时长、标题等。当消息采用AMF0编码时，其 Message Type ID=18;当消息采用AMF3编码时，其 Message Type ID=15。</p>
-  </li>
-  <li>
-    <p>共享消息(Shared Object Message Type ID = 19或16)<br />
-共享消息是一个 Flash 类型的对象，由键值对的集合组成，用于多客户端，多实例时使用。当消息使用AMF0编码时，Message Type ID = 19;当消息使用AMF3编码时，Message Type ID = 16。每个消息可以包含如下多个事件。</p>
-  </li>
-</ul>
-
-<p><img src="http://lazybing.github.io/images/RTMPProtocol/shared_object_message_format.png" /></p>
-
-<p>RTMP 协议支持如下事件类型：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">Event</th>
-      <th style="text-align: center">Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">Use(=1)</td>
-      <td style="text-align: center">客户端发送该事件通知服务端创建共享对象</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Release(=2)</td>
-      <td style="text-align: center">当共享对象在客户端侧删除时，客户端发送该事件到服务端</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Request Change(=3)</td>
-      <td style="text-align: center">客户端发送该事件到服务端请求更改共享对象的某个给定参数名的值</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Change(=4)</td>
-      <td style="text-align: center">服务端发送该事件来通知所有客户端，更改某个给定参数名的参数值</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Success(=5)</td>
-      <td style="text-align: center">如果客户端发送的请求被服务端接受，服务端会发送该事件给到请求的客户端，最为请求的回应</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">SendMessage(=6)</td>
-      <td style="text-align: center">客户端向服务端发送该事件，用于广播一个消息。接收到该事件后，服务端广播一条消息到所有的客户端，包括发送的客户端</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Status(=7)</td>
-      <td style="text-align: center">服务端发送一个事件通知客户端关于error condictions</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Clear(=8)</td>
-      <td style="text-align: center">服务端发送该事件到客户端，用于清除一个共享对象。服务端同样会发送该事件用于回应客户端发送的Use事件</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Remove(=9)</td>
-      <td style="text-align: center">服务端发送该事件请求客户端删除一个slot</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Request Remove(=10)</td>
-      <td style="text-align: center">客户端发送该事件请求客户端删除一个slot</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Use Success(=11)</td>
-      <td style="text-align: center">服务端发送该事件通知客户端建立成功</td>
-    </tr>
-  </tbody>
-</table>
-
-<ul>
-  <li>
-    <p>音频消息(Audio Message, Message Type ID = 8)<br />
-客户端或服务端发送该消息用于发送音频数据给对端。</p>
-  </li>
-  <li>
-    <p>视频消息(Video Message, Message Type ID = 9)
-客户端或服务端发送该消息用于发送视频数据给对端。</p>
-  </li>
-  <li>
-    <p>用户控制消息事件(User Control Message Event)
-客户端或服务端发送该消息来通知对端关于用户控制事件。RTMP 支持如下的用户控制事件类型：</p>
-  </li>
-</ul>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">Event</th>
-      <th style="text-align: center">Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">Stream Begin(=0)</td>
-      <td style="text-align: center">服务端发送该事件通知客户端，流功能已经完成，可以用于通信。默认情况下，应用连接命令成功接收到后，该事件的ID会被设置为0。事件数据为4字节</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Stream EOF(=1)</td>
-      <td style="text-align: center">服务端发送该事件通知客户端，数据的播放已经结束。</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">StreamDry(=2)</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">SetBuffer Lenght(=3)</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">StreamIsRecorded(=4)</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">PingRequest(=6)</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">PingResponse(=7)</td>
-      <td style="text-align: center"> </td>
-    </tr>
-  </tbody>
-</table>
-
-<ul>
-  <li>聚集消息(Aggregate Message, Messaget Type ID=22)</li>
-</ul>
-
-<h4 id="types-of-commands">5.2 指令类型(Types of Commands)</h4>
-
-<h3 id="section-5">6. 参考文献</h3>
-
-<p>1.<a href="http://mingyangshang.github.io/2016/03/06/RTMP%E5%8D%8F%E8%AE%AE/">带你吃透RTMP</a><br />
-2.<a href="https://www.gitbook.com/book/chenlichao/rtmp-zh_cn/details">RTMP协议规范中文版</a><br />
-3.<a href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/rtmp/pdf/rtmp_specification_1.0.pdf">RTMP官方协议英文版</a></p>
 
 ]]></content>
   </entry>
