@@ -1,0 +1,258 @@
+---
+layout: post
+title: "x264 参数详解"
+date: 2017-06-23 20:07:55 -0700
+comments: true
+categories: x264 
+---
+
+* list element with functor item
+{:toc}
+
+x264 中参数选项详解
+
+<!--more-->
+
+## 输入
+用1个绝对路径定义输入文件（或者2个，rawYUV文件）。如下例：  
+
+```  
+x264.exe -o NUL C:\input.avs  
+x264 -o /dev/null ~/input.y4m  
+```
+
+如果输入文件是rawYUV格式的，还要把分辨率一并输入。如果开启了比特率控制，还需要输入帧率。如下例： 
+ 
+```
+x264.exe -o NUL –fps 25 D:\input.yuv 1280×720  
+x264 -o /dev/null –fps 30000/1001 ~/input.yuv 640×480  
+```
+
+## 预设值
+预设值是x264在r1177版本增加的一个方便的命令行选项。可以用x264.exe –fullhelp查看所有的命令行帮助。   
+
+* profile  
+默认：无  
+说明：限制输出文件的profile。这个参数将覆盖其它所有值，此选项能保证输出profile兼容的视频流。如果使用了这个选项，将不能进行无损压缩（qp 0 or crf 0）。  
+可选：baseline，main，high  
+建议：不设置。除非解码环境只支持main或者baseline profile的解码。  
+
+* preset  
+默认：medium  
+一些在压缩效率和运算时间中平衡的预设值。如果指定了一个预设值，它会在其它选项生效前生效。  
+可选：ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow and placebo.  
+建议：可接受的最慢的值  
+
+* tune  
+默认：无  
+说明：在上一个选项基础上进一步优化输入。如果定义了一个tune值，它将在preset之后，其它选项之前生效。  
+可选：film, animation, grain, stillimage, psnr, ssim, fastdecode, zerolatency and touhou.  
+建议：根据输入选择。如果没有合适的就不要指定。  
+
+* slow-firstpass  
+默认：无  
+说明：随着预设值机制在r1177版本的出现，使用–pass 1会在解析命令行时增加以下设置：`ref 1`
+`no-8x8dct``partitions i4x4 (if originally enabled, else none)``me dia``subme MIN( 2, subme )``trellis 0`  
+如果设置preset=placebo则自动关闭此特性。如果想显式关闭此特性，使用slow-firstpass。  
+
+## 帧类型
+
+* keyint  
+默认：250  
+说明：设置x264输出中最大的IDR帧（亦称关键帧）间距。  
+IDR帧是视频流的“分隔符”，所有帧都不可以使用越过关键帧的帧作为参考帧。IDR帧是I帧的一种，所以它们也不参照其它帧。这意味着它们可以作为视频的搜索（seek）点。  
+通过这个设置可以设置IDR帧的最大间隔帧数（亦称最大图像组长度）。较大的值将导致IDR帧减少（会用占用空间更少的P帧和B帧取代），也就同时减弱了参照帧选择的限制。较小的值导致减少搜索一个随机帧所需的平均时间。  
+建议：默认值（fps的10倍）对大多数视频都很好。如果在为蓝光、广播、直播流或者其它什么专业流编码，也许会需要更小的图像组长度（一般等于fps）。  
+参见：min-keyint, scenecut, intra-refresh  
+
+* min-keyint  
+默认：auto（keyint/10）  
+说明：参见keyint的说明。过小的keyint范围会导致产生“错误的”IDR帧（比如说，一个闪屏场景，参见上一篇blog）。此选项限制了IDR帧之间的最小距离。  
+建议：默认，或者与fps相等  
+参见：keyint, scenecut  
+
+* no-scenecut  
+默认：无  
+说明：完全关闭自适应I帧决策。  
+参见：scenecut  
+
+* scenecut  
+默认：40  
+说明：设置决策使用I帧、IDR帧的阈值（场景变换检测）。  
+x264会计算每一帧与前一帧的不同程度并得出一个值。如果这个值低于scenecut，那么就算检测到一个“场景变换”。如果此时距离上一帧的距离小于 min-keyint则插入一个I帧，反之则插入一个IDR帧。较高的值会增加侦测到“场景变换”纪律。参见更详细的[工作原理](http://forum.doom9.org/showthread.PHP?t=121116)  
+设置scenecut=0与no-scenecut等效。  
+建议：使用默认值  
+参见：keyint, min-keyint, no-scenecut  
+
+* intra-refresh  
+默认：off  
+说明：让x264为每keyint数量的帧使用宏块内部编码取代IDR帧。块以水平移动列的方式更新，也叫刷新波。对于低延迟的流，这样可以让帧的尺寸比使用标准的IDR帧更加保持恒定。而且这样可以增强视频流对丢包的容错能力。这个选项会降低压缩率，所以在确实需要的时候才选择它。  
+还有一些有意思的事情：1、第一帧依然是IDR帧。2、内部宏块只在P帧中存在，刷新波在一个或多个B帧后的P帧中广泛存在。3、主要的压缩率下降原因是在宏块中新（左边）的波并不能参考旧（右边）的波。  
+建议：使用默认值  
+
+* bframes
+默认：3  
+说明：设置x264可使用的B帧的最大连续数量。  
+没有B帧时，一个典型的x264流帧类型是这样的：IPPPPP…PI。如果设置了-bframes 2，那么两个连续的P帧就可以用B帧替换，然后就像这样：IBPBBPBPPPB…PI。  
+B帧和P帧的区别在于它可以参照它之后的帧，这个特点让它可以显著地提升压缩率。他们的平均品质受 –pbratio选项的控制。  
+还有一些有意思的事情：  
+1、x264有2种B帧，一种可以作为参照帧，一种不能；  
+2、关于x264如何决策B帧或P帧，可以看看这个ffmpeg-devel[邮件列表](http://article.gmane.org /gmane.comp.video.ffmpeg.devel/29064)。这种情况下帧类型看起来就像这样IBBBPBBBPBPI（假设设置 –bframes 3）。  
+参见：–no-b-adapt, –b-bias, –b-pyramid, –ref, –pbratio, –partitions, –weightb  
+
+* b-adapt
+默认：1  
+说明：设置B帧决策算法，这个选项会影响到x264使用P帧或者B帧。  
+0 —— 关闭。总是使用B帧。和以前的 no-b-adapt选项效果相同；  
+1 —— ‘快速’算法。快速，–b-frames越大速度越快。推荐配合使用–bframes 16；  
+2 —— ‘最佳’算法，慢速，–b-frames越大速度越慢；  
+注意：多趟编码时，只有第一趟编码的此选项起效，因为第一趟编码结束时，帧类型就已经被决定了。  
+
+* b-bias  
+默认：0  
+说明：调节使用B帧的力度。越大的值越偏向B帧，可以在-100和100之间选择。100或-100不能保证完全或是全是B帧（使用 –b-adapt 0）。请只在你认为你能做出比x264更好的码率控制时才使用这个选项。  
+参见： –b-frames, –ipratio  
+
+* b-pyramid
+默认：normal  
+说明：允许B帧作为参照帧。如果关闭，那么只有I帧和P帧才能作为参照帧。可以作为参照帧的B帧的量化参数会介于P帧和普通B帧之间。只在–b-frames设置大于等于2时此选项才生效。如果是在为蓝光光盘编码，请使用none或者strict。  
+none —— 不允许B帧作为参照帧；  
+strict —— 一个图像组内只允许一个B帧参照帧，这是蓝光编码强制要求的标准；  
+normal —— 任意使用B帧参照帧；  
+参见：–bframes, –refs, –no-mixed-refs  
+
+* open-gop
+默认：none  
+说明：Open-GOP是一个提升压缩效率的编码技术。它有以下选项：  
+none —— 关闭  
+normal —— 开启  
+bluray —— 开启。一个稍低效的open-GOP版本，因为normal模式不能用于蓝光编码  
+有些解码器不能完全支持open-GOP流，因此这个选项默认关闭。如果要用，请测试你的解码器。
+更多open-gop的资料参见该[链接](http://forum.doom9.org/showthread.php?p=1300124#post1300124)  
+
+* no-cabac  
+默认：无  
+说明：关闭CABAC (Context Adaptive Binary Arithmetic Coder)压缩，使用较为低效的CAVLC (Context Adaptive Variable Length Coder)。这两者在压缩效率和解码效率上有10%-20%的差别。  
+
+* ref  
+默认：3  
+说明：控制DPB (Decoded Picture Buffer)的大小。可以在0-16之间选择。简单地说，就是设置P帧可以选择它之前的多少帧作为参照帧（B帧的值要小1-2，取决于那个B帧能不能作为参照）。最小可以选择值1，只参照自己前面的那帧。注意H.264标准限制了每个level可以参照的帧的数量。如果选择level4.1，1080p最大选4，720p最大选9。  
+参照： –b-pyramid, –no-mixed-refs, –level  
+
+* no-deblock  
+默认：无  
+说明：完全关闭内置去块滤镜。不推荐使用。  
+参见： –deblock  
+
+* deblock  
+默认：0:0  
+说明：调节H.264标准中的内置去块滤镜。这是个性价比很高的选则。详解参见[参数运作原理](http://forum.doom9.org/showthread.php?t=109747)。
+参见: –no-deblock
+
+* slices  　　
+默认：0  　　
+说明：设置每帧的分片数，强制使用矩形分片。（会被–slice-max-size 或 –slice-max-mbs选项覆盖)如果是在为蓝光光盘编码，设置为4。如果不是，不要使用这个选项，除非你确定你需要它。  　　
+参见：–slice-max-size, –slice-max-mbs  　　　　
+
+* slice-max-size  　　
+默认：0  　　
+说明：设置每个分块包括NAL头的最大大小（bytes）。 (目前与 –interlaced选项不兼容)  　　
+参见：–slices  　　
+
+* slice-max-mbs  　　
+默认：0  　　
+说明：设置每个分块包含的最大宏块数量。 (目前与 –interlaced选项不兼容)  　　
+参见：–slices 
+ 　　
+* tff  
+说明：开启隔行编码并设置上半场在前。x264的隔行编码使用MBAFF，因此效率不如逐行扫描。所以，仅在需要在隔行显示的设备上显示时才开启这个选项（或是送给x264之前无法进行反隔行扫描）。这个选项会触发 –pic-struct开启。  
+
+* bff  
+说明：开启隔行编码并设置下半场在前。更多信息同–tff。  
+
+* constrained-intra  
+默认：无  
+说明：开启SVC编码的底层要求的强制帧内预测。选择每个人都无视SVC了，你也可以忽略这个设置。  
+
+* pulldown  
+默认：none  
+说明：为你的输入流（逐行扫描的，固定帧率的）使用一组预设的“软性电视模式”。“软性电视模式”在HandBrake Wiki里面有很好的解释。  
+可选的参数有：none、22、32、64、double、triple、euro。除了none之外的选项都会触发 –pic-struct开启。  
+
+* fake-interlaced  
+默认：无  
+说明：把流标志为隔行的但不按隔行编码。用于编码25p和30p的蓝光兼容视频。  
+
+
+## 码率控制
+
+* qp  
+默认：无  
+说明：三种可选的码率控制方法之一。设置x264使用固定量化参数模式。给定的数量将被作为P帧的量化参数，I帧和B帧的量化参数由–ipratio and –pbratio参数进一步算出。QP模式适用固定的量化参数，这意味着最终的文件大小是不可知的（可以通过一些其他方法预测）。设置为0将产出无损的输出。相同视觉质量时，QP模式产出的文件比crf模式大。QP模式将关闭自适应量化器，因为它是固定QP的。
+这个选项和 –bitrate和–crf是互斥的，三者只能选一个，参见[原理](http://blog.yikuyiku.com/index.php/archives/1901)。一般而言crf都能代替QP模式，不过QP因为完全不需要预测所以它会运行地更快些。  
+参见：–bitrate, –crf, –ipratio, –pbratio  
+
+* bitrate  
+默认：无  
+说明：三种可选的码率控制方法之二。设置x264使用固定目标比特率模式。固定目标比特率意味着最终文件的大小是可知的，但是目标的质量是不可知的。 x264会试图让最终文件的整体码率与给定的码率相等。参数的量纲为kilobits/sec（8bit = 1byte）。通常这个选项和–pass选项配合进行2趟编码。
+这个选项和 –qp和–crf是互斥的，三者只能选一个，参见[原理](http://blog.yikuyiku.com/index.php/archives/1901)。  
+参见：–qp, –crf, –ratetol, –pass, –stats  
+
+* crf
+默认：23.0  
+说明：三种可选的码率控制方法之二。固定ratefactor。QP是固定量化器，bitrate是固定文件大小，crf则是固定“质量”。crf可以提供跟QP一样的视觉的质量，但是文件更小。crf的单位是ratefactor。
+crf是通过降低那些“不那么重要”的帧的质量做到这一切的。“不那么重要”意思是过于耗费码率又难以用肉眼察觉的帧，比如复杂或者超高速运行的场景。省下来的码率会用在其它更有效的帧里。
+crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf的最终码率也是不可预测的。你应该根据应用场景来选择码率控制方式。这个选项和 –qp和–crf是互斥的，三者只能选一个，参见[原理](http://blog.yikuyiku.com/index.php/archives/1901)。  
+参见：–qp, –bitrate  
+
+* rc-lookahead  
+默认：40  
+说明：为mb-tree ratecontrol（Macroblock Tree Ratecontrol）和vbv-lookahead设置可用的帧的数量。最大可设置为250。对于mb-tree而言，调大这个值会得到更准确地结果，但也会更慢。mb-tree能使用的最大值是–rc-lookahead和–keyint中较小的那一个。对于vbv-lookahead而言，调大这个值会得更稳定和精确的码率控制。vbv-lookahead能使用的最大值是如下公式算出来的：`MIN(rc-lookahead, MAX(–keyint, MAX(–vbv-maxrate, –bitrate) / –vbv-bufsize * –fps))`  
+参见：–no-mbtree, –vbv-bufsize, –vbv-maxrate  
+
+* vbv-maxrate  
+默认：0  
+说明：设置VBV（Video Buffering Verifier）可用的最大码率。使用VBV会降低视频质量，只在真正需要的才设定它。  
+参见：–vbv-bufsize, –vbv-init，[详解](http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding)
+
+* vbv-bufsize  
+默认：0  
+说明：设置VBV（Video Buffering Verifier）可用的最大缓冲区，单位是kilobits。使用VBV会降低视频质量，只在真正需要的才设定它。  
+参见：–vbv-maxsize, –vbv-init，[详解](http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding)
+
+* vbv-init  
+默认：0.9  
+说明：设置重放之前必须先载入多大的VBV缓冲。如果值小于1，那么大小就为 vbv-init * vbv-bufsize。如果大于1，则是以kbits为单位的值。  
+参见：–vbv-maxsize, –vbv-bufsize  
+
+* crf-max  
+默认：无  
+说明：类似 –qp-max，但是设置的是最大的ratefactor值而不是量化参数。这个选项仅用于crf和vbv同时启用的时候。它阻止x264使用小于给定值的ratefactor（也就是“质量”），哪怕会违反vbv。一般用于流服务器。[更多的信息](http://Git.videolan.org /gitweb.cgi/x264.git/?a=commit; h=81eee062a4ce9aae1eceb3befcae855c25e5ec52)。  
+参见：–crf, –vbv-maxrate, –vbv-bufsize  
+
+* qpmin  
+默认：10  
+说明：设置x264可以使用的最小量化器。量化参数越小，输出越接近输入。使用某些值时，x264的输出可以和输入看起来完全一样，虽然其实并不是精确相同的，通常就够了没有必要使用更多比特在宏块上了。
+如果开启了自适应量化器（默认开启），则不鼓励提高qpmin的值，那样可能会降低帧的平坦部分的质量。  
+参见：–qpmax, –ipratio  
+
+* qpmax  
+默认：51  
+说明：qpmin的反面，设置x264可以使用的最大量化器。默认值51是H.264标准中的最大值，质量非常低。默认值51其实相当于没有设置 qpmax。如果你想控制x264输出的最低品质，也许你想要把这个值调低一点（调到30-40最低了），但一般而言不推荐调节这个值。  
+参见：–qpmin, –pbratio, –crf-max  
+
+* qpstep  
+默认：4  
+说明：设置2帧间量化器最大的可变值。  
+
+* ratetol  
+默认：1.0  
+说明：这个参数有2个可能的含义：  
+1、在1趟bitrate编码时，这个参数控制x264可以偏离给定的平均目标比特率的百分比。可以设置为inf完全关闭码率溢出侦测。最低可以设置为 0.01。较高的值可以让x264更好地处理影片结束部分的复杂场景。对于这个目的而言单位是百分比（1.0意味着允许1%的bitrate偏差）。很多影片（比如说动作打斗片）在最后的片段里十分复杂。1趟编码并不知道哪里是最复杂的片断，往往到最后比特都已经用完了。把rateol设置为inf就能解决这个问题，它允许编码器用类似 –crf的方式工作，当然，文件大小会溢出。  
+2、当开启了vbv时（只要使用了任何–vbv-开头的选项就会开启），这个选项意味着vbv的强度。更高的值意味着允许更高的在设定的vbv值上下波动。在这个含义时，可以使用任意的度量单位。  
+
+* ipratio  
+默认：1.40  
+说明：设置平均的I帧的量化器相比P帧量化器增值。更高的值意味着更高的I帧质量。  
+参见：–pbratio  
+
