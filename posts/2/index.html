@@ -9,8 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="avcodec_find_decoder和avcodec_find_encoder 主要是查找 FFmpeg 的解码器和编码器。
-">
+  <meta name="description" content="avio_open2 声明和定义 avio_open2 调动关系 avio_open2 源码分析 ffurl_open 函数 ffurl_alloc 函数 ffurl_connect 函数 ffio_fdopen 函数 avio_open2 主要实现创建并初始化一个 AVIOContext， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +79,54 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/12/07/avio-open2/">FFMPEG源码分析：avio_open2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-12-07T04:21:48-08:00'><span class='date'>2016 年 12 月 07 日</span> <span class='time'>4:21 am</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#avioopen2-" id="markdown-toc-avioopen2-">avio_open2 声明和定义</a></li>
+  <li><a href="#avioopen2--1" id="markdown-toc-avioopen2--1">avio_open2 调动关系</a></li>
+  <li><a href="#avioopen2--2" id="markdown-toc-avioopen2--2">avio_open2 源码分析</a>    <ul>
+      <li><a href="#ffurlopen-" id="markdown-toc-ffurlopen-">ffurl_open 函数</a>        <ul>
+          <li><a href="#ffurlalloc-" id="markdown-toc-ffurlalloc-">ffurl_alloc 函数</a></li>
+          <li><a href="#ffurlconnect-" id="markdown-toc-ffurlconnect-">ffurl_connect 函数</a></li>
+        </ul>
+      </li>
+      <li><a href="#ffiofdopen-" id="markdown-toc-ffiofdopen-">ffio_fdopen 函数</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>avio_open2 主要实现创建并初始化一个 AVIOContext，用于访问由 url 指定文件。
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/12/07/avio-open2/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -484,53 +531,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/07/20/lib-trmp-source-code-study/">RTMP协议学习（中）：源码分析</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
-        
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
-  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
-  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
-  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
-  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
-  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
-  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
-  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
-  <li><a href="#download" id="markdown-toc-download">Download</a></li>
-  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
-</ul>
-
-<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/07/20/lib-trmp-source-code-study/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -549,7 +549,7 @@
                 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (3)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (4)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
@@ -561,6 +561,10 @@
 <section>
   <h1>最新文章</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/06/24/x264-encoder-open/">X264代码解析之x264_encoder_open函数</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2017/06/23/x264-paraments-illustra/">X264 参数详解</a>
@@ -576,10 +580,6 @@
     
       <li class="post">
         <a href="/blog/2017/01/01/ffmpeg-sdk-learning/">FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放以及添加水印</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2016/12/25/avformat_find_stream_info/">FFMPEG 源码分析：avformat_find_stream_info</a>
       </li>
     
   </ul>

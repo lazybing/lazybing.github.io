@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-06-23T20:33:24-07:00</updated>
+  <updated>2017-06-24T18:29:13-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,19 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264代码解析之x264_encoder_open函数]]></title>
+    <link href="http://lazybing.github.io/blog/2017/06/24/x264-encoder-open/"/>
+    <updated>2017-06-24T18:24:01-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/06/24/x264-encoder-open</id>
+    <content type="html"><![CDATA[
+<p>本文主要记录<code>x264_encoder_open</code>函数。</p>
+
+<!--more-->
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264 参数详解]]></title>
@@ -4495,198 +4508,6 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 </span><span class="line">                   <span class="s">&quot;Skipping flv packet: type %d, size %d, flags %d.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
 </span><span class="line">                   <span class="n">type</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[RTMP协议学习（中）：源码分析]]></title>
-    <link href="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study/"/>
-    <updated>2016-07-20T17:03:14-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
-  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
-  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
-  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
-  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
-  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
-  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
-  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
-  <li><a href="#download" id="markdown-toc-download">Download</a></li>
-  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
-</ul>
-
-<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
-<!--more--></p>
-
-<h3 id="section">大致流程</h3>
-
-<p>使用RTMP下载流媒体的主要流程包括以下几个步骤：</p>
-
-<ul>
-  <li>InitSocket()</li>
-  <li>RTMP_Init(Struct RTMP)</li>
-  <li>RTMP_ParseURL</li>
-  <li>RTMP_SetupStream</li>
-  <li>fopen</li>
-  <li>RTMP_Connect()</li>
-  <li>RTMP_ConnectStream</li>
-  <li>Download</li>
-  <li>CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</li>
-</ul>
-
-<p>下面逐个记录各个步骤的功能。
-在了解具体步骤之前，先了解结构重要的Structure:</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">RTMP</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_inChunkSize</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_outChunkSize</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_nBWCheckCounter</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_nBytesIn</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_nBytesInSent</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_nBufferMS</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_stream_id</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_mediaChannel</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">uint32_t</span> <span class="n">m_mediaStamp</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">uint32_t</span> <span class="n">m_pauseStamp</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_pausing</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_nServerBW</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_nClientBW</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">m_nClientBW2</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">m_bPlaying</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">m_bSendEncoding</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">m_bSendCounter</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_numInvokes</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">m_numCalls</span><span class="p">;</span>
-</span><span class="line">    <span class="n">RTMP_METHOD</span> <span class="o">*</span><span class="n">m_methodCalls</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="initsocket">InitSocket()</h3>
-
-<p>初始化 Socket ,代码非常简单。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">int InitSockets()
-</span><span class="line">{
-</span><span class="line">#ifdef WIN32
-</span><span class="line">    WORD version;
-</span><span class="line">    WSADATA wsaData;
-</span><span class="line">
-</span><span class="line">    version MAKEWORD(1, 1);       
-</span><span class="line">    return (WSASTartup(version, &amp;wsaData) == 1);
-</span><span class="line">#else
-</span><span class="line">    return TRUE;
-</span><span class="line">#endif
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</h3>
-
-<p>初始化 RTMP 结构体。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">void RTMP_Init(RTMP *r)
-</span><span class="line">{
-</span><span class="line">#ifdef CRYPTO
-</span><span class="line">    if(!RTMP_TLS_cts)
-</span><span class="line">        RTMP_TLS_Init();
-</span><span class="line">#endif
-</span><span class="line">
-</span><span class="line">    memset(r, 0, sizeof(RTMP));
-</span><span class="line">    r-&gt;m_sb.sb_socket = -1;
-</span><span class="line">    r-&gt;m_inChunkSize  = RTMP_DEFAULT_CHUNKSIZE;
-</span><span class="line">    r-&gt;m_outChunkSize = RTMP_DEFAULT_CHUNKSIZE;
-</span><span class="line">    r-&gt;m_nBufferMS    = 30000;
-</span><span class="line">    r-&gt;m_nClientBW    = 2500000;
-</span><span class="line">    r-&gt;m_nClientBW2   = 2;
-</span><span class="line">    r-&gt;m_nServerBW    = 2500000;
-</span><span class="line">    r-&gt;m_fAudioCodecs = 3191.0;
-</span><span class="line">    r-&gt;m_fVideoCodecs = 252.0;
-</span><span class="line">    r-&gt;Link.timeout   = 20;
-</span><span class="line">    r-&gt;Link.swfAge    = 30;
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="rtmpparseurl">RTMP_ParseURL</h3>
-
-<p>URL 一般由三部分组成: 资源类型、存放资源的主机域名、资源文件名。
-语法格式为([]为可选项):protocol://hostname[:port]/path/[:parameters][?query]#fragment
-protocol(协议名称)、hostname(主机名)、port(端口号)、path(路径)、parameters(参数)。</p>
-
-<p>RTMP_ParseURL函数定义:</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port, AVal *playpath, AVal *app);</span></code></pre></td></tr></table></div></figure>
-
-<p>从函数定义的几个参数可以看出，url 被定位为 const 型，即该参数在函数内部不可改变，而protocol、host、port、palypath、app 则是在函数内部根据url来进行解析，之后进行赋值的。</p>
-
-<h3 id="rtmpsetupstream">RTMP_SetupStream</h3>
-
-<h3 id="fopen">fopen</h3>
-
-<h3 id="rtmpconnect">RTMP_Connect()</h3>
-
-<h3 id="rtmpconnectstream">RTMP_ConnectStream</h3>
-
-<h3 id="download">Download</h3>
-
-<h3 id="cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</h3>
 
 ]]></content>
   </entry>
