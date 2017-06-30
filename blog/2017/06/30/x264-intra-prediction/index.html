@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文主要记录 x264 中使用到的帧内预测技术。 x264 中对于预测 intra16x16Predmode Name of Intra16x16PredMode Note 0 Intra_16x16_Vertical(prediction mode) 由上边像素推出相应像素值 1 &hellip;">
+  <meta name="description" content="Specification of Intra_16x16_Vertical prediction mode 本文主要记录 x264 中使用到的帧内预测技术。 x264 中对于预测 intra16x16Predmode Name of Intra16x16PredMode Note 0 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,7 +99,10 @@
   </header>
 
 
-<div class="entry-content">
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#specification-of-intra16x16vertical-prediction-mode" id="markdown-toc-specification-of-intra16x16vertical-prediction-mode">Specification of Intra_16x16_Vertical prediction mode</a></li>
+</ul>
+
 <p>本文主要记录 x264 中使用到的帧内预测技术。</p>
 
 <!--more-->
@@ -139,6 +142,12 @@
 </table>
 
 <p>下面依次分析这几种预测模式：</p>
+
+<h3 id="specification-of-intra16x16vertical-prediction-mode">Specification of Intra_16x16_Vertical prediction mode</h3>
+
+<p>在 SPEC 中，关于该预测模式的定义如下：<br />
+&gt; This Intra_16x16 prediction mode shall be used only when the samples p[x, -1] with x=0…15 are marked as “available for Intra_16x16 prediction”.
+&gt; The values of the prediction samples pred[x, y] with x,y=0…15, are derived by pred[x,y]=p[x,-1],with x,y=0…15</p>
 
 <p>x264 中关于模式 Vertical 的代码如下：</p>
 
