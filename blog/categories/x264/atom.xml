@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-06-24T18:29:13-07:00</updated>
+  <updated>2017-06-30T09:29:04-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,98 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264 源码分析之帧内预测]]></title>
+    <link href="http://lazybing.github.io/blog/2017/06/30/x264-intra-prediction/"/>
+    <updated>2017-06-30T08:12:22-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/06/30/x264-intra-prediction</id>
+    <content type="html"><![CDATA[
+<p>本文主要记录 x264 中使用到的帧内预测技术。</p>
+
+<!--more-->
+
+<p>x264 中对于预测</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">intra16x16Predmode</th>
+      <th style="text-align: center">Name of Intra16x16PredMode</th>
+      <th style="text-align: center">Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">Intra_16x16_Vertical(prediction mode)</td>
+      <td style="text-align: center">由上边像素推出相应像素值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">Intra_16x16_Horicontal(prdiction mode)</td>
+      <td style="text-align: center">由左边像素推出相应像素值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">Intra_16x16_DC(prediction mode)</td>
+      <td style="text-align: center">由上边和左边像素平均值推出相应像素值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">Intra_16x16_Plane(prediction mode)</td>
+      <td style="text-align: center">利用线性 plan 函数及左、上像素推出相应像素值，适用于亮度变化平缓区域</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>下面依次分析这几种预测模式：</p>
+
+<p>x264 中关于模式 Vertical 的代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">x264_predict_16x16_v_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">v0</span> <span class="o">=</span> <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">src</span><span class="p">[</span> <span class="mi">0</span><span class="o">-</span><span class="n">FDEC_STRIDE</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">v1</span> <span class="o">=</span> <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">src</span><span class="p">[</span> <span class="mi">4</span><span class="o">-</span><span class="n">FDEC_STRIDE</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">v2</span> <span class="o">=</span> <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">src</span><span class="p">[</span> <span class="mi">8</span><span class="o">-</span><span class="n">FDEC_STRIDE</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">v3</span> <span class="o">=</span> <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">src</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">FDEC_STRIDE</span><span class="p">]</span> <span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">16</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span> <span class="mi">0</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v0</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span> <span class="mi">4</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v1</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span> <span class="mi">8</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v2</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span><span class="mi">12</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v3</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">src</span> <span class="o">+=</span> <span class="n">FDEC_STRIDE</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>注意，上面代码中的 pixel 为 uint8_t，而 pixel4 为 uint32_t，而 MPIXEL_X4 定义如下：</p>
+
+<p><code>
+#define MPIXEL_X4(src) M32(src)  
+#deinfe M32(src) (((x264_union32_t *)(src))-&gt;i)  
+typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;
+</code></p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264代码解析之x264_encoder_open函数]]></title>
