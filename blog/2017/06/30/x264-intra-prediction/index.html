@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Intra_16x16_Vertical 预测模式 本文主要记录 x264 中使用到的帧内预测技术。 x264 中对于预测 intra16x16Predmode Name of Intra16x16PredMode Note 0 Intra_16x16_Vertical(prediction &hellip;">
+  <meta name="description" content="Intra_16x16_Vertical 预测模式 Intra_16x16_Horizontal 预测模式 本文主要记录 x264 中使用到的帧内预测技术。 x264 中对于预测 intra16x16Predmode Name of Intra16x16PredMode Note 0 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -101,6 +101,7 @@
 
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#intra16x16vertical-" id="markdown-toc-intra16x16vertical-">Intra_16x16_Vertical 预测模式</a></li>
+  <li><a href="#intra16x16horizontal-" id="markdown-toc-intra16x16horizontal-">Intra_16x16_Horizontal 预测模式</a></li>
 </ul>
 
 <p>本文主要记录 x264 中使用到的帧内预测技术。</p>
@@ -193,6 +194,12 @@
 </pre></td><td class="code"><pre><code class=""><span class="line">#define MPIXEL_X4(src) M32(src)  
 </span><span class="line">#deinfe M32(src) (((x264_union32_t *)(src))-&gt;i)  
 </span><span class="line">typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="intra16x16horizontal-">Intra_16x16_Horizontal 预测模式</h3>
+
+<p>在 SPEC 中，关于该预测模式的定义如下：</p>
+
+<blockquote><p>This Intra_16x16 prediction mode shall be used only when the samples p[−1, y] with y = 0..15 are marked as "available<br />for Intra_16x16 prediction".<br />The values of the prediction samples predL[ x, y ], with x, y = 0..15, are derived by<br />predL[ x, y ] = p[ −1, y ], with x, y = 0..15</p></blockquote>
 
 </div>
 
