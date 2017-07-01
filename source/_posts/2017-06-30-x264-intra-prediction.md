@@ -74,3 +74,26 @@ predL[ x, y ] = p[ −1, y ], with x, y = 0..15
 {% endblockquote %}
 
 
+x264 中关于模式 Horizontal 的代码如下：  
+
+{% codeblock lang:c %}
+void x264_predict_16x16_h_c( pixel *src )
+{
+    for( int i = 0; i < 16; i++ )
+    {
+        const pixel4 v = PIXEL_SPLAT_X4( src[-1] );
+        MPIXEL_X4( src+ 0 ) = v;
+        MPIXEL_X4( src+ 4 ) = v;
+        MPIXEL_X4( src+ 8 ) = v;
+        MPIXEL_X4( src+12 ) = v;
+        src += FDEC_STRIDE;
+    }
+}
+{% endcodeblock %}
+
+其中`PIXEL_SPLAT_X4`定义如下：  
+
+```
+#   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)
+```
+
