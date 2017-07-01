@@ -4,7 +4,7 @@
   <title><![CDATA[分类:rtmp源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-06-30T10:00:58-07:00</updated>
+  <updated>2017-07-01T07:47:05-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -53,53 +53,30 @@
 <p>下面逐个记录各个步骤的功能。
 在了解具体步骤之前，先了解结构重要的Structure:</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">RTMP</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_inChunkSize</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_outChunkSize</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBWCheckCounter</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBytesIn</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBytesInSent</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBufferMS</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_stream_id</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_mediaChannel</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">m_mediaStamp</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">m_pauseStamp</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_pausing</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nServerBW</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nClientBW</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_nClientBW2</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_bPlaying</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_bSendEncoding</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_bSendCounter</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">m_numInvokes</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">m_numCalls</span><span class="p">;</span>
-</span><span class='line'><span class="n">RTMP_METHOD</span> <span class="o">*</span><span class="n">m_methodCalls</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>{% codeblock lang:c %}
+typedef struct RTMP
+{
+    int m_inChunkSize;
+    int m_outChunkSize;
+    int m_nBWCheckCounter;
+    int m_nBytesIn;
+    int m_nBytesInSent;
+    int m_nBufferMS;
+    int m_stream_id;
+    int m_mediaChannel;
+    uint32_t m_mediaStamp;
+    uint32_t m_pauseStamp;
+    int m_pausing;
+    int m_nServerBW;
+    int m_nClientBW;
+    uint8_t m_nClientBW2;
+    uint8_t m_bPlaying;
+    uint8_t m_bSendEncoding;
+    uint8_t m_bSendCounter;</p>
+
+<pre><code>int m_numInvokes;
+int m_numCalls;
+RTMP_METHOD *m_methodCalls; } {% endcodeblock %}
 </code></pre>
 
 <h3 id="initsocket">InitSocket()</h3>
@@ -290,7 +267,7 @@ C2 和 S2 是对 C1 和 S1 的一个对等。</p>
 
 <h5 id="handshake-diagram">握手框图(HandShake Diagram)</h5>
 
-<p><img src="/images/RTMPProtocol/HandShake_Diagram.png"></p>
+<p>{% img /images/RTMPProtocol/HandShake_Diagram.png %}</p>
 
 <hr />
 
@@ -312,7 +289,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>每个 Chunk 包含一个 header 和 data 部分。Header 又包含：<code>Basic Header</code><code>Message Header</code><code>Extended Timestamp</code>三部分。</p>
 
-<p><img src="/images/RTMPProtocol/chunk_format.png"></p>
+<p>{% img /images/RTMPProtocol/chunk_format.png %}</p>
 
 <ul>
   <li>Basize Header : 1 到 3 byte,该字段编码了 chunk stream ID 和 chunk type。其中 chunk type 决定了编码的message header 的格式。它的长度完全由 chunk stream ID 来决定，它是一个变长字段。</li>
@@ -336,7 +313,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>Type 0 的 chunk header 是 11 byte 长。该类型只能在 chunk 流的开始使用。</p>
 
-<p><img src="/images/RTMPProtocol/chunk_message_header_type0.png"></p>
+<p>{% img /images/RTMPProtocol/chunk_message_header_type0.png %}</p>
 
 <p><code>timestamp</code>3 字节，对于 type 0 的 chunk,timestamp 的消息在此处发送。如果timestamp 大于或等于0xFFFFFF,该字段等于0XFFFFFF,指明extended timestamp字段被编码。</p>
 
@@ -346,7 +323,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>Type 1 的 chunk header 是7 byte 长，不包含 message stream ID，该 chunk 与上一个 chunk 有相同的 stream ID。变长消息的 stream 在第一个消息后，应该使用该格式作为第一个 chunk。</p>
 
-<p><img src="/images/RTMPProtocol/chunk_message_header_type1.png"></p>
+<p>{% img /images/RTMPProtocol/chunk_message_header_type1.png %}</p>
 
 <ul>
   <li>Type 2</li>
@@ -354,7 +331,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>Type 2 的 chunk header 是 3 byte 长，既不包含 stream ID，也不包含 message length，它与前一个 chunk 有相同的 stream ID 和 消息长度。固定大小的流应该使用这种格式。</p>
 
-<p><img src="/images/RTMPProtocol/chunk_message_header_type2.png"></p>
+<p>{% img /images/RTMPProtocol/chunk_message_header_type2.png %}</p>
 
 <ul>
   <li>Type 3</li>
@@ -390,7 +367,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>最大块大小通常不会小于 128 字节，最小不能小于1 字节。最大块大小是双向独立的。</p>
 
-<p><img src="/images/RTMPProtocol/set_chunk_size.png"></p>
+<p>{% img /images/RTMPProtocol/set_chunk_size.png %}</p>
 
 <p>0:该 bit 必须为0.<br />
 块大小(chunk size)：该字段以字节形式保存新的最大块大小，该值将用于后续所有发送块。取值范围为1——2147483647（0X7FFFFFFF）,然而所有大于0XFFFFFF的值都是等同的。</p>
@@ -399,7 +376,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>协议控制消息2，终止消息，被用于通知对端，可以丢弃通过指定块流接收到的部分数据.</p>
 
-<p><img src="/images/RTMPProtocol/abort_message.png"></p>
+<p>{% img /images/RTMPProtocol/abort_message.png %}</p>
 
 <p>块流ID(32bit)：该字段表示块流ID，它的当前消息可被丢弃。</p>
 
@@ -407,7 +384,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>在接受到与窗口大小相等的消息后，客户端或服务端必须发送一个确认消息给对端。窗口大小是发送端发送的最大字节数，无论有没有收到接收端发送的确认消息。该消息指明序列号，代表目前为止接收到的字节数。</p>
 
-<p><img src="/images/RTMPProtocol/acknowledgement.png"></p>
+<p>{% img /images/RTMPProtocol/acknowledgement.png %}</p>
 
 <p>序列号(32bit)：该字段表示目前为止已接收到字节总数。</p>
 
@@ -416,7 +393,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 <p>客户端或服务端发送该消息来限制对端的输出带宽。接收端收到消息后，通过将已发送但尚未被确认的数据总数限制为该消息指定的视窗大小，来
 实现限制输出带宽的目的。如果视窗大小与上一个视窗大小不同，则该消息的接收端应该向该消息的发送端发送视窗大小确认消息。</p>
 
-<p><img src="/images/RTMPProtocol/set_peer_bandwidth.png"></p>
+<p>{% img /images/RTMPProtocol/set_peer_bandwidth.png %}</p>
 
 <p>Limit Type(显示类型)有以下可选值：</p>
 
@@ -447,7 +424,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
   <li>时间戳(Timestamp):4 字节字段代表消息的时间戳。同样为大端格式。</li>
 </ul>
 
-<p><img src="/images/RTMPProtocol/message_header.png"></p>
+<p>{% img /images/RTMPProtocol/message_header.png %}</p>
 
 <h5 id="message-payload">消息负载(Message Payload)</h5>
 
@@ -463,7 +440,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
 
 <p>客户端或服务端通过发送该消息告知对方用户控制事件。该消息携带事件类型和事件数据两部分。</p>
 
-<p><img src="/images/RTMPProtocol/user_control_message.png"></p>
+<p>{% img /images/RTMPProtocol/user_control_message.png %}</p>
 
 <p>消息数据的前 2 字节用于指定事件类型，紧跟着的是事件数据。事件数据字段长度可变。但如果使用 RTMP 块
 流传输，则消息总长度不能超过最大块大小，以使消息可以使用一个单独的块进行传输。</p>
@@ -494,7 +471,7 @@ chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chu
   </li>
 </ul>
 
-<p><img src="/images/RTMPProtocol/shared_object_message_format.png"></p>
+<p>{% img /images/RTMPProtocol/shared_object_message_format.png %}</p>
 
 <p>RTMP 协议支持如下事件类型：</p>
 
