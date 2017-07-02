@@ -1,0 +1,757 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>FFmpeg 常用结构体解析 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="AVPacket结构体解析 AVFrame结构体解析 AVCodec结构体解析 AVCodecContext结构体解析 AVStream结构体解析 FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">FFmpeg 常用结构体解析</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-06-15T17:56:18-07:00'><span class='date'>2016 年 06 月 15 日</span> <span class='time'>5:56 pm</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#avpacket" id="markdown-toc-avpacket">AVPacket结构体解析</a></li>
+  <li><a href="#avframe" id="markdown-toc-avframe">AVFrame结构体解析</a></li>
+  <li><a href="#avcodec" id="markdown-toc-avcodec">AVCodec结构体解析</a></li>
+  <li><a href="#avcodeccontext" id="markdown-toc-avcodeccontext">AVCodecContext结构体解析</a></li>
+  <li><a href="#avstream" id="markdown-toc-avstream">AVStream结构体解析</a></li>
+</ul>
+
+<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中，经常使用到的结构体的含义以及使用场景。
+<!--more--></p>
+
+<p>首先，我们从 FFMpeg 主要完成的功能视频编解码开始，编解码的大致流程可以使用如下图表示：</p>
+
+<p><img src="/images/ffmpeg_struct/ffmpeg_transcode.png" /></p>
+
+<h2 id="avpacket">AVPacket结构体解析</h2>
+
+<p>从上面的图中可以看出，解复用器 Demuxer 输出的 packets data 作为解码器 Decoder 的输入；同时也是编码器 Encoder 的输出，复用器 Muxer 的输入。</p>
+
+<p>FFMpeg 中使用 AVpacket 结构定义图中描述的 packet。该结构保存了压缩数据，它由 demuxers 输出，之后作为 decoders 的输入；或作为 encoders 的输出，之后作为 muxers 的输入。</p>
+
+<p>对于视频数据，它只包含一帧压缩数据；对于音频数据，它可能包含多帧压缩数据。</p>
+
+<figure class="code"><figcaption><span>AVPacket </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVPacket</span><span class="p">{</span>
+</span><span class="line">	<span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span>      <span class="n">pts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span>      <span class="n">dts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">uint8_t</span>    <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span>         <span class="n">size</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">stream_index</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span>        <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVPacketSideData</span> <span class="o">*</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">side_data_elems</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span>   <span class="n">duration</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">pos</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">convergence_duration</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>pts：显示时间戳，它的单位是 AVStream-&gt;time_base；如果在文件中没有保存这个值，它被设置为 AV_NOPTS_VALUE。由于图像显示不可能早于图像解压，因此 PTS 必须比 DTS（解码时间戳）大或者相等。某些文件格式中可能会使用 PTS/DTS 表示其他含义，此时时间戳必须转为真正的时间戳才能保存到 AVPacket 结构中。</li>
+  <li>dts：解码时间戳，它的单位是 AVStream-&gt;time_base，表示压缩视频解码的时间，如果文件中没有保存该值，它被设置为 AV_NOPTS_VALUE。</li>
+  <li>data：指向真正的压缩编码的数据。</li>
+  <li>size：表示该 AVPacket 结构中 data 字段所指向的压缩数据的大小。</li>
+  <li>stream_index：标识该 AVPacket 结构所属的视频流或音频流。</li>
+  <li>duration:该 AVPacket 包以 AVStream-&gt;time_base 为单位，所持续的时间，0 表示未知，或者为显示时间戳的差值(next_pts - this pts)。</li>
+  <li>pos：表示该 AVPacket 数据在媒体中的位置，即字节偏移量。</li>
+</ul>
+
+<p>由上面的图可以看出，该结构主要用于解码器(Decoder)或编码器(Encoder),一般使用方法代码示例如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVPacket</span> <span class="n">avpkt</span><span class="p">;</span>
+</span><span class="line"><span class="n">av_init_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">avpkt</span><span class="p">);</span>
+</span><span class="line"><span class="n">avpkt</span><span class="p">.</span><span class="n">size</span> <span class="o">=</span> <span class="p">...</span>
+</span><span class="line"><span class="n">avpkt</span><span class="p">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="avframe">AVFrame结构体解析</h2>
+
+<p>上面已经分析了压缩域的表示结构体 AVPacket 结构，与之相对于的，FFMpeg 为之提供的表示像素域的结构体为 AVFrame 结构。从上面的图中也可以看出，Frame 主要作为解码器的输出、编码器的输入。AVFrame 结构主要用来描述未压缩的视频或音频数据，比如视频的 YUV 数据、RGB 数据，音频的 PCM 数据等。</p>
+
+<p>AVFrame 结构体必须使用<code>av_frame_alloc()</code>分配，注意该函数只是分配了 AVFrame 结构本身，它的 data 区域要用其他方式管理；该结构体的释放要用<code>av_frame_free()</code>。</p>
+
+<p>AVFrame 结构体通常只需分配一次，之后即可通过保存不同的数据来重复多次使用，比如一个 AVFrame 结构可以保存从解码器中解码出的多帧数据。此时，就可以使用<code>av_frame_unref()</code>释放任何由 Frame 保存的参考帧并还原回最原始的状态。</p>
+
+<figure class="code"><figcaption><span>AVFrame </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFrame</span><span class="p">{</span>
+</span><span class="line">	<span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">linesize</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">uint8_t</span> <span class="o">**</span><span class="n">extended_data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">nb_samples</span><span class="p">;</span> <span class="cm">/* number of audio samples(per channel) described by this frame */</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">format</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">key_frame</span><span class="p">;</span> <span class="cm">/* 1-&gt;keyframe, 0-&gt;not*/</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVPictureType</span> <span class="n">pict_type</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">pts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">pkt_pts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">pkt_dts</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">coded_picture_number</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">display_picture_number</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">quality</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span> <span class="cm">/* for some private data of the user */</span>
+</span><span class="line">	<span class="kt">uint64_t</span> <span class="n">error</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">repeat_pict</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">interlaced_frame</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">top_field_first</span><span class="p">;</span>	<span class="cm">/* If the content is interlaced, is top field displayed first */</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">palette_has_changed</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">reordered_opaque</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">sample_rate</span><span class="p">;</span>    <span class="cm">/*Sample rate of the audio data*/</span>
+</span><span class="line">    <span class="kt">uint64_t</span> <span class="n">channel_layout</span><span class="p">;</span> <span class="cm">/*channel layout of the audio data*/</span>
+</span><span class="line">    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">buf</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">];</span>
+</span><span class="line">    <span class="n">AVBufferRef</span> <span class="o">**</span><span class="n">extended_buf</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_exteneded_buf</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVFrameSideData</span> <span class="o">**</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_side_data</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorRange</span> <span class="n">color_range</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorPrimaries</span> <span class="n">color_primaries</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorTransferCharacteristic</span> <span class="n">color_trc</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVColorSpace</span> <span class="n">colorspace</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVChromaLocation</span> <span class="n">chroma_location</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">best_effort_timestamp</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pkt_pos</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pkt_duration</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">decode</span> <span class="n">_error_flags</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int</span> <span class="n">channels</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">pkt_size</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVBufferRef</span> <span class="o">*</span><span class="n">qp_table_buf</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>data：指向图片或信道的指针，与初始化时分配的大小可能不同，一些解码器取数据范围超出(0,0)-(width, height),具体请查看<code>avcodec_align_dimensions2()</code>方法。一些过滤器或扫描器读数据时可能会超过 16 字节，所以当它们使用时，必须额外分配 16 字节。对于 packed 格式的数据(例如 RGB24)，会存放到 data[0] 里面；对于 planar 格式的数据(例如 YUV420P)，则会分开 data[0]/data[1]/data[2]（YUV420P 中 data[0] 存放 Y，data[1] 存放 U，data[2] 存放 V）。</li>
+  <li>linesize：对于视频数据，表示每个图像行的字节大小；对于音频数据，表示每个 Plane 的字节大小，只有linesize[0]可以设置，对于plane 音频，每个信道 channel 必须是相同的。对于视频的 linesize 应为 CPU 的对准要求的倍数，一般为 32。注意 linesize 可大于可用的数据的尺寸，有可能存在由于性能原因额外填充。</li>
+  <li>width/height:视频的宽高</li>
+  <li>format：帧格式,-1表示未设置的帧格式。对于视频帧，该值为 enum 类型的 AVPixelFormat，例如 AV_PIX_FMT_YUV420P；对于音频帧，该值为 enum 型的 AVSampleFormat，例如 AV_SAMPLE_FMT_S16。</li>
+  <li>key_frame:关键帧，1 表示关键帧，0 表示非关键帧。</li>
+  <li>pict_type：帧图片类型，例如 I/P/B。</li>
+  <li>sample_aspect_ration：帧像素的宽高比，使用 AVRational 表示。</li>
+  <li>pts：显示时间戳，单位为 time_base。</li>
+  <li>pkt_pts：该 PTS 是从 AVPacket 结构中拷贝过来的；与之对应的是pkt_dts。</li>
+  <li>coded_picture_number/display_picture_number：解码序列号和显示序列号（Display Order/Decoded Order）。</li>
+  <li>interlaced_frame:表示该帧为 interlace 码流或者为 progressive 码流。</li>
+  <li>top_field_first:对于 interlace 码流，表示该它是 top first or bottom first。</li>
+</ul>
+
+<h2 id="avcodec">AVCodec结构体解析</h2>
+<p>上面分析了像素域的表示结构体 AVFrame 和 压缩域的表示结构体 AVPacket，两者之间的转换是通过编解码器来完成的，FFMpeg 中使用 AVCodec 结构体表示编解码。本小节就来看一下 AVCodec 结构体。</p>
+
+<figure class="code"><figcaption><span>AVCodec </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVCodec</span><span class="p">{</span>
+</span><span class="line">	<span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">long_name</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">type</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">capabilities</span><span class="p">;</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVRational</span> <span class="o">*</span><span class="n">supported_framerates</span><span class="p">;</span> <span class="c1">///&lt; array of supported framerates, or NULL if any, array is terminated by {0,0}</span>
+</span><span class="line">    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="o">*</span><span class="n">pix_fmts</span><span class="p">;</span>     <span class="c1">///&lt; array of supported pixel formats, or NULL if unknown, array is terminated by -1</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="o">*</span><span class="n">supported_samplerates</span><span class="p">;</span>       <span class="c1">///&lt; array of supported audio samplerates, or NULL if unknown, array is terminated by 0</span>
+</span><span class="line">    <span class="k">const</span> <span class="k">enum</span> <span class="n">AVSampleFormat</span> <span class="o">*</span><span class="n">sample_fmts</span><span class="p">;</span> <span class="c1">///&lt; array of supported sample formats, or NULL if unknown, array is terminated by -1</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">channel_layouts</span><span class="p">;</span>         <span class="c1">///&lt; array of support channel layouts, or NULL if unknown. array is terminated by 0</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">max_lowres</span><span class="p">;</span>                     <span class="c1">///&lt; maximum value for lowres supported by the decoder, no direct access, use av_codec_get_max_lowres()</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">priv_class</span><span class="p">;</span>              <span class="c1">///&lt; AVClass for the private context</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVProfile</span> <span class="o">*</span><span class="n">profiles</span><span class="p">;</span>              <span class="c1">///&lt; array of recognized profiles, or NULL if unknown, array is terminated by {FF_PROFILE_UNKNOWN}</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">priv_data_size</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init_thread_copy</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">update_thread_context</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">src</span><span class="p">);</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVCodecDefault</span> <span class="o">*</span><span class="n">defaults</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">init_static_data</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode_sub</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">,</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">encode2</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">avctx</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">frame</span><span class="p">,</span>
+</span><span class="line">                   <span class="kt">int</span> <span class="o">*</span><span class="n">got_packet_ptr</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">decode</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">outdata</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">outdata_size</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">avpkt</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">close</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">flush</span><span class="p">)(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">caps_internal</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>name:具体的 CODEC 的名称的简短描述，比如”HEVC”/”H264”等。</li>
+  <li>long_name: CODEC 名称的详细描述，比如”HEVC (High Efficiency Video Coding)”。</li>
+  <li>type:媒体类型的字段，它是 enum 型的，表示视频、音频、字幕等，比如AVMEDIA_TYPE_VIDEO、AVMEIDA_TYPE_AUDIO。</li>
+  <li>id：唯一标识的 CODEC 类型，比如 AV_CODEC_ID_HEVC。</li>
+  <li>supported_framerates:支持的视频帧率的数组，以{0，0}作为结束。</li>
+  <li>pix_fmts:编解码器支持的图像格式的数组，以 -1 作为结束。</li>
+  <li>profiles:编解码器支持的 Profile，以 HEVC 为例，包含”Main”“Main10”“Main Still Picture”。</li>
+</ul>
+
+<p>每一个编解码器对应一个 AVCodec 结构体，对应一种编解码方式，比如 HEVC、AVC、MPEG2、MPEG4、VP6、VP8、VP9等。以 HEVC 为例，FFMpeg中关于 AVCodec 的定义如下：</p>
+
+<figure class="code"><figcaption><span>ff_hevc_decoder </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVCodec</span> <span class="n">ff_hevc_decoder</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class="line">    <span class="p">.</span><span class="n">name</span>                  <span class="o">=</span> <span class="s">&quot;hevc&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">long_name</span>             <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="s">&quot;HEVC (High Efficiency Video Coding)&quot;</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">type</span>                  <span class="o">=</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">id</span>                    <span class="o">=</span> <span class="n">AV_CODEC_ID_HEVC</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_data_size</span>        <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">HEVCContext</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_class</span>            <span class="o">=</span> <span class="o">&amp;</span><span class="n">hevc_decoder_class</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">init</span>                  <span class="o">=</span> <span class="n">hevc_decode_init</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">close</span>                 <span class="o">=</span> <span class="n">hevc_decode_free</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">decode</span>                <span class="o">=</span> <span class="n">hevc_decode_frame</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">flush</span>                 <span class="o">=</span> <span class="n">hevc_decode_flush</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">update_thread_context</span> <span class="o">=</span> <span class="n">hevc_update_thread_context</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">init_thread_copy</span>      <span class="o">=</span> <span class="n">hevc_init_thread_copy</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">capabilities</span>          <span class="o">=</span> <span class="n">AV_CODEC_CAP_DR1</span> <span class="o">|</span> <span class="n">AV_CODEC_CAP_DELAY</span> <span class="o">|</span>
+</span><span class="line">                             <span class="n">AV_CODEC_CAP_SLICE_THREADS</span> <span class="o">|</span> <span class="n">AV_CODEC_CAP_FRAME_THREADS</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">profiles</span>              <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="n">profiles</span><span class="p">),</span>
+</span><span class="line"><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>各种不同的编解码器，FFMpeg 使用注册函数<code>avcodec_register_all()</code>来完成。</p>
+
+<p>关于 AVCodec 的通常使用方法：首先，根据特定的 ID 找到特定的编解码器；其次，根据特定的编解码器分配出特定的描述编解码上下文的 AVCodecContext 结构体；之后，打开编解码器；最后，调用编解码器进行编解码。示例代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line"><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">ctx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">codec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">origin_ctx</span><span class="o">-&gt;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class="line"><span class="n">ctx</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line"><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="avcodeccontext">AVCodecContext结构体解析</h2>
+
+<h2 id="avstream">AVStream结构体解析</h2>
+<p>AVStream用于存储一个视频流、音频流的结构体。</p>
+<figure class="code"><figcaption><span>AVStream </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVStream</span><span class="p">{</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">index</span><span class="p">;</span>	<span class="c1">//stream index in AVFormatContext</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">id</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">time_base</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">start_time</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">duration</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">nb_frames</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">disposition</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVDiscard</span> <span class="n">discard</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">avg_frame_rate</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVPacket</span> <span class="n">attached_pic</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVPacketSideData</span> <span class="o">*</span><span class="n">side_data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span>            <span class="n">nb_side_data</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">event_flags</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">pts_wrap_bits</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">first_dts</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">cur_dts</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">last_IP_pts</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">last_IP_duration</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">probe_packets</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">codec_info_nb_frames</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="n">AVStream</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>index:标识该视频流、音频流，是 AVFormatContext 中的流索引。</li>
+  <li>id：</li>
+</ul>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-06-15T17:56:18-07:00'><span class='date'>2016 年 06 月 15 日</span> <span class='time'>5:56 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/05/23/the-data-layout/" title="Previous Post: YUV 数据分析">&laquo; YUV 数据分析</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/06/19/ffmpeg-basics/" title="Next Post: FFmpeg 使用">FFmpeg 使用 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi" data-title="FFmpeg 常用结构体解析" data-url="http://lazybing.github.io/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (5)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/06/30/x264-intra-prediction/">X264 源码分析之帧内预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/24/x264-encoder-open/">X264代码解析之x264_encoder_open函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/23/x264-paraments-illustra/">X264 参数详解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/22/sodb-rbsp-ebsp/">SODB RBSP EBSP 的区别与联系</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/09/x264-download-install-and-use/">X264 下载、安装和使用</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

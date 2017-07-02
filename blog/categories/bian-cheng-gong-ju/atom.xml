@@ -1,0 +1,768 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2017-07-02T07:41:36-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Addr2line 的介绍与使用]]></title>
+    <link href="http://lazybing.github.io/blog/2016/12/22/addr2line-use/"/>
+    <updated>2016-12-22T07:26:02-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/12/22/addr2line-use</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#addr2line-" id="markdown-toc-addr2line-">addr2line 简介</a></li>
+  <li><a href="#addr2line--1" id="markdown-toc-addr2line--1">addr2line 的使用示例</a></li>
+  <li><a href="#addr2line--2" id="markdown-toc-addr2line--2">addr2line 的原理</a></li>
+</ul>
+
+<p><code>addr2line</code>的作用是将地址转化为文件名和行号。<br />
+<!--more--></p>
+
+<h2 id="addr2line-">addr2line 简介</h2>
+<p>在编写程序时，经常会遇到出现程序 crah 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。</p>
+
+<p><code>addr2line</code>能够将地址转换为文件名和行号。给定一个可执行文件的地址或者一个可重定位目标的目标偏移，addr2line 就会利用 debug 信息来计算出与该地址关联的文件名和行号。</p>
+
+<p>使用的可执行文件或可重定位目标使用<code>-e</code>选项来指定、可重定位目标的部分使用<code>-j</code>选项来指定。</p>
+
+<p><code>addr2line</code>有两种操作模式：<br />
+1. 在命令行下，直接指定十六进制的地址，addr2line 为每个地址显示文件名和行号。<br />
+2. addr2line 从标准输入中读取十六进制地址，并且为每个地址输出文件名和行号到标准输出中。</p>
+
+<p>输出格式为<code>FILENAME:LINENO</code>，默认情况下，每个输入地址对应一行输出。</p>
+
+<h2 id="addr2line--1">addr2line 的使用示例</h2>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">div</span><span class="p">(</span><span class="kt">int</span> <span class="n">numerator</span><span class="p">,</span> <span class="kt">int</span> <span class="n">denominator</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">numerator</span>   <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">denominator</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">div</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">);</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>编译：gcc -o div -g div.c
+生成可执行文件<code>div</code>后，执行该文件：./div 得到如下error:<br />
+<code>
+Floating point exception (core dumped)
+</code></p>
+
+<p>此时并没有任何其他提示信息，我们可以通过<code>dmesg</code>查看信息：<br />
+<code>
+[ 4709.210137] traps: div[2500] trap divide error ip:400524 sp:7ffcd27fd630 error:0 in div[400000+1000]
+</code>
+通过该信息可以看出，ip 指向的地址为<code>400524</code>，得到该地址后，我们就可以使用 addr2line 来定位出错的位置。 
+<code>addr2line -e div 400524</code> 得到结果如下：<br />
+<code>
+/home/bing/work/study/div.c:5
+</code></p>
+
+<p>可以很直观的显示，该 core  dump 信息是在<code>div.c</code>的 line 5。</p>
+
+<h2 id="addr2line--2">addr2line 的原理</h2>
+<p><code>addr2line</code>之所以能够利用可执行文件将地址信息转换为行号，是因为在可执行 ELF 文件中存有这些对应的信息。可以使用<code>readelf</code>来查看这些信息。例如上面的<code>div</code>文件，通过readelf div 可以看到如下信息：
+<code>
+ Line Number Statements:
+  [0x00000026]  Extended opcode 2: set Address to 0x400516
+  [0x00000031]  Special opcode 8: advance Address by 0 to 0x400516 and Line by 3 to 4
+  [0x00000032]  Special opcode 146: advance Address by 10 to 0x400520 and Line by 1 to 5
+  [0x00000033]  Special opcode 104: advance Address by 7 to 0x400527 and Line by 1 to 6
+  [0x00000034]  Special opcode 36: advance Address by 2 to 0x400529 and Line by 3 to 9
+  [0x00000035]  Special opcode 216: advance Address by 15 to 0x400538 and Line by 1 to 10
+  [0x00000036]  Special opcode 104: advance Address by 7 to 0x40053f and Line by 1 to 11
+  [0x00000037]  Special opcode 105: advance Address by 7 to 0x400546 and Line by 2 to 13
+  [0x00000038]  Special opcode 216: advance Address by 15 to 0x400555 and Line by 1 to 14
+  [0x00000039]  Advance PC by 2 to 0x400557
+  [0x0000003b]  Extended opcode 1: End of Sequence
+</code>
+从上面可以看出到 addr 在 0x400520-0x400527之间时，行号为5.</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何使用gprof]]></title>
+    <link href="http://lazybing.github.io/blog/2016/09/22/how-to-use-gprof/"/>
+    <updated>2016-09-22T09:52:06-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/09/22/how-to-use-gprof</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Gprof">Gprof</a> 是一个 Unix 应用程序性能分析工具。
+<!--more--></p>
+
+<p><a href="https://sourceware.org/binutils/docs/gprof/index.html">Profiling</a> 可以使我们看到程序运行时程序的调用关系、函数的消耗时长等。这些信息可以使我们了解程序中那块代码耗时高于预期。</p>
+
+<p>使用 Profiling 主要包括如下三步：</p>
+
+<ul>
+  <li>
+    <p>编译链接程序时要使能 profiling 。</p>
+  </li>
+  <li>
+    <p>执行编译处的可执行文件，产生 profile 数据文件。</p>
+  </li>
+  <li>
+    <p>使用 gpro 分析 profile 数据。</p>
+  </li>
+</ul>
+
+<p>根据产生的 profile ，可以产生各种不同实行的分析输出。如 The Flat Profile、The Call Graph、The Annotated Source Listing。</p>
+
+<p>示例分析：
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;include-stdioh&quot;</span><span class="o">&gt;</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdlib</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;time.h&gt;&lt;/time.h&gt;&lt;/stdlib.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">fun2</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">fun1</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">5</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">fun2</span><span class="p">();</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">10</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">fun1</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>编译，注意要添加<code>-pg</code>选项，这样才能与后面的 gprof 结合使用。</p>
+
+<p><code>
+gcc -pg -o test test.c
+</code></p>
+
+<p>执行, 执行完毕后，会生成 gmon.out 文件，用于性能分析的文件。</p>
+
+<p><code>
+./test
+</code></p>
+
+<p>分析, 使用 gprof 分析。
+<code>
+gprof test gmon.out &gt; analysis.txt
+</code></p>
+
+<p>此时生成的分析文件 analysis.txt 中有两种形式的分析数据。</p>
+
+<p>Flat Profile 如图：</p>
+
+<p><img src="http://lazybing.github.io/images/gprof/Flat_profile.png" /></p>
+
+<p>Call Graph 如图：</p>
+
+<p><img src="http://lazybing.github.io/images/gprof/Call_graph.png" /></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[将vim打造成IDE]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/07/how-to-use-vim/"/>
+    <updated>2016-07-07T08:17:10-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/07/how-to-use-vim</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#mac-osx--gvim" id="markdown-toc-mac-osx--gvim">Mac OSX 下安装 gvim</a></li>
+  <li><a href="#section" id="markdown-toc-section">基本设置</a></li>
+  <li><a href="#vim-" id="markdown-toc-vim-">vim 对单个字符的操作</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">删除某个字符</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">替换某个字符</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">移动到某个字符</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--1" id="markdown-toc-vim--1">vim 对单字的操作</a>    <ul>
+      <li><a href="#section-4" id="markdown-toc-section-4">删除某个单字</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">修改某个单字</a></li>
+      <li><a href="#section-6" id="markdown-toc-section-6">移动到某个单字</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--2" id="markdown-toc-vim--2">vim 对整行的操作</a>    <ul>
+      <li><a href="#section-7" id="markdown-toc-section-7">移动到行首或行尾</a></li>
+      <li><a href="#section-8" id="markdown-toc-section-8">移动到指定行</a></li>
+      <li><a href="#section-9" id="markdown-toc-section-9">使用标签记录并跳转到某行</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--3" id="markdown-toc-vim--3">vim 对单个文件的浏览</a>    <ul>
+      <li><a href="#vim--4" id="markdown-toc-vim--4">vim 滚动屏幕命令</a></li>
+      <li><a href="#vim--5" id="markdown-toc-vim--5">vim 切分窗口</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--6" id="markdown-toc-vim--6">vim 对多个文件的操作</a>    <ul>
+      <li><a href="#section-10" id="markdown-toc-section-10">工程文件浏览</a></li>
+      <li><a href="#section-11" id="markdown-toc-section-11">多文档编辑</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--7" id="markdown-toc-vim--7">vim 寄存器</a></li>
+  <li><a href="#vim--8" id="markdown-toc-vim--8">vim 分屏功能</a></li>
+</ul>
+
+<p><code>Vim</code> 是一个学习成本比较高的编辑器。本文主要记录对于编辑浏览代码时，如何配置<code>vim</code>才能更高效的编辑、浏览代码。</p>
+
+<!--more-->
+
+<h2 id="mac-osx--gvim">Mac OSX 下安装 gvim</h2>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install macvim</span></code></pre></td></tr></table></div></figure></p>
+
+<h2 id="section">基本设置</h2>
+
+<p>配置信息都放到了<code>~/.vimrc</code>文件中：<br />
+显示行号，在<code>.vimrc</code>中添加<code>set nu</code>  <br />
+开启文件类型侦测, <code>filetype on</code><br />
+根据侦测到的不同类型加载对应的插件， <code>filetype plugin on</code><br />
+开启实时搜索功能，</p>
+
+<h2 id="vim-">vim 对单个字符的操作</h2>
+
+<blockquote>
+  <p>To err is human. To really foul up you need a computer.</p>
+</blockquote>
+
+<h3 id="section-1">删除某个字符</h3>
+
+<p>删除字符命令非常简单，就是单个字符<code>x</code>,例如上面的一行code，如果将光标至于<code>really</code>的<code>r</code>处执行<code>x</code>命令，就会将 <code>r</code> 删除。</p>
+
+<h3 id="section-2">替换某个字符</h3>
+
+<p>替换字符的命令<code>rx</code>将光标下的字符 replace 成字符<code>x</code>。如果发现连个相邻的字符颠倒了，可以直接在前一个字符处执行<code>xp</code>命令即可，其中的<code>x</code>时删除光标下的字符，<code>p</code>时黏贴。</p>
+
+<h3 id="section-3">移动到某个字符</h3>
+
+<p><code>fx</code>命令在一行中向前搜索单个字符<code>x</code>。速记：<code>f</code>此处是<code>Find</code>的简写。</p>
+
+<p>例如，你现在处于上面 code 的开头处，假设你想将光标移动到<code>human</code>中的<code>h</code>字符处。此时你只需要简单的执行<code>fh</code>，光标将会跳转到<code>h</code>:</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+----------&gt;---------------&gt;
+    fh		 fy
+</code></pre>
+
+<p>上面命令也显示了<code>fy</code>移动光标到<code>really</code>的<code>y</code>处。当然，此时你也可以在命令前添加执行次数，可以用<code>3fl</code>命令跳转光标到<code>foult</code>的<code>l</code>处：</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+	  ---------------------&gt;
+		   3fl
+</code></pre>
+
+<p>与<code>f</code>相对应的<code>F</code>命令会向左搜索：</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+	  &lt;---------------------
+		    Fh
+</code></pre>
+
+<p>除了<code>fx</code>命令用于搜索一行中的某个特定字符外，还有<code>tx</code>命令，<code>tx</code>命令会停在搜索的字符<code>x</code>前。速记：<code>t</code>时<code>To</code>的简写。与<code>Fx</code>相对应的是<code>Tx</code>。</p>
+
+<pre><code>To err is human.  To really foul up you need a computer. ~
+	   &lt;------------  -------------&gt;
+		Th		tn
+</code></pre>
+
+<p><code>fx</code><code>Fx</code><code>tx</code><code>Tx</code>这四个命令可以用<code>;</code>命令重复，<code>,</code>向相反的方向执行。</p>
+
+<p>上面的移动命令虽然很好用，但有如果一行中存在多个我们想要查找的字符，我们要么人肉看一下搜索的字符位于第几个位置，要么要一直重复执行相同的移动命令。非常影响思维连贯性。例如想要从上面一行的开头找到<code>computer</code>中的<code>o</code>。
+此时我们可以借助插件来完成，<code>easymotion</code>即可帮助我们，它会把所有满足条件的位置用[A-Za-z]间的标签字符标出来，找到你想要去的位置再键入对应标签字符即可快速到达。
+比如，上面的例子，假设关闭在行首，我只需要键入<Leader><Leader>fo,所有字符a都被重新标记成a、b、c、d等等标签（原始内容不变），直接键入标签字母即可到达需要到达的地方。</Leader></Leader></p>
+
+<h2 id="vim--1">vim 对单字的操作</h2>
+
+<h3 id="section-4">删除某个单字</h3>
+
+<p>删除某个单字非常简单，只需要在单字的开始执行<code>dw</code>即可。速记：<code>d</code>是<code>deleate</code>的简写。</p>
+
+<h3 id="section-5">修改某个单字</h3>
+
+<p>修改某个单字时，只需要在单字的开始执行<code>cxxxxx</code>即可，<code>c</code>是<code>change</code>的简写，<code>xxxxx</code>即代表要修改的单字。</p>
+
+<h3 id="section-6">移动到某个单字</h3>
+
+<p>想要移动光标大下一个单字，使用<code>w</code>命令。跟很多<code>vim</code>命令一样，可以在命令前添加一个执行次数。比如,<code>3w</code>就是移动 3 个单字。下面展示它是如何工作的：</p>
+
+<pre><code>This is a line with example text ~
+  ---&gt;--&gt;-&gt;-----------------&gt;
+   w  w  w    3w
+</code></pre>
+
+<p>注意，<code>w</code>命令会移动到下一个单字的起始处。<br />
+<code>b</code>命令向前移动到前一个单字的起始处。</p>
+
+<pre><code>This is a line with example text ~
+&lt;----&lt;--&lt;-&lt;---------&lt;---
+   b   b b    2b      b
+</code></pre>
+
+<p>与<code>w</code><code>b</code>对应的有<code>e</code>和<code>ge</code>命令分别向后和向前移动到单字的末尾：</p>
+
+<pre><code>This is a line with example text ~
+   &lt;-   &lt;--- -----&gt;   ----&gt;
+   ge    ge     e       e
+</code></pre>
+
+<p>如果光标位于一行的最后一个单字，<code>w</code>命令会带你到下一行的第一个单字处。因此你可以使用<code>w</code>命令来在一行中移动。</p>
+
+<h2 id="vim--2">vim 对整行的操作</h2>
+
+<h3 id="section-7">移动到行首或行尾</h3>
+
+<p><code>$</code>命令移动光标到一行的结尾，与<code>&lt;End&gt;</code>键作用相同。<code>^</code>命令移动到一行的第一个非空白字符处。<code>0</code>命令移动到一行的最前面第一个字符处，与<code>&lt;Home&gt;</code>键作用相同。</p>
+
+<pre><code>	  ^
+     &lt;------------
+.....This is a line with example text ~
+&lt;-----------------   ---------------&gt;
+	0		   $
+</code></pre>
+
+<p>(….指空白符)</p>
+
+<h3 id="section-8">移动到指定行</h3>
+
+<p>C/C++ 程序员应该经常能遇到程序出错时，会有类似如下的提示信息：</p>
+
+<pre><code>prog.c:33: j   undeclared (first use in this function) ~
+</code></pre>
+
+<p>这就提示我们该跳转到 33 行 fix 掉错误，此时可以使用<code>G</code>命令：<code>33G</code>即可跳转到 33 行。
+另一种方法是在<code>shell</code>命令行下执行<code>:33&lt;Enter&gt;</code>。
+上面的两种方法都是假设你想要移动到某个特定的行，而不管该行是否可见。假如你想要移动到屏幕的中间或者起始行时，该如何操作呢？</p>
+
+<pre><code>		+---------------------------+
+	H --&gt;	| text sample text	    |
+		| sample text		    |
+		| text sample text	    |
+		| sample text		    |
+	M --&gt;	| text sample text	    |
+		| sample text		    |
+		| text sample text	    |
+		| sample text		    |
+	L --&gt;	| text sample text	    |
+		+---------------------------+
+</code></pre>
+
+<p>速记：<code>H</code>是<code>Home</code>的简写，<code>M</code>是<code>Middle</code>的简写，<code>L</code>是<code>Last</code>的简写。</p>
+
+<h3 id="section-9">使用标签记录并跳转到某行</h3>
+
+<p>在介绍标签之前，先了解另外两个命令<code>CTRL-O</code>和<code>CTRL-I</code>，其中<code>CTRL-O</code>是回到之前的位置，<code>CTRL-I</code>是回到下一个位置。例如：</p>
+
+<pre><code>     |	example text   ^	     |
+33G  |	example text   |  CTRL-O     | CTRL-I
+     |	example text   |	     |
+     V	line 33 text   ^	     V
+     |	example text   |	     |
+   /^The |	example text   |  CTRL-O     | CTRL-I
+     V	There you are  |	     V
+	example text
+</code></pre>
+
+<p>注意：CTRL-I 是和 <Tab> 相同的。</Tab></p>
+
+<p><code>vim</code>可以使你定义自己的标签。命令<code>ma</code>标记当前光标所在的位置。`{mark} 和 ‘{mark}都可以跳回到标签处。不同的是`{mark} 跳回的是光标所在行的原来那一列，’{mark}跳回的是光标所在哪一行的起始位置。</p>
+
+<h2 id="vim--3">vim 对单个文件的浏览</h2>
+
+<h3 id="vim--4">vim 滚动屏幕命令</h3>
+
+<p><code>CTRL-U</code>和<code>CTRL-D</code>命令向上或向下滚动半个屏幕。<br />
+<code>CTRL-E</code>和<code>CTRL-Y</code>分别向上和向下滚动一行。<br />
+<code>CTRL-F</code>和<code>CTRL-B</code>分别向前和向后滚动整个屏幕。
+有时当执行多个<code>j</code>命令时，光标会在屏幕的最底部，此时如果想让光标所在行位于中间位置，可以使用<code>zz</code>命令,<code>zt</code>命令将光标所在行至于顶部，<code>zb</code>命令将光标所在行至于底部。</p>
+
+<h3 id="vim--5">vim 切分窗口</h3>
+
+<p>切分新窗口最简单的命令是<code>:split</code>，该命令可以使我们在两个窗口中查看同一个文件，比如可以使用第一个窗口显示变量声明，另一个窗口展示该变量的使用。
+<code>CTRL-W w</code>命令可用于两个窗口间的跳转。垂直切分窗口命令是<code>:vsplitw</code>。窗口直接的切换命令如下：</p>
+
+<pre><code>CTRL-W h	move to the window on the left
+CTRL-W j	move to the window below
+CTRL-W k	move to the window above
+CTRL-W l	move to the window on the right
+
+CTRL-W t	move to the TOP window
+CTRL-W b	move to the BOTTOM window
+</code></pre>
+
+<h2 id="vim--6">vim 对多个文件的操作</h2>
+
+<h3 id="section-10">工程文件浏览</h3>
+
+<p>在项目工程中，经常要用到插件，此处介绍一个插件<code>NERDTree</code>，通过<code>NERDtree</code>插件可以查看文件列表，要打开哪个文件，
+光标选中后回车即可在新<code>buffer</code>中打开。</p>
+
+<p>常用操作：回车，打开选中文件;<code>r</code>刷新工程目录文件列表；<code>I</code>显示/影藏文件；<code>m</code>出现创建/删除/剪切/拷贝操作列表。键入<leader>fl后，右边子窗口为工程项目文件列表。</leader></p>
+
+<h3 id="section-11">多文档编辑</h3>
+<p><code>vim</code>的多文档编辑涉及三个概念:buffer、window、tab。vim把加载进内存的文件叫做buffer,buffer不一定可见；
+若要buffer可见，则必须通过window作为载体呈现；同个看面上的多个window组合成一个tab。</p>
+
+<p>vim中每打开一个文件，vim就对应的创建一个buffer,多个文件就有多个 buffer, 但默认你只能看到最后buffer对应
+window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列出来，并且可以显示多个 buffer 对应的Window。</p>
+
+<h2 id="vim--7">vim 寄存器</h2>
+
+<p>使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">寄存器种类</th>
+      <th style="text-align: center">寄存器</th>
+      <th style="text-align: center">寄存器描述</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">无名寄存器</td>
+      <td style="text-align: center">””</td>
+      <td style="text-align: center">缓存最后一个操作内容</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">数字寄存器</td>
+      <td style="text-align: center">“0~”9</td>
+      <td style="text-align: center">缓存最近操作内容</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">行内寄存器</td>
+      <td style="text-align: center">”-</td>
+      <td style="text-align: center">缓存行内删除内容</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">具名寄存器</td>
+      <td style="text-align: center">“a~”z或”A~”Z</td>
+      <td style="text-align: center">指定时可用</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">只读寄存器</td>
+      <td style="text-align: center">”:,”.,”%,”#</td>
+      <td style="text-align: center">分别缓存最近命令，最近插入文本，当前文件名，当前交替文件名</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">表达式寄存器</td>
+      <td style="text-align: center">”=</td>
+      <td style="text-align: center">只读，用于执行表达式命令</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">选择及拖拽寄存器</td>
+      <td style="text-align: center">“*,”+,”~</td>
+      <td style="text-align: center">存取GUI选择文本</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">黑洞寄存器</td>
+      <td style="text-align: center">“_</td>
+      <td style="text-align: center">不缓存操作内容</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">模式寄存器</td>
+      <td style="text-align: center">”/</td>
+      <td style="text-align: center">缓存最近的搜索模式</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="vim--8">vim 分屏功能</h2>
+
+<image src="http://lazybing.github.io/images/vim_split_screen.png">
+
+vim 同时打开多个文件。
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vim -o file1 file2              //小写 o 参数来水平分屏
+</span><span class='line'>vim -O file1 file2              //大写 O 参数来垂直分屏</span></code></pre></td></tr></table></div></figure>
+
+vim 在多窗口打开。
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>:vs path/file       //在新的垂直分屏中打开文件
+</span><span class='line'>:sv path/file       //在新的水平分屏中打开文件</span></code></pre></td></tr></table></div></figure>
+
+多窗口间切换的3方法：`Ctrl+w+方向键``Ctrl+w+h/j/k/l``Ctrl+ww`。  
+
+移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。  
+
+## vim 插件安装
+
+首先安装插件管理插件
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim</span></code></pre></td></tr></table></div></figure>
+
+其次在`.vimrc`下增加配置信息如下。
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>" vundle 环境设置
+</span><span class='line'>filetype off
+</span><span class='line'>set rtp+=~/.vim/bundle/Vundle.vim
+</span><span class='line'>" vundle 管理的插件列表必须位于 vundle#begin() 和 vundle#end() 之间
+</span><span class='line'>call vundle#begin()
+</span><span class='line'>Plugin 'VundleVim/Vundle.vim'
+</span><span class='line'>Plugin 'altercation/vim-colors-solarized'
+</span><span class='line'>Plugin 'tomasr/molokai'
+</span><span class='line'>Plugin 'vim-scripts/phd'
+</span><span class='line'>Plugin 'Lokaltog/vim-powerline'
+</span><span class='line'>Plugin 'octol/vim-cpp-enhanced-highlight'
+</span><span class='line'>Plugin 'nathanaelkane/vim-indent-guides'
+</span><span class='line'>Plugin 'derekwyatt/vim-fswitch'
+</span><span class='line'>Plugin 'kshenoy/vim-signature'
+</span><span class='line'>Plugin 'vim-scripts/BOOKMARKS—Mark-and-Highlight-Full-Lines'
+</span><span class='line'>Plugin 'majutsushi/tagbar'
+</span><span class='line'>Plugin 'vim-scripts/indexer.tar.gz'
+</span><span class='line'>Plugin 'vim-scripts/DfrankUtil'
+</span><span class='line'>Plugin 'vim-scripts/vimprj'
+</span><span class='line'>Plugin 'dyng/ctrlsf.vim'
+</span><span class='line'>Plugin 'terryma/vim-multiple-cursors'
+</span><span class='line'>Plugin 'scrooloose/nerdcommenter'
+</span><span class='line'>Plugin 'vim-scripts/DrawIt'
+</span><span class='line'>Plugin 'SirVer/ultisnips'
+</span><span class='line'>Plugin 'Valloric/YouCompleteMe'
+</span><span class='line'>Plugin 'derekwyatt/vim-protodef'
+</span><span class='line'>Plugin 'scrooloose/nerdtree'
+</span><span class='line'>Plugin 'fholgado/minibufexpl.vim'
+</span><span class='line'>Plugin 'gcmt/wildfire.vim'
+</span><span class='line'>Plugin 'sjl/gundo.vim'
+</span><span class='line'>Plugin 'Lokaltog/vim-easymotion'
+</span><span class='line'>Plugin 'suan/vim-instant-markdown'
+</span><span class='line'>Plugin 'lilydjwg/fcitx.vim'
+</span><span class='line'>" 插件列表结束
+</span><span class='line'>call vundle#end()
+</span><span class='line'>filetype plugin indent on`</span></code></pre></td></tr></table></div></figure>
+
+最后，进入`vim`执行
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>:PluginInstall</span></code></pre></td></tr></table></div></figure>
+
+## vim 浏览代码
+
+vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。  
+
+
+</image>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何使用 GDB]]></title>
+    <link href="http://lazybing.github.io/blog/2016/04/01/how-to-use-gdb/"/>
+    <updated>2016-04-01T07:48:51-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/04/01/how-to-use-gdb</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">前期准备</a></li>
+  <li><a href="#gdb" id="markdown-toc-gdb">启动GDB</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">查看源码</a></li>
+  <li><a href="#break-" id="markdown-toc-break-">断点break 使用</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">运行程序</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">查看运行时数据</a></li>
+  <li><a href="#gdb-1" id="markdown-toc-gdb-1">启动GDB方法</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">参考文献</a></li>
+</ul>
+
+<p><a href="https://www.gnu.org/software/gdb/">GDB</a>, The GNU Project debugger, allows you to see what is going on inside another program while it executes – or what another program was doing at the moment it crashed.</p>
+
+<!--more-->
+
+<p>GDB 主要完成以下四件事：</p>
+
+<ol>
+  <li>启动程序，指定影响程序运行的条件。</li>
+  <li>使程序在特定的条件下停止。</li>
+  <li>程序停止时，检查程序锁发生的事。</li>
+  <li>动态的改变程序的执行环境。</li>
+</ol>
+
+<h3 id="section">前期准备</h3>
+
+<p>GDB 一般用于调试<code>C/C++</code>程序，要想能够使用<code>GDB</code>调试<code>C/C++</code>程序，首先必须将调试信息添加到可执行程序中。使用<code>gcc/g++</code>的<code>-g</code>参数可以做到这一点。如：</p>
+
+<p><code>
+gcc -g programe.c -o programe
+</code>
+此时，可执行程序<code>programe</code>中就包含了调试需要的各种信息，如程序函数名、变量名等。
+对于 MAC OSX 系统，调试信息会包含在另外一个<code>programe.dSYM</code>（debug symbols）文件夹下面，可以使用<code>dwarfdump programe.dSYM</code>直接查看各符号信息。</p>
+
+<h3 id="gdb">启动GDB</h3>
+
+<p><code>
+gdb programe
+</code></p>
+
+<h3 id="section-1">查看源码</h3>
+
+<p><code>
+list linenum  //查看linenum行的源码
+list function //查看function的源码
+</code></p>
+
+<h3 id="break-">断点break 使用</h3>
+
+<p>设置断点的方法
+<code>
+break linenum  //在 linenum 处设置断点
+break function //在进入指定 function 时停住
+break filename:linenum  //在源文件 filename 的 linenum 行处停住
+break filename:function //在源文件 filename 的 function 函数的入口处停住
+break *address          //在程序运行的内存地址处停住
+</code></p>
+
+<p>查看断点信息
+<code>
+info break    //查看所有 break 的信息
+info break n //查看 n 断点号的信息
+</code></p>
+
+<h3 id="section-2">运行程序</h3>
+
+<p>运行程序如下
+<code>
+next //单步执行
+continue //继续执行程序，直到程序结束或遇到下一个断点
+</code></p>
+
+<h3 id="section-3">查看运行时数据</h3>
+
+<p><code>
+print parm //打印变量parm的值
+bt         //查看函数堆栈信息
+</code></p>
+
+<p>当运行程序到某个位置时，我们希望看看此时程序的状态，比如某个变量的值是否按照预期改变、某块内存的值是否被改。此时就需要用到查看程序运行数据的集中方法。</p>
+
+<p>查看格式 <code>print &lt;expr&gt;</code>或<code>print /&lt;f&gt; &lt;expr&gt;</code>，其中<code>&lt;expr&gt;</code>是要查看的表达式，可以是一个变量、数组、表达式等，<code>&lt;f&gt;</code>是输出时的格式，比如想要按照 16 进制输出，就使用<code>/x</code>。</p>
+
+<p>可以使用 examine 命令查看内存地址中的值。格式是<code>x /&lt;n/f/u&gt; &lt;addr&gt;</code>，其中<code>&lt;addr&gt;</code>是内存地址。</p>
+
+<h3 id="gdb-1">启动GDB方法</h3>
+
+<ol>
+  <li>gdb <programe> program就是执行的文件，一般在当前目录下。</programe></li>
+  <li>gdb <programe> core 用GDB同事调试一个运行程序和 core 文件，core 是程序非法执行后 core dump 后产生的文件。</programe></li>
+  <li>gdb <programe> <PID> 如果程序是一个服务程序，则可以指定服务程序运行时的进程ID。gdb 自动 attach 上去，并调试它。 program 应该在 PATH 环境变量中搜索得到。</PID></programe></li>
+</ol>
+
+<h3 id="section-4">参考文献</h3>
+
+<ol>
+  <li><a href="http://www.tutorialspoint.com/gnu_debugger/index.htm">GNU Debugger Tutorial</a></li>
+  <li><a href="https://sourceware.org/gdb/">GDB: The GNU Project Debugger</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/GNU_Debugger">GNU Debugger</a></li>
+  <li><a href="http://cs.baylor.edu/~donahoo/tools/gdb/tutorial.html">How to Debug Using GDB</a></li>
+  <li><a href="http://web.mit.edu/gnu/doc/html/gdb_toc.html">Debugging with GDB</a></li>
+  <li><a href="http://blog.csdn.net/haoel/article/details/2879">用GDB调试程序</a></li>
+  <li><a href="https://www.amazon.com/Debugging-GDB-GNU-Source-Level-Debugger/dp/1882114884/httpwwwtuto0a-20">Debugging with GDB: The GNU Source-Level Debugger</a></li>
+  <li><a href="https://www.amazon.com/GDB-Pocket-Reference-OReilly/dp/0596100272/httpwwwtuto0a-20">GDB Pocket Reference: Debugging Quickly &amp; Painlessly with GDB</a></li>
+  <li><a href="https://www.amazon.com/Art-Debugging-GDB-DDD-Eclipse/dp/1593271743/ref=sr_1_fkmr1_1?s=books&amp;ie=UTF8&amp;qid=1488032361&amp;sr=1-1-fkmr1&amp;keywords=3.%09The+Art+of+Debugging+with+GDB%2C+DDD%2C+and+Eclipse">The Art of Debugging with GDB, DDD, and Eclipse</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+</feed>
