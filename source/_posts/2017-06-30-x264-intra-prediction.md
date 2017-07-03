@@ -97,3 +97,29 @@ void x264_predict_16x16_h_c( pixel *src )
 #   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)
 ```
 
+### Intra_16x16_DC 预测模式  
+
+在 SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for
+Intra_16x16 prediction", as follows:
+{% endblockquote %}
+
+x264 中关于模式 DC 的代码如下：  
+
+{% codeblock lang:c %}
+void x264_predict_16x16_dc_c( pixel *src )
+{
+    int dc = 0;
+
+    for( int i = 0; i < 16; i++ )
+    {
+        dc += src[-1 + i * FDEC_STRIDE];
+        dc += src[i - FDEC_STRIDE];
+    }
+    pixel4 dcsplat = PIXEL_SPLAT_X4( ( dc + 16 ) >> 5 );
+
+    PREDICT_16x16_DC( dcsplat );
+}
+{% endcodeblock %}
