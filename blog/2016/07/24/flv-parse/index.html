@@ -1,0 +1,856 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>媒体文件格式分析之FLV - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="FLV Header FLV File Body FLV tags Audio tags Video tags Video Data AVCVIDEOPACKET onMetaData FFmpeg FLV Demuxer源码分析 FLV 是 FLASH VIDEO 的简称，FLV &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/07/24/flv-parse/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">媒体文件格式分析之FLV</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-07-24T00:22:21-07:00'><span class='date'>2016 年 07 月 24 日</span> <span class='time'>12:22 am</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#flv-header" id="markdown-toc-flv-header">FLV Header</a></li>
+  <li><a href="#flv-file-body" id="markdown-toc-flv-file-body">FLV File Body</a>    <ul>
+      <li><a href="#flv-tags" id="markdown-toc-flv-tags">FLV tags</a>        <ul>
+          <li><a href="#audio-tags" id="markdown-toc-audio-tags">Audio tags</a></li>
+          <li><a href="#video-tags" id="markdown-toc-video-tags">Video tags</a></li>
+          <li><a href="#video-data" id="markdown-toc-video-data">Video Data</a></li>
+          <li><a href="#avcvideopacket" id="markdown-toc-avcvideopacket">AVCVIDEOPACKET</a></li>
+          <li><a href="#onmetadata" id="markdown-toc-onmetadata">onMetaData</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#ffmpeg-flv-demuxer" id="markdown-toc-ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Flash_Video">FLV</a> 是 FLASH VIDEO 的简称，FLV 流媒体是随着Flash MX 的推出发展而来的视频格式。FLV 一般由文件头(FLV header) 和文件体(FLV body) 组成。其中文件体(FLV body)由一些列tag组成，tag又可分成三类:audio/video/script，分别代表音频流、视频流、脚本流(关键字或文件信息之类)。
+<!--more-->
+在 FLV 文件中，每种 tag 类型都由一个单独的流组成，即在 FLV 文件中最多有一个视频流和一个音频流，对同一种类型的流，FLV 中不能够定义多个独立的流。
+与 SWF 文件不同,FLV 文件以大字节序存储多字节。比如，0x300(0x12C) 在 SWF 文件中的字节序为 0x2C 0x01,在FLV 文件中则为 0x01 0x2C。</p>
+
+<h2 id="flv-header">FLV Header</h2>
+
+<p>以 FLV Header <code>46 4C 56 01 05 00 00 00 09</code>为例：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">必须为’F’(0x46)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">必须为’L’(0x4C)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">必须为’V’(0x56)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">(版本)Version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">通常为0x01</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsReserved</td>
+      <td style="text-align: center">5 bits</td>
+      <td style="text-align: center">必须为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsAudio</td>
+      <td style="text-align: center">1 bit</td>
+      <td style="text-align: center">表示是否含有音频</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsReserved</td>
+      <td style="text-align: center">1 bit</td>
+      <td style="text-align: center">必须为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsVideo</td>
+      <td style="text-align: center">1 bit</td>
+      <td style="text-align: center">表示是否含有视频</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">DataOffset</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">文件头部的大小(从文件开始位置到body的偏移量),通常为9</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>FLV Header 的前三个字节是固定的<code>FLV</code>的 ASCII 码的值<code>0x46 0x4C 0x56</code>; 接下来的一个字节表示 FLV 的版本号,例如 0x01 代表 FLV 版本号为 1。第 5 个字节中的第0位和第2位分别表示video和audio的存在情况（1表示存在，0表示不存在）,其余6位必须为0.最后的4字节表示FLV Header的长度，对于version 1，此处为9.</p>
+
+<h2 id="flv-file-body">FLV File Body</h2>
+
+<p>FLV Header 之后，FLV 文件的剩余部分称为 Body，它是由tag组成，它们交替如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">PreviousTagSize0</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Tag1</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">第一个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSize0</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">上一个tag的大小，包含了tag的头部。对FLV版本1来讲，它的值等于上一个tag的数据大小+11</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Tag2</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">第二个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSizeN - 1</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">倒数第二个tag的大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TagN</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">最后一个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSizeN</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">最后一个tag的大小</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>FLV 文件的整体结构如下图所示：</p>
+
+<p><img src="/images/flv/flv_structure.png" /></p>
+
+<h3 id="flv-tags">FLV tags</h3>
+
+<p>FLV tag格式如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Tag类型(TagType)</td>
+      <td style="text-align: center">1 bytes</td>
+      <td style="text-align: center">8：音频、9：视频、18：script数据</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">数据大小(DataSize)</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center">数据字段的长度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">时间戳(Timestamp)</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center">毫秒为单位，第一个tag时，该值总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">时间戳扩展(TimeStampExtended)</td>
+      <td style="text-align: center">1 bytes</td>
+      <td style="text-align: center">时间戳扩展为4bytes,代表高8位，很少用到</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">流ID</td>
+      <td style="text-align: center">3bytes</td>
+      <td style="text-align: center">总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">数据(Data)</td>
+      <td style="text-align: center">音频、视频或script</td>
+      <td style="text-align: center">数据实体</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>以 Tag <code>12 00 12 A9 00 00 00 00 00 00 00 02 00 0A……</code>为例，<code>0x12</code>代表该 tag 为script data，<code>00 12 A9</code>代表该 tag 的 DataSize 为 681 byte，<code>00 00 00</code>代表该 tag 的 TimeStamp 为 0，<code>00</code>代表该 tag 的 TimeStampExtended 为 0，StreamID 总是 0，接下来的 681 byte 为script data 的内容。</p>
+
+<p>播放过程中，FLV tag的时间信息完全依赖于 FLV 时间戳，内置的其他时间信息都被忽略掉。</p>
+
+<h4 id="audio-tags">Audio tags</h4>
+
+<h4 id="video-tags">Video tags</h4>
+
+<p>Video Tag 与 SWF 文件格式中的 VideoFrame Tag 类似，它们的 Payload 数据是同一的。关于 SWF 文件格式的介绍，请看<a href="www.adobe.com/go/swf_file_format">SWF(File Format Specification)</a>。</p>
+
+<p>以<code>09 00 00 2D 00 00 00 00 00 00 00 17 00 00 00 00 01 4D 40 1F FF E1 00 19 67 4D 40 ……</code>为例，<code>09</code>表示 Tag Type 为 Video Tag;<code>00 00 2D</code>表示 DataSize 为 45；<code>00 00 00</code>表示 Timestamp 为 0；<code>00</code>表示 TimestampExtended 为 0；<code>00 00 00</code>表示 StreamID 为 0；<code>17</code>中的 8 bit，其中前 4 bit<code>1</code>表示 FrameType 为 keyframe,后 4 bit<code>7</code>表示 CodecID 为 AVC；之后的 45 byte 为 VideoData;</p>
+
+<h4 id="video-data">Video Data</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">帧类型(FrameType)</td>
+      <td style="text-align: center">4bits</td>
+      <td style="text-align: center">1.关键帧 2.inter frame(for AVC, a non-seekable frame) 3.disposable inter frame(H.263 only) 4.generated keyframe(reserved for serve use only) 5.video info/command frame</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">CodeID</td>
+      <td style="text-align: center">4bits</td>
+      <td style="text-align: center">1:JPEG 2:H.263 3:Screen video 4:VP6 5:VP6 6:Screen video version 2 7:AVC</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">视频数据(VideoData)</td>
+      <td style="text-align: center">if CodecID == 7 AVCVIDEOPACKET</td>
+      <td style="text-align: center">Video frame payload or UI8(see note following table)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>如果 FrameType = 5,此时的 VideoData 含义如下：</p>
+
+<ul>
+  <li>0 = Start of client-side seeking video frame sequence</li>
+  <li>1 = End of client-side seeking video frame sequence</li>
+</ul>
+
+<h4 id="avcvideopacket">AVCVIDEOPACKET</h4>
+
+<p>AVCVIDEOPACKET 携带一个AVC video data。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">AVCPacketType</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">0:AVC sequence header 1:AVC NALU 2:AVC end of sequence</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">CompositionTime</td>
+      <td style="text-align: center">SI24</td>
+      <td style="text-align: center">if AVCPacketType == 1 CompositionTime offset else 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Data</td>
+      <td style="text-align: center">UI8[n]</td>
+      <td style="text-align: center">if AVCPacketType == 0 AVCDecoderConfigurationRecord else if AVCPacketType == 1 one or more NALUs</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="onmetadata">onMetaData</h4>
+<ul>
+  <li>duration : 一个 DOUBLE 指定了整个文件的总时长，单位 seconds</li>
+  <li>width : 一个 DOUBLE 指定了视频的宽，单位 pixel</li>
+  <li>height : 一个 DOUBLE 指定了视频的高,danwei pixel</li>
+  <li>videodatarate : 一个DOUBLE 指定了 video bit rate，单位 kilobits per second</li>
+  <li>framerate : 一个DOUBLE 指定了每秒的 frame 数</li>
+  <li>videocodeid : 一个DOUBLE 指定了 video codec ID</li>
+  <li>audiosamplerate : 一个 DOUBLE 指定了音频采样的分辨率</li>
+  <li>stereo : 一个 BOOL 指定了data 是否是stereo</li>
+  <li>filesize : 一个 DOUBLE 指定了文件的总大小，单位 byte.</li>
+</ul>
+
+<h2 id="ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</h2>
+
+<p>FFmpeg 中关于flv demuxer的定义如下：</p>
+
+<figure class="code"><figcaption><span>ff_flv_demuxer </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVInputFormat</span> <span class="n">ff_flv_demuxer</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class="line">    <span class="p">.</span><span class="n">name</span>           <span class="o">=</span> <span class="s">&quot;flv&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">long_name</span>      <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="s">&quot;FLV (Flash Video)&quot;</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_data_size</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">FLVContext</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">read_probe</span>     <span class="o">=</span> <span class="n">flv_probe</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">read_header</span>    <span class="o">=</span> <span class="n">flv_read_header</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">read_packet</span>    <span class="o">=</span> <span class="n">flv_read_packet</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">read_seek</span>      <span class="o">=</span> <span class="n">flv_read_seek</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">read_close</span>     <span class="o">=</span> <span class="n">flv_read_close</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">extensions</span>     <span class="o">=</span> <span class="s">&quot;flv&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">priv_class</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">flv_class</span><span class="p">,</span>
+</span><span class="line"><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中的<code>flv_read_header</code>是分析 FLV 的header函数，分析代码如下：</p>
+
+<figure class="code"><figcaption><span>flv_read_header </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">int</span> <span class="nf">flv_read_header</span><span class="p">(</span><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">offset</span><span class="p">,</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span> <span class="c1">//将flv的头去掉</span>
+</span><span class="line">    <span class="n">flags</span> <span class="o">=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//读取flv的video和audio flag信息</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">s</span><span class="o">-&gt;</span><span class="n">ctx_flags</span> <span class="o">|=</span> <span class="n">AVFMTCTX_NOHEADER</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">FLV_HEADER_FLAG_HASVIDEO</span><span class="p">)</span> <span class="c1">//如果flv中包含video, 创建视频流</span>
+</span><span class="line">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">create_stream</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">))</span>
+</span><span class="line">            <span class="k">return</span> <span class="n">AVERROR</span><span class="p">(</span><span class="n">ENOMEM</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">FLV_HEADER_FLAG_HASAUDIO</span><span class="p">)</span> <span class="c1">//如果flv中包含audio,创建音频流</span>
+</span><span class="line">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">create_stream</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AVMEDIA_TYPE_AUDIO</span><span class="p">))</span>
+</span><span class="line">            <span class="k">return</span> <span class="n">AVERROR</span><span class="p">(</span><span class="n">ENOMEM</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">offset</span> <span class="o">=</span> <span class="n">avio_rb32</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//获取文件头长度,通常为9</span>
+</span><span class="line">    <span class="n">avio_seek</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">SEEK_SET</span><span class="p">);</span><span class="c1">//跳过DataOffset字段</span>
+</span><span class="line">    <span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span><span class="c1">//跳过Body中的PreviousTagSize0字段，大小即为4bytes</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">s</span><span class="o">-&gt;</span><span class="n">start_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>FLV中关于tag的处理使用<code>flv_read_packet</code>,代码如下：</p>
+
+<figure class="code"><figcaption><span>flv_read_packet </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">int</span> <span class="nf">flv_read_packet</span><span class="p">(</span><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">pkt</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">FLVContext</span> <span class="o">*</span><span class="n">flv</span> <span class="o">=</span> <span class="n">s</span><span class="o">-&gt;</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">ret</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">FlvTagType</span> <span class="n">type</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">stream_type</span><span class="o">=-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">next</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">meta_pos</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">dts</span><span class="p">,</span> <span class="n">pts</span> <span class="o">=</span> <span class="n">AV_NOPTS_VALUE</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">av_uninit</span><span class="p">(</span><span class="n">channels</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">av_uninit</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">);</span>
+</span><span class="line">    <span class="n">AVStream</span> <span class="o">*</span><span class="n">st</span>    <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* pkt size is repeated at end. skip it */</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(;;</span> <span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span> <span class="p">{</span>
+</span><span class="line">        <span class="n">pos</span>  <span class="o">=</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class="line">        <span class="n">type</span> <span class="o">=</span> <span class="p">(</span><span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x1F</span><span class="p">);</span><span class="c1">//获取tag的类型，分为三种:0x08:AUDIO,0x09:VIDOE0x12:META</span>
+</span><span class="line">        <span class="n">size</span> <span class="o">=</span> <span class="n">avio_rb24</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//tag的长度</span>
+</span><span class="line">        <span class="n">dts</span>  <span class="o">=</span> <span class="n">avio_rb24</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//获取时间戳</span>
+</span><span class="line">        <span class="n">dts</span> <span class="o">|=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">;</span><span class="c1">//获取时间戳扩展</span>
+</span><span class="line">        <span class="n">av_log</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AV_LOG_TRACE</span><span class="p">,</span> <span class="s">&quot;type:%d, size:%d, dts:%&quot;</span><span class="n">PRId64</span><span class="s">&quot; pos:%&quot;</span><span class="n">PRId64</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">dts</span><span class="p">,</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">));</span>
+</span><span class="line">        <span class="k">if</span> <span class="p">(</span><span class="n">avio_feof</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">))</span>
+</span><span class="line">            <span class="k">return</span> <span class="n">AVERROR_EOF</span><span class="p">;</span>
+</span><span class="line">        <span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="cm">/* stream id, always 0 */</span>
+</span><span class="line">        <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">        <span class="p">...</span>
+</span><span class="line">
+</span><span class="line">        <span class="k">if</span> <span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">            <span class="k">continue</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">        <span class="n">next</span> <span class="o">=</span> <span class="n">size</span> <span class="o">+</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">        <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">FLV_TAG_TYPE_AUDIO</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="n">stream_type</span> <span class="o">=</span> <span class="n">FLV_STREAM_TYPE_AUDIO</span><span class="p">;</span>
+</span><span class="line">            <span class="n">flags</span>    <span class="o">=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class="line">            <span class="n">size</span><span class="o">--</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">FLV_TAG_TYPE_VIDEO</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="n">stream_type</span> <span class="o">=</span> <span class="n">FLV_STREAM_TYPE_VIDEO</span><span class="p">;</span>
+</span><span class="line">            <span class="n">flags</span>    <span class="o">=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class="line">            <span class="n">size</span><span class="o">--</span><span class="p">;</span>
+</span><span class="line">            <span class="k">if</span> <span class="p">((</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">FLV_VIDEO_FRAMETYPE_MASK</span><span class="p">)</span> <span class="o">==</span> <span class="n">FLV_FRAME_VIDEO_INFO_CMD</span><span class="p">)</span>
+</span><span class="line">                <span class="k">goto</span> <span class="n">skip</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">FLV_TAG_TYPE_META</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="n">stream_type</span><span class="o">=</span><span class="n">FLV_STREAM_TYPE_DATA</span><span class="p">;</span>
+</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">13</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// Header-type metadata stuff</span>
+</span><span class="line">                <span class="kt">int</span> <span class="n">type</span><span class="p">;</span>
+</span><span class="line">                <span class="n">meta_pos</span> <span class="o">=</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class="line">                <span class="n">type</span> <span class="o">=</span> <span class="n">flv_read_metabody</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">next</span><span class="p">);</span>
+</span><span class="line">                <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">dts</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">type</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">type</span> <span class="o">==</span> <span class="n">TYPE_UNKNOWN</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">                    <span class="k">goto</span> <span class="n">skip</span><span class="p">;</span>
+</span><span class="line">                <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">TYPE_ONTEXTDATA</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">                    <span class="n">avpriv_request_sample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;OnTextData packet&quot;</span><span class="p">);</span>
+</span><span class="line">                    <span class="k">return</span> <span class="n">flv_data_packet</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">dts</span><span class="p">,</span> <span class="n">next</span><span class="p">);</span>
+</span><span class="line">                <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">TYPE_ONCAPTION</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">                    <span class="k">return</span> <span class="n">flv_data_packet</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">dts</span><span class="p">,</span> <span class="n">next</span><span class="p">);</span>
+</span><span class="line">                <span class="p">}</span>
+</span><span class="line">                <span class="n">avio_seek</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">pb</span><span class="p">,</span> <span class="n">meta_pos</span><span class="p">,</span> <span class="n">SEEK_SET</span><span class="p">);</span>
+</span><span class="line">            <span class="p">}</span>
+</span><span class="line">        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class="line">            <span class="n">av_log</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AV_LOG_DEBUG</span><span class="p">,</span>
+</span><span class="line">                   <span class="s">&quot;Skipping flv packet: type %d, size %d, flags %d.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class="line">                   <span class="n">type</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-07-24T00:22:21-07:00'><span class='date'>2016 年 07 月 24 日</span> <span class='time'>12:22 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/shi-pin-ji-chu/'>视频基础</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/07/24/flv-parse/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/07/24/flv-parse/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/07/20/lib-trmp-source-code-study/" title="Previous Post: RTMP协议学习（中）：源码分析">&laquo; RTMP协议学习（中）：源码分析</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/07/24/avi-parse-format/" title="Next Post: 媒体文件格式分析之AVI">媒体文件格式分析之AVI &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2016/07/24/flv-parse" data-title="媒体文件格式分析之FLV" data-url="http://lazybing.github.io/blog/2016/07/24/flv-parse//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (5)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/06/30/x264-intra-prediction/">X264 源码分析之帧内预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/24/x264-encoder-open/">X264代码解析之x264_encoder_open函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/23/x264-paraments-illustra/">X264 参数详解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/22/sodb-rbsp-ebsp/">SODB RBSP EBSP 的区别与联系</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/09/x264-download-install-and-use/">X264 下载、安装和使用</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,449 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="avcodec_find_decoder和avcodec_find_encoder 主要是查找 FFmpeg 的解码器和编码器。 avcodec_find_decoder 和 avcodec_find_encoder 主要是利用 AVCodecID 来查找编解码器。
+其实质是遍历AVCodec &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/06/av-find-encdec/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-12-06T06:18:07-08:00'><span class='date'>2016 年 12 月 06 日</span> <span class='time'>6:18 am</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><code>avcodec_find_decoder</code>和<code>avcodec_find_encoder</code> 主要是查找 FFmpeg 的解码器和编码器。<br />
+<!--more--></p>
+
+<p>avcodec_find_decoder 和 avcodec_find_encoder 主要是利用 AVCodecID 来查找编解码器。<br />
+其实质是遍历AVCodec 链表并且获得符合AVCodecID的元素。</p>
+
+<p>avcodec_find_decoder 定义如下：</p>
+
+<figure class="code"><figcaption><span>avcodec_find_decoder </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVCodec</span> <span class="o">*</span><span class="nf">avcodec_find_decoder</span><span class="p">(</span><span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">find_encdec</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>由定义可以看出，该函数利用 AVCodecID 查找 AVCodec，并将找到的 AVCodec 返回。
+<code>find_encdec</code>定义如下：</p>
+
+<figure class="code"><figcaption><span>find_encdec </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="nf">find_encdec</span><span class="p">(</span><span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">encoder</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="n">experimental</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="n">p</span> <span class="o">=</span> <span class="n">first_avcodec</span><span class="p">;</span>
+</span><span class="line">    <span class="n">id</span><span class="o">=</span> <span class="n">remap_deprecated_codec_id</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+</span><span class="line">    <span class="k">while</span> <span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">if</span> <span class="p">((</span><span class="n">encoder</span> <span class="o">?</span> <span class="n">av_codec_is_encoder</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">:</span> <span class="n">av_codec_is_decoder</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">            <span class="n">p</span><span class="o">-&gt;</span><span class="n">id</span> <span class="o">==</span> <span class="n">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">capabilities</span> <span class="o">&amp;</span> <span class="n">AV_CODEC_CAP_EXPERIMENTAL</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">experimental</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">                <span class="n">experimental</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span>
+</span><span class="line">            <span class="p">}</span> <span class="k">else</span>
+</span><span class="line">                <span class="k">return</span> <span class="n">p</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">experimental</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中<code>av_codec_is_decoder</code>定义如下：</p>
+
+<figure class="code"><figcaption><span>av_codec_is_decoder </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">av_codec_is_decoder</span><span class="p">(</span><span class="k">const</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">codec</span> <span class="o">&amp;&amp;</span> <span class="n">codec</span><span class="o">-&gt;</span><span class="n">decode</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>av_codec_is_encoder</code>定义如下：</p>
+
+<figure class="code"><figcaption><span>av_codec_is_decoder </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">av_codec_is_encoder</span><span class="p">(</span><span class="k">const</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">codec</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">encode_sub</span> <span class="o">||</span> <span class="n">codec</span><span class="o">-&gt;</span><span class="n">encode2</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>查找编解码器除了上述的<code>avcodec_find_decoder</code>和<code>avcodec_find_encoder</code>外，还可以利用编解码器名字来查找函数为：avcodec_find_encoder_by_name 和 avcodec_find_decoder_by_name，在此不再赘述。</p>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-12-06T06:18:07-08:00'><span class='date'>2016 年 12 月 06 日</span> <span class='time'>6:18 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/06/av-find-encdec/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/06/av-find-encdec/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/12/05/avcodec-register-all/" title="Previous Post: FFMPEG 源码分析：avcodec_register_all">&laquo; FFMPEG 源码分析：avcodec_register_all</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/12/07/avio-open2/" title="Next Post: FFMPEG源码分析：avio_open2">FFMPEG源码分析：avio_open2 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2016/12/06/av-find-encdec" data-title="FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder" data-url="http://lazybing.github.io/blog/2016/12/06/av-find-encdec//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (5)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/06/30/x264-intra-prediction/">X264 源码分析之帧内预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/24/x264-encoder-open/">X264代码解析之x264_encoder_open函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/23/x264-paraments-illustra/">X264 参数详解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/22/sodb-rbsp-ebsp/">SODB RBSP EBSP 的区别与联系</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/09/x264-download-install-and-use/">X264 下载、安装和使用</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

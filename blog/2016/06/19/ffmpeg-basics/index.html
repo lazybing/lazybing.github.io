@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>FFmpeg 使用 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="Bit Rate, Frame Rate 和 File Size Resizing and Scaling Video Cropping Video Padding Video Filpping and Rotating Video Blur Sharpen adn Other &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">FFmpeg 使用</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-06-19T09:59:26-07:00'><span class='date'>2016 年 06 月 19 日</span> <span class='time'>9:59 am</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#bit-rate-frame-rate--file-size" id="markdown-toc-bit-rate-frame-rate--file-size">Bit Rate, Frame Rate 和 File Size</a></li>
+  <li><a href="#resizing-and-scaling-video" id="markdown-toc-resizing-and-scaling-video">Resizing and Scaling Video</a></li>
+  <li><a href="#cropping-video" id="markdown-toc-cropping-video">Cropping Video</a></li>
+  <li><a href="#padding-video" id="markdown-toc-padding-video">Padding Video</a></li>
+  <li><a href="#filpping-and-rotating-video" id="markdown-toc-filpping-and-rotating-video">Filpping and Rotating Video</a></li>
+  <li><a href="#blur-sharpen-adn-other-denoising" id="markdown-toc-blur-sharpen-adn-other-denoising">Blur Sharpen adn Other Denoising</a></li>
+  <li><a href="#overlay---picture-in-picture" id="markdown-toc-overlay---picture-in-picture">Overlay - Picture in Picture</a></li>
+  <li><a href="#adding-text-on-video" id="markdown-toc-adding-text-on-video">Adding Text on Video</a></li>
+  <li><a href="#conversion-between-formats" id="markdown-toc-conversion-between-formats">Conversion Between Formats</a></li>
+</ul>
+
+<p>FFmpeg Basics —Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。</p>
+
+<!--more-->
+
+<hr />
+
+<h3 id="bit-rate-frame-rate--file-size">Bit Rate, Frame Rate 和 File Size</h3>
+
+<p>Frame Rate 是一秒钟播放的 frame 的个数，又可以分为 interlaced 和 progressive 两种， Interlaced Frame 主要用于 TV，如 NTSC 标准使用 60i fps ，即 60 interlaced fields（30 frames）每秒。</p>
+
+<p>Frame rate 设置使用 -r 选项： <code>ffmpeg -i input -r fps output</code></p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.avi -r 30 output.mp4</span></code></pre></td></tr></table></div></figure>
+<p>除此之外，也可用 fps filter 设置 frame rate。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i clip.mpg -vf fps=fps=25 clip.webm</span></code></pre></td></tr></table></div></figure>
+
+<p>Bit Rate 是单位时间内可以处理的 bits 数，可分为 <code>ABR(Average bit rate)</code> <code>CBR(Constant bit rate)</code> <code>VBR(Variable bit rate)</code>。
+Bit Rate 设置使用 -b 选项：<code>ffmpeg -i input -b bitrates output</code>
+针对 video 和 audio 的不同，又可使用 <code>-b:v</code> 和 <code>-b:a</code>。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i file.avi -b 1.5M film.mp4
+</span><span class="line">ffmpeg -i input.avi -b:v 1500k output.mp4</span></code></pre></td></tr></table></div></figure>
+<p>CBR 的设置需要同时设置 bitrate、minimal rate 和 maximal rate 为相同的值，设置 maxrate的同时需要设置 bufsize 选项。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i in.avi -b 0.5M -minrate 0.5M -maxrate 0.5M -bufsize 1M out.mkv</span></code></pre></td></tr></table></div></figure>
+
+<p>File Size 是由 Video Size 和 Audio Size 两者之和组成的。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">video_size = video_bitrate * time_in_seconds / 8;
+</span><span class="line">audio_size = audio_bitrate * time_in_seconds / 8; 或
+</span><span class="line">audio_size = sampling_rate * bit_depth * channels * time_in_seconds / 8;</span></code></pre></td></tr></table></div></figure>
+<p>也可设置输出文件的最大值,设置选项为 -fs(file size) ：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.avi -fs 10MB output.mp4</span></code></pre></td></tr></table></div></figure>
+<hr />
+
+<h3 id="resizing-and-scaling-video">Resizing and Scaling Video</h3>
+
+<p>Resizing 是指改变宽高，Scaling 是利用 scale filter 改变 frame size。</p>
+
+<p>Resizing Video ： 利用 <code>-s</code>选项指定输出视频的宽高，格式为<code>wxh</code>，其中 w 是以 pixel 为单位的宽， h 是以 pixel 为单位的高。例如:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input_file -s 320x240 output_file</span></code></pre></td></tr></table></div></figure>
+<p>此外，FFmpeg 针对不同的宽高信息，提供了预定义的视频大小简写，下面两个命令的作用相同，都是将 input_file 转换为 640*480 的输出文件：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input_file.avi -s 640x480 output.avi
+</span><span class="line">ffmpeg -i input_file.avi -s vga output.avi</span></code></pre></td></tr></table></div></figure>
+<p>通常情况下，做 resize 是从<code>big frame -&gt; small frame</code>，反过来的话，可能导致图片不清晰，尤其是当原始视频的 resolution 比较小的时候。针对 <code>small frame -&gt; big frame</code>，有专门的特殊 filter（<code>super2xsai</code>） 可以使用，它可以使原视频文件变大两倍。2xsai 即指 2 times scale and interpolate, syntax 是 <code>-vf super2xsai</code>。
+例如把 128x96 的 phone_video.3gp 文件转换为 256x192 的视频文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i phone_video.3gp -vf super2xsai output.mp4</span></code></pre></td></tr></table></div></figure>
+
+<p>Scaling Video : 当使用<code>-s</code>选项来改变 frame size 时，其实在 filtergraph 的最后有一个 scale filter。scale filter也可以通过设置来固定在某个位置。</p>
+
+<p>scale 可以改变输出视频的 sample aspect ration，同时 display aspect ration 保持不变。</p>
+
+<p>syntax 是 <code>scale=width:height[:interl={l|-l}]</code>。其中 width 和 height 可以是 iw/in_w/ih/in_h/ow/out_w/oh/out_h等。</p>
+
+<p>下面两个 command 执行效果相同:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.mpg -s 320x240 output.mp4
+</span><span class="line">ffmpeg -i input.mpg -vf scale=320:240 output.mp4</span></code></pre></td></tr></table></div></figure>
+<p>如果不知道源视频的 resolution，又需要做 scale，可以用下面的方法:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input.mpg -vf scale=iw/2:ih/2 output.mp4
+</span><span class="line">ffmpeg -i input.mpg -vf scale=iw*0.9:ih*0.9 output.mp4
+</span><span class="line">ffmpeg -i input.mpg -vf scale=iw/PHI:ih/PHI output.mp4</span></code></pre></td></tr></table></div></figure>
+
+<hr />
+
+<h3 id="cropping-video">Cropping Video</h3>
+
+<p>Cropping Video 是指截取源视频中的某个矩形区域作为输出视频显示。通常它会与 Resizing/Padding 等共同配合使用。</p>
+
+<p>旧版 FFmpeg 中会使用 cropbottom/cropleft/cropright/croptop 等选项，现在的版本中废弃了这种使用方式，改用<code>crop filter</code>的方式来实现Cropping Video。</p>
+
+<p>syntax 是<code>crop=ow[:oh[:x[:y[:keep_aspect]]]]</code>，其中 <code>ow=out_w oh=out_h</code>。示例如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf crop=iw/3:ih:0:0 output
+</span><span class="line">ffmpet -i input -vf crop=iw/3:ih:iw/3*2:0 output</span></code></pre></td></tr></table></div></figure>
+<p>如果x和y没有专门给出，会有默认值计算：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">X(default) = (input width - output widht)/2
+</span><span class="line">Y(default) = (input height - output height)/2</span></code></pre></td></tr></table></div></figure>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input_file -vf crop=w:h output_file
+</span><span class="line">ffmpeg -i input.avi -vf crop=iw/2:ih/2 output.avi</span></code></pre></td></tr></table></div></figure>
+
+<hr />
+
+<h3 id="padding-video">Padding Video</h3>
+<p>对于 Padding Video ，使用 pad filter 来实现。
+syntax 是<code>pad=width[:height[:x[:y[:color]]]]</code>，其中的 color 表示 padding 的颜色。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i photo.jpg -vf pad=860:660:30:30:pink framed_photo.jpg</span></code></pre></td></tr></table></div></figure>
+
+<p>Padding videos from 4:3 to 16:9</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf pad=ih*16/9:ih:(ow-iw)/2:0:color output
+</span><span class="line">ffmepg -i film.mpg -vf pad=ih*16/9:ih:(ow-iw)/2:0 filem_wide.avi</span></code></pre></td></tr></table></div></figure>
+
+<p>Padding videos from 16:9 to 4:3</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf pad=iw:iw*3/4:0:(oh-ih)/2:color output
+</span><span class="line">ffmpeg -i hd_video.avi -vf pad=iw:iw*3/4:0:(oh-ih)/2 video.avi</span></code></pre></td></tr></table></div></figure>
+
+<p>Padding from and to various aspect ratios</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffmpeg -i input -vf pad=ih*ar:ih:(ow-iw)/2:0:color output //pillarboxing -adding boxes horizontally(To adjust a smaller width-to-height aspect ration to the bigger)
+</span><span class="line">ffmpeg -i input -vf pad=iw:iw*ar:0:(oh-ih)/2:color output //letterboxing -adding boxes vertically(To adjust a bigger width-to-height aspect ration to the smaller)</span></code></pre></td></tr></table></div></figure>
+<hr />
+
+<h3 id="filpping-and-rotating-video">Filpping and Rotating Video</h3>
+
+<h3 id="blur-sharpen-adn-other-denoising">Blur Sharpen adn Other Denoising</h3>
+
+<h3 id="overlay---picture-in-picture">Overlay - Picture in Picture</h3>
+
+<h3 id="adding-text-on-video">Adding Text on Video</h3>
+
+<h3 id="conversion-between-formats">Conversion Between Formats</h3>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-06-19T09:59:26-07:00'><span class='date'>2016 年 06 月 19 日</span> <span class='time'>9:59 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/du-shu-bi-ji/'>读书笔记</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi/" title="Previous Post: FFmpeg 常用结构体解析">&laquo; FFmpeg 常用结构体解析</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/06/27/profiles-tiers-levels/" title="Next Post: Profiles-Tiers-Levels">Profiles-Tiers-Levels &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2016/06/19/ffmpeg-basics" data-title="FFmpeg 使用" data-url="http://lazybing.github.io/blog/2016/06/19/ffmpeg-basics//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (5)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/06/30/x264-intra-prediction/">X264 源码分析之帧内预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/24/x264-encoder-open/">X264代码解析之x264_encoder_open函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/23/x264-paraments-illustra/">X264 参数详解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/22/sodb-rbsp-ebsp/">SODB RBSP EBSP 的区别与联系</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/09/x264-download-install-and-use/">X264 下载、安装和使用</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

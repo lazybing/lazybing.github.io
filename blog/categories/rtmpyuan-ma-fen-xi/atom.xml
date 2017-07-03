@@ -1,0 +1,625 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:rtmp源码分析 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/rtmpyuan-ma-fen-xi/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2017-07-03T08:38:00-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[RTMP协议学习（中）：源码分析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study/"/>
+    <updated>2016-07-20T17:03:14-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/20/lib-trmp-source-code-study</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
+  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
+  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
+  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
+  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
+  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
+  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
+  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
+  <li><a href="#download" id="markdown-toc-download">Download</a></li>
+  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
+</ul>
+
+<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
+<!--more--></p>
+
+<h3 id="section">大致流程</h3>
+
+<p>使用RTMP下载流媒体的主要流程包括以下几个步骤：</p>
+
+<ul>
+  <li>InitSocket()</li>
+  <li>RTMP_Init(Struct RTMP)</li>
+  <li>RTMP_ParseURL</li>
+  <li>RTMP_SetupStream</li>
+  <li>fopen</li>
+  <li>RTMP_Connect()</li>
+  <li>RTMP_ConnectStream</li>
+  <li>Download</li>
+  <li>CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</li>
+</ul>
+
+<p>下面逐个记录各个步骤的功能。
+在了解具体步骤之前，先了解结构重要的Structure:</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="n">RTMP</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_inChunkSize</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_outChunkSize</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBWCheckCounter</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBytesIn</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBytesInSent</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nBufferMS</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_stream_id</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_mediaChannel</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">m_mediaStamp</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint32_t</span> <span class="n">m_pauseStamp</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_pausing</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nServerBW</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">m_nClientBW</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_nClientBW2</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_bPlaying</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_bSendEncoding</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="n">m_bSendCounter</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">m_numInvokes</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">m_numCalls</span><span class="p">;</span>
+</span><span class='line'><span class="n">RTMP_METHOD</span> <span class="o">*</span><span class="n">m_methodCalls</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="initsocket">InitSocket()</h3>
+
+<p>初始化 Socket ,代码非常简单。</p>
+
+<p>```
+int InitSockets()
+{
+#ifdef WIN32
+    WORD version;
+    WSADATA wsaData;</p>
+
+<pre><code>version MAKEWORD(1, 1);       
+return (WSASTartup(version, &amp;wsaData) == 1); #else
+return TRUE; #endif } ```
+</code></pre>
+
+<h3 id="rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</h3>
+
+<p>初始化 RTMP 结构体。</p>
+
+<p>```
+void RTMP_Init(RTMP *r)
+{
+#ifdef CRYPTO
+    if(!RTMP_TLS_cts)
+        RTMP_TLS_Init();
+#endif</p>
+
+<pre><code>memset(r, 0, sizeof(RTMP));
+r-&gt;m_sb.sb_socket = -1;
+r-&gt;m_inChunkSize  = RTMP_DEFAULT_CHUNKSIZE;
+r-&gt;m_outChunkSize = RTMP_DEFAULT_CHUNKSIZE;
+r-&gt;m_nBufferMS    = 30000;
+r-&gt;m_nClientBW    = 2500000;
+r-&gt;m_nClientBW2   = 2;
+r-&gt;m_nServerBW    = 2500000;
+r-&gt;m_fAudioCodecs = 3191.0;
+r-&gt;m_fVideoCodecs = 252.0;
+r-&gt;Link.timeout   = 20;
+r-&gt;Link.swfAge    = 30; } ```
+</code></pre>
+
+<h3 id="rtmpparseurl">RTMP_ParseURL</h3>
+
+<p>URL 一般由三部分组成: 资源类型、存放资源的主机域名、资源文件名。
+语法格式为([]为可选项):protocol://hostname[:port]/path/[:parameters][?query]#fragment
+protocol(协议名称)、hostname(主机名)、port(端口号)、path(路径)、parameters(参数)。</p>
+
+<p>RTMP_ParseURL函数定义:</p>
+
+<p><code>
+int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port, AVal *playpath, AVal *app);
+</code></p>
+
+<p>从函数定义的几个参数可以看出，url 被定位为 const 型，即该参数在函数内部不可改变，而protocol、host、port、palypath、app 则是在函数内部根据url来进行解析，之后进行赋值的。</p>
+
+<h3 id="rtmpsetupstream">RTMP_SetupStream</h3>
+
+<h3 id="fopen">fopen</h3>
+
+<h3 id="rtmpconnect">RTMP_Connect()</h3>
+
+<h3 id="rtmpconnectstream">RTMP_ConnectStream</h3>
+
+<h3 id="download">Download</h3>
+
+<h3 id="cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</h3>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[RTMP 协议学习（上）: 协议规范]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard/"/>
+    <updated>2016-07-17T08:17:38-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/17/rtmp-protocol-standard</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">1. 几个概念</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">2.字节序、字节对齐和时间格式</a></li>
+  <li><a href="#rtmp-chunk-stream" id="markdown-toc-rtmp-chunk-stream">3. RTMP Chunk Stream</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">3.1 消息格式</a></li>
+      <li><a href="#handshake" id="markdown-toc-handshake">3.2 握手(HandShake)</a>        <ul>
+          <li><a href="#section-3" id="markdown-toc-section-3">握手序列:</a></li>
+          <li><a href="#c--s-" id="markdown-toc-c--s-">C 和 S 格式：</a></li>
+          <li><a href="#handshake-diagram" id="markdown-toc-handshake-diagram">握手框图(HandShake Diagram)</a></li>
+        </ul>
+      </li>
+      <li><a href="#chunking" id="markdown-toc-chunking">3.3 分块(Chunking)</a>        <ul>
+          <li><a href="#chunk-" id="markdown-toc-chunk-">Chunk 格式</a>            <ul>
+              <li><a href="#chunk-basic-header" id="markdown-toc-chunk-basic-header">Chunk Basic Header</a></li>
+              <li><a href="#chunk-message-header" id="markdown-toc-chunk-message-header">Chunk Message Header</a></li>
+              <li><a href="#extended-timestamp" id="markdown-toc-extended-timestamp">Extended Timestamp</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><a href="#protocol-control-message" id="markdown-toc-protocol-control-message">3.4 协议控制消息(Protocol Control Message)</a>        <ul>
+          <li><a href="#set-chunk-size-1" id="markdown-toc-set-chunk-size-1">设置块大小1(Set Chunk Size 1)</a></li>
+          <li><a href="#acknowledgement-3" id="markdown-toc-acknowledgement-3">确认消息3(Acknowledgement 3)</a></li>
+          <li><a href="#window-acknowledgement-size-5" id="markdown-toc-window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</a></li>
+          <li><a href="#set-peer-bandwidth-6" id="markdown-toc-set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a>    <ul>
+      <li><a href="#rtmprtmp-message-format" id="markdown-toc-rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</a>        <ul>
+          <li><a href="#message-header" id="markdown-toc-message-header">消息头部(Message Header)</a></li>
+          <li><a href="#message-payload" id="markdown-toc-message-payload">消息负载(Message Payload)</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-4" id="markdown-toc-section-4">4.2 使用控制消息(4)</a></li>
+    </ul>
+  </li>
+  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a>    <ul>
+      <li><a href="#types-of-message" id="markdown-toc-types-of-message">5.1 消息类型(Types of Message)</a></li>
+      <li><a href="#types-of-commands" id="markdown-toc-types-of-commands">5.2 指令类型(Types of Commands)</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">6. 参考文献</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
+<!--more--></p>
+
+<h3 id="section">1. 几个概念</h3>
+<ul>
+  <li>负载(Payload): 分组中包含的数据，比如音频采样数据和视频压缩数据。</li>
+  <li>分组(Packet): 数据分组由固定头部和负载组成的。对于底层协议，可能需要定义分组的封装。</li>
+  <li>端口(Port): 用于区分不同的目标抽象，一般用整数表示，如TCP/IP中的端口号。</li>
+  <li>传输地址(Transport address): 网络地址和端口号的组合,用于标识一个传输层的端口。如IP地址+TCP端口号。</li>
+  <li>消息流(Message stream): 允许消息流动的逻辑上的通讯通道。</li>
+  <li>消息流ID(Message stream ID): 每隔消息都有与之关联的ID号，用于与其他消息流作区分。</li>
+  <li>块(Chunk): 一个消息片段。消息被放到网络上传输之前被切分成小的片段并被交错存取。分块确保跨流的所有消息按时间戳顺序被不断的传输。</li>
+  <li>块流(Chunk stream):</li>
+  <li>块流ID(Chunk stream ID): 每个块所关联的用于区分其他块流的ID。</li>
+  <li>复用(Multiplexing): 将音视频数据整合到一个数据流内,使得多个音视频数据流可以同步传输.</li>
+  <li>解复用(DeMultimplexing): 复用的反过程,交互的音视频数据被分成原始的音频数据和视频数据。</li>
+  <li>远程过程调用(Remote Procedure Call(RPC)):</li>
+  <li>元数据(Metadata): 数据的一个简单描述。如一部电影的电影名、时长、制作时间等等.</li>
+  <li>应用Instance（Application Instance): 对于服务器端的应用Instance，客户端就是通过连接该Instance来发送请求的.</li>
+  <li>Action Message Format(AMF):</li>
+</ul>
+
+<h3 id="section-1">2.字节序、字节对齐和时间格式</h3>
+<p>所有完整的字段都是按照网络字节序被承载的。即零字节是第一个字节，bit 0 是一个字段中的最高有效位。即所谓的大端。
+如无特殊说明，RTMP 中的所有字段都是字节对齐的。
+<code>
+#define ALIGN_16bit(value) (((value + 15) &gt;&gt; 4) &lt;&lt; 4)
+#define ALIGN_32bit(value) (((value + 31) &gt;&gt; 5) &lt;&lt; 5)
+#define ALIGN_64bit(value) (((value + 63) &gt;&gt; 6) &lt;&lt; 6)
+</code>
+RTMP 中的时间戳用整数来表示，它是以毫秒为单位的相对时间。典型的，码流中都是从时间戳为0开始的，但这不是必须的，只要通讯双方用统一的时间即可。注意，这就要求任何跨流的同步都需要 RTMP 外的额外机制。</p>
+
+<h3 id="rtmp-chunk-stream">3. RTMP Chunk Stream</h3>
+
+<h4 id="section-2">3.1 消息格式</h4>
+
+<p>根据上层协议，消息格式可以被分成多个块以支持复用。消息格式应包含如下字段，这对于创建块是必须的:</p>
+
+<ol>
+  <li>时间戳(TimeStamp)：消息的时间戳，占 4 个字节。</li>
+  <li>长度(Length): 消息的长度，包含头部。占头部中的3 个字节。</li>
+  <li>类型Id(Type Id): 消息的类型 Id,占 1 个字节。</li>
+  <li>消息流ID（Message Stream ID）:  每个消息的唯一标识，划分成 Chunk 和还原 Chunk 为 Message 时，
+都是根据这个 ID 来辨识是否是同一个消息的 Chunk 的，占 4 个字节，并且以小端格式存储。</li>
+</ol>
+
+<h4 id="handshake">3.2 握手(HandShake)</h4>
+
+<p>RTMP 协议开始于握手，这里的握手不同于其他协议的握手，它是由 3 个固定大小的块组成，而不是带有头部的可变大小的块。
+客户端和服务器端都会发送 3 个固定大小的块。客户端发送的称为 C0/C1/C2，服务器端发送的称为S0/S1/S2。</p>
+
+<h5 id="section-3">握手序列:</h5>
+
+<p>首先，握手必须是由客户端发送C0/C1开始的。 <br />
+其次，客户端必须接收到服务器端发送的S1后才能发送C2, 必须接收到服务器端发送的S2后才能发送其他数据。 <br />
+再次，服务器端必须等到客户端发送的C0后才能发送S0和S1,也可等到接收到C1后再发送。 <br />
+同样，服务器端必须等到客户端发送的C1后才能发送S1,必须等到客户端发送的C2后才能发送其他数据。</p>
+
+<h5 id="c--s-">C 和 S 格式：</h5>
+
+<p>C0 和 S0 是一个8-bit的整数字段： <br />
+C1 和 S1 是一个1536 byte 的序列，其中 4 byte 是表示时间，4 byte 全部填0，剩余部分填写其他值。 <br />
+C2 和 S2 是对 C1 和 S1 的一个对等。</p>
+
+<h5 id="handshake-diagram">握手框图(HandShake Diagram)</h5>
+
+<p><img src="/images/RTMPProtocol/HandShake_Diagram.png"></p>
+
+<hr />
+
+<p>对上面的框图进行简单说明如下：</p>
+
+<p>未初始化阶段(Uninitialized):协议版本会在该阶段发送。客户端和服务器端都处于未初始化阶段。客户端在 C0 包里发送协议版本，如果服务器端支持该协议，就会发送 S0 和 S1 作为反馈，如果不支持，就会终止连接。 <br />
+版本发送阶段(Version Sent): Uninitialized 阶段后，客户端和服务器端都会进入 Version Sent 阶段。客户端等待服务器端发送的 S1 包，服务器端等待客户端发送的 C1 包。一旦等到回应后，客户端会发送 C2 包、服务器端会发送 S2 包。之后进入 Ack Sent 阶段。    <br />
+确认阶段(ACK Sent):客户端和服务器端分别等待 S2 和 C2.    <br />
+握手结束(Handshake Done):客户端和服务器端交换消息.</p>
+
+<h4 id="chunking">3.3 分块(Chunking)</h4>
+
+<p>握手后，连接就会多路传输一个或多个 chunk streams。每个 chunk stream 携带来自一个消息流的一种类型的消息。每个 chunk stream 有一个独立的 chunk stream ID。
+chunk 通过网络传输，传输过程中，每个 chunk 必须在下一个 chunk 前传输完成。接收端会根据 chunk stream ID 将 chunks 组合进消息。</p>
+
+<p>Chunk size 是可配置的。它可以使用一个控制消息来设置 chunk size。size 较大的chunk 降低 CPU 的使用，size 较小的 chunk 不适用于高比特流的码流。chunk size 的维护是双向独立的。</p>
+
+<h5 id="chunk-">Chunk 格式</h5>
+
+<p>每个 Chunk 包含一个 header 和 data 部分。Header 又包含：<code>Basic Header</code><code>Message Header</code><code>Extended Timestamp</code>三部分。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_format.png"></p>
+
+<ul>
+  <li>Basize Header : 1 到 3 byte,该字段编码了 chunk stream ID 和 chunk type。其中 chunk type 决定了编码的message header 的格式。它的长度完全由 chunk stream ID 来决定，它是一个变长字段。</li>
+  <li>Message Header : (0/3/7/11 byte)，该地段编码了关于发送的消息的信息。它的长度同样由 chunk header 里面的chunk type 指定。</li>
+  <li>Extended Timestamp : (0/4 byte)，该字段是否出现取决于 chunk message header 里面的 timestamp 或 timestamp delta 字段。</li>
+  <li>Chunk Data : 可变大小，chunk 的负载，最大值为配置的最大 chunk size。</li>
+</ul>
+
+<h6 id="chunk-basic-header">Chunk Basic Header</h6>
+
+<p>Chunk Basic Header 编码了chunk stream ID 和 chunk type(由 fmt 字段表示)。Chunk Basic Header 字段可能是0-3 byte，取决于 chunk stream ID。实现应该使用最小的size。<br />
+协议支持最大 65597 streams，对应的 ID 为 3-65599。值为 0/1/2 的 ID 保留。</p>
+
+<h6 id="chunk-message-header">Chunk Message Header</h6>
+
+<p>根据 chunk basic header 里的<code>fmt</code>字段的不同，chunk message header 有 4 种不同的格式。</p>
+
+<ul>
+  <li>Type 0</li>
+</ul>
+
+<p>Type 0 的 chunk header 是 11 byte 长。该类型只能在 chunk 流的开始使用。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_message_header_type0.png"></p>
+
+<p><code>timestamp</code>3 字节，对于 type 0 的 chunk,timestamp 的消息在此处发送。如果timestamp 大于或等于0xFFFFFF,该字段等于0XFFFFFF,指明extended timestamp字段被编码。</p>
+
+<ul>
+  <li>Type 1</li>
+</ul>
+
+<p>Type 1 的 chunk header 是7 byte 长，不包含 message stream ID，该 chunk 与上一个 chunk 有相同的 stream ID。变长消息的 stream 在第一个消息后，应该使用该格式作为第一个 chunk。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_message_header_type1.png"></p>
+
+<ul>
+  <li>Type 2</li>
+</ul>
+
+<p>Type 2 的 chunk header 是 3 byte 长，既不包含 stream ID，也不包含 message length，它与前一个 chunk 有相同的 stream ID 和 消息长度。固定大小的流应该使用这种格式。</p>
+
+<p><img src="/images/RTMPProtocol/chunk_message_header_type2.png"></p>
+
+<ul>
+  <li>Type 3</li>
+</ul>
+
+<p>Type 3 chunk 没有 message header，stream ID 和 消息长度以及 timestamp delta 字段都未出现，该类型的 chunk 与之前的 chunk 有相同的 chunk stream ID。
+当一个单独的消息被分成不同的 chunk 时，该消息的所有 chunks 处理第一个都应该使用该类型。</p>
+
+<ul>
+  <li>共用 Header 字段</li>
+</ul>
+
+<p><code>timestamp delta</code>（3 字节）：对于type是1或2的chunk来说，该字段表示上一个chunk的timestamp和当前chunk的timestamp的差值。如果该字段值
+大于等于0XFFFFFF,该字段值必须为0XFFFFFF，表示Extended Timestamp字段被编码；否则表示实际的差值。<br />
+<code>message length</code>（3 字节）：对于type是0或1的chunk来说，消息的长度由此字段传送。注意它与chunk负载的长度不同。chunk负载的长度是对除最后一个chunk外的所有chunk的最大size。<br />
+<code>message type id</code>（1 字节）：对于type是0或1的chunk，消息的类型由该字段传送。<br />
+<code>message stream id</code>（4 字节）：对于type是0的chunk，message stream ID由该字段传送。</p>
+
+<h6 id="extended-timestamp">Extended Timestamp</h6>
+
+<p>上面我们提到在chunk中会有时间戳timestamp和时间戳差timestamp delta，并且它们不会同时存在，只有这两者之一大于3个字节能表示的最大数值0xFFFFFF＝16777215时，才会用这个字段来表示真正的时间戳，否则这个字段为0。扩展时间戳占4个字节，能表示的最大数值就是0xFFFFFFFF＝4294967295。当扩展时间戳启用时，timestamp字段或者timestamp delta要全置为1，表示应该去扩展时间戳字段来提取真正的时间戳或者时间戳差。注意扩展时间戳存储的是完整值，而不是减去时间戳或者时间戳差的值。</p>
+
+<h4 id="protocol-control-message">3.4 协议控制消息(Protocol Control Message)</h4>
+
+<p>RTMP 块流使用消息类型ID为1/2/3/5/6的消息作为协议控制消息，这些消息中包含了 RTMP 块流协议所需要的信息。这些协议控制消息的消息流ID必须
+为0（控制流），而他们的块流ID必须为2。协议控制消息一旦接受即刻生效，它们的时间戳会被忽略。</p>
+
+<h5 id="set-chunk-size-1">设置块大小1(Set Chunk Size 1)</h5>
+
+<p>协议控制消息1，设置块大小，用于通知另一端最大块大小。默认的最大块大小为 128 字节，但客户端和服务器端可以使用该消息来更新最大块大小的值到对端。
+例如，假设客户端想要发送 131 字节的音频数据，而最大块大小为 128，此时客户端会发送消息到服务端并通知它，当前最大块为 131 字节。此时客户端
+只用一个块即可发送这些音频数据。</p>
+
+<p>最大块大小通常不会小于 128 字节，最小不能小于1 字节。最大块大小是双向独立的。</p>
+
+<p><img src="/images/RTMPProtocol/set_chunk_size.png"></p>
+
+<p>0:该 bit 必须为0.<br />
+块大小(chunk size)：该字段以字节形式保存新的最大块大小，该值将用于后续所有发送块。取值范围为1——2147483647（0X7FFFFFFF）,然而所有大于0XFFFFFF的值都是等同的。</p>
+
+<h5 id="acknowledgement-3">确认消息3(Acknowledgement 3)</h5>
+
+<p>协议控制消息2，终止消息，被用于通知对端，可以丢弃通过指定块流接收到的部分数据.</p>
+
+<p><img src="/images/RTMPProtocol/abort_message.png"></p>
+
+<p>块流ID(32bit)：该字段表示块流ID，它的当前消息可被丢弃。</p>
+
+<h5 id="window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</h5>
+
+<p>在接受到与窗口大小相等的消息后，客户端或服务端必须发送一个确认消息给对端。窗口大小是发送端发送的最大字节数，无论有没有收到接收端发送的确认消息。该消息指明序列号，代表目前为止接收到的字节数。</p>
+
+<p><img src="/images/RTMPProtocol/acknowledgement.png"></p>
+
+<p>序列号(32bit)：该字段表示目前为止已接收到字节总数。</p>
+
+<h5 id="set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</h5>
+
+<p>客户端或服务端发送该消息来限制对端的输出带宽。接收端收到消息后，通过将已发送但尚未被确认的数据总数限制为该消息指定的视窗大小，来
+实现限制输出带宽的目的。如果视窗大小与上一个视窗大小不同，则该消息的接收端应该向该消息的发送端发送视窗大小确认消息。</p>
+
+<p><img src="/images/RTMPProtocol/set_peer_bandwidth.png"></p>
+
+<p>Limit Type(显示类型)有以下可选值：</p>
+
+<ul>
+  <li>0-Hard：消息接收端应该将输出带宽限制为指定视窗大小。</li>
+  <li>1-Soft:消息接收端应该将输出带宽限制为指定视窗大小和当前视窗大小中较小值。</li>
+  <li>2-Dynamic：如果上一个消息的限制类型为Hard,则该消息同样为 Hard，否则抛弃该消息。</li>
+</ul>
+
+<h3 id="rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</h3>
+
+<p>本部分描述 RTMP 消息遵循底层协议在网络中断之间传输时的消息格式。</p>
+
+<p>尽管 RTMP 被设计成使用 RTMP 块流传输，但它可以使用其他传输协议来发送消息。RTMP 块流和 RTMP 非常适合
+音视频应用，包括单播、一对多实时直播、视频点播和视频会议等。</p>
+
+<h4 id="rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</h4>
+
+<p>服务端和客户端通过网络发送 RTMP 消息来进行通讯，消息包好视频、音频、数据和其他信息。RTMP 消息包含两部分：头部和负载。</p>
+
+<h5 id="message-header">消息头部(Message Header)</h5>
+
+<p>消息头部包含：消息类型、长度、时间戳和消息流ID.</p>
+
+<ul>
+  <li>消息类型(Message Type)：1 字节字段代表消息类型。类型ID(1-6)是为协议控制消息保留的。</li>
+  <li>长度(Length)：3 字节字段代表负载的大小，字节为单位，大端格式。</li>
+  <li>时间戳(Timestamp):4 字节字段代表消息的时间戳。同样为大端格式。</li>
+</ul>
+
+<p><img src="/images/RTMPProtocol/message_header.png"></p>
+
+<h5 id="message-payload">消息负载(Message Payload)</h5>
+
+<p>消息头部后面的是消息的负载，它是消息内真实的数据。例如，它可能是某些音频样本或压缩的视频数据。</p>
+
+<h4 id="section-4">4.2 使用控制消息(4)</h4>
+
+<p>RTMP 协议将消息类型 4 作为用户层控制消息 ID。该消息包含了 RTMP 流所需要的信息。消息类型 ID 为
+1、2、3、5 和 6的协议消息被用作 RTMP 块流协议。</p>
+
+<p>用户控制消息应该使用 ID 为 0 的消息流(即控制流)，并且通过 RTMP 块流传输时使用 ID 为 2 的块流。
+用户控制消息收到后立即生效，它们的时间戳信息会被忽略。</p>
+
+<p>客户端或服务端通过发送该消息告知对方用户控制事件。该消息携带事件类型和事件数据两部分。</p>
+
+<p><img src="/images/RTMPProtocol/user_control_message.png"></p>
+
+<p>消息数据的前 2 字节用于指定事件类型，紧跟着的是事件数据。事件数据字段长度可变。但如果使用 RTMP 块
+流传输，则消息总长度不能超过最大块大小，以使消息可以使用一个单独的块进行传输。</p>
+
+<h3 id="rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</h3>
+
+<p>本部分描述了用于服务端和客户端通讯用到的消息类型和命令类型。</p>
+
+<p>服务端和客户端通过交换不同的消息类型来传送不同的消息：音频消息传送音频数据、视频消息传送视频数据、数据消息传送用户数据、共享对象消息和指令消息等。共享对象消息为管理分布与不同客户端和相同服务器的功效数据提供了规范途径。指令消息携带客户端与服务端之间的 AMF 编码指令，客户端或服务端也可以通过指令消息来实现远程过程调用(RPC)。</p>
+
+<h4 id="types-of-message">5.1 消息类型(Types of Message)</h4>
+
+<p>服务端和客户端双方通过网络发送消息进行通信。消息可以是任意类型，包括音频消息、视频消息、命令消息、共享对象消息、数据消息和用户控制消息。</p>
+
+<ul>
+  <li>
+    <p>命令消息(Command Message, Message Type ID = 17或20)<br />
+命令消息携带<code>AMF</code>编码的命令用于客户端和服务器端的传递。如果消息采用AMF0编码，它的 Message Type ID = 20;如果消息采用AMF3编码，它的 Message Type ID=17。命令消息大致可分为两类：用于通知对方执行某些操作的消息，比如connect、createStream、publish、play、pause等;用于通知发送方请求命令状态的消息，比如onstatus、result等。
+一个命令消息包含如下：command name、transaction ID以及包含相关参数的command object。</p>
+  </li>
+  <li>
+    <p>数据消息(Data Message, Message Type ID = 18或15)<br />
+客户端或服务端利用数据消息发送Metadata或其他用户数据给对端。Metadata 包含关于数据(例如音频或视频等)的一些描述，比如创建时间、持续时长、标题等。当消息采用AMF0编码时，其 Message Type ID=18;当消息采用AMF3编码时，其 Message Type ID=15。</p>
+  </li>
+  <li>
+    <p>共享消息(Shared Object Message Type ID = 19或16)<br />
+共享消息是一个 Flash 类型的对象，由键值对的集合组成，用于多客户端，多实例时使用。当消息使用AMF0编码时，Message Type ID = 19;当消息使用AMF3编码时，Message Type ID = 16。每个消息可以包含如下多个事件。</p>
+  </li>
+</ul>
+
+<p><img src="/images/RTMPProtocol/shared_object_message_format.png"></p>
+
+<p>RTMP 协议支持如下事件类型：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Event</th>
+      <th style="text-align: center">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Use(=1)</td>
+      <td style="text-align: center">客户端发送该事件通知服务端创建共享对象</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Release(=2)</td>
+      <td style="text-align: center">当共享对象在客户端侧删除时，客户端发送该事件到服务端</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Request Change(=3)</td>
+      <td style="text-align: center">客户端发送该事件到服务端请求更改共享对象的某个给定参数名的值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Change(=4)</td>
+      <td style="text-align: center">服务端发送该事件来通知所有客户端，更改某个给定参数名的参数值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Success(=5)</td>
+      <td style="text-align: center">如果客户端发送的请求被服务端接受，服务端会发送该事件给到请求的客户端，最为请求的回应</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">SendMessage(=6)</td>
+      <td style="text-align: center">客户端向服务端发送该事件，用于广播一个消息。接收到该事件后，服务端广播一条消息到所有的客户端，包括发送的客户端</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Status(=7)</td>
+      <td style="text-align: center">服务端发送一个事件通知客户端关于error condictions</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Clear(=8)</td>
+      <td style="text-align: center">服务端发送该事件到客户端，用于清除一个共享对象。服务端同样会发送该事件用于回应客户端发送的Use事件</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Remove(=9)</td>
+      <td style="text-align: center">服务端发送该事件请求客户端删除一个slot</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Request Remove(=10)</td>
+      <td style="text-align: center">客户端发送该事件请求客户端删除一个slot</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Use Success(=11)</td>
+      <td style="text-align: center">服务端发送该事件通知客户端建立成功</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>
+    <p>音频消息(Audio Message, Message Type ID = 8)<br />
+客户端或服务端发送该消息用于发送音频数据给对端。</p>
+  </li>
+  <li>
+    <p>视频消息(Video Message, Message Type ID = 9)
+客户端或服务端发送该消息用于发送视频数据给对端。</p>
+  </li>
+  <li>
+    <p>用户控制消息事件(User Control Message Event)
+客户端或服务端发送该消息来通知对端关于用户控制事件。RTMP 支持如下的用户控制事件类型：</p>
+  </li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Event</th>
+      <th style="text-align: center">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Stream Begin(=0)</td>
+      <td style="text-align: center">服务端发送该事件通知客户端，流功能已经完成，可以用于通信。默认情况下，应用连接命令成功接收到后，该事件的ID会被设置为0。事件数据为4字节</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Stream EOF(=1)</td>
+      <td style="text-align: center">服务端发送该事件通知客户端，数据的播放已经结束。</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">StreamDry(=2)</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">SetBuffer Lenght(=3)</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">StreamIsRecorded(=4)</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PingRequest(=6)</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PingResponse(=7)</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>聚集消息(Aggregate Message, Messaget Type ID=22)</li>
+</ul>
+
+<h4 id="types-of-commands">5.2 指令类型(Types of Commands)</h4>
+
+<h3 id="section-5">6. 参考文献</h3>
+
+<p>1.<a href="http://mingyangshang.github.io/2016/03/06/RTMP%E5%8D%8F%E8%AE%AE/">带你吃透RTMP</a><br />
+2.<a href="https://www.gitbook.com/book/chenlichao/rtmp-zh_cn/details">RTMP协议规范中文版</a><br />
+3.<a href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/rtmp/pdf/rtmp_specification_1.0.pdf">RTMP官方协议英文版</a></p>
+
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,662 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>X264 参数详解 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="输入 预设值 帧类型 码率控制 x264 中参数选项详解 输入
+用1个绝对路径定义输入文件（或者2个，rawYUV文件）。如下例： 1
+2
+x264.exe -o NUL C:\input.avs x264 -o /dev/null ~/input.y4m 如果输入文件是rawYUV格式的， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">X264 参数详解</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2017-06-23T20:07:55-07:00'><span class='date'>2017 年 06 月 23 日</span> <span class='time'>8:07 pm</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">输入</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">预设值</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">帧类型</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">码率控制</a></li>
+</ul>
+
+<p>x264 中参数选项详解</p>
+
+<!--more-->
+
+<h2 id="section">输入</h2>
+<p>用1个绝对路径定义输入文件（或者2个，rawYUV文件）。如下例：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">x264.exe -o NUL C:\input.avs  
+</span><span class="line">x264 -o /dev/null ~/input.y4m  </span></code></pre></td></tr></table></div></figure>
+
+<p>如果输入文件是rawYUV格式的，还要把分辨率一并输入。如果开启了比特率控制，还需要输入帧率。如下例：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">x264.exe -o NUL –fps 25 D:\input.yuv 1280×720  
+</span><span class="line">x264 -o /dev/null –fps 30000/1001 ~/input.yuv 640×480  </span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section-1">预设值</h2>
+<p>预设值是x264在r1177版本增加的一个方便的命令行选项。可以用x264.exe –fullhelp查看所有的命令行帮助。</p>
+
+<ul>
+  <li>
+    <p>profile<br />
+默认：无<br />
+说明：限制输出文件的profile。这个参数将覆盖其它所有值，此选项能保证输出profile兼容的视频流。如果使用了这个选项，将不能进行无损压缩（qp 0 or crf 0）。<br />
+可选：baseline，main，high<br />
+建议：不设置。除非解码环境只支持main或者baseline profile的解码。</p>
+  </li>
+  <li>
+    <p>preset<br />
+默认：medium<br />
+一些在压缩效率和运算时间中平衡的预设值。如果指定了一个预设值，它会在其它选项生效前生效。<br />
+可选：ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow and placebo.<br />
+建议：可接受的最慢的值</p>
+  </li>
+  <li>
+    <p>tune<br />
+默认：无<br />
+说明：在上一个选项基础上进一步优化输入。如果定义了一个tune值，它将在preset之后，其它选项之前生效。<br />
+可选：film, animation, grain, stillimage, psnr, ssim, fastdecode, zerolatency and touhou.<br />
+建议：根据输入选择。如果没有合适的就不要指定。</p>
+  </li>
+  <li>
+    <p>slow-firstpass<br />
+默认：无<br />
+说明：随着预设值机制在r1177版本的出现，使用–pass 1会在解析命令行时增加以下设置：<code>ref 1</code>
+<code>no-8x8dct</code><code>partitions i4x4 (if originally enabled, else none)</code><code>me dia</code><code>subme MIN( 2, subme )</code><code>trellis 0</code><br />
+如果设置preset=placebo则自动关闭此特性。如果想显式关闭此特性，使用slow-firstpass。</p>
+  </li>
+</ul>
+
+<h2 id="section-2">帧类型</h2>
+
+<ul>
+  <li>
+    <p>keyint<br />
+默认：250<br />
+说明：设置x264输出中最大的IDR帧（亦称关键帧）间距。<br />
+IDR帧是视频流的“分隔符”，所有帧都不可以使用越过关键帧的帧作为参考帧。IDR帧是I帧的一种，所以它们也不参照其它帧。这意味着它们可以作为视频的搜索（seek）点。<br />
+通过这个设置可以设置IDR帧的最大间隔帧数（亦称最大图像组长度）。较大的值将导致IDR帧减少（会用占用空间更少的P帧和B帧取代），也就同时减弱了参照帧选择的限制。较小的值导致减少搜索一个随机帧所需的平均时间。<br />
+建议：默认值（fps的10倍）对大多数视频都很好。如果在为蓝光、广播、直播流或者其它什么专业流编码，也许会需要更小的图像组长度（一般等于fps）。<br />
+参见：min-keyint, scenecut, intra-refresh</p>
+  </li>
+  <li>
+    <p>min-keyint<br />
+默认：auto（keyint/10）<br />
+说明：参见keyint的说明。过小的keyint范围会导致产生“错误的”IDR帧（比如说，一个闪屏场景，参见上一篇blog）。此选项限制了IDR帧之间的最小距离。<br />
+建议：默认，或者与fps相等<br />
+参见：keyint, scenecut</p>
+  </li>
+  <li>
+    <p>no-scenecut<br />
+默认：无<br />
+说明：完全关闭自适应I帧决策。<br />
+参见：scenecut</p>
+  </li>
+  <li>
+    <p>scenecut<br />
+默认：40<br />
+说明：设置决策使用I帧、IDR帧的阈值（场景变换检测）。<br />
+x264会计算每一帧与前一帧的不同程度并得出一个值。如果这个值低于scenecut，那么就算检测到一个“场景变换”。如果此时距离上一帧的距离小于 min-keyint则插入一个I帧，反之则插入一个IDR帧。较高的值会增加侦测到“场景变换”纪律。参见更详细的<a href="http://forum.doom9.org/showthread.PHP?t=121116">工作原理</a><br />
+设置scenecut=0与no-scenecut等效。<br />
+建议：使用默认值<br />
+参见：keyint, min-keyint, no-scenecut</p>
+  </li>
+  <li>
+    <p>intra-refresh<br />
+默认：off<br />
+说明：让x264为每keyint数量的帧使用宏块内部编码取代IDR帧。块以水平移动列的方式更新，也叫刷新波。对于低延迟的流，这样可以让帧的尺寸比使用标准的IDR帧更加保持恒定。而且这样可以增强视频流对丢包的容错能力。这个选项会降低压缩率，所以在确实需要的时候才选择它。<br />
+还有一些有意思的事情：1、第一帧依然是IDR帧。2、内部宏块只在P帧中存在，刷新波在一个或多个B帧后的P帧中广泛存在。3、主要的压缩率下降原因是在宏块中新（左边）的波并不能参考旧（右边）的波。<br />
+建议：使用默认值</p>
+  </li>
+  <li>
+    <p>bframes
+默认：3<br />
+说明：设置x264可使用的B帧的最大连续数量。<br />
+没有B帧时，一个典型的x264流帧类型是这样的：IPPPPP…PI。如果设置了-bframes 2，那么两个连续的P帧就可以用B帧替换，然后就像这样：IBPBBPBPPPB…PI。<br />
+B帧和P帧的区别在于它可以参照它之后的帧，这个特点让它可以显著地提升压缩率。他们的平均品质受 –pbratio选项的控制。<br />
+还有一些有意思的事情：<br />
+1、x264有2种B帧，一种可以作为参照帧，一种不能；<br />
+2、关于x264如何决策B帧或P帧，可以看看这个ffmpeg-devel<a href="http://article.gmane.org /gmane.comp.video.ffmpeg.devel/29064">邮件列表</a>。这种情况下帧类型看起来就像这样IBBBPBBBPBPI（假设设置 –bframes 3）。<br />
+参见：–no-b-adapt, –b-bias, –b-pyramid, –ref, –pbratio, –partitions, –weightb</p>
+  </li>
+  <li>
+    <p>b-adapt
+默认：1<br />
+说明：设置B帧决策算法，这个选项会影响到x264使用P帧或者B帧。<br />
+0 —— 关闭。总是使用B帧。和以前的 no-b-adapt选项效果相同；<br />
+1 —— ‘快速’算法。快速，–b-frames越大速度越快。推荐配合使用–bframes 16；<br />
+2 —— ‘最佳’算法，慢速，–b-frames越大速度越慢；<br />
+注意：多趟编码时，只有第一趟编码的此选项起效，因为第一趟编码结束时，帧类型就已经被决定了。</p>
+  </li>
+  <li>
+    <p>b-bias<br />
+默认：0<br />
+说明：调节使用B帧的力度。越大的值越偏向B帧，可以在-100和100之间选择。100或-100不能保证完全或是全是B帧（使用 –b-adapt 0）。请只在你认为你能做出比x264更好的码率控制时才使用这个选项。<br />
+参见： –b-frames, –ipratio</p>
+  </li>
+  <li>
+    <p>b-pyramid
+默认：normal<br />
+说明：允许B帧作为参照帧。如果关闭，那么只有I帧和P帧才能作为参照帧。可以作为参照帧的B帧的量化参数会介于P帧和普通B帧之间。只在–b-frames设置大于等于2时此选项才生效。如果是在为蓝光光盘编码，请使用none或者strict。<br />
+none —— 不允许B帧作为参照帧；<br />
+strict —— 一个图像组内只允许一个B帧参照帧，这是蓝光编码强制要求的标准；<br />
+normal —— 任意使用B帧参照帧；<br />
+参见：–bframes, –refs, –no-mixed-refs</p>
+  </li>
+  <li>
+    <p>open-gop
+默认：none<br />
+说明：Open-GOP是一个提升压缩效率的编码技术。它有以下选项：<br />
+none —— 关闭<br />
+normal —— 开启<br />
+bluray —— 开启。一个稍低效的open-GOP版本，因为normal模式不能用于蓝光编码<br />
+有些解码器不能完全支持open-GOP流，因此这个选项默认关闭。如果要用，请测试你的解码器。
+更多open-gop的资料参见该<a href="http://forum.doom9.org/showthread.php?p=1300124#post1300124">链接</a></p>
+  </li>
+  <li>
+    <p>no-cabac<br />
+默认：无<br />
+说明：关闭CABAC (Context Adaptive Binary Arithmetic Coder)压缩，使用较为低效的CAVLC (Context Adaptive Variable Length Coder)。这两者在压缩效率和解码效率上有10%-20%的差别。</p>
+  </li>
+  <li>
+    <p>ref<br />
+默认：3<br />
+说明：控制DPB (Decoded Picture Buffer)的大小。可以在0-16之间选择。简单地说，就是设置P帧可以选择它之前的多少帧作为参照帧（B帧的值要小1-2，取决于那个B帧能不能作为参照）。最小可以选择值1，只参照自己前面的那帧。注意H.264标准限制了每个level可以参照的帧的数量。如果选择level4.1，1080p最大选4，720p最大选9。<br />
+参照： –b-pyramid, –no-mixed-refs, –level</p>
+  </li>
+  <li>
+    <p>no-deblock<br />
+默认：无<br />
+说明：完全关闭内置去块滤镜。不推荐使用。<br />
+参见： –deblock</p>
+  </li>
+  <li>
+    <p>deblock<br />
+默认：0:0<br />
+说明：调节H.264标准中的内置去块滤镜。这是个性价比很高的选则。详解参见<a href="http://forum.doom9.org/showthread.php?t=109747">参数运作原理</a>。
+参见: –no-deblock</p>
+  </li>
+  <li>
+    <p>slices  　　
+默认：0  　　
+说明：设置每帧的分片数，强制使用矩形分片。（会被–slice-max-size 或 –slice-max-mbs选项覆盖)如果是在为蓝光光盘编码，设置为4。如果不是，不要使用这个选项，除非你确定你需要它。  　　
+参见：–slice-max-size, –slice-max-mbs  　　　　</p>
+  </li>
+  <li>
+    <p>slice-max-size  　　
+默认：0  　　
+说明：设置每个分块包括NAL头的最大大小（bytes）。 (目前与 –interlaced选项不兼容)  　　
+参见：–slices  　　</p>
+  </li>
+  <li>slice-max-mbs  　　
+默认：0  　　
+说明：设置每个分块包含的最大宏块数量。 (目前与 –interlaced选项不兼容)  　　
+参见：–slices 
+ 　　</li>
+  <li>
+    <p>tff<br />
+说明：开启隔行编码并设置上半场在前。x264的隔行编码使用MBAFF，因此效率不如逐行扫描。所以，仅在需要在隔行显示的设备上显示时才开启这个选项（或是送给x264之前无法进行反隔行扫描）。这个选项会触发 –pic-struct开启。</p>
+  </li>
+  <li>
+    <p>bff<br />
+说明：开启隔行编码并设置下半场在前。更多信息同–tff。</p>
+  </li>
+  <li>
+    <p>constrained-intra<br />
+默认：无<br />
+说明：开启SVC编码的底层要求的强制帧内预测。选择每个人都无视SVC了，你也可以忽略这个设置。</p>
+  </li>
+  <li>
+    <p>pulldown<br />
+默认：none<br />
+说明：为你的输入流（逐行扫描的，固定帧率的）使用一组预设的“软性电视模式”。“软性电视模式”在HandBrake Wiki里面有很好的解释。<br />
+可选的参数有：none、22、32、64、double、triple、euro。除了none之外的选项都会触发 –pic-struct开启。</p>
+  </li>
+  <li>fake-interlaced<br />
+默认：无<br />
+说明：把流标志为隔行的但不按隔行编码。用于编码25p和30p的蓝光兼容视频。</li>
+</ul>
+
+<h2 id="section-3">码率控制</h2>
+
+<ul>
+  <li>
+    <p>qp<br />
+默认：无<br />
+说明：三种可选的码率控制方法之一。设置x264使用固定量化参数模式。给定的数量将被作为P帧的量化参数，I帧和B帧的量化参数由–ipratio and –pbratio参数进一步算出。QP模式适用固定的量化参数，这意味着最终的文件大小是不可知的（可以通过一些其他方法预测）。设置为0将产出无损的输出。相同视觉质量时，QP模式产出的文件比crf模式大。QP模式将关闭自适应量化器，因为它是固定QP的。
+这个选项和 –bitrate和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。一般而言crf都能代替QP模式，不过QP因为完全不需要预测所以它会运行地更快些。<br />
+参见：–bitrate, –crf, –ipratio, –pbratio</p>
+  </li>
+  <li>
+    <p>bitrate<br />
+默认：无<br />
+说明：三种可选的码率控制方法之二。设置x264使用固定目标比特率模式。固定目标比特率意味着最终文件的大小是可知的，但是目标的质量是不可知的。 x264会试图让最终文件的整体码率与给定的码率相等。参数的量纲为kilobits/sec（8bit = 1byte）。通常这个选项和–pass选项配合进行2趟编码。
+这个选项和 –qp和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。<br />
+参见：–qp, –crf, –ratetol, –pass, –stats</p>
+  </li>
+  <li>
+    <p>crf
+默认：23.0<br />
+说明：三种可选的码率控制方法之二。固定ratefactor。QP是固定量化器，bitrate是固定文件大小，crf则是固定“质量”。crf可以提供跟QP一样的视觉的质量，但是文件更小。crf的单位是ratefactor。
+crf是通过降低那些“不那么重要”的帧的质量做到这一切的。“不那么重要”意思是过于耗费码率又难以用肉眼察觉的帧，比如复杂或者超高速运行的场景。省下来的码率会用在其它更有效的帧里。
+crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf的最终码率也是不可预测的。你应该根据应用场景来选择码率控制方式。这个选项和 –qp和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。<br />
+参见：–qp, –bitrate</p>
+  </li>
+  <li>
+    <p>rc-lookahead<br />
+默认：40<br />
+说明：为mb-tree ratecontrol（Macroblock Tree Ratecontrol）和vbv-lookahead设置可用的帧的数量。最大可设置为250。对于mb-tree而言，调大这个值会得到更准确地结果，但也会更慢。mb-tree能使用的最大值是–rc-lookahead和–keyint中较小的那一个。对于vbv-lookahead而言，调大这个值会得更稳定和精确的码率控制。vbv-lookahead能使用的最大值是如下公式算出来的：<code>MIN(rc-lookahead, MAX(–keyint, MAX(–vbv-maxrate, –bitrate) / –vbv-bufsize * –fps))</code><br />
+参见：–no-mbtree, –vbv-bufsize, –vbv-maxrate</p>
+  </li>
+  <li>
+    <p>vbv-maxrate<br />
+默认：0<br />
+说明：设置VBV（Video Buffering Verifier）可用的最大码率。使用VBV会降低视频质量，只在真正需要的才设定它。<br />
+参见：–vbv-bufsize, –vbv-init，<a href="http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding">详解</a></p>
+  </li>
+  <li>
+    <p>vbv-bufsize<br />
+默认：0<br />
+说明：设置VBV（Video Buffering Verifier）可用的最大缓冲区，单位是kilobits。使用VBV会降低视频质量，只在真正需要的才设定它。<br />
+参见：–vbv-maxsize, –vbv-init，<a href="http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding">详解</a></p>
+  </li>
+  <li>
+    <p>vbv-init<br />
+默认：0.9<br />
+说明：设置重放之前必须先载入多大的VBV缓冲。如果值小于1，那么大小就为 vbv-init * vbv-bufsize。如果大于1，则是以kbits为单位的值。<br />
+参见：–vbv-maxsize, –vbv-bufsize</p>
+  </li>
+  <li>
+    <p>crf-max<br />
+默认：无<br />
+说明：类似 –qp-max，但是设置的是最大的ratefactor值而不是量化参数。这个选项仅用于crf和vbv同时启用的时候。它阻止x264使用小于给定值的ratefactor（也就是“质量”），哪怕会违反vbv。一般用于流服务器。<a href="http://Git.videolan.org /gitweb.cgi/x264.git/?a=commit; h=81eee062a4ce9aae1eceb3befcae855c25e5ec52">更多的信息</a>。<br />
+参见：–crf, –vbv-maxrate, –vbv-bufsize</p>
+  </li>
+  <li>
+    <p>qpmin<br />
+默认：10<br />
+说明：设置x264可以使用的最小量化器。量化参数越小，输出越接近输入。使用某些值时，x264的输出可以和输入看起来完全一样，虽然其实并不是精确相同的，通常就够了没有必要使用更多比特在宏块上了。
+如果开启了自适应量化器（默认开启），则不鼓励提高qpmin的值，那样可能会降低帧的平坦部分的质量。<br />
+参见：–qpmax, –ipratio</p>
+  </li>
+  <li>
+    <p>qpmax<br />
+默认：51<br />
+说明：qpmin的反面，设置x264可以使用的最大量化器。默认值51是H.264标准中的最大值，质量非常低。默认值51其实相当于没有设置 qpmax。如果你想控制x264输出的最低品质，也许你想要把这个值调低一点（调到30-40最低了），但一般而言不推荐调节这个值。<br />
+参见：–qpmin, –pbratio, –crf-max</p>
+  </li>
+  <li>
+    <p>qpstep<br />
+默认：4<br />
+说明：设置2帧间量化器最大的可变值。</p>
+  </li>
+  <li>
+    <p>ratetol<br />
+默认：1.0<br />
+说明：这个参数有2个可能的含义：<br />
+1、在1趟bitrate编码时，这个参数控制x264可以偏离给定的平均目标比特率的百分比。可以设置为inf完全关闭码率溢出侦测。最低可以设置为 0.01。较高的值可以让x264更好地处理影片结束部分的复杂场景。对于这个目的而言单位是百分比（1.0意味着允许1%的bitrate偏差）。很多影片（比如说动作打斗片）在最后的片段里十分复杂。1趟编码并不知道哪里是最复杂的片断，往往到最后比特都已经用完了。把rateol设置为inf就能解决这个问题，它允许编码器用类似 –crf的方式工作，当然，文件大小会溢出。<br />
+2、当开启了vbv时（只要使用了任何–vbv-开头的选项就会开启），这个选项意味着vbv的强度。更高的值意味着允许更高的在设定的vbv值上下波动。在这个含义时，可以使用任意的度量单位。</p>
+  </li>
+  <li>
+    <p>ipratio<br />
+默认：1.40<br />
+说明：设置平均的I帧的量化器相比P帧量化器增值。更高的值意味着更高的I帧质量。<br />
+参见：–pbratio</p>
+  </li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2017-06-23T20:07:55-07:00'><span class='date'>2017 年 06 月 23 日</span> <span class='time'>8:07 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/x264/'>x264</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2017/06/22/sodb-rbsp-ebsp/" title="Previous Post: SODB RBSP EBSP 的区别与联系">&laquo; SODB RBSP EBSP 的区别与联系</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2017/06/24/x264-encoder-open/" title="Next Post: x264代码解析之x264_encoder_open函数">x264代码解析之x264_encoder_open函数 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2017/06/23/x264-paraments-illustra" data-title="x264 参数详解" data-url="http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (5)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/06/30/x264-intra-prediction/">X264 源码分析之帧内预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/24/x264-encoder-open/">X264代码解析之x264_encoder_open函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/23/x264-paraments-illustra/">X264 参数详解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/22/sodb-rbsp-ebsp/">SODB RBSP EBSP 的区别与联系</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/09/x264-download-install-and-use/">X264 下载、安装和使用</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

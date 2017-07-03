@@ -1,0 +1,489 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>FFmpeg 学习之 FFplay 源码分析 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="FFplay 的使用 FFplay 源码分析 av_register_all() FFplay 是一个简单便携的媒体播放器，它使用了 FFmpeg 和 SDL 库。 FFplay 的使用
+首先看一下 FFplay 的使用：安装完 FFmpeg 后，直接在命令行中输入
+1
+ffplay [ &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">FFmpeg 学习之 FFplay 源码分析</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-11-05T21:03:58-07:00'><span class='date'>2016 年 11 月 05 日</span> <span class='time'>9:03 pm</span></time>
+        
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#ffplay-" id="markdown-toc-ffplay-">FFplay 的使用</a></li>
+  <li><a href="#ffplay--1" id="markdown-toc-ffplay--1">FFplay 源码分析</a>    <ul>
+      <li><a href="#avregisterall" id="markdown-toc-avregisterall">av_register_all()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>FFplay 是一个简单便携的媒体播放器，它使用了 FFmpeg 和 SDL 库。<br />
+<!--more--></p>
+
+<h3 id="ffplay-">FFplay 的使用</h3>
+<p>首先看一下 FFplay 的使用：安装完 FFmpeg 后，直接在命令行中输入</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ffplay [options] bitstream_file</span></code></pre></td></tr></table></div></figure>
+<p>其中更详细的使用说明，可以使用<code>man ffplay</code>来查看。</p>
+
+<p>其次我们可以通过使用<code>Esc</code><code>q</code>来推出播放，可以使用空格来暂停播放，可以使用<code>s</code>来执行逐帧播放视频等等操作。</p>
+
+<h3 id="ffplay--1">FFplay 源码分析</h3>
+
+<p>ffplay 里面最主要的函数时:<code>av_register_all()</code><code>SDL_Init(flags)</code><code>av_init_packet</code><code>stream_open</code><code>event_loop</code>。下面逐个分析这几个函数主要完成的功能。</p>
+
+<h4 id="avregisterall">av_register_all()</h4>
+
+<p><code>av_register_all</code>实现注册<code>codecs</code><code>demux</code>和<code>protocols</code>。其中注册的<code>codecs</code>时通过<code>avcodec_reigster_all()</code>函数来实现的；注册<code>demux</code>的方法，以 HEVC 为例。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_MUXER(X, x)                                            \</span>
+</span><span class="line"><span class="cp">    {                                                                   \</span>
+</span><span class="line"><span class="cp">        extern AVOutputFormat ff_##x##_muxer;                           \</span>
+</span><span class="line"><span class="cp">        if (CONFIG_##X##_MUXER)                                         \</span>
+</span><span class="line"><span class="cp">            av_register_output_format(&amp;ff_##x##_muxer);                 \</span>
+</span><span class="line"><span class="cp">    }</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define REGISTER_DEMUXER(X, x)                                          \</span>
+</span><span class="line"><span class="cp">    {                                                                   \</span>
+</span><span class="line"><span class="cp">        extern AVInputFormat ff_##x##_demuxer;                          \</span>
+</span><span class="line"><span class="cp">        if (CONFIG_##X##_DEMUXER)                                       \</span>
+</span><span class="line"><span class="cp">            av_register_input_format(&amp;ff_##x##_demuxer);                \</span>
+</span><span class="line"><span class="cp">    }</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</span>
+</span><span class="line">
+</span><span class="line"><span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">HEVC</span><span class="p">,</span><span class="n">hevc</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>将上面的宏展开即为：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">av_register_input_format</span><span class="p">(</span><span class="n">AVInputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">AVInputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_iformat</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="n">last_iformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">av_register_output_format</span><span class="p">(</span><span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">AVOutputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_oformat</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
+</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line">    <span class="n">last_oformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVOutputFormat</span> <span class="n">ff_hevc_muxer</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class="line">    <span class="p">.</span><span class="n">name</span>              <span class="o">=</span> <span class="s">&quot;hevc&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">long_name</span>         <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="s">&quot;raw HEVC video&quot;</span><span class="p">),</span>
+</span><span class="line">    <span class="p">.</span><span class="n">extensions</span>        <span class="o">=</span> <span class="s">&quot;hevc&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">audio_codec</span>       <span class="o">=</span> <span class="n">AV_CODEC_ID_NONE</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">video_codec</span>       <span class="o">=</span> <span class="n">AV_CODEC_ID_HEVC</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">write_packet</span>      <span class="o">=</span> <span class="n">ff_raw_write_packet</span><span class="p">,</span>
+</span><span class="line">    <span class="p">.</span><span class="n">flags</span>             <span class="o">=</span> <span class="n">AVFMT_NOTIMESTAMPS</span><span class="p">,</span>
+</span><span class="line"><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-11-05T21:03:58-07:00'><span class='date'>2016 年 11 月 05 日</span> <span class='time'>9:03 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/09/22/how-to-use-gprof/" title="Previous Post: 如何使用gprof">&laquo; 如何使用gprof</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/11/16/par-sar-dar-analyse/" title="Next Post: PAR、DAR、SAR分析">PAR、DAR、SAR分析 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
+<div class="ds-thread" data-thread-key="/blog/2016/11/05/ffmpeg-learning-of-ffplay" data-title="FFmpeg 学习之 FFplay 源码分析" data-url="http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay//"></div>
+<!-- Duoshuo Comment end -->
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"lazybing"};
+    (function() {
+                var ds = document.createElement('script');
+                ds.type = 'text/javascript';ds.async = true;
+                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+                ds.charset = 'UTF-8';
+                (document.getElementsByTagName('head')[0] 
+                || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+<!-- 多说公共JS代码 end -->
+
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (5)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/06/30/x264-intra-prediction/">X264 源码分析之帧内预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/24/x264-encoder-open/">X264代码解析之x264_encoder_open函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/23/x264-paraments-illustra/">X264 参数详解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/22/sodb-rbsp-ebsp/">SODB RBSP EBSP 的区别与联系</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/06/09/x264-download-install-and-use/">X264 下载、安装和使用</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

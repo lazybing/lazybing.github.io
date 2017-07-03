@@ -1,0 +1,562 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2017-07-03T08:38:00-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[PAR、DAR、SAR分析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/16/par-sar-dar-analyse/"/>
+    <updated>2016-11-16T08:11:53-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/16/par-sar-dar-analyse</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Aspect_ratio_(image)">Aspect Ratio</a> 是图片的宽高比。<br />
+<!--more--></p>
+
+<p>主要有 3 种<code>aspect ratio</code>：PAR(Pixel Aspect Ratio)、DAR(Display Aspect Ratio)、SAR(Sample Aspect Ratio)。</p>
+
+<p>PAR(Pixel Aspect Ratio): 像素纵横比；<br />
+DAR(Display Aspect Ratio):显示纵横比；<br />
+SAR(Sample Aspect Ratio):采样纵横比；</p>
+
+<p>三者的关系为PAR x SAR = DAR 或者 PAR = DAR / SAR。</p>
+
+<p>PAR 示例如下：</p>
+
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-1to1.svg.png" title="‘1to1_PAR’" ></p>
+
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-2to1.svg.png" title="‘2to1_PAR’" ></p>
+
+<p>DAR 示例如下：</p>
+
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="‘16to9_DAR’" ></p>
+
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="‘4to3_DAR’" ></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Profiles-Tiers-Levels]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/"/>
+    <updated>2016-06-27T07:52:00-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
+</ul>
+
+<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
+
+<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
+Profile 指出码流中使用了哪些编码工具和算法。</p>
+
+<!--more-->
+
+<p>Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
+值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。</p>
+
+<p>在 HEVC 的设计中，应用可以只依据最大的码率和 CPB 大小就可以区分。为了解决这个问题，有些 Level 定义了
+两个 Tier——Main Tier 用于大多数应用，High Tier 用于那些最苛刻的应用。</p>
+
+<p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
+<code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
+
+<p>HM 中关于 ProfileTierLevel 的定义如下：</p>
+
+<p>```
+namespace Profile
+{
+    enum Name
+    {
+        NONE               = 0,
+        MAIN               = 1,
+        MAIN10             = 2,
+        MAINSTILLPICTURE   = 3,
+        MAINREXT           = 4,
+        HIGHTHROUGHPUTREXT = 5
+    };
+}</p>
+
+<p>namespace Level
+{
+    enum Tier
+    {
+        MAIN = 0,
+        HIGH = 1,
+    };</p>
+
+<pre><code>enum Name
+{
+    NONE       = 0,
+    LEVEL1     = 30,
+    LEVEL2     = 60,
+    LEVEL2_1   = 63,
+    LEVEL3     = 90,
+    LEVEL3_1   = 93,
+    LEVEL4     = 120,
+    LEVEL4_1   = 123,
+    LEVEL5     = 150,
+    LEVEL5_1   = 153,
+    LEVEL5_2   = 156,
+    LEVEL6     = 180,
+    LEVEL6_1   = 183,
+    LEVEL6_2   = 186,
+    LEVEL8_5   = 255,
+}; }
+</code></pre>
+
+<p>class ProfileTierLevel
+{
+    Int            m_profileSpace;
+    Level::Tier    m_tierFlag;
+    Profile::Name  m_profileIdc;
+    Bool           m_profileCompatibilityFlag[32];
+    Level::Name    m_levelIdc;</p>
+
+<pre><code>Bool           m_progressiveSourceFlag;
+Bool           m_interlacedSourceFlag;
+Bool           m_nonPackedConstraintFlag;
+Bool           m_frameOnlyConstraintFlag;
+UInt           m_bitDepthConstraintValue;
+ChromaFormat   m_chromaFormatConstraintValue;
+Bool           m_intraConstraintFlag;
+Bool           m_lowerBitRateConstraintFlag; } ```
+</code></pre>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[YUV 数据分析]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/23/the-data-layout/"/>
+    <updated>2016-05-23T09:23:07-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/23/the-data-layout</id>
+    <content type="html"><![CDATA[<p>图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。
+<!--more--></p>
+
+<h2 id="yuv-">YUV 数据</h2>
+<p>对于 YUV 图像来说，会有如下几个特性：<code>FOURCC</code> <code>Format</code> <code>Component Order</code> <code>Image Resolution</code> <code>Interlace/Progressive</code> <code>Packed/Planar</code> 。</p>
+
+<p><code>FOURCC</code>包括：<code>UYVY</code> <code>UYNV</code> <code>Y422</code> <code>IUYV</code> 等等；</p>
+
+<p><code>Format</code>包括：<code>YUV420</code> <code>YUV422</code> <code>YUV444</code> <code>RGB444</code> <code>MONO</code>等等：</p>
+
+<p><code>Component Order</code>包括：<code>YUV</code> <code>YVU</code>。</p>
+
+<h3 id="yuv420">YUV420摆放格式</h3>
+
+<p>progressive 的摆放格式如图：</p>
+
+<p><img src="http://lazybing.github.io/images/datalayout/Yuv420.png" /></p>
+
+<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：</p>
+
+<p><figure class='code'><figcaption><span>splityuvfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>                                                                                                                              <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
+</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
+</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
+</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
+</span><span class='line'>     <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
+</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
+</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+</span><span class='line'><span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
+interlace 的摆放格式如图：</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[UBoot 源码分析]]></title>
+    <link href="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/"/>
+    <updated>2015-07-01T07:48:51-07:00</updated>
+    <id>http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system</id>
+    <content type="html"><![CDATA[<p>公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。
+<!--more--></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[使用Octopress 搭建个人博客]]></title>
+    <link href="http://lazybing.github.io/blog/2015/05/01/create-github-blog-using-octopress/"/>
+    <updated>2015-05-01T19:47:37-07:00</updated>
+    <id>http://lazybing.github.io/blog/2015/05/01/create-github-blog-using-octopress</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#octorpess" id="markdown-toc-octorpess">安装octorpess</a></li>
+  <li><a href="#octopress" id="markdown-toc-octopress">部署octopress</a></li>
+  <li><a href="#section" id="markdown-toc-section">发布新帖</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">基本配置</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">主题修改</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">添加图片</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">添加文章目录</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">添加表格</a></li>
+  <li><a href="#mac" id="markdown-toc-mac">多台Mac上同时使用</a>    <ul>
+      <li><a href="#mac-ssh-key--github-" id="markdown-toc-mac-ssh-key--github-">在新的Mac上创建 ssh key 并添加到 github 中。</a></li>
+      <li><a href="#section-6" id="markdown-toc-section-6">配置环境。</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">使用技巧</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
+<!--more--></p>
+
+<h2 id="octorpess">安装octorpess</h2>
+
+<p>首先，安装<code>git</code><code>ruby</code>,注册 github 账号。</p>
+
+<p>然后，在终端(Terminal)下执行如下命令：<br />
+<code>
+git clone git://github.com/imathis/octopress.git octopress
+cd octopress
+gem install bundler
+bundle install
+rake install // 安装默认主题
+</code>
+本地安装完毕后，通过<code>rake preview</code>预览安装效果。执行完<code>rake preview</code>后，在浏览器
+中输入<code>http://localhost:4000</code>即可查看搭建效果。</p>
+
+<h2 id="octopress">部署octopress</h2>
+
+<p>登录注册的 github 账号，选择<code>New Repository</code>,进入新建库页面后，
+在<code>Repository name</code>一栏填<code>[your_username].github.io</code>,[your_username]
+是 github 上的用户名，此处的格式一定要正确，否则部署会失败。
+之后点击<code>Create repository</code>按钮提交。</p>
+
+<p>如果创建仓库成功，会有一个 SSH 地址，形如<code>git@github.com:[your_name]/[your_name].github.io.git</code>,后面会用到该地址。</p>
+
+<p>终端下执行如下命令:<br />
+<code>
+cd octopress
+rake setup_github_pages
+</code>
+执行完上面两条命令后，需要把刚刚生成的 SSH 地址粘贴到此处。
+继续执行：</p>
+
+<p><code>
+rake generate
+rake deploy
+</code>
+其中<code>rake generate</code>用来生成页面，<code>rake deploy</code>用来部署页面。上述完成后，
+即可使用<code>http://[your_username].github.io</code>来访问页面。</p>
+
+<p>最后要记得把源文件全部发布到<code>source</code>分支下面。通过下面命令完成:<br />
+<code>
+git add .
+git commit -m "commit message"
+git push origin source
+</code></p>
+
+<h2 id="section">发布新帖</h2>
+
+<p>发布新帖的两种方法:<br />
+方法一是在命令行下执行如下命令：<br />
+<code>
+cd octopress
+rake new_post["Post Title"]
+</code>
+其中的<code>Post Title</code>就是你想要的文章标题，然后会有一个名为<code>yyyy-mm-dd-Post_Title.markdown</code>的文件在<code>octopress/source_posts</code>目录下生成，其中<code>yyy-mm-dd</code>是当时的日期。之后打开文件，即可编辑博客。</p>
+
+<p>方法二是直接在<code>octopress/source_posts</code>文件下，生成一个格式相同的文件即可。</p>
+
+<p>生成的文件格式头如下<br />
+```
+—
+layout: post
+title: “使用Octopress 搭建个人博客”
+date: 2015-05-01 19:47:37 -0700
+comments: true
+categories: 总结积累
+—</p>
+
+<p>```</p>
+
+<h2 id="section-1">基本配置</h2>
+
+<p><code>_config.yml</code>用于基本配置，包括域名、网站标题、作者等等信息。</p>
+
+<p><figure class='code'><figcaption><span>_config.yml </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">http://yhoursite.com</span>
+</span><span class='line'><span class="l-Scalar-Plain">title</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">My Octopress Blog</span>
+</span><span class='line'><span class="l-Scalar-Plain">subtitle</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">A blogging framework for hackeers.</span>
+</span><span class='line'><span class="l-Scalar-Plain">author</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Your Name</span>
+</span><span class='line'><span class="l-Scalar-Plain">simple_search</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">https://www.google.com/search</span>
+</span><span class='line'><span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>汉化”Categories”, 在<code>_config.yml</code>文件中，添加下面一行代码：
+<code>
+category_tile_prefix: “分类：”
+</code></p>
+
+<p>汉化“Read On-&gt;”按钮:当文章只是显示摘要，点击”Read on-&gt;”
+后才可查看全文时，可以通过在文章中插入如下内容：
+<code>
+&lt;!--more--&gt;
+</code></p>
+
+<p>在文章中找到如下一行，把其中的”Read on”改为”继续阅读”。
+<code>
+excerpt_link:"Read on"
+</code></p>
+
+<h2 id="section-2">主题修改</h2>
+
+<p>网站底部：一般来讲网站底部会有一些网站的描述信息，比如版权声明、网站
+主题，网站使用的系统等等，要修改这部分内容，直接打开<code>source/_includes/custom/foot.html</code>修改相应部分即可。</p>
+
+<h2 id="section-3">添加图片</h2>
+
+<p>在写 blog 的过程中，经常需要用到插入图片。示例如下：</p>
+
+<ol>
+  <li>
+    <p>把图片 <code>meinv.png</code> copy 到 <code>source/images</code>下。</p>
+  </li>
+  <li>
+    <p>在需要的位置添加代码.</p>
+  </li>
+</ol>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;img src="/images/meinvp.png"></span></code></pre></td></tr></table></div></figure></p>
+
+<p><img src="/images/meinvping.png"></p>
+
+<p>更多技巧，请参见 Octopress 官网提供的<a href="http://octopress.org/docs/plugins/image-tag/">技术支持</a>。</p>
+
+<h2 id="section-4">添加文章目录</h2>
+
+<p>文章一旦长了之后，想要找某个点就需要目录来索引。添加文章目录方法：</p>
+
+<p>首先，使用 kramdown 作为 Octopress 作为 Markdown 解析器。</p>
+
+<p>①  在<code>Gemfile</code>中添加如下代码.
+<code>
+gem 'kramdown'
+</code></p>
+
+<p>②  端执行如下命令。</p>
+
+<p><code>
+bundle install
+</code></p>
+
+<p>③  修改<code>_config.yml</code>文件中相关内容如下。</p>
+
+<p><code>
+markdown: kramdown
+kramdown:
+    user_coderay: true
+    coderay:
+        coderay_line_numbers: table
+        coderay_css: class
+</code></p>
+
+<p>其次，在想要插入目录的地方，插入如下代码即可。</p>
+
+<p>```
+* list element with functor item</p>
+<p>```</p>
+
+<p>再次,在目录前自动添加<code>本页目录</code>,修改<code>sass/custom/_style.scss</code>,代码如下.</p>
+
+<p><code>
+#markdown-toc:before{
+    content: "本页目录";
+    font-weitht: bold;
+}
+</code>
+最后，为防止显示摘要时出现目录，在<code>sass/custom/_style.scss</code>添加代码。</p>
+
+<p><code>
+.blog-index #markdown-toc{
+    display: none;
+}
+</code></p>
+
+<p>参考博文：<a href="http://shengmingzhiqing.com/blog/octopress-lean-modification-5.html/#section-1">Octopress 精益修改</a> 和 <a href="http://blog.riemann.cc/2013/04/10/table-of-contents-in-octopress/">Table Of Contents in Octopress</a></p>
+
+<h2 id="section-5">添加表格</h2>
+
+<p>语法说明：</p>
+
+<ul>
+  <li><code>|</code><code>-</code><code>:</code>之间的多余空格会被忽略，不影响布局。</li>
+  <li>默认标题栏居中对齐，内容居左对齐。</li>
+  <li><code>-:</code>表示内容和标题栏居右对齐，<code>:-</code>表示内容和标题栏居左对齐，<code>:-:</code>表示内容和标题栏居中对齐。</li>
+  <li>内容和<code>|</code>之间的多余空格会被忽略，每行第一个<code>|</code>和最后一个<code>|</code>可以省略，<code>-</code>的数量至少一个。</li>
+</ul>
+
+<p><code>
+| 左对齐标题 | 右对齐标题 | 居中对齐标题 |
+| :--------  | ---------: | :----------: |
+| 短文本 | 中等文本 | 稍微长一点的文本 |
+| 稍微长一点的文本 | 短文本 | 中等文本 |
+</code></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">左对齐标题</th>
+      <th style="text-align: right">右对齐标题</th>
+      <th style="text-align: center">居中对齐标题</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">短文本</td>
+      <td style="text-align: right">中等文本</td>
+      <td style="text-align: center">稍微长一点的文本</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">稍微长一点的文本</td>
+      <td style="text-align: right">短文本</td>
+      <td style="text-align: center">中等文本</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="mac">多台Mac上同时使用</h2>
+
+<h3 id="mac-ssh-key--github-">在新的Mac上创建 ssh key 并添加到 github 中。</h3>
+
+<p>创建<code>ssh-key</code>。
+<code>
+$ ssh-keygen -t rsa -b 4096 -C "libinglimit@gmail.com"
+</code>
+把生成的<code>key</code>添加到<code>ssh-agent</code>中。
+<code>
+$ ssh-add ~/.ssh/id_rsa
+</code>
+把添加的<code>key</code>放到<code>github</code>中。</p>
+
+<p>本地重建Octopress仓库。clone<code>source</code>分支/<code>master</code>分支：
+<code>
+$ git clone -b source git@github.com:lazybing/lazybing.github.io octopress
+$ cd octopress
+$ git clone git@github.com:lazybing/lazybing.github.io _deploy
+</code>
+参见 github 官方<a href="https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac">帮助文档</a>。</p>
+
+<h3 id="section-6">配置环境。</h3>
+
+<p>执行以下命令配置环境：
+<code>
+$ gem install bundler
+$ rbenv rehash    # If you use rbenv, rehash to be able to run the bundle command
+$ bundle install
+$ rake setup_github_pages 
+</code></p>
+
+<h3 id="section-7">使用技巧</h3>
+
+<p>及时提交本地修改
+<code>
+$ rake generate
+$ rake deploy
+</code>
+第一条命令会使用本地的修改生成最新的<code>blog</code>网站，并且生成的<code>blog</code>会存放到<code>Octopress</code>根目录下的<code>public/</code>目录下；</p>
+
+<p>第二条命令主要做了两件事：</p>
+
+<p>*用<code>generate</code>命令生成在<code>public/</code>目录下的内容覆盖<code>_deploy/</code>目录下内容；</p>
+
+<p>*将<code>_deploy/</code>目录下的修改<code>add</code> 、 <code>commit</code>到<code>git</code>，并<code>push</code>到<code>git</code>的<code>master</code>分支。</p>
+
+<p>除此之外，还需要把<code>source</code>分支中做到的修改提交到<code>git</code>仓库中，执行以下命令：
+<code>
+$ git add .
+$ git commit -am "Some comment here." 
+$ git push origin source  # update the remote source branch 
+</code>
+修改前先更新到最新的版本。
+<code>
+$ cd octopress
+$ git pull origin source  # update the local source branch
+$ cd ./_deploy
+$ git pull origin master  # update the local master branch
+</code></p>
+
+<p>参考博文:<a href="http://foggry.com/blog/2014/04/02/ru-he-pei-zhi-rang-ni-de-octopressbo-ke-zai-duo-tai-macshang-tong-shi-shi-yong/">让Octopress博客在多台Mac上同时使用</a></p>
+
+]]></content>
+  </entry>
+  
+</feed>
