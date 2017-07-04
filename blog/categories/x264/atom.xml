@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-04T08:43:23-07:00</updated>
+  <updated>2017-07-04T08:49:38-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -158,7 +158,7 @@ typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union
 
 <p>在 SPEC 中，关于该预测模式的定义如下：</p>
 
-<p><blockquote><p>This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as “available for<br/>Intra_16x16 prediction”, as follows: $a^2=b$</p></blockquote></p>
+<p><blockquote><p>This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as “available for<br/>Intra_16x16 prediction”, as follows: <br /></p></blockquote></p>
 
 <p>x264 中关于模式 DC 的代码如下：</p>
 
@@ -194,6 +194,56 @@ typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union
 <p>在 SPEC 中，关于该预测模式的定义如下：</p>
 
 <p><blockquote><p>This Intra_16x16 prediction mode shall be used only when the samples p[ x, .1 ] with x = .1..15 and p[ .1, y ] with y = 0..15 are marked as “available for Intra_16x16 prediction”.<br /><br/>The values of the prediction samples $pred_L[x,y]$,with x,y=0…15, are derived by<br /><br/>$pred_L[x,y]=Clip1_Y((a+b<em>(x-7)+c</em>(y-7)+16)»5)$,with x,y=0…15, where <br /><br/>$a = 16 * ( p[ .1, 15 ] + p[ 15, .1 ] )$ <br /><br/>$b = ( 5 * H + 32 ) » 6$ <br /><br/>$c = ( 5 * V + 32 ) » 6$   <br /><br/>and H and V are specified as<br /></p></blockquote></p>
+
+<p>x264 中关于模式 Plane 的代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">x264_predict_16x16_dc_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">dc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">16</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">dc</span> <span class="o">+=</span> <span class="n">src</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">FDEC_STRIDE</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">dc</span> <span class="o">+=</span> <span class="n">src</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="n">FDEC_STRIDE</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">pixel4</span> <span class="n">dcsplat</span> <span class="o">=</span> <span class="n">PIXEL_SPLAT_X4</span><span class="p">(</span> <span class="p">(</span> <span class="n">dc</span> <span class="o">+</span> <span class="mi">16</span> <span class="p">)</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">5</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">PREDICT_16x16_DC</span><span class="p">(</span> <span class="n">dcsplat</span> <span class="p">);</span> <span class="p">}</span> <span class="err">#</span><span class="n">define</span> <span class="n">PREDICT_16x16_DC</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>\
+</span><span class='line'><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">16</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>\
+</span><span class='line'><span class="p">{</span>\
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span> <span class="mi">0</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v</span><span class="p">;</span>\
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span> <span class="mi">4</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v</span><span class="p">;</span>\
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span> <span class="mi">8</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v</span><span class="p">;</span>\
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span><span class="mi">12</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v</span><span class="p">;</span>\
+</span><span class='line'>    <span class="n">src</span> <span class="o">+=</span> <span class="n">FDEC_STRIDE</span><span class="p">;</span>\
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
 ]]></content>
   </entry>
   
