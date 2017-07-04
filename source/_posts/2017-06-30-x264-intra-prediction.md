@@ -103,7 +103,7 @@ void x264_predict_16x16_h_c( pixel *src )
 
 {% blockquote %}
 This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for
-Intra_16x16 prediction", as follows: $a^2=b$
+Intra_16x16 prediction", as follows:   
 {% endblockquote %}
 
 x264 中关于模式 DC 的代码如下：  
@@ -125,3 +125,46 @@ void x264_predict_16x16_dc_c( pixel *src )
 {% endcodeblock %}
 
 
+### Intra_16x16_Plane 预测模式  
+
+在 SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_16x16 prediction mode shall be used only when the samples p[ x, .1 ] with x = .1..15 and p[ .1, y ] with y = 0..15 are marked as "available for Intra_16x16 prediction".  
+The values of the prediction samples $pred_L[x,y]$,with x,y=0...15, are derived by  
+$pred_L[x,y]=Clip1_Y((a+b*(x-7)+c*(y-7)+16)>>5)$,with x,y=0...15, where   
+$a = 16 * ( p[ .1, 15 ] + p[ 15, .1 ] )$   
+$b = ( 5 * H + 32 ) >> 6$   
+$c = ( 5 * V + 32 ) >> 6$     
+and H and V are specified as   
+$H=\sum_{x'=0}^{7}(x'+1)*(p[8+x',-1]-p[6-x',-1])$    
+$V=\sum_{y'=0}^{7}(y'+1)*(p[-1,8+y']-p[-1,6-y'])$    
+{% endblockquote %}
+
+x264 中关于模式 Plane 的代码如下：  
+
+{% codeblock lang:c %}
+void x264_predict_16x16_dc_c( pixel *src )
+{
+    int dc = 0;
+
+    for( int i = 0; i < 16; i++ )
+    {
+        dc += src[-1 + i * FDEC_STRIDE];
+        dc += src[i - FDEC_STRIDE];
+    }
+    pixel4 dcsplat = PIXEL_SPLAT_X4( ( dc + 16 ) >> 5 );
+
+    PREDICT_16x16_DC( dcsplat );
+}
+#define PREDICT_16x16_DC(v)\
+    for( int i = 0; i < 16; i++ )\
+    {\
+        MPIXEL_X4( src+ 0 ) = v;\
+        MPIXEL_X4( src+ 4 ) = v;\
+        MPIXEL_X4( src+ 8 ) = v;\
+        MPIXEL_X4( src+12 ) = v;\
+        src += FDEC_STRIDE;\
+    }
+
+{% endcodeblock %}
