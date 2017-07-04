@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="安装octorpess 部署octopress 发布新帖 基本配置 主题修改 添加图片 添加文章目录 添加表格 多台Mac上同时使用 在新的Mac上创建 ssh key 并添加到 github 中。 配置环境。 使用技巧 详细记录使用Octopress的搭建和使用过程中遇到的问题。 &hellip;">
+  <meta name="description" content="安装octorpess 部署octopress 发布新帖 基本配置 主题修改 添加图片 添加文章目录 添加表格 多台Mac上同时使用 在新的Mac上创建 ssh key 并添加到 github 中。 配置环境。 使用技巧 octopress中添加Latex支持 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -114,6 +114,7 @@
       <li><a href="#section-7" id="markdown-toc-section-7">使用技巧</a></li>
     </ul>
   </li>
+  <li><a href="#octopresslatex" id="markdown-toc-octopresslatex">octopress中添加Latex支持</a></li>
 </ul>
 
 <p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
@@ -422,6 +423,78 @@
 
 <p>参考博文:<a href="http://foggry.com/blog/2014/04/02/ru-he-pei-zhi-rang-ni-de-octopressbo-ke-zai-duo-tai-macshang-tong-shi-shi-yong/">让Octopress博客在多台Mac上同时使用</a></p>
 
+<h2 id="octopresslatex">octopress中添加Latex支持</h2>
+
+<ol>
+  <li>首先要安装 kramdown,安装命令：gem install kramdown</li>
+  <li>在<code>source/_includes/custom/footer.html</code>添加如下代码：</li>
+</ol>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">&lt;!-- MathJax --&gt;  
+</span><span class="line">&lt;script type="text/x-mathjax-config"&gt;  
+</span><span class="line">    MathJax.Hub.Config({  
+</span><span class="line">                       tex2jax: {  
+</span><span class="line">                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+</span><span class="line">                       processEscapes: true  
+</span><span class="line">                       }  
+</span><span class="line">                       });  
+</span><span class="line">    &lt;/script&gt;  
+</span><span class="line">  
+</span><span class="line">&lt;script type="text/x-mathjax-config"&gt;  
+</span><span class="line">    MathJax.Hub.Config({  
+</span><span class="line">                       tex2jax: {  
+</span><span class="line">                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+</span><span class="line">                       }  
+</span><span class="line">                       });  
+</span><span class="line">    &lt;/script&gt;  
+</span><span class="line">  
+</span><span class="line">&lt;script type="text/x-mathjax-config"&gt;  
+</span><span class="line">    MathJax.Hub.Queue(function() {  
+</span><span class="line">                      var all = MathJax.Hub.getAllJax(), i;  
+</span><span class="line">                      for(i=0; i &lt; all.length; i += 1) {  
+</span><span class="line">                      all[i].SourceElement().parentNode.className += ' has-jax';  
+</span><span class="line">                      }  
+</span><span class="line">                      });  
+</span><span class="line">    &lt;/script&gt;  
+</span><span class="line">  
+</span><span class="line">&lt;script type="text/javascript"  
+</span><span class="line">    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"&gt;  
+</span><span class="line">    &lt;/script&gt;</span></code></pre></td></tr></table></div></figure>
+
+<p>这样就引入了 MathJax 的 js 包。<br />
+3. 在<code>_config.yml</code>文件中，用<code>markdown: kramdown</code>替换<code>markdown: rdiscount</code>。</p>
+
+<p>完成上述步骤后，即可使用 Latex 公式了。<a href="http://blog.csdn.net/hankai1024/article/details/18048999">参考文献</a></p>
+
 </div>
 
 
@@ -654,6 +727,37 @@ $(document).ready(function(){
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
 
 </footer>
   
