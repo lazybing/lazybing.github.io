@@ -123,3 +123,5 @@ void x264_predict_16x16_dc_c( pixel *src )
     PREDICT_16x16_DC( dcsplat );
 }
 {% endcodeblock %}
+
+
