@@ -103,7 +103,7 @@ void x264_predict_16x16_h_c( pixel *src )
 
 {% blockquote %}
 This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for
-Intra_16x16 prediction", as follows:
+Intra_16x16 prediction", as follows: $a^2=b$
 {% endblockquote %}
 
 x264 中关于模式 DC 的代码如下：  

@@ -270,3 +270,45 @@ $ git pull origin master  # update the local master branch
 
 参考博文:[让Octopress博客在多台Mac上同时使用](http://foggry.com/blog/2014/04/02/ru-he-pei-zhi-rang-ni-de-octopressbo-ke-zai-duo-tai-macshang-tong-shi-shi-yong/)
 
+##octopress中添加Latex支持  
+
+1. 首先要安装 kramdown,安装命令：gem install kramdown  
+2. 在`source/_includes/custom/footer.html`添加如下代码：  
+{% codeblock %}
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+{% endcodeblock %}
+
+这样就引入了 MathJax 的 js 包。  
+3. 在`_config.yml`文件中，用`markdown: kramdown`替换`markdown: rdiscount`。  
+
+完成上述步骤后，即可使用 Latex 公式了。[参考文献](http://blog.csdn.net/hankai1024/article/details/18048999)   
+
