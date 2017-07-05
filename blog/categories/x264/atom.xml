@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-05T08:55:37-07:00</updated>
+  <updated>2017-07-05T16:18:56-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -37,6 +37,17 @@
       <li><a href="#intra4x4horizontaldown-" id="markdown-toc-intra4x4horizontaldown-">Intra_4x4_Horizontal_Down 预测模式</a></li>
       <li><a href="#intra4x4verticalleft-" id="markdown-toc-intra4x4verticalleft-">Intra_4x4_Vertical_Left 预测模式</a></li>
       <li><a href="#intra4x4horizontalup-" id="markdown-toc-intra4x4horizontalup-">Intra_4x4_Horizontal_Up 预测模式</a></li>
+      <li><a href="#intra8x8-" id="markdown-toc-intra8x8-">Intra_8x8 预测模式</a>        <ul>
+          <li><a href="#intra8x8vertical-" id="markdown-toc-intra8x8vertical-">Intra_8x8_Vertical 预测模式</a></li>
+          <li><a href="#intra8x8horizontal-" id="markdown-toc-intra8x8horizontal-">Intra_8x8_Horizontal 预测模式</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#define-predict8x8dcv-" id="markdown-toc-define-predict8x8dcv-">define PREDICT_8x8_DC(v) \</a>    <ul>
+      <li><a href="#intra8x8dc-" id="markdown-toc-intra8x8dc-">Intra_8x8_DC 预测模式</a></li>
+      <li><a href="#intra8x8diagonaldownleft-" id="markdown-toc-intra8x8diagonaldownleft-">Intra_8x8_Diagonal_Down_Left 预测模式</a></li>
+      <li><a href="#intra8x8diagonaldownright-" id="markdown-toc-intra8x8diagonaldownright-">Intra_8x8_Diagonal_Down_Right 预测模式</a></li>
       <li><a href="#intra16x16-" id="markdown-toc-intra16x16-">Intra_16x16 预测模式</a>        <ul>
           <li><a href="#intra16x16vertical-" id="markdown-toc-intra16x16vertical-">Intra_16x16_Vertical 预测模式</a></li>
           <li><a href="#intra16x16horizontal-" id="markdown-toc-intra16x16horizontal-">Intra_16x16_Horizontal 预测模式</a></li>
@@ -480,6 +491,317 @@
 </span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span>
 </span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span> <span class="n">l3</span><span class="p">;</span>
 </span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h2 id="intra8x8-">Intra_8x8 预测模式</h2>
+
+<p>x264 中对 8x8 的预测模式如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">intra8x8Predmodei[luma8x8BlkIdx]</th>
+      <th style="text-align: center">Name of Intra8x8PredMode[luma8x8BlkIdx]</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">Intra_8x8_Vertical(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">Intra_8x8_Horizontal(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">Intra_8x8_DC(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">Intra_8x8_Diagonal_Down_Left(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">Intra_8x8_Diagonal_Down_Right(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">5</td>
+      <td style="text-align: center">Intra_8x8_Vertical_Right(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">6</td>
+      <td style="text-align: center">Intra_8x8_Horizontal_Down(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">7</td>
+      <td style="text-align: center">Intra_8x8_Vertical_Left(prediction mode)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">8</td>
+      <td style="text-align: center">Intra_8x8_Horizontal_Up(prediction mode)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>下面依次分析这几种预测模式：</p>
+
+<h3 id="intra8x8vertical-">Intra_8x8_Vertical 预测模式</h3>
+
+<p>在 SPEC 中，关于该预测模式的定义如下：</p>
+
+<p><blockquote><p>This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 0.<br/>This mode shall be used only when the samples p[ x, -1 ] with x = 0..7 are marked as “available for Intra_8x8 prediction”.<br/>The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived by <br /><br/>$pred8x8_L[x,y]=p’[x,-1],with x,y=0..7$</p></blockquote></p>
+
+<p>X264 中关于模式 Intra_8x8_Vertical 的代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">x264_predict_8x8_v_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">top</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">edge</span><span class="o">+</span><span class="mi">16</span> <span class="p">),</span>
+</span><span class='line'>                      <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">edge</span><span class="o">+</span><span class="mi">20</span> <span class="p">)</span> <span class="p">};</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span><span class="n">y</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">FDEC_STRIDE</span><span class="o">+</span><span class="mi">0</span> <span class="p">)</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span><span class="n">y</span><span class="o">*</span><span class="n">FDEC_STRIDE</span><span class="o">+</span><span class="mi">4</span> <span class="p">)</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="intra8x8horizontal-">Intra_8x8_Horizontal 预测模式</h3>
+
+<p>在SPEC 中，关于该预测模式的定义如下：</p>
+
+<p><blockquote><p>This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 1.<br/>This mode shall be used only when the samples p[ −1, y ], with y = 0..7, are marked as “available for Intra_8x8 prediction”.<br/>The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived by<br /><br/>$pred8x8_L[x,y]=p’[-1,y], with x,y=0..7$</p></blockquote></p>
+
+<p>x264 中对 Intra_8x8_Horizontal 的代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define PL(y) \</span>
+</span><span class='line'><span class="cp">    UNUSED int l##y = edge[14-y];</span>
+</span><span class='line'><span class="cp">#define PT(x) \</span>
+</span><span class='line'><span class="cp">    UNUSED int t##x = edge[16+x];</span>
+</span><span class='line'><span class="cp">#define PREDICT_8x8_LOAD_TOPLEFT \</span>
+</span><span class='line'><span class="cp">    int lt = edge[15];</span>
+</span><span class='line'><span class="cp">#define PREDICT_8x8_LOAD_LEFT \</span>
+</span><span class='line'><span class="cp">    PL(0) PL(1) PL(2) PL(3) PL(4) PL(5) PL(6) PL(7)</span>
+</span><span class='line'><span class="cp">#define PREDICT_8x8_LOAD_TOP \</span>
+</span><span class='line'><span class="cp">    PT(0) PT(1) PT(2) PT(3) PT(4) PT(5) PT(6) PT(7)</span>
+</span><span class='line'><span class="cp">#define PREDICT_8x8_LOAD_TOPRIGHT \</span>
+</span><span class='line'><span class="cp">    PT(8) PT(9) PT(10) PT(11) PT(12) PT(13) PT(14) PT(15)&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-predict8x8dcv-&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">PREDICT_8x8_DC</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span> <span class="p">)</span> <span class="p">{</span> \
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span><span class="mi">0</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v</span><span class="p">;</span> \
+</span><span class='line'>    <span class="n">MPIXEL_X4</span><span class="p">(</span> <span class="n">src</span><span class="o">+</span><span class="mi">4</span> <span class="p">)</span> <span class="o">=</span> <span class="n">v</span><span class="p">;</span> \
+</span><span class='line'>    <span class="n">src</span> <span class="o">+=</span> <span class="n">FDEC_STRIDE</span><span class="p">;</span> \
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">x264_predict_8x8_h_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_LEFT</span>
+</span><span class='line'><span class="cp">#define ROW(y) MPIXEL_X4( src+y&lt;/em&gt;FDEC_STRIDE+0 ) =\</span>
+</span><span class='line'><span class="cp">               MPIXEL_X4( src+y*FDEC_STRIDE+4 ) = PIXEL_SPLAT_X4( l##y );</span>
+</span><span class='line'>    <span class="n">ROW</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="n">ROW</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="n">ROW</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span> <span class="n">ROW</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span> <span class="n">ROW</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="n">ROW</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="n">ROW</span><span class="p">(</span><span class="mi">6</span><span class="p">);</span> <span class="n">ROW</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+</span><span class='line'><span class="cp">#undef ROW</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="intra8x8dc-">Intra_8x8_DC 预测模式</h3>
+
+<p>在SPEC 中，关于该预测模式的定义如下：</p>
+
+<p><blockquote><p>This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 2.<br/>The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived as follows:</p></blockquote></p>
+
+<p>x264 中对 Intra_8x8_DC 模式的代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">x264_predict_8x8_dc_128_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_DC</span><span class="p">(</span> <span class="n">PIXEL_SPLAT_X4</span><span class="p">(</span> <span class="mi">1</span> <span class="err">« </span><span class="p">(</span><span class="n">BIT_DEPTH</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">)</span> <span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">x264_predict_8x8_dc_left_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_LEFT</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">PIXEL_SPLAT_X4</span><span class="p">(</span> <span class="p">(</span><span class="n">l0</span><span class="o">+</span><span class="n">l1</span><span class="o">+</span><span class="n">l2</span><span class="o">+</span><span class="n">l3</span><span class="o">+</span><span class="n">l4</span><span class="o">+</span><span class="n">l5</span><span class="o">+</span><span class="n">l6</span><span class="o">+</span><span class="n">l7</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span><span class="err"> »</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_DC</span><span class="p">(</span> <span class="n">dc</span> <span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">x264_predict_8x8_dc_top_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_TOP</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">PIXEL_SPLAT_X4</span><span class="p">(</span> <span class="p">(</span><span class="n">t0</span><span class="o">+</span><span class="n">t1</span><span class="o">+</span><span class="n">t2</span><span class="o">+</span><span class="n">t3</span><span class="o">+</span><span class="n">t4</span><span class="o">+</span><span class="n">t5</span><span class="o">+</span><span class="n">t6</span><span class="o">+</span><span class="n">t7</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span><span class="err"> »</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_DC</span><span class="p">(</span> <span class="n">dc</span> <span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">x264_predict_8x8_dc_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_LEFT</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_TOP</span>
+</span><span class='line'>    <span class="n">pixel4</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">PIXEL_SPLAT_X4</span><span class="p">(</span> <span class="p">(</span><span class="n">l0</span><span class="o">+</span><span class="n">l1</span><span class="o">+</span><span class="n">l2</span><span class="o">+</span><span class="n">l3</span><span class="o">+</span><span class="n">l4</span><span class="o">+</span><span class="n">l5</span><span class="o">+</span><span class="n">l6</span><span class="o">+</span><span class="n">l7</span><span class="o">+</span><span class="n">t0</span><span class="o">+</span><span class="n">t1</span><span class="o">+</span><span class="n">t2</span><span class="o">+</span><span class="n">t3</span><span class="o">+</span><span class="n">t4</span><span class="o">+</span><span class="n">t5</span><span class="o">+</span><span class="n">t6</span><span class="o">+</span><span class="n">t7</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span><span class="err"> »</span> <span class="mi">4</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_DC</span><span class="p">(</span> <span class="n">dc</span> <span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="intra8x8diagonaldownleft-">Intra_8x8_Diagonal_Down_Left 预测模式</h3>
+
+<p>在SPEC 中，关于该预测模式的定义如下：</p>
+
+<p><blockquote><p>This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 3.<br/>This mode shall be used only when the samples p[ x, −1 ] with x = 0..15 are marked as “available for Intra_8x8 prediction”.<br/>The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived as follows:<br /><br/>If x is equal to 7 and y is equal to 7,<br /><br/>$pred8xx_L[x,y]=( p′[ 14, −1 ] + 3 * p′[ 15, −1 ] + 2 ) » 2$<br/>Otherwise (x is not equal to 7 or y is not equal to 7)<br /><br/>$pred8x8_L[ x, y ] = ( p′[ x + y, −1 ] + 2 * p′[ x + y + 1, −1 ] + p′[ x + y + 2, −1 ] + 2 ) » 2$</p></blockquote></p>
+
+<p>X264 中关于模式 Intra_8x8_Diagonal_Down_Left 的代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">x264_predict_8x8_ddl_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_TOP</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_TOPRIGHT</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">,</span><span class="n">t3</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span><span class="n">t3</span><span class="p">,</span><span class="n">t4</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t3</span><span class="p">,</span><span class="n">t4</span><span class="p">,</span><span class="n">t5</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t4</span><span class="p">,</span><span class="n">t5</span><span class="p">,</span><span class="n">t6</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t5</span><span class="p">,</span><span class="n">t6</span><span class="p">,</span><span class="n">t7</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t6</span><span class="p">,</span><span class="n">t7</span><span class="p">,</span><span class="n">t8</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t7</span><span class="p">,</span><span class="n">t8</span><span class="p">,</span><span class="n">t9</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t8</span><span class="p">,</span><span class="n">t9</span><span class="p">,</span><span class="n">t10</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t9</span><span class="p">,</span><span class="n">t10</span><span class="p">,</span><span class="n">t11</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t10</span><span class="p">,</span><span class="n">t11</span><span class="p">,</span><span class="n">t12</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t11</span><span class="p">,</span><span class="n">t12</span><span class="p">,</span><span class="n">t13</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t12</span><span class="p">,</span><span class="n">t13</span><span class="p">,</span><span class="n">t14</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t13</span><span class="p">,</span><span class="n">t14</span><span class="p">,</span><span class="n">t15</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t14</span><span class="p">,</span><span class="n">t15</span><span class="p">,</span><span class="n">t15</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="intra8x8diagonaldownright-">Intra_8x8_Diagonal_Down_Right 预测模式</h3>
+
+<p>在SPEC 中，关于该预测模式的定义如下：</p>
+
+<p><blockquote><p>This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 4.<br/>This mode shall be used only when the samples p[ x, .1 ] with x = 0..7 and p[ .1, y ] with y = .1..7 are marked as<br/>“available for Intra_8x8 prediction”.<br/>The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived as follows:<br /><br/>If x is greater than y,<br/>$pred8x8_L[ x, y ] = ( p′[ x − y − 2, −1] + 2 * p′[ x − y − 1, −1 ] + p′[ x − y, −1 ] + 2 ) » 2$<br/>Otherwise if x is less than y,<br/>$pred8x8_L[ x, y ] = ( p′[ .1, y . x . 2 ] + 2 * p′[ .1, y . x . 1 ] + p′[ .1, y . x ] + 2 ) » 2$<br/>Otherwise (x is equal to y),<br/>$pred8x8_L[ x, y ] = ( p′[ 0, −1 ] + 2 * p′[ −1, −1 ] + p′[ −1, 0 ] + 2 ) » 2$</p></blockquote></p>
+
+<p>X264 中关于模式 Intra_8x8_Diagonal_Down_Right 的代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">x264_predict_8x8_ddr_c</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="n">pixel</span> <span class="n">edge</span><span class="p">[</span><span class="mi">36</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_TOP</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_LEFT</span>
+</span><span class='line'>    <span class="n">PREDICT_8x8_LOAD_TOPLEFT</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l7</span><span class="p">,</span><span class="n">l6</span><span class="p">,</span><span class="n">l5</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l6</span><span class="p">,</span><span class="n">l5</span><span class="p">,</span><span class="n">l4</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l5</span><span class="p">,</span><span class="n">l4</span><span class="p">,</span><span class="n">l3</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l4</span><span class="p">,</span><span class="n">l3</span><span class="p">,</span><span class="n">l2</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l3</span><span class="p">,</span><span class="n">l2</span><span class="p">,</span><span class="n">l1</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l2</span><span class="p">,</span><span class="n">l1</span><span class="p">,</span><span class="n">l0</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l1</span><span class="p">,</span><span class="n">l0</span><span class="p">,</span><span class="n">lt</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">l0</span><span class="p">,</span><span class="n">lt</span><span class="p">,</span><span class="n">t0</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">lt</span><span class="p">,</span><span class="n">t0</span><span class="p">,</span><span class="n">t1</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span><span class="n">t2</span><span class="p">,</span><span class="n">t3</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span><span class="n">t3</span><span class="p">,</span><span class="n">t4</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t3</span><span class="p">,</span><span class="n">t4</span><span class="p">,</span><span class="n">t5</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span><span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t4</span><span class="p">,</span><span class="n">t5</span><span class="p">,</span><span class="n">t6</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SRC</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">=</span> <span class="n">F2</span><span class="p">(</span><span class="n">t5</span><span class="p">,</span><span class="n">t6</span><span class="p">,</span><span class="n">t7</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
 <h2 id="intra16x16-">Intra_16x16 预测模式</h2>
