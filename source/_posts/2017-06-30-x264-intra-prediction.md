@@ -13,7 +13,122 @@ categories: x264
 
 <!--more-->
 
-x264 中对于预测  
+## Intra_4x4 预测模式  
+
+x264 中对 4x4 的预测模式如下：  
+
+| Intra4x4PredMode[luma4x4BlkIdx] | Name of Intra4x4PredMode[luma4x4BlkIdx] |  
+| :-----------------------------: | :-------------------------------------: |  
+| 0                               | Intra_4x4_Vertical(prediction mode)     |  
+| 1                               | Intra_4x4_Horizontal(prediction mode)   |  
+| 2                               | Intra_4x4_DC(prediction mode)           |  
+| 3                               | Intra_4x4_Diagonal_Down_Left(prediction mode)           |  
+| 4                               | Intra_4x4_Diagonal_Down_Right(prediction mode)           |  
+| 5                               | Intra_4x4_Vertical_Right(prediction mode)           |  
+| 6                               | Intra_4x4_Horizontal_Down(prediction mode)           |  
+| 7                               | Intra_4x4_Vertical_Left(prediction mode)           |  
+| 8                               | Intra_4x4_Horizonal_Up(prediction mode)           |  
+
+下面依次分析这几种预测模式：  
+
+### Intra_4x4_Vertical 预测模式  
+
+在 SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_4x4 prediction mode is invoked when Intra4x4PredMode[ luma4x4BlkIdx ] is equal to 0.
+This mode shall be used only when the samples p[ x, -1 ] with x = 0..3 are marked as "available for Intra_4x4 prediction".
+The values of the prediction samples pred4x4L[ x, y ], with x, y = 0..3, are derived by  
+$pred4x4_L[x,y]=p[x,-1], with x,y=0..3$
+{% endblockquote %}
+
+x264 中关于模式 Intra_4x4_Vertical 的代码如下：  
+
+{% codeblock lang:c %}
+void x264_predict_4x4_v_c( pixel *src )
+{
+    PREDICT_4x4_DC(SRC_X4(0,-1));
+}
+#define SRC(x,y) src[(x)+(y)*FDEC_STRIDE]
+#define SRC_X4(x,y) MPIXEL_X4( &SRC(x,y) )
+
+#define PREDICT_4x4_DC(v)\
+    SRC_X4(0,0) = SRC_X4(0,1) = SRC_X4(0,2) = SRC_X4(0,3) = v;
+{% endcodeblock %}
+
+### Intra_4x4_Horizontal 预测模式  
+
+在 SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_4x4 prediction mode is invoked when Intra4x4PredMode[ luma4x4BlkIdx ] is equal to 1.  
+This mode shall be used only when the samples p[ −1, y ], with y = 0..3, are marked as "available for Intra_4x4 prediction".
+The values of the prediction samples pred4x4L[ x, y ], with x, y = 0..3, are derived by  
+$pred4x4_L[x,y]=p[-1, y], with x,y=0..3$
+{% endblockquote %}
+
+x264 中关于模式 Intra_4x4_Vertical 的代码如下：  
+
+{% codeblock lang:c %}
+void x264_predict_4x4_h_c( pixel *src )
+{
+    SRC_X4(0,0) = PIXEL_SPLAT_X4( SRC(-1,0) );
+    SRC_X4(0,1) = PIXEL_SPLAT_X4( SRC(-1,1) );
+    SRC_X4(0,2) = PIXEL_SPLAT_X4( SRC(-1,2) );
+    SRC_X4(0,3) = PIXEL_SPLAT_X4( SRC(-1,3) );
+}
+{% endcodeblock %}
+
+### Intra_4x4_Horizontal 预测模式  
+
+在 SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_4x4 prediction mode is invoked when Intra4x4PredMode[ luma4x4BlkIdx ] is equal to 2.
+The values of the prediction samples $pred4x4_L$[ x, y ], with x, y = 0..3, are derived as follows:  
+
+If all samples p[ x, −1 ], with x = 0..3, and p[ −1, y ], with y = 0..3, are marked as "available for Intra_4x4 prediction", the values of the prediction samples $pred4x4_L$[ x, y ], with x, y = 0..3, are derived by  
+$pred4x4_L[x,y]$ = (p[0,-1]+p[1,-1]+p[2,-1]+p[3,-1]+p[-1,0]+p[-1,1]+p[-1,2]+p[-1,3]+4)>>3  
+
+Otherwise, if any samples p[ x, .1 ], with x = 0..3, are marked as "not available for Intra_4x4 prediction" and all samples p[ .1, y ], with y = 0..3, are marked as "available for Intra_4x4 prediction", the values of the prediction samples $pred4x4_L$[ x, y ], with x, y = 0..3, are derived by  
+$pred4x4_L[x,y] = (p[-1,0]+p[-1,1]+p[-1,2]+p[-1,3]+2)>>2$  
+
+Otherwise, if any samples p[ .1, y ], with y = 0..3, are marked as "not available for Intra_4x4 prediction" and all samples p[ x, .1 ], with x = 0 .. 3, are marked as "available for Intra_4x4 prediction", the values of the prediction samples $pred4x4_L$[ x, y ], with x, y = 0 .. 3, are derived by    
+$pred4x4_L[x,y] = (p[0,-1]+p[1,-1]+p[2,-1]+p[3,-1]+2)>>2$    
+
+Otherwise (some samples p[ x, .1 ], with x = 0..3, and some samples p[ .1, y ], with y = 0..3, are marked as "not available for Intra_4x4 prediction"), the values of the prediction samples $pred4x4_L$[ x, y ], with x, y = 0..3, are derived by  
+$pred4x4_L[x,y]=(1<<(BitDepth_Y-1))$
+{% endblockquote %}
+
+x264 中关于模式 Intra_4x4_DC 的代码如下：  
+
+{% codeblock lang:c %}
+static void x264_predict_4x4_dc_128_c( pixel *src )
+{
+    PREDICT_4x4_DC( PIXEL_SPLAT_X4( 1 << (BIT_DEPTH-1) ) );
+}
+static void x264_predict_4x4_dc_left_c( pixel *src )
+{
+    pixel4 dc = PIXEL_SPLAT_X4( (SRC(-1,0) + SRC(-1,1) + SRC(-1,2) + SRC(-1,3) + 2) >> 2 );
+    PREDICT_4x4_DC( dc );
+}
+static void x264_predict_4x4_dc_top_c( pixel *src )
+{
+    pixel4 dc = PIXEL_SPLAT_X4( (SRC(0,-1) + SRC(1,-1) + SRC(2,-1) + SRC(3,-1) + 2) >> 2 );
+    PREDICT_4x4_DC( dc );
+}
+void x264_predict_4x4_dc_c( pixel *src )
+{
+    pixel4 dc = PIXEL_SPLAT_X4( (SRC(-1,0) + SRC(-1,1) + SRC(-1,2) + SRC(-1,3) +
+                                 SRC(0,-1) + SRC(1,-1) + SRC(2,-1) + SRC(3,-1) + 4) >> 3 );
+    PREDICT_4x4_DC( dc );
+}
+{% endcodeblock %}
+
+## Intra_16x16 预测模式
+
+
+x264 中对 16x16 的预测模式如下：  
 
 | intra16x16Predmode     | Name of Intra16x16PredMode   | Note  |
 | :--------------------: | :--------------------------: | :---: |
