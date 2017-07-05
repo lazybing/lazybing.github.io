@@ -103,12 +103,41 @@ void x264_predict_16x16_h_c( pixel *src )
 
 {% blockquote %}
 This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for
-Intra_16x16 prediction", as follows:   
+Intra_16x16 prediction", as follows:  
+
+If all neighbouring samples p[x,-1] ], with x = 0..15, and p[ −1, y ], with y = 0..15, are marked as "available for
+Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by:  
+$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+\sum_{y'=0}^{15}p[-1,y']+16)>>5, with x,y=0..15$  
+
+Otherwise, if any of the neighbouring samples p[ x, .1 ], with x = 0..15, are marked as "not available for Intra_16x16
+prediction" and all of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "available for Intra_16x16
+prediction", the prediction for all luma samples in the macroblock is given by:  
+$pred_L[x,y]=(\sum_{y'=0}^{15}p[-1,y']+8)>>4, with x,y=0..15$   
+
+Otherwise, if any of the neighbouring samples p[ −1, y ], with y = 0..15, are marked as "not available for Intra_16x16
+prediction" and all of the neighbouring samples p[ x, −1 ], with x = 0..15, are marked as "available for Intra_16x16
+prediction", the prediction for all luma samples in the macroblock is given by:  
+$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+8)>>4, with x,y=0..15$   
+
+Otherwise (some of the neighbouring samples p[ x, .1 ], with x = 0..15, and some of the neighbouring samples
+p[ .1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction"), the prediction for all luma samples
+in the macroblock is given by:  
+$pred_L[x,y]=(1<<(BitDepth_Y - 1)), with x,y=0..15$
 {% endblockquote %}
 
 x264 中关于模式 DC 的代码如下：  
 
 {% codeblock lang:c %}
+#define PREDICT_16x16_DC(v)\
+    for( int i = 0; i < 16; i++ )\
+    {\
+        MPIXEL_X4( src+ 0 ) = v;\
+        MPIXEL_X4( src+ 4 ) = v;\
+        MPIXEL_X4( src+ 8 ) = v;\
+        MPIXEL_X4( src+12 ) = v;\
+        src += FDEC_STRIDE;\
+    }
+
 void x264_predict_16x16_dc_c( pixel *src )
 {
     int dc = 0;
@@ -144,27 +173,38 @@ $V=\sum_{y'=0}^{7}(y'+1)*(p[-1,8+y']-p[-1,6-y'])$
 x264 中关于模式 Plane 的代码如下：  
 
 {% codeblock lang:c %}
-void x264_predict_16x16_dc_c( pixel *src )
+void x264_predict_16x16_p_c( pixel *src )
 {
-    int dc = 0;
+    int H = 0, V = 0;
 
-    for( int i = 0; i < 16; i++ )
+    /* calculate H and V */
+    for( int i = 0; i <= 7; i++ )
     {
-        dc += src[-1 + i * FDEC_STRIDE];
-        dc += src[i - FDEC_STRIDE];
+        H += ( i + 1 ) * ( src[ 8 + i - FDEC_STRIDE ] - src[6 -i -FDEC_STRIDE] );
+        V += ( i + 1 ) * ( src[-1 + (8+i)*FDEC_STRIDE] - src[-1 + (6-i)*FDEC_STRIDE] );
     }
-    pixel4 dcsplat = PIXEL_SPLAT_X4( ( dc + 16 ) >> 5 );
 
-    PREDICT_16x16_DC( dcsplat );
+    int a = 16 * ( src[-1 + 15*FDEC_STRIDE] + src[15 - FDEC_STRIDE] );
+    int b = ( 5 * H + 32 ) >> 6;
+    int c = ( 5 * V + 32 ) >> 6;
+
+    int i00 = a - b * 7 - c * 7 + 16;
+
+    for( int y = 0; y < 16; y++ )
+    {
+        int pix = i00;
+        for( int x = 0; x < 16; x++ )
+        {
+            src[x] = x264_clip_pixel( pix>>5 );
+            pix += b;
+        }
+        src += FDEC_STRIDE;
+        i00 += c;
+    }
 }
-#define PREDICT_16x16_DC(v)\
-    for( int i = 0; i < 16; i++ )\
-    {\
-        MPIXEL_X4( src+ 0 ) = v;\
-        MPIXEL_X4( src+ 4 ) = v;\
-        MPIXEL_X4( src+ 8 ) = v;\
-        MPIXEL_X4( src+12 ) = v;\
-        src += FDEC_STRIDE;\
-    }
 
+static ALWAYS_INLINE pixel x264_clip_pixel( int x )
+{
+    return ( (x & ~PIXEL_MAX) ? (-x)>>31 & PIXEL_MAX : x );
+}
 {% endcodeblock %}
