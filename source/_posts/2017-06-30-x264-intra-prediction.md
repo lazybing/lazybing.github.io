@@ -554,6 +554,199 @@ static void x264_predict_8x8_ddr_c( pixel *src, pixel edge[36] )
 }
 {% endcodeblock %}
 
+### Intra_8x8_Vertical_Right 预测模式  
+
+在SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 5.
+This mode shall be used only when the samples p[ x, -1 ] with x = 0..7 and p[ -1, y ] with y = -1..7 are marked as "available for Intra_8x8 prediction".
+Let the variable zVR be set equal to 2 * x . y.
+The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived as follows:  
+If zVR is equal to 0, 2, 4, 6, 8, 10, 12, or 14  
+$pred8x8_L[x,y] = (p'[x-y(y>>1)-1,-1] + p'[x-(y>>1),-1]+1)>>1$  
+Otherwise, if zVR is equal to 1, 3, 5, 7, 9, 11, or 13  
+$pred8x8_L[x,y]=(p'[x-(y>>1)-2,-1]+2*p'[x-(y>>1)-1,-1]+p'[x-(y>>1),-1]+2)>>2$  
+Otherwise, if zVR is equal to −1,  
+$pred8x8_L[ x, y ] = ( p′[ −1, 0 ] + 2 * p′[ −1, −1 ] + p′[ 0, −1 ] + 2 ) >> 2$  
+Otherwise (zVR is equal to .2, .3, .4, .5, .6, or .7),  
+$pred8x8_L[ x, y ] = ( p′[ -1, y . 2*x - 1 ] + 2 * p′[ -1, y - 2*x - 2 ] + p′[ -1, y - 2*x - 3 ] + 2 ) >> 2$
+{% endblockquote %}
+
+X264 中关于模式 Intra_8x8_Vertical_Right 的代码如下：  
+
+{% codeblock lang:c %}
+static void x264_predict_8x8_vr_c( pixel *src, pixel edge[36] )
+{
+    PREDICT_8x8_LOAD_TOP
+    PREDICT_8x8_LOAD_LEFT
+    PREDICT_8x8_LOAD_TOPLEFT
+    SRC(0,6)= F2(l5,l4,l3);
+    SRC(0,7)= F2(l6,l5,l4);
+    SRC(0,4)=SRC(1,6)= F2(l3,l2,l1);
+    SRC(0,5)=SRC(1,7)= F2(l4,l3,l2);
+    SRC(0,2)=SRC(1,4)=SRC(2,6)= F2(l1,l0,lt);
+    SRC(0,3)=SRC(1,5)=SRC(2,7)= F2(l2,l1,l0);
+    SRC(0,1)=SRC(1,3)=SRC(2,5)=SRC(3,7)= F2(l0,lt,t0);
+    SRC(0,0)=SRC(1,2)=SRC(2,4)=SRC(3,6)= F1(lt,t0);
+    SRC(1,1)=SRC(2,3)=SRC(3,5)=SRC(4,7)= F2(lt,t0,t1);
+    SRC(1,0)=SRC(2,2)=SRC(3,4)=SRC(4,6)= F1(t0,t1);
+    SRC(2,1)=SRC(3,3)=SRC(4,5)=SRC(5,7)= F2(t0,t1,t2);
+    SRC(2,0)=SRC(3,2)=SRC(4,4)=SRC(5,6)= F1(t1,t2);
+    SRC(3,1)=SRC(4,3)=SRC(5,5)=SRC(6,7)= F2(t1,t2,t3);
+    SRC(3,0)=SRC(4,2)=SRC(5,4)=SRC(6,6)= F1(t2,t3);
+    SRC(4,1)=SRC(5,3)=SRC(6,5)=SRC(7,7)= F2(t2,t3,t4);
+    SRC(4,0)=SRC(5,2)=SRC(6,4)=SRC(7,6)= F1(t3,t4);
+    SRC(5,1)=SRC(6,3)=SRC(7,5)= F2(t3,t4,t5);
+    SRC(5,0)=SRC(6,2)=SRC(7,4)= F1(t4,t5);
+    SRC(6,1)=SRC(7,3)= F2(t4,t5,t6);
+    SRC(6,0)=SRC(7,2)= F1(t5,t6);
+    SRC(7,1)= F2(t5,t6,t7);
+    SRC(7,0)= F1(t6,t7);
+}
+{% endcodeblock %}
+
+### Intra_8x8_Horizontal_Down 预测模式  
+
+在SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 6.
+This mode shall be used only when the samples p[ x, −1 ] with x = 0..7 and p[ −1, y ] with y = −1..7 are marked as "available for Intra_8x8 prediction".
+Let the variable zHD be set equal to 2 * y − x.
+The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived as follows:  
+If zHD is equal to 0, 2, 4, 6, 8, 10, 12, or 14  
+$pred8x8_L[ x, y ] = ( p′[ −1, y − ( x >> 1 ) − 1 ] + p′[ −1, y − ( x >> 1 ) ] + 1 ) >> 1$  
+Otherwise, if zHD is equal to 1, 3, 5, 7, 9, 11, or 13  
+$pred8x8_L[x,y]=(p′[-1, y -(x>>1)-2]+2*p′[-1,y-(x>>1)-1]+p′[-1,y-(x>>1)]+2)>>2$
+Otherwise, if zHD is equal to −1,
+$pred8x8L[ x, y ] = ( p′[ −1, 0 ] + 2 * p′[ −1, −1 ] + p′[ 0, −1 ] + 2 ) >> 2$
+Otherwise (zHD is equal to −2, −3, −4, −5, −6, −7),
+$pred8x8L[ x, y ] = ( p′[ x − 2*y − 1, −1 ] + 2 * p′[ x − 2*y − 2, −1 ] + p′[ x − 2*y − 3, −1 ] + 2 ) >> 2$
+{% endblockquote %}
+
+X264 中关于模式 Intra_8x8_Horizontal_Down 的代码如下：  
+
+{% codeblock lang:c %}
+static void x264_predict_8x8_hd_c( pixel *src, pixel edge[36] )
+{
+    PREDICT_8x8_LOAD_TOP
+    PREDICT_8x8_LOAD_LEFT
+    PREDICT_8x8_LOAD_TOPLEFT
+    int p1 = pack_pixel_1to2(F1(l6,l7), F2(l5,l6,l7));
+    int p2 = pack_pixel_1to2(F1(l5,l6), F2(l4,l5,l6));
+    int p3 = pack_pixel_1to2(F1(l4,l5), F2(l3,l4,l5));
+    int p4 = pack_pixel_1to2(F1(l3,l4), F2(l2,l3,l4));
+    int p5 = pack_pixel_1to2(F1(l2,l3), F2(l1,l2,l3));
+    int p6 = pack_pixel_1to2(F1(l1,l2), F2(l0,l1,l2));
+    int p7 = pack_pixel_1to2(F1(l0,l1), F2(lt,l0,l1));
+    int p8 = pack_pixel_1to2(F1(lt,l0), F2(l0,lt,t0));
+    int p9 = pack_pixel_1to2(F2(t1,t0,lt), F2(t2,t1,t0));
+    int p10 = pack_pixel_1to2(F2(t3,t2,t1), F2(t4,t3,t2));
+    int p11 = pack_pixel_1to2(F2(t5,t4,t3), F2(t6,t5,t4));
+    SRC_X4(0,7)= pack_pixel_2to4(p1,p2);
+    SRC_X4(0,6)= pack_pixel_2to4(p2,p3);
+    SRC_X4(4,7)=SRC_X4(0,5)= pack_pixel_2to4(p3,p4);
+    SRC_X4(4,6)=SRC_X4(0,4)= pack_pixel_2to4(p4,p5);
+    SRC_X4(4,5)=SRC_X4(0,3)= pack_pixel_2to4(p5,p6);
+    SRC_X4(4,4)=SRC_X4(0,2)= pack_pixel_2to4(p6,p7);
+    SRC_X4(4,3)=SRC_X4(0,1)= pack_pixel_2to4(p7,p8);
+    SRC_X4(4,2)=SRC_X4(0,0)= pack_pixel_2to4(p8,p9);
+    SRC_X4(4,1)= pack_pixel_2to4(p9,p10);
+    SRC_X4(4,0)= pack_pixel_2to4(p10,p11);
+}
+{% endcodeblock %}
+
+### Intra_8x8_Vertical_Left 预测模式  
+
+在SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 7.
+This mode shall be used only when the samples p[ x, −1 ] with x = 0..15 are marked as "available for Intra_8x8 prediction".
+The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived as follows:  
+If y is equal to 0, 2, 4 or 6  
+$pred8x8_L[ x, y ] = ( p′[ x + ( y >> 1 ), .1 ] + p′[ x + ( y >> 1 ) + 1, .1 ] + 1) >> 1$  
+Otherwise (y is equal to 1, 3, 5, 7),  
+$pred8x8_L[ x, y ] = ( p′[ x + ( y >> 1 ), −1 ] + 2 * p′[ x + ( y >> 1 ) + 1, −1 ] + p′[ x + ( y >> 1 ) + 2, −1 ] + 2 ) >>2$
+{% endblockquote %}
+
+X264 中关于模式 Intra_8x8_Horizontal_Down 的代码如下：  
+
+{% codeblock lang:c %}
+static void x264_predict_8x8_vl_c( pixel *src, pixel edge[36] )
+{
+    PREDICT_8x8_LOAD_TOP
+    PREDICT_8x8_LOAD_TOPRIGHT
+    SRC(0,0)= F1(t0,t1);
+    SRC(0,1)= F2(t0,t1,t2);
+    SRC(0,2)=SRC(1,0)= F1(t1,t2);
+    SRC(0,3)=SRC(1,1)= F2(t1,t2,t3);
+    SRC(0,4)=SRC(1,2)=SRC(2,0)= F1(t2,t3);
+    SRC(0,5)=SRC(1,3)=SRC(2,1)= F2(t2,t3,t4);
+    SRC(0,6)=SRC(1,4)=SRC(2,2)=SRC(3,0)= F1(t3,t4);
+    SRC(0,7)=SRC(1,5)=SRC(2,3)=SRC(3,1)= F2(t3,t4,t5);
+    SRC(1,6)=SRC(2,4)=SRC(3,2)=SRC(4,0)= F1(t4,t5);
+    SRC(1,7)=SRC(2,5)=SRC(3,3)=SRC(4,1)= F2(t4,t5,t6);
+    SRC(2,6)=SRC(3,4)=SRC(4,2)=SRC(5,0)= F1(t5,t6);
+    SRC(2,7)=SRC(3,5)=SRC(4,3)=SRC(5,1)= F2(t5,t6,t7);
+    SRC(3,6)=SRC(4,4)=SRC(5,2)=SRC(6,0)= F1(t6,t7);
+    SRC(3,7)=SRC(4,5)=SRC(5,3)=SRC(6,1)= F2(t6,t7,t8);
+    SRC(4,6)=SRC(5,4)=SRC(6,2)=SRC(7,0)= F1(t7,t8);
+    SRC(4,7)=SRC(5,5)=SRC(6,3)=SRC(7,1)= F2(t7,t8,t9);
+    SRC(5,6)=SRC(6,4)=SRC(7,2)= F1(t8,t9);
+    SRC(5,7)=SRC(6,5)=SRC(7,3)= F2(t8,t9,t10);
+    SRC(6,6)=SRC(7,4)= F1(t9,t10);
+    SRC(6,7)=SRC(7,5)= F2(t9,t10,t11);
+    SRC(7,6)= F1(t10,t11);
+    SRC(7,7)= F2(t10,t11,t12);
+}
+{% endcodeblock %}
+
+### Intra_8x8_Horizontal_Up 预测模式  
+
+在SPEC 中，关于该预测模式的定义如下：  
+
+{% blockquote %}
+This Intra_8x8 prediction mode is invoked when Intra8x8PredMode[ luma8x8BlkIdx ] is equal to 8.
+This mode shall be used only when the samples p[ -1, y ] with y = 0..7 are marked as "available for Intra_8x8 prediction".
+Let the variable zHU be set equal to x + 2 * y.
+The values of the prediction samples $pred8x8_L[ x, y ]$, with x, y = 0..7, are derived as follows:  
+If zHU is equal to 0, 2, 4, 6, 8, 10, or 12  
+$pred8x8_L[ x, y ] = ( p′[ −1, y + ( x >> 1 ) ] + p′[ −1, y + ( x >> 1 ) + 1 ] + 1 ) >> 1$
+Otherwise, if zHU is equal to 1, 3, 5, 7, 9, or 11  
+$pred8x8_L[ x, y ] = ( p′[ −1, y + ( x >> 1 ) ] + 2 * p′[ −1, y + ( x >> 1 ) + 1 ] + p′[ −1, y + ( x >> 1 ) + 2 ] + 2 ) >>2$
+Otherwise, if zHU is equal to 13,  
+$pred8x8_L[ x, y ] = ( p′[ −1, 6 ] + 3 * p′[ −1, 7 ] + 2 ) >> 2$  
+Otherwise (zHU is greater than 13),  
+$pred8x8_L[x,y]=p'[-1,7]$
+{% endblockquote %}
+
+X264 中关于模式 Intra_8x8_Horizontal_Up 的代码如下：  
+
+{% codeblock lang:c %}
+static void x264_predict_8x8_hu_c( pixel *src, pixel edge[36] )
+{
+    PREDICT_8x8_LOAD_LEFT
+    int p1 = pack_pixel_1to2(F1(l0,l1), F2(l0,l1,l2));
+    int p2 = pack_pixel_1to2(F1(l1,l2), F2(l1,l2,l3));
+    int p3 = pack_pixel_1to2(F1(l2,l3), F2(l2,l3,l4));
+    int p4 = pack_pixel_1to2(F1(l3,l4), F2(l3,l4,l5));
+    int p5 = pack_pixel_1to2(F1(l4,l5), F2(l4,l5,l6));
+    int p6 = pack_pixel_1to2(F1(l5,l6), F2(l5,l6,l7));
+    int p7 = pack_pixel_1to2(F1(l6,l7), F2(l6,l7,l7));
+    int p8 = pack_pixel_1to2(l7,l7);
+    SRC_X4(0,0)= pack_pixel_2to4(p1,p2);
+    SRC_X4(0,1)= pack_pixel_2to4(p2,p3);
+    SRC_X4(4,0)=SRC_X4(0,2)= pack_pixel_2to4(p3,p4);
+    SRC_X4(4,1)=SRC_X4(0,3)= pack_pixel_2to4(p4,p5);
+    SRC_X4(4,2)=SRC_X4(0,4)= pack_pixel_2to4(p5,p6);
+    SRC_X4(4,3)=SRC_X4(0,5)= pack_pixel_2to4(p6,p7);
+    SRC_X4(4,4)=SRC_X4(0,6)= pack_pixel_2to4(p7,p8);
+    SRC_X4(4,5)=SRC_X4(4,6)= SRC_X4(0,7) = SRC_X4(4,7) = pack_pixel_2to4(p8,p8);
+}
+{% endcodeblock %}
+
 ## Intra_16x16 预测模式
 
 
