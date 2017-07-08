@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "x264 源码分析之帧内预测"
+title: "x264 源码解析之帧内预测"
 date: 2017-06-30 08:12:22 -0700
 comments: true
 categories: x264
