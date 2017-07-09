@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-09T04:27:08-07:00</updated>
+  <updated>2017-07-09T05:22:37-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -22,7 +22,18 @@
   <li><a href="#sadsatdssd" id="markdown-toc-sadsatdssd">SAD、SATD、SSD等相关知识介绍</a></li>
   <li><a href="#x264" id="markdown-toc-x264">X264中的函数实现</a></li>
   <li><a href="#define-init2name-name1-name2-cpu--" id="markdown-toc-define-init2name-name1-name2-cpu--">define INIT2_NAME( name1, name2, cpu ) \</a></li>
-  <li><a href="#define-initads-cpu--" id="markdown-toc-define-initads-cpu--">define INIT_ADS( cpu ) \</a></li>
+  <li><a href="#define-initads-cpu--" id="markdown-toc-define-initads-cpu--">define INIT_ADS( cpu ) \</a>    <ul>
+      <li><a href="#sad-" id="markdown-toc-sad-">SAD 实现过程</a></li>
+    </ul>
+  </li>
+  <li><a href="#define-pixelsadc-name-lx-ly--" id="markdown-toc-define-pixelsadc-name-lx-ly--">define PIXEL_SAD_C( name, lx, ly ) \</a>    <ul>
+      <li><a href="#ssd-" id="markdown-toc-ssd-">SSD 实现过程</a></li>
+    </ul>
+  </li>
+  <li><a href="#define-pixelssdc-name-lx-ly--" id="markdown-toc-define-pixelssdc-name-lx-ly--">define PIXEL_SSD_C( name, lx, ly ) \</a>    <ul>
+      <li><a href="#satd-" id="markdown-toc-satd-">SATD 的实现过程</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>本文主要记录<code>x264_pixel_init</code>函数的实现，该函数主要是与像素计算有关的函数，包括SAD、SATD、SSD、SSIM等，它会在打开编码器(x264_encoder_open)时被调用到。<br />
@@ -169,6 +180,200 @@
 </span><span class='line'><span class="c1">//后面是与 CPU 有关的函数定义，此处略去 } </span>
 </span></code></pre></td></tr></table></div></figure>
 </code></pre>
+
+<p>下面分别介绍 SAD、SSD、SATD 的实现过程。</p>
+
+<h3 id="sad-">SAD 实现过程</h3>
+
+<p>将上面代码中的<code>INIT8(sad,)</code>展开，可以得到如下代码：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_sad_16x16</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_16x8</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_sad_16x8</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_sad_8x16</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_8x8</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_8x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_8x4</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_4x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_4x8</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_4x4</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_4x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_sad_4x16</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>我们选取其中最简单的<code>x264_pixel_sad_4x4</code>继续展开，它是通过一个宏来定义的：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">PIXEL_SAD_C</span><span class="p">(</span> <span class="n">x264_pixel_sad_4x4</span><span class="p">,</span>    <span class="mi">4</span><span class="p">,</span>  <span class="mi">4</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-pixelsadc-name-lx-ly--&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">PIXEL_SAD_C</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span> <span class="p">)</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">static</span> <span class="kt">int</span> <span class="n">name</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span>  \
+</span><span class='line'>                 <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span> <span class="p">)</span> \
+</span><span class='line'><span class="p">{</span>                                                   \
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>                                  \
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ly</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span> <span class="p">)</span>                   \
+</span><span class='line'>    <span class="p">{</span>                                               \
+</span><span class='line'>        <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">lx</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span> <span class="p">)</span>               \
+</span><span class='line'>        <span class="p">{</span>                                           \
+</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">abs</span><span class="p">(</span> <span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="p">);</span>      \
+</span><span class='line'>        <span class="p">}</span>                                           \
+</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>                      \
+</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>                      \
+</span><span class='line'>    <span class="p">}</span>                                               \
+</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>                                   \
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>展开后，可以得到如下代码：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">x264_pixel_sad_4x4</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">abs</span><span class="p">(</span><span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">]);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="ssd-">SSD 实现过程</h3>
+
+<p>将上面代码中的<code>INIT8(ssd,)</code>展开，可以得到如下代码：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_ssd_16x16</span><span class="p">;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_16x8</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_ssd_16x8</span><span class="p">;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_ssd_8x16</span><span class="p">;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_8x8</span><span class="p">;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_8x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_8x4</span><span class="p">;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_4x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_4x8</span><span class="p">;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_4x4</span><span class="p">;</span>
+</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_4x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_ssd_4x16</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">PIXEL_SSD_C</span><span class="p">(</span> <span class="n">x264_pixel_ssd_4x4</span><span class="p">,</span>    <span class="mi">4</span><span class="p">,</span>  <span class="mi">4</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-pixelssdc-name-lx-ly--&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">PIXEL_SSD_C</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span> <span class="p">)</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">static</span> <span class="kt">int</span> <span class="n">name</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span>  \
+</span><span class='line'>                 <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span> <span class="p">)</span> \
+</span><span class='line'><span class="p">{</span>                                                   \
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>                                  \
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ly</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span> <span class="p">)</span>                   \
+</span><span class='line'>    <span class="p">{</span>                                               \
+</span><span class='line'>        <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">lx</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span> <span class="p">)</span>               \
+</span><span class='line'>        <span class="p">{</span>                                           \
+</span><span class='line'>            <span class="kt">int</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>              \
+</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">d</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">d</span><span class="p">;</span>                           \
+</span><span class='line'>        <span class="p">}</span>                                           \
+</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>                      \
+</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>                      \
+</span><span class='line'>    <span class="p">}</span>                                               \
+</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>                                   \
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>此时，可以得到<code>x264_pixel_ssd_4x4</code>的定义如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">x264_pixel_ssd_4x4</span><span class="p">(</span><span class="n">pixel</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">j</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">d</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">d</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="satd-">SATD 的实现过程</h3>
 
 ]]></content>
   </entry>
