@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-09T06:07:24-07:00</updated>
+  <updated>2017-07-10T08:51:55-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,19 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264 Dct Init]]></title>
+    <link href="http://lazybing.github.io/blog/2017/07/10/x264-dct-init/"/>
+    <updated>2017-07-10T08:48:23-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/07/10/x264-dct-init</id>
+    <content type="html"><![CDATA[
+<p>本文主要记录 X264 中对于 DCT 变换的初始化过程。</p>
+
+<!--more-->
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264源码解析之x264_pixel_init函数]]></title>
@@ -5005,139 +5018,6 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 <p><img src="http://lazybing.github.io/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="'16to9_DAR'" /></p>
 
 <p><img src="http://lazybing.github.io/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="'4to3_DAR'" /></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[FFmpeg 学习之 FFplay 源码分析]]></title>
-    <link href="http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay/"/>
-    <updated>2016-11-05T21:03:58-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/11/05/ffmpeg-learning-of-ffplay</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#ffplay-" id="markdown-toc-ffplay-">FFplay 的使用</a></li>
-  <li><a href="#ffplay--1" id="markdown-toc-ffplay--1">FFplay 源码分析</a>    <ul>
-      <li><a href="#avregisterall" id="markdown-toc-avregisterall">av_register_all()</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p>FFplay 是一个简单便携的媒体播放器，它使用了 FFmpeg 和 SDL 库。<br />
-<!--more--></p>
-
-<h3 id="ffplay-">FFplay 的使用</h3>
-<p>首先看一下 FFplay 的使用：安装完 FFmpeg 后，直接在命令行中输入</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">ffplay [options] bitstream_file</span></code></pre></td></tr></table></div></figure>
-<p>其中更详细的使用说明，可以使用<code>man ffplay</code>来查看。</p>
-
-<p>其次我们可以通过使用<code>Esc</code><code>q</code>来推出播放，可以使用空格来暂停播放，可以使用<code>s</code>来执行逐帧播放视频等等操作。</p>
-
-<h3 id="ffplay--1">FFplay 源码分析</h3>
-
-<p>ffplay 里面最主要的函数时:<code>av_register_all()</code><code>SDL_Init(flags)</code><code>av_init_packet</code><code>stream_open</code><code>event_loop</code>。下面逐个分析这几个函数主要完成的功能。</p>
-
-<h4 id="avregisterall">av_register_all()</h4>
-
-<p><code>av_register_all</code>实现注册<code>codecs</code><code>demux</code>和<code>protocols</code>。其中注册的<code>codecs</code>时通过<code>avcodec_reigster_all()</code>函数来实现的；注册<code>demux</code>的方法，以 HEVC 为例。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define REGISTER_MUXER(X, x)                                            \</span>
-</span><span class="line"><span class="cp">    {                                                                   \</span>
-</span><span class="line"><span class="cp">        extern AVOutputFormat ff_##x##_muxer;                           \</span>
-</span><span class="line"><span class="cp">        if (CONFIG_##X##_MUXER)                                         \</span>
-</span><span class="line"><span class="cp">            av_register_output_format(&amp;ff_##x##_muxer);                 \</span>
-</span><span class="line"><span class="cp">    }</span>
-</span><span class="line">
-</span><span class="line"><span class="cp">#define REGISTER_DEMUXER(X, x)                                          \</span>
-</span><span class="line"><span class="cp">    {                                                                   \</span>
-</span><span class="line"><span class="cp">        extern AVInputFormat ff_##x##_demuxer;                          \</span>
-</span><span class="line"><span class="cp">        if (CONFIG_##X##_DEMUXER)                                       \</span>
-</span><span class="line"><span class="cp">            av_register_input_format(&amp;ff_##x##_demuxer);                \</span>
-</span><span class="line"><span class="cp">    }</span>
-</span><span class="line">
-</span><span class="line"><span class="cp">#define REGISTER_MUXDEMUX(X, x) REGISTER_MUXER(X, x); REGISTER_DEMUXER(X, x)</span>
-</span><span class="line">
-</span><span class="line"><span class="n">REGISTER_MUXDEMUX</span><span class="p">(</span><span class="n">HEVC</span><span class="p">,</span><span class="n">hevc</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>将上面的宏展开即为：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">av_register_input_format</span><span class="p">(</span><span class="n">AVInputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">AVInputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_iformat</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
-</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
-</span><span class="line">    <span class="n">last_iformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="nf">av_register_output_format</span><span class="p">(</span><span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">format</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">AVOutputFormat</span> <span class="o">**</span><span class="n">p</span> <span class="o">=</span> <span class="n">last_oformat</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="o">*</span><span class="n">p</span> <span class="o">||</span> <span class="n">avpriv_atomic_ptr_cas</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span> <span class="k">volatile</span> <span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">format</span><span class="p">))</span>
-</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
-</span><span class="line">    <span class="n">last_oformat</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">format</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVOutputFormat</span> <span class="n">ff_hevc_muxer</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class="line">    <span class="p">.</span><span class="n">name</span>              <span class="o">=</span> <span class="s">&quot;hevc&quot;</span><span class="p">,</span>
-</span><span class="line">    <span class="p">.</span><span class="n">long_name</span>         <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="s">&quot;raw HEVC video&quot;</span><span class="p">),</span>
-</span><span class="line">    <span class="p">.</span><span class="n">extensions</span>        <span class="o">=</span> <span class="s">&quot;hevc&quot;</span><span class="p">,</span>
-</span><span class="line">    <span class="p">.</span><span class="n">audio_codec</span>       <span class="o">=</span> <span class="n">AV_CODEC_ID_NONE</span><span class="p">,</span>
-</span><span class="line">    <span class="p">.</span><span class="n">video_codec</span>       <span class="o">=</span> <span class="n">AV_CODEC_ID_HEVC</span><span class="p">,</span>
-</span><span class="line">    <span class="p">.</span><span class="n">write_packet</span>      <span class="o">=</span> <span class="n">ff_raw_write_packet</span><span class="p">,</span>
-</span><span class="line">    <span class="p">.</span><span class="n">flags</span>             <span class="o">=</span> <span class="n">AVFMT_NOTIMESTAMPS</span><span class="p">,</span>
-</span><span class="line"><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
