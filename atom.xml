@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-10T08:54:56-07:00</updated>
+  <updated>2017-07-11T08:35:30-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[X264 Dct Init]]></title>
+    <title type="html"><![CDATA[X264源码解析之x264_dct_init函数]]></title>
     <link href="http://lazybing.github.io/blog/2017/07/10/x264-dct-init/"/>
     <updated>2017-07-10T08:48:23-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/07/10/x264-dct-init</id>
@@ -22,6 +22,112 @@
 <p>本文主要记录 X264 中对于 DCT 变换的初始化过程。</p>
 
 <!--more-->
+
+<p>DCT 变化理论比较抽象，先从 X264 中代码入手，然后经过 DCT 变换后，比较变换前和变换后的数据，能够更好的理解 DCT 变换。</p>
+
+<p>X264 中对 DCT 各类函数的定义都在<code>common/dct.c</code>里面。其中 sub4x4_dct 定义如下：</p>
+
+<figure class="code"><figcaption><span>sub4x4_dct </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">pixel_sub_wxh</span><span class="p">(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">diff</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i_size</span><span class="p">,</span>
+</span><span class="line">                                  <span class="n">pixel</span> <span class="o">*</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i_pix1</span><span class="p">,</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i_pix2</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">i_size</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">i_size</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">            <span class="n">diff</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">*</span><span class="n">i_size</span><span class="p">]</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
+</span><span class="line">        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_pix1</span><span class="p">;</span>
+</span><span class="line">        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_pix2</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">sub4x4_dct</span><span class="p">(</span> <span class="n">dctcoef</span> <span class="n">dct</span><span class="p">[</span><span class="mi">16</span><span class="p">],</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix1</span><span class="p">,</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">dctcoef</span> <span class="n">d</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+</span><span class="line">    <span class="n">dctcoef</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">pixel_sub_wxh</span><span class="p">(</span> <span class="n">d</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pix1</span><span class="p">,</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="n">pix2</span><span class="p">,</span> <span class="n">FDEC_STRIDE</span> <span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s03</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">3</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s12</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">2</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d03</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">3</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d12</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">2</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">        <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span>   <span class="n">s03</span> <span class="o">+</span>   <span class="n">s12</span><span class="p">;</span>
+</span><span class="line">        <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">d03</span> <span class="o">+</span>   <span class="n">d12</span><span class="p">;</span>
+</span><span class="line">        <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span>   <span class="n">s03</span> <span class="o">-</span>   <span class="n">s12</span><span class="p">;</span>
+</span><span class="line">        <span class="n">tmp</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span>   <span class="n">d03</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">d12</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s03</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">3</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s12</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">2</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d03</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">3</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d12</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">2</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">        <span class="n">dct</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span>   <span class="n">s03</span> <span class="o">+</span>   <span class="n">s12</span><span class="p">;</span>
+</span><span class="line">        <span class="n">dct</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">d03</span> <span class="o">+</span>   <span class="n">d12</span><span class="p">;</span>
+</span><span class="line">        <span class="n">dct</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span>   <span class="n">s03</span> <span class="o">-</span>   <span class="n">s12</span><span class="p">;</span>
+</span><span class="line">        <span class="n">dct</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span>   <span class="n">d03</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">d12</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中的<code>pixel_sub_wxh</code>是获取 pix1 和 pix2 两块数据的残差。这里对 pix1 和 pix2 随意举两个相似的4x4的矩阵作为例子，
+之所以要<code>随意</code>是为了突出其普遍性，适用于大多数的 DCT 变换；而<code>相似</code>是因为 pix1 为编码块，pix2 为预测块，它们理论上就应该是相似的。为此举例如下：</p>
+
+<p>$pix1[4x4]=[(23,24,27,29),(24,25,28,28),(26,28,29,29),(26,25,28,30)];$<br />
+$pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
+
+<p>将 pix1 和 pix2 经过<code>pixel_sub_wxh</code>的计算后，得到矩阵d[4x4]为[(3,1,0,0),(1,1,2,1),(1,2,4,1),(0,1,0,0)]。<br />
+经第一个for循环后得到tmp[4x4]=[]</p>
 
 ]]></content>
   </entry>
