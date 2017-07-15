@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>分类:编程工具 - 懒人李冰</title>
+  <title>X26源码解析之码流控制 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Category: 编程工具">
+  <meta name="description" content="本文主要记录 X264 中使用到的码流控制。 码率控制是指视频编码中决定输出码率的过程。首先介绍一下 X264 中使用到的与码率控制相关的几个概念： CQP(Constant QP),恒定QP（Quantization Parameter）,追求量化失真的恒定，瞬时码率会随场景
+复杂度而波动， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/07/15/x264-rake-control/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -78,77 +79,106 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">分类:编程工具</h1>
+    
+      <h1 class="entry-title">X26源码解析之码流控制</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2017-07-15T07:19:27-07:00'><span class='date'>2017 年 07 月 15 日</span> <span class='time'>7:19 am</span></time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content">
+<p>本文主要记录 X264 中使用到的码流控制。</p>
 
-  
-  <h2>2016</h2>
+<!--more-->
 
-<article>
-  
-<h1><a href="/blog/2016/12/22/addr2line-use/">Addr2line 的介绍与使用</a></h1>
-<time datetime="2016-12-22T07:26:02-08:00" pubdate><span class='month'>12 月</span> <span class='day'>22 日</span> <span class='year'>2016</span></time>
+<p>码率控制是指视频编码中决定输出码率的过程。首先介绍一下 X264 中使用到的与码率控制相关的几个概念：</p>
 
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
+<ul>
+  <li>
+    <p>CQP(Constant QP),恒定QP（Quantization Parameter）,追求量化失真的恒定，瞬时码率会随场景
+复杂度而波动，该模式基本被淘汰(被 CRF 取代)，只有用”-pq 0”来进行无损编码还有价值。</p>
+  </li>
+  <li>
+    <p>CRF(Constant Rate Factor),恒定质量因子，与恒定 QP 类似，但追求主观感知到的质量恒定，瞬时码率也
+会随场景复杂度波动。对于快速运动或细节丰富的场景会适当增大量化失真（因为人眼不易注意到），反之
+对于静止或平坦区域则减少量化失真。</p>
+  </li>
+  <li>
+    <p>ABR(Average Bitrate),平均码率，追求整个文件的码率平均达到指定值（对于流媒体有何特殊之处？）。
+瞬时码率也会随着场景复杂度波动，但最终要受平均值的约束。</p>
+  </li>
+  <li>
+    <p>CBR(Constant Bitrate),恒定码率。前面几个模式都属于可变码率（瞬时码率在波动），即VBR（Variable Bitrate）；
+恒定码率与之相对，即码率保持不变。</p>
+  </li>
+</ul>
 
+<p>x264 并没有直接提供 CBR 这种模式，但可以通过在 VBR 模式的基础上做进一步限制来达到恒定码率的目标。
+CRF 和 ABR 模式都能通过<code>--vbv-maxrate</code> <code>--vbv-bufsize</code>来限制码率波动。</p>
 
-</article>
+<p>关于这几个概念的参考如下：</p>
 
-
-
-<article>
-  
-<h1><a href="/blog/2016/09/22/how-to-use-gprof/">如何使用gprof</a></h1>
-<time datetime="2016-09-22T09:52:06-07:00" pubdate><span class='month'>09 月</span> <span class='day'>22 日</span> <span class='year'>2016</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2016/07/07/how-to-use-vim/">将vim打造成IDE</a></h1>
-<time datetime="2016-07-07T08:17:10-07:00" pubdate><span class='month'>07 月</span> <span class='day'>07 日</span> <span class='year'>2016</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2016/04/01/how-to-use-gdb/">如何使用 GDB</a></h1>
-<time datetime="2016-04-01T07:48:51-07:00" pubdate><span class='month'>04 月</span> <span class='day'>01 日</span> <span class='year'>2016</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
-
-
-</article>
+<p>1.<a href="https://codesequoia.wordpress.com/2010/04/19/what-are-cbr-vbv-and-cpb/">Waht are CBR,VBV and CPB?</a><br />
+2.<a href="https://trac.ffmpeg.org/wiki/Encode/H.264">FFmpeg and H.264 Encoding Guide</a><br />
+3.<a href="http://slhck.info/video/2017/02/24/crf-guide.html">CRF Guide(Constant Rate Factor in X264 and X265)</a><br />
+4.<a href="https://en.wikibooks.org/wiki/MeGUI/x264_Settings">MeGUI/x264 setting</a></p>
 
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2017-07-15T07:19:27-07:00'><span class='date'>2017 年 07 月 15 日</span> <span class='time'>7:19 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/x264/'>x264</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/07/15/x264-rake-control/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/07/15/x264-rake-control/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2017/07/10/x264-dct-init/" title="Previous Post: x264源码解析之x264_dct_init函数">&laquo; x264源码解析之x264_dct_init函数</a>
+      
+      
+    </p>
+  </footer>
 </article>
 
 </div>
