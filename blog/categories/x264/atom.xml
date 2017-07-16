@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-15T07:50:39-07:00</updated>
+  <updated>2017-07-16T04:00:51-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,14 +14,20 @@
 
   
   <entry>
-    <title type="html"><![CDATA[X26源码解析之码流控制]]></title>
+    <title type="html"><![CDATA[X264源码解析之码流控制]]></title>
     <link href="http://lazybing.github.io/blog/2017/07/15/x264-rake-control/"/>
     <updated>2017-07-15T07:19:27-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/07/15/x264-rake-control</id>
-    <content type="html"><![CDATA[
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">码率控制基本概念</a></li>
+  <li><a href="#x264-" id="markdown-toc-x264-">X264 中码率控制</a></li>
+</ul>
+
 <p>本文主要记录 X264 中使用到的码流控制。</p>
 
 <!--more-->
+
+<h2 id="section">码率控制基本概念</h2>
 
 <p>码率控制是指视频编码中决定输出码率的过程。首先介绍一下 X264 中使用到的与码率控制相关的几个概念：</p>
 
@@ -54,6 +60,49 @@ CRF 和 ABR 模式都能通过<code>--vbv-maxrate</code> <code>--vbv-bufsize</co
 2.<a href="https://trac.ffmpeg.org/wiki/Encode/H.264">FFmpeg and H.264 Encoding Guide</a><br />
 3.<a href="http://slhck.info/video/2017/02/24/crf-guide.html">CRF Guide(Constant Rate Factor in X264 and X265)</a><br />
 4.<a href="https://en.wikibooks.org/wiki/MeGUI/x264_Settings">MeGUI/x264 setting</a></p>
+
+<h2 id="x264-">X264 中码率控制</h2>
+
+<p>X264 中对于码率控制方法有三种：X264_RC_CQP、X264_RC_CRF、X264_RC_ABR。默认情况是选择 CRF 方法，设置是在
+<code>x264_param_default</code>函数里设置的</p>
+
+<p><code>
+param-&gt;rc.i_rc_method = X264_RC_CRF;
+param-&gt;rc.f_rf_constant = 23;
+</code>
+关于这三种方法，网上有提到优先级是<code>ABR&gt;CQP&gt;CRF</code>的，但分析 X264 的源码，并没有看出有优先级顺序，关于码率控制方法的设置代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>    <span class="n">OPT</span><span class="p">(</span><span class="err">“</span><span class="n">bitrate</span><span class="err">”</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">p</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_bitrate</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">p</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_rc_method</span> <span class="o">=</span> <span class="n">X264_RC_ABR</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">OPT2</span><span class="p">(</span><span class="err">“</span><span class="n">qp</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">qp_constant</span><span class="err">”</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">p</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">p</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_rc_method</span> <span class="o">=</span> <span class="n">X264_RC_CQP</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">OPT</span><span class="p">(</span><span class="err">“</span><span class="n">crf</span><span class="err">”</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">p</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">f_rf_constant</span> <span class="o">=</span> <span class="n">atof</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">p</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_rc_method</span> <span class="o">=</span> <span class="n">X264_RC_CRF</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
   </entry>
