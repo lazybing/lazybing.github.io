@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-16T04:03:36-07:00</updated>
+  <updated>2017-07-16T04:31:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -20,7 +20,10 @@
     <id>http://lazybing.github.io/blog/2017/07/15/x264-rake-control</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">码率控制基本概念</a></li>
-  <li><a href="#x264-" id="markdown-toc-x264-">X264 中码率控制</a></li>
+  <li><a href="#x264-" id="markdown-toc-x264-">X264 中码率控制</a>    <ul>
+      <li><a href="#x264--qp" id="markdown-toc-x264--qp">X264 中关于 QP</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>本文主要记录 X264 中使用到的码流控制。</p>
@@ -103,6 +106,25 @@ param-&gt;rc.f_rf_constant = 23;
 </span><span class='line'>        <span class="n">p</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_rc_method</span> <span class="o">=</span> <span class="n">X264_RC_CRF</span><span class="p">;</span>
 </span><span class='line'>    <span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="x264--qp">X264 中关于 QP</h3>
+
+<p>首先看一段 X264 中关于 QP 值的代码，该段代码在<code>x264_ratecontrol_new</code>：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">rc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ip_offset</span> <span class="o">=</span> <span class="mf">6.0</span> <span class="o">*</span> <span class="n">log2f</span><span class="p">(</span><span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_ip_factor</span><span class="p">);</span>
+</span><span class='line'><span class="n">rc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb_offset</span> <span class="o">=</span> <span class="mf">6.0</span> <span class="o">*</span> <span class="n">log2f</span><span class="p">(</span><span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_pb_factor</span><span class="p">);</span>
+</span><span class='line'><span class="n">rc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">qp_constant</span><span class="p">[</span><span class="n">SLICE_TYPE_P</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span><span class="p">;</span>
+</span><span class='line'><span class="n">rc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">qp_constant</span><span class="p">[</span><span class="n">SLICE_TYPE_I</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_clip3</span><span class="p">(</span><span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span> <span class="o">-</span> <span class="n">rc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ip_offset</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">QP_MAX</span><span class="p">);</span>
+</span><span class='line'><span class="n">rc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">qp_constant</span><span class="p">[</span><span class="n">SLICE_TYPE_B</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_clip3</span><span class="p">(</span><span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span> <span class="o">+</span> <span class="n">rc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb_offset</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">QP_MAX</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>从上面的代码可以看出，默认的<code>i_qp_constant</code>或者通过命令行传入的<code>qp</code> <code>qp_constant</code>实际设置的是 P 帧的 QP。
+I 帧和 B 帧的 QP 设置是根据<code>f_ip_factor</code> <code>f_pb_factor</code>计算得到。</p>
 
 ]]></content>
   </entry>
