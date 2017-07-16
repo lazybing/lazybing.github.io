@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-16T04:31:10-07:00</updated>
+  <updated>2017-07-16T06:50:52-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -125,6 +125,67 @@ param-&gt;rc.f_rf_constant = 23;
 
 <p>从上面的代码可以看出，默认的<code>i_qp_constant</code>或者通过命令行传入的<code>qp</code> <code>qp_constant</code>实际设置的是 P 帧的 QP。
 I 帧和 B 帧的 QP 设置是根据<code>f_ip_factor</code> <code>f_pb_factor</code>计算得到。</p>
+
+<p>在研究编码算法的时候，一般会选用 CQP 方法，设定 QP 为 24、28、32、36、40等（一般选 4 个 QP 值），然后比较算法优劣。
+在 X264 中，关于QPmin、QPmax、QPstep的默认设置如下：<br />
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">param</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_min</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="n">param</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_max</span> <span class="o">=</span> <span class="n">QP_MAX</span><span class="p">;</span>
+</span><span class='line'><span class="n">param</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_step</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<ul>
+  <li>
+    <p>QPmin,默认值：0.定义 X264 可以使用的最小量化值，量化值越小，输出视频质量越好。当 QP 小于某一个值后，
+编码输出的宏块质量与原始块极为相近，此时没必要继续降低 QP。如果开启了自适应量化器（默认开启），不建议
+提高 QPmin 的值，因为这会降低平滑背景区域的视觉质量。</p>
+  </li>
+  <li>
+    <p>QPmax，默认值：51.定义 X264 可以使用的最大量化值。默认值 51 是 H.264 规格中可供使用的最大量化值。如果
+想要控制 X264 输出的最低品质，可以将此值设置的小一些。QPmin 和 QPmax 在CRF，ABR方法下是有效的，过低的设置
+QPmax，可能造成 ABR 码率控制失败。不建议调整该参数。</p>
+  </li>
+  <li>
+    <p>QPstep，默认值：4.设置两帧间量化值的最大变化幅度。</p>
+  </li>
+</ul>
+
+<p>帧间 QP 变化，帧内宏块 QP 不变，输出码率未知，各帧输出视觉质量有变化（高 QP 底码率的情况下会更明显）。</p>
+
+<p>比较三种码率控制方式如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">码率控制方法</th>
+      <th style="text-align: center">视觉质量稳定性</th>
+      <th style="text-align: center">即时输出码率</th>
+      <th style="text-align: center">输出文件大小</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">CBR</td>
+      <td style="text-align: center">不稳定</td>
+      <td style="text-align: center">恒定</td>
+      <td style="text-align: center">可控</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">VBR</td>
+      <td style="text-align: center">稳定</td>
+      <td style="text-align: center">变化</td>
+      <td style="text-align: center">不可控</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">ABR</td>
+      <td style="text-align: center">基本稳定</td>
+      <td style="text-align: center">变化</td>
+      <td style="text-align: center">可控</td>
+    </tr>
+  </tbody>
+</table>
 
 ]]></content>
   </entry>
