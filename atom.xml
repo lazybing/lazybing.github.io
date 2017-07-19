@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-07-19T08:41:38-07:00</updated>
+  <updated>2017-07-19T15:50:23-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -2085,6 +2085,97 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 </pre></td><td class="code"><pre><code class=""><span class="line">/* x264_encoder_open:
 </span><span class="line"> *      create a new encoder handler, all parameters from x264_param_t are copied */
 </span><span class="line">x264_t *x264_encoder_open( x264_param_t * );</span></code></pre></td></tr></table></div></figure>
+<p><code>x264_encoder_open</code>中会调用到一些宏定义的函数，比如<code>x264_reduce_fraction</code>，这里先把该函数的定义给出来：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/****************************************************************************</span>
+</span><span class="line"><span class="cm"> * x264_reduce_fraction:</span>
+</span><span class="line"><span class="cm"> ****************************************************************************/</span>
+</span><span class="line"><span class="cp">#define REDUCE_FRACTION( name, type )\</span>
+</span><span class="line"><span class="cp">void name( type *n, type *d )\</span>
+</span><span class="line"><span class="cp">{                   \</span>
+</span><span class="line"><span class="cp">    type a = *n;    \</span>
+</span><span class="line"><span class="cp">    type b = *d;    \</span>
+</span><span class="line"><span class="cp">    type c;         \</span>
+</span><span class="line"><span class="cp">    if( !a || !b )  \</span>
+</span><span class="line"><span class="cp">        return;     \</span>
+</span><span class="line"><span class="cp">    c = a % b;      \</span>
+</span><span class="line"><span class="cp">    while( c )      \</span>
+</span><span class="line"><span class="cp">    {               \</span>
+</span><span class="line"><span class="cp">        a = b;      \</span>
+</span><span class="line"><span class="cp">        b = c;      \</span>
+</span><span class="line"><span class="cp">        c = a % b;  \</span>
+</span><span class="line"><span class="cp">    }               \</span>
+</span><span class="line"><span class="cp">    *n /= b;        \</span>
+</span><span class="line"><span class="cp">    *d /= b;        \</span>
+</span><span class="line"><span class="cp">}</span>
+</span><span class="line">
+</span><span class="line"><span class="n">REDUCE_FRACTION</span><span class="p">(</span> <span class="n">x264_reduce_fraction</span>  <span class="p">,</span> <span class="kt">uint32_t</span> <span class="p">)</span>
+</span><span class="line"><span class="n">REDUCE_FRACTION</span><span class="p">(</span> <span class="n">x264_reduce_fraction64</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>将上面的<code>x264_reduce_fraction</code>展开，代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_reduce_fraction</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">n</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="o">*</span><span class="n">d</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">	<span class="kt">uint32_t</span> <span class="n">a</span> <span class="o">=</span> <span class="o">*</span><span class="n">n</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">uint32_t</span> <span class="n">b</span> <span class="o">=</span> <span class="o">*</span><span class="n">d</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">uint32_t</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line">	
+</span><span class="line">	<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">a</span> <span class="o">||</span> <span class="o">!</span><span class="n">b</span><span class="p">)</span>
+</span><span class="line">	    <span class="k">return</span><span class="p">;</span>
+</span><span class="line">	<span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">%</span> <span class="n">b</span><span class="p">;</span>
+</span><span class="line">	<span class="k">while</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+</span><span class="line">	<span class="p">{</span>
+</span><span class="line">		<span class="n">a</span> <span class="o">=</span> <span class="n">b</span><span class="p">;</span>
+</span><span class="line">		<span class="n">b</span> <span class="o">=</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line">		<span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">%</span> <span class="n">b</span><span class="p">;</span>
+</span><span class="line">	<span class="p">}</span>
+</span><span class="line">	<span class="o">*</span><span class="n">n</span> <span class="o">/=</span><span class="n">b</span><span class="p">;</span>
+</span><span class="line">	<span class="o">*</span><span class="n">d</span> <span class="o">/=</span><span class="n">b</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
