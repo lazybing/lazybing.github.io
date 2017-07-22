@@ -221,12 +221,13 @@ void &hellip;">
 
 <p>在<a href="http://files.cnblogs.com/files/irish/The_H.264_advanced_video_compression_standard.pdf">The H.264 advanced video compression standard</a>里有如下描述：</p>
 
-<blockquote><p>Blocks of transform coefficients are scanned, i.e. converted to linear array, prior to entropy<br />coding. The scan order is intended to group together significant coefficients, i.e. non-zero<br />quantized coefficients. In a typical block in a progressive frame, non-zero coefficients tend to<br />be clustered around the top left'DC' coefficient. In this case, a zigzag scan order <br />may be the most efficient, shown in 4x4 and 8x8 blocks. After scanning the block in a<br />zigzag order, the coefficients are placed in a linear array in which most of the non-zero<br />coefficients tend to occur near the start of the array.</p><p>However, in an interlaced field or a field of a progressive frame converted from interlaced<br />content, vertical frequencies in each block tend to dominate because the field is vertically <br />sub-sampled from the original scene. This means that non-zero coefficients ten to occur at<br />the top and towards the left side of the block. A block in a field macroblock is<br />therefore scanned in a modified field scan order.</p><footer><strong>Block scan orders</strong></footer></blockquote>
+<blockquote><p>Blocks of transform coefficients are scanned, i.e. converted to linear array, prior to entropy coding. The scan order is intended to group together significant coefficients, i.e. non-zero quantized coefficients. In a typical block in a progressive frame, non-zero coefficients tend to be clustered around the top left'DC' coefficient. In this case, a zigzag scan order may be the most efficient, shown in 4x4 and 8x8 blocks. After scanning the block in a zigzag order, the coefficients are placed in a linear array in which most of the non-zero coefficients tend to occur near the start of the array.</p><p>However, in an interlaced field or a field of a progressive frame converted from interlaced content, vertical frequencies in each block tend to dominate because the field is vertically sub-sampled from the original scene. This means that non-zero coefficients ten to occur at the top and towards the left side of the block. A block in a field macroblock is therefore scanned in a modified field scan order.</p><footer><strong>Block scan orders</strong></footer></blockquote>
 
 <p>通过描述可以看出，通过扫描后，非零系统会集中在一维线性数组最开始的几个位置。示例图如下：</p>
 
-<p><img src="/images/progressive_scan_orders.png" />
-<img src="/images/field_scan_orders.png" /></p>
+<p><img src="/images/zigzag/progressive_scan_orders.png" /></p>
+
+<p><img src="/images/zigzag/field_scan_orders.png" /></p>
 
 <p>上面的图片给出了扫描的顺序，X264 中的源码，与 4x4 frame 类似，此处不在重复。</p>
 
