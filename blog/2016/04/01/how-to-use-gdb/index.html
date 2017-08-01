@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="前期准备 启动GDB 查看源码 断点break 使用 运行程序 查看运行时数据 启动GDB方法 参考文献 GDB, The GNU Project debugger, allows you to see what is going on inside another program while &hellip;">
+  <meta name="description" content="前期准备 启动GDB 查看源码 断点break 使用 运行程序 查看运行时数据 启动GDB方法 查看内存数据 参考文献 GDB, The GNU Project debugger, allows you to see what is going on inside another program &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -106,7 +106,8 @@
   <li><a href="#section-2" id="markdown-toc-section-2">运行程序</a></li>
   <li><a href="#section-3" id="markdown-toc-section-3">查看运行时数据</a></li>
   <li><a href="#gdb-1" id="markdown-toc-gdb-1">启动GDB方法</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">参考文献</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">查看内存数据</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">参考文献</a></li>
 </ul>
 
 <p><a href="https://www.gnu.org/software/gdb/">GDB</a>, The GNU Project debugger, allows you to see what is going on inside another program while it executes – or what another program was doing at the moment it crashed.</p>
@@ -192,7 +193,18 @@
   <li>gdb <programe> <PID> 如果程序是一个服务程序，则可以指定服务程序运行时的进程ID。gdb 自动 attach 上去，并调试它。 program 应该在 PATH 环境变量中搜索得到。</PID></programe></li>
 </ol>
 
-<h3 id="section-4">参考文献</h3>
+<h3 id="section-4">查看内存数据</h3>
+
+<p>在调试代码时，经常需要查看某块内存的数据，此时就需要使用<code>GDB</code>中的<a href="http://www.delorie.com/gnu/docs/gdb/gdb_56.html">Examining memory</a>。<br />
+可以使用命令<code>x</code>(即<code>examine</code>)来检查任意格式的内存数据，不管你的程序数据类型。使用的格式为：<code>x  /nfu addr</code>或<code>x addr</code>。</p>
+
+<p>其中n/f/u 是选项参数，指定内存的大小及显示格式；addr 指定显示的内存的起始地址。n 是十进制的整数，指定小时内存的大小；f 指定显示的格式，它的使用与 GDB 中的 print 使用的格式一样，如<code>x</code>指定使用 16 进制显示，
+<code>d</code>按十进制格式显示等；u 是指每个显示单元的大小，如<code>b</code>是指每个显示单元为 byte，<code>h</code>是指每个显示单元为半字（两个 byte）等；addr 指定要显示的内存的起始地址。</p>
+
+<p>如果需要查看的数据比较多，比如我们需要 dump 一块 buffer 的数据，与特定的数据进行比较，上面提到的<code>examine</code>就很难实现了。此时需要将块内存 dump 出来。使用到的命令是 <code>dump</code>或<code>append</code>或<code>restore</code>。此处主要介绍<code>dump</code>命令。<br />
+它的格式为<code>dump [format] memory filename start_addr end_addr</code>从格式可以看出，它的含义是从<code>start_addr</code>开始到<code>end_addr</code>结束的 memory dump 到 指定的文件 filename 中。</p>
+
+<h3 id="section-5">参考文献</h3>
 
 <ol>
   <li><a href="http://www.tutorialspoint.com/gnu_debugger/index.htm">GNU Debugger Tutorial</a></li>
