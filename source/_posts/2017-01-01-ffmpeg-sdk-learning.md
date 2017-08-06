@@ -323,7 +323,7 @@ while(uDataSize > 0){
 int avcodec_decode_video2(AVCodecContext *avctx, AVFrame *picture,
                          int *got_picture_ptr,
                          const AVPacket *avpkt);
-{% endcodeblock lang:c %}
+{% endcodeblock %}
 
 该函数各个参数的意义：  
 
@@ -469,8 +469,254 @@ ost->frame = alloc_picture(c->pix_fmt, c->width, c->height);
 
 根据流程可以推到出大致的代码流程：  
 
+* 首先对输入文件(Container 文件)、输出文件(Video/Audio 进行处理)，方便后面的使用；
+* 其次打开输入文件，并分配 Format Context，从输入文件中得到流信息
+* 之后打开视频、音频编码器 Context,针对视频数据，分配图像 image。
+* 分配 frame 结构，初始化 packet，从输入文件中读取 frame 信息，并之后进行解码 packet。
+* 最后释放各种分配的数据信息。  
 
-完整实现过程请移步[解封在实现(https://github.com/lazybing/ffmpeg-study-recording/blob/master/demuxer.c)]
+*** 
+
+在音视频分离后，需要将分离出的音视频分别放到不同的输出文件中，为此，需要打开文件以备后用。  
+
+{% codeblock lang:c %}
+static const char *video_dst_filename = NULL;
+static const char *audio_dst_filename = NULL;
+static FILE *video_dst_file = NULL;
+static FILE *audio_dst_file = NULL;
+video_dst_filename = argv[2];
+audio_dst_filename = argv[3];
+video_dst_file = fopen(video_dst_filename, "wb+");
+audio_dst_file = fopen(audio_dst_filename, "wb+");
+{% endcodeblock %}
+
+对于给定的需要 AV 分离的输入文件，使用`avformat_open_input`打开输入文件，并分配`AVFormatContext`结构。该函数的声明如下：  
+
+```
+int avformat_open_input(AVFormatContext **ps, const char *filename, AVInputFormat *fmt, AVDictionary **options);
+```
+其中：  
+
+* ps:指向由用户提供的`AVFormatContext`结构体，该结构体通过`avformat_alloc_context`分配，如果它是一个 NULL，该结构在此函数内分配并负值给 ps。
+* filename:指向需要打开的流的名称。  
+* fmt：如果是 non-NULL,该参数指定输入的文件格式，否则输入文件的格式自动根据文件本身自动获取。  
+* options:此处可以为 NULL。  
+* 返回值：成功返回0，否则返回 AVERROR。  
+
+实现代码如下：  
+
+{% codeblock lang:c %}
+//open input file, and allocate format context
+if(avformat_open_input(&fmt_ctx, src_filename, NULL, NULL) < 0){
+    fprintf(stderr, "Could not open source file %s\n", src_filename);   
+    exit(1);
+}
+
+//retrive stream information
+if(avformat_find_stream_info(fmt_ctx, NULL) < 0){
+    fprintf(stderr, "Could not find stream information\n");
+    exit(1);
+}
+{% endcodeblock %}
+
+通过输入文件分配好`AVFormatContext`后，需要找到里面的音频流和视频流，此处需要用到的函数为`av_find_best_stream`;
+之后要根据找到的不同的流(如H264流、HEVC流等)找到特定的编解码器，此处使用`avcodec_find_decoder`;找到了解码器后，
+就需要打开解码器，此处使用`avcodec_open2`函数完成。下面分别介绍这几个函数的使用：  
+
+`av_find_best_stream`函数定义如下：  
+
+```
+int av_find_best_stream(AVFormatContext *ic, enum AVMediaType type, int wanted_stream_nb, int related_stream, AVCodec **decoder_ret, int flags);
+```
+其中：  
+
+* ic:媒体文件句柄。  
+* type:媒体类型，视频、音频、文本等。  
+* wanted_stream_nb:用户请求的流，-1 代表自动选择。  
+* related_stream:尝试找到相关流，如果没有就设为-1。
+* decoder_ret:如果是non-NULL,返回选定的流的解码器。
+* flags：此处定位0。
+* 返回值：成功返回非负值，如果找不到指定的请求类型的流，就返回`AVERROR_STREAM_NOT_FOUND`;如果找到了流，但没找到对应的解码器，就返回`AVERROR_DECODER_NOT_FOUND`。
+
+`avcodec_find_decoder`函数定义如下：  
+
+```
+AVCodec *avcodec_find_decoder(enum AVCodecID id);
+```
+
+该函数参数为`AVCodecID`指定了请求的解码器，成功返回解码器，否则返回 NULL。  
+
+`avcodec_open2`函数定义如下：  
+
+```
+int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
+```
+
+其中：  
+ 
+* avctx:即将初始化的`AVCodecContext`结构体。
+* codec：打开的解码器，如果它是non-NULL codec,并在之前传递给了`avcodec_alloc_context3`或`avcodec_get_context_defaults3`，该参数必须为 NULL 或之前传递的 CODEC。  
+* Options：此处我们设置为 NULL。  
+* 返回值：成功返回0，出错返回一个负值。  
+
+该函数的主要作用是根据给定的`AVCodec`初始化`AVCodecContext`,在使用该函数之前，待初始化的`AVCodecContext`结构需要先使用`avcodec_alloc_context3`分配好。其中的参数
+`AVCodec`可以通过`avcodec_find_decoder_by_name``avcodec_find_encoder_by_name``avcodec_find_decoder`或`avcodec_find_endcoder`来获取。在进行真正的解码之前，必须调用该函数。
+下面给出使用的示例：  
+
+{% codeblock lang:c %}
+avcodec_register_all();
+av_dict_set(&opts, "b", "2.5M", 0);
+codec = avcodec_find_decoder(AV_CODEC_ID_H264);
+if(!codec)
+    exit(1);
+
+context = avcodec_alloc_context3(codec);
+if(avcodec_open2(context, codec, opts) < 0)
+    exit(1);
+{% endcodeblock %}
+
+对于上面分析的部分，我们将其封装在一个函数里，代码如下：  
+
+{% codeblock lang:c %}
+static int open_codec_context(int *stream_idx, 
+                              AVFormatContext *fmt_ctx,
+                              enum AVMediaType type)
+{
+    int ret, stream_index;
+    AVStream *pStream;
+    AVCodecContext *codec_ctx = NULL;
+    AVCodec *codec;
+
+    ret = av_find_best_stream(fmt_ctx, type, -1, -1, NULL, 0);
+    if(ret < 0){
+        fprintf(stderr, "Could not find %s stream in input file '%s'\n",
+                av_get_media_type_string(type), src_filename);
+    }else{
+        stream_index = ret;
+        pStream = fmt_ctx->streams[stream_index];
+
+        //find decoder for the stream
+        codec_ctx = pStream->codec;
+        codec = avcodec_find_decoder(codec_ctx->codec_id);
+        if(!codec){
+            fprintf(stderr, "Failed to find %s codec\n",
+                    av_get_media_type_string(type));
+            return AVERROR(EINVAL);
+        }
+
+        //open the decoder
+        if((ret = avcodec_open2(codec_ctx, codec, NULL))< 0){
+            fprintf(stderr, "Failed to open %s codec\n",
+                    av_get_media_type_string(type));
+            return ret;
+        }
+    }
+    *stream_idx = stream_index;
+}
+{% endcodeblock %}
+
+针对音频、视频，分别调用该函数，示例代码如下：  
+
+{% codeblock lang:c %}
+    if(open_codec_context(&video_stream_idx, fmt_ctx, AVMEDIA_TYPE_VIDEO) >= 0){
+        video_stream    = fmt_ctx->streams[video_stream_idx];
+        video_codec_ctx = video_stream->codec;
+
+        //allocate image where the decoded image will be put
+        width   = video_codec_ctx->width;
+        height  = video_codec_ctx->height;
+        pix_fmt = video_codec_ctx->pix_fmt;
+        ret = av_image_alloc(video_dst_data, video_dst_linesize,
+                             width, height, pix_fmt, 1);
+        if(ret < 0){
+            fprintf(stderr, "Could not allocate raw video buffer\n");
+            exit(1);
+        }
+        video_dst_bufsize = ret;
+    }
+
+    if(open_codec_context(&audio_stream_idx, fmt_ctx, AVMEDIA_TYPE_AUDIO) >= 0){
+        audio_stream = fmt_ctx->streams[audio_stream_idx];
+        audio_codec_ctx = audio_stream->codec;
+    }
+{% endcodeblock %}
+
+上面的一些准备工作完成后，就需要从输入文件中一帧一帧读取数据，并进行解码了。从这里可以看出，需要找到一个
+一帧视频存放的地方，为此需要使用`av_init_packet`初始化一个`AVPacket`。之后就可以使用`av_read_frame`来从输入
+文件中读取一个 frame。示例代码如下：  
+
+{% codeblock lang:c %}
+static int decode_packet(int *got_frame, int cached)
+{
+    int ret = 0;
+    int decoded = pkt.size;
+    *got_frame = 0;
+
+    if(pkt.stream_index == video_stream_idx){
+        //decode video frame
+        ret = avcodec_decode_video2(video_codec_ctx, frame, got_frame, &pkt);
+        if(ret < 0){
+            fprintf(stderr, "Error decoding video frame (%s) \n",
+                    av_err2str(ret));
+            return ret;
+        }
+
+        printf("num %d got_frame %d\n", num++, *got_frame);
+        if(*got_frame){
+            av_image_copy(video_dst_data, video_dst_linesize,
+                          (const uint8_t **)(frame->data), frame->linesize,
+                          pix_fmt, width, height);
+
+            //write to raw video file
+            fwrite(video_dst_data[0], 1, video_dst_bufsize, video_dst_file);
+        }
+    }else if(pkt.stream_index == audio_stream_idx){
+        //decode audio frame
+        ret = avcodec_decode_audio4(audio_codec_ctx, frame, got_frame, &pkt);
+        if(ret < 0){
+            fprintf(stderr, "Error decoding audio frame (%s)\n", av_err2str(ret));
+            return ret;
+        }
+
+        if(*got_frame){
+            size_t unpadded_linesize = frame->nb_samples * av_get_bytes_per_sample(frame->format);
+            fwrite(frame->extended_data[0], 1, unpadded_linesize, audio_dst_file);
+        }
+    }
+
+    return FFMIN(ret, pkt.size);
+}
+
+//allocate frame 
+frame = av_frame_alloc();
+if(!frame){
+    fprintf(stderr, "Could not allocate frame\n");
+    exit(1);
+}
+
+av_init_packet(&pkt);
+pkt.data = NULL;
+pkt.size = 0;
+
+//read frames from the file
+int got_frame;
+while(av_read_frame(fmt_ctx, &pkt) >= 0){
+    AVPacket orig_pkt = pkt;
+
+    do{
+        ret = decode_packet(&got_frame, 0);
+        if(ret < 0)
+            break;
+        pkt.data += ret;
+        pkt.size -= ret;
+    }while(pkt.size > 0);
+    av_free_packet(&orig_pkt);
+}
+{% endcodeblock %}
+
+解封装大致流程已经完成了，剩余的是一些收尾工作，例如释放刚刚分配的内存等。  
+
+完整实现过程请移步[解封在实现](https://github.com/lazybing/ffmpeg-study-recording/blob/master/demuxer.c).    
 
 
 ##FFMpeg 转码的实现
