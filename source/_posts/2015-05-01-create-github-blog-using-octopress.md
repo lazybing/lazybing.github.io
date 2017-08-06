@@ -132,6 +132,51 @@ excerpt_link:"Read on"
 
 更多技巧，请参见 Octopress 官网提供的[技术支持](http://octopress.org/docs/plugins/image-tag/)。
 
+##添加视频
+
+在写 blog 的过程中，经常需要在博客里添加视频。在此记录添加 YouKu 视频的方法。
+首先添加 ruby 插件，添加文件`octopress/plugins/youku.rb`，代码如下：  
+
+{% codeblock %}
+class Youku < Liquid::Tag
+
+def initialize(tagName, markup, tokens)
+  super
+  
+  @params = markup.split(" ")
+  if @params.count >= 1
+    @id = @params[0]
+    if @params.count >= 3
+      @width = @params[1]
+      @height = @params[2]
+    else
+      @width = 560
+      @height = 420
+    end
+  else
+    raise "No Youku ID provided in the \"youku\" tag"    
+  end
+end
+
+def render(context)
+# "<iframe height=498 width=510 src="http://player.youku.com/embed/XNTEzNzcwNDI0" frameborder=0 allowfullscreen></iframe>"
+"<iframe style=\"margin:0 auto; display: block\" height=\"#{@height}\" width=\"#{@width}\" src=\"http://player.youku.com/embed/#{@id}?color=white&theme=light\"></iframe>"
+end
+
+Liquid::Template.register_tag "youku", self
+end
+{% endcodeblock %}
+
+添加完上述文件后，就可添加 youku 视频文件了，方法是在需要添加视频的位置添加如下 Tag：  
+
+`youku id width height` 
+
+其中的youku 是关键字;id 是打开的youku视频的id，可以从网址里找到；width/height 是视频的宽高。  
+
+示例如下:  
+
+{% youku XNDQ4ODQxNTI0 720 586 %}
+
 ##添加文章目录
 
 文章一旦长了之后，想要找某个点就需要目录来索引。添加文章目录方法：

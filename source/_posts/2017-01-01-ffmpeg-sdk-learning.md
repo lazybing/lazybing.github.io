@@ -454,9 +454,24 @@ ost->frame = alloc_picture(c->pix_fmt, c->width, c->height);
 
 完整实现请移步[封装实现](https://github.com/lazybing/ffmpeg-study-recording/blob/master/muxer.c)。
 
-{% video https://github.com/lazybing/lazybing.github.io/blob/source/images/ffmpeg.mp4 640 320 %}
-
 ##FFMpeg 解封装实现
+
+本例子实现的是将音视频分离，例如将封装格式为 FLV、MKV、MP4、AVI 等封装格式的文件，将音频、视频分离开来。
+实现的过程，可以大致用如下图表示：  
+
+{% img /images/ffmpeg_sdk/demuxer.png %}
+
+从图中可以看出大致的节封装流程：  
+
+* 首先要对解复用器进行初始化。  
+* 其次将输入的封装格式文件给到解复用器内。  
+* 最后利用解封装对 Container 进行解封装。
+
+根据流程可以推到出大致的代码流程：  
+
+
+完整实现过程请移步[解封在实现(https://github.com/lazybing/ffmpeg-study-recording/blob/master/demuxer.c)]
+
 
 ##FFMpeg 转码的实现
 

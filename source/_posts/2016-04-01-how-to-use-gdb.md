@@ -90,13 +90,24 @@ bt         //查看函数堆栈信息
 ### 查看内存数据
 
 在调试代码时，经常需要查看某块内存的数据，此时就需要使用`GDB`中的[Examining memory](http://www.delorie.com/gnu/docs/gdb/gdb_56.html)。  
-可以使用命令`x`(即`examine`)来检查任意格式的内存数据，不管你的程序数据类型。使用的格式为：`x  /nfu addr`或`x addr`。  
+可以使用命令`x`(即`examine`)来检查任意格式的内存数据，不管你的程序数据类型。使用的格式为：
+
+```
+x  /nfu addr
+x addr  
+```
 
 其中n/f/u 是选项参数，指定内存的大小及显示格式；addr 指定显示的内存的起始地址。n 是十进制的整数，指定小时内存的大小；f 指定显示的格式，它的使用与 GDB 中的 print 使用的格式一样，如`x`指定使用 16 进制显示，
 `d`按十进制格式显示等；u 是指每个显示单元的大小，如`b`是指每个显示单元为 byte，`h`是指每个显示单元为半字（两个 byte）等；addr 指定要显示的内存的起始地址。  
 
 如果需要查看的数据比较多，比如我们需要 dump 一块 buffer 的数据，与特定的数据进行比较，上面提到的`examine`就很难实现了。此时需要将块内存 dump 出来。使用到的命令是 `dump`或`append`或`restore`。此处主要介绍`dump`命令。  
-它的格式为`dump [format] memory filename start_addr end_addr`从格式可以看出，它的含义是从`start_addr`开始到`end_addr`结束的 memory dump 到 指定的文件 filename 中。  
+它的格式为:  
+
+```
+dump [format] memory filename start_addr end_addr
+```
+
+从格式可以看出，它的含义是从`start_addr`开始到`end_addr`结束的 memory dump 到 指定的文件 filename 中。  
 
 ### 参考文献
 
