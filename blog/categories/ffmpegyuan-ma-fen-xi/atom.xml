@@ -4,7 +4,7 @@
   <title><![CDATA[分类:ffmpeg源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-06T08:41:23-07:00</updated>
+  <updated>2017-08-06T09:14:14-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -980,6 +980,145 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 </code></pre>
+
+<p>上面的一些准备工作完成后，就需要从输入文件中一帧一帧读取数据，并进行解码了。从这里可以看出，需要找到一个
+一帧视频存放的地方，为此需要使用<code>av_init_packet</code>初始化一个<code>AVPacket</code>。之后就可以使用<code>av_read_frame</code>来从输入
+文件中读取一个 frame。示例代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">decode_packet</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">got_frame</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cached</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">decoded</span> <span class="o">=</span> <span class="n">pkt</span><span class="p">.</span><span class="n">size</span><span class="p">;</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">got_frame</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">pkt</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">video_stream_idx</span><span class="p">){</span>
+</span><span class='line'>    <span class="c1">//decode video frame</span>
+</span><span class='line'>    <span class="n">ret</span> <span class="o">=</span> <span class="n">avcodec_decode_video2</span><span class="p">(</span><span class="n">video_codec_ctx</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">got_frame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">pkt</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">ret</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Error decoding video frame (%s) </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">av_err2str</span><span class="p">(</span><span class="n">ret</span><span class="p">));</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;num %d got_frame %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">num</span><span class="o">++</span><span class="p">,</span> <span class="o">*</span><span class="n">got_frame</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">*</span><span class="n">got_frame</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">av_image_copy</span><span class="p">(</span><span class="n">video_dst_data</span><span class="p">,</span> <span class="n">video_dst_linesize</span><span class="p">,</span>
+</span><span class='line'>                      <span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">**</span><span class="p">)(</span><span class="n">frame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">),</span> <span class="n">frame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">linesize</span><span class="p">,</span>
+</span><span class='line'>                      <span class="n">pix_fmt</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">//write to raw video file</span>
+</span><span class='line'>        <span class="n">fwrite</span><span class="p">(</span><span class="n">video_dst_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">video_dst_bufsize</span><span class="p">,</span> <span class="n">video_dst_file</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">pkt</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">audio_stream_idx</span><span class="p">){</span>
+</span><span class='line'>    <span class="c1">//decode audio frame</span>
+</span><span class='line'>    <span class="n">ret</span> <span class="o">=</span> <span class="n">avcodec_decode_audio4</span><span class="p">(</span><span class="n">audio_codec_ctx</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">got_frame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">pkt</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">ret</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Error decoding audio frame (%s)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">av_err2str</span><span class="p">(</span><span class="n">ret</span><span class="p">));</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">*</span><span class="n">got_frame</span><span class="p">){</span>
+</span><span class='line'>        <span class="kt">size_t</span> <span class="n">unpadded_linesize</span> <span class="o">=</span> <span class="n">frame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nb_samples</span> <span class="o">*</span> <span class="n">av_get_bytes_per_sample</span><span class="p">(</span><span class="n">frame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">format</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">fwrite</span><span class="p">(</span><span class="n">frame</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">extended_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">unpadded_linesize</span><span class="p">,</span> <span class="n">audio_dst_file</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">FFMIN</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">pkt</span><span class="p">.</span><span class="n">size</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//allocate frame </span>
+</span><span class='line'><span class="n">frame</span> <span class="o">=</span> <span class="n">av_frame_alloc</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">frame</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Could</span> <span class="n">not</span> <span class="n">allocate</span> <span class="n">frame</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">av_init_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">pkt</span><span class="p">);</span>
+</span><span class='line'><span class="n">pkt</span><span class="p">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="n">pkt</span><span class="p">.</span><span class="n">size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//read frames from the file</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">got_frame</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">av_read_frame</span><span class="p">(</span><span class="n">fmt_ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">pkt</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">AVPacket</span> <span class="n">orig_pkt</span> <span class="o">=</span> <span class="n">pkt</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">do</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">ret</span> <span class="o">=</span> <span class="n">decode_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">got_frame</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">ret</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">pkt</span><span class="p">.</span><span class="n">data</span> <span class="o">+=</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">pkt</span><span class="p">.</span><span class="n">size</span> <span class="o">-=</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="k">while</span><span class="p">(</span><span class="n">pkt</span><span class="p">.</span><span class="n">size</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'><span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">orig_pkt</span><span class="p">);</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>解封装大致流程已经完成了，剩余的是一些收尾工作，例如释放刚刚分配的内存等。</p>
 
 <p>完整实现过程请移步<a href="https://github.com/lazybing/ffmpeg-study-recording/blob/master/demuxer.c">解封在实现</a>.</p>
 
