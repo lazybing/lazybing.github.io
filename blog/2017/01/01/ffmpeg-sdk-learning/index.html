@@ -805,6 +805,261 @@
 
 <p>根据流程可以推到出大致的代码流程：</p>
 
+<ul>
+  <li>首先对输入文件(Container 文件)、输出文件(Video/Audio 进行处理)，方便后面的使用；</li>
+  <li>其次打开输入文件，并分配 Format Context，从输入文件中得到流信息</li>
+  <li>之后打开视频、音频编码器 Context,针对视频数据，分配图像 image。</li>
+  <li>分配 frame 结构，初始化 packet，从输入文件中读取 frame 信息，并之后进行解码 packet。</li>
+  <li>最后释放各种分配的数据信息。</li>
+</ul>
+
+<hr />
+
+<p>在音视频分离后，需要将分离出的音视频分别放到不同的输出文件中，为此，需要打开文件以备后用。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">video_dst_filename</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line"><span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">audio_dst_filename</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">video_dst_file</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">audio_dst_file</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line"><span class="n">video_dst_filename</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+</span><span class="line"><span class="n">audio_dst_filename</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+</span><span class="line"><span class="n">video_dst_file</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">video_dst_filename</span><span class="p">,</span> <span class="s">&quot;wb+&quot;</span><span class="p">);</span>
+</span><span class="line"><span class="n">audio_dst_file</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">audio_dst_filename</span><span class="p">,</span> <span class="s">&quot;wb+&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>对于给定的需要 AV 分离的输入文件，使用<code>avformat_open_input</code>打开输入文件，并分配<code>AVFormatContext</code>结构。该函数的声明如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int avformat_open_input(AVFormatContext **ps, const char *filename, AVInputFormat *fmt, AVDictionary **options);</span></code></pre></td></tr></table></div></figure>
+<p>其中：</p>
+
+<ul>
+  <li>ps:指向由用户提供的<code>AVFormatContext</code>结构体，该结构体通过<code>avformat_alloc_context</code>分配，如果它是一个 NULL，该结构在此函数内分配并负值给 ps。</li>
+  <li>filename:指向需要打开的流的名称。</li>
+  <li>fmt：如果是 non-NULL,该参数指定输入的文件格式，否则输入文件的格式自动根据文件本身自动获取。</li>
+  <li>options:此处可以为 NULL。</li>
+  <li>返回值：成功返回0，否则返回 AVERROR。</li>
+</ul>
+
+<p>实现代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">//open input file, and allocate format context</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">avformat_open_input</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fmt_ctx</span><span class="p">,</span> <span class="n">src_filename</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Could not open source file %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">src_filename</span><span class="p">);</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="c1">//retrive stream information</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">avformat_find_stream_info</span><span class="p">(</span><span class="n">fmt_ctx</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Could not find stream information</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>通过输入文件分配好<code>AVFormatContext</code>后，需要找到里面的音频流和视频流，此处需要用到的函数为<code>av_find_best_stream</code>;
+之后要根据找到的不同的流(如H264流、HEVC流等)找到特定的编解码器，此处使用<code>avcodec_find_decoder</code>;找到了解码器后，
+就需要打开解码器，此处使用<code>avcodec_open2</code>函数完成。下面分别介绍这几个函数的使用：</p>
+
+<p><code>av_find_best_stream</code>函数定义如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int av_find_best_stream(AVFormatContext *ic, enum AVMediaType type, int wanted_stream_nb, int related_stream, AVCodec **decoder_ret, int flags);</span></code></pre></td></tr></table></div></figure>
+<p>其中：</p>
+
+<ul>
+  <li>ic:媒体文件句柄。</li>
+  <li>type:媒体类型，视频、音频、文本等。</li>
+  <li>wanted_stream_nb:用户请求的流，-1 代表自动选择。</li>
+  <li>related_stream:尝试找到相关流，如果没有就设为-1。</li>
+  <li>decoder_ret:如果是non-NULL,返回选定的流的解码器。</li>
+  <li>flags：此处定位0。</li>
+  <li>返回值：成功返回非负值，如果找不到指定的请求类型的流，就返回<code>AVERROR_STREAM_NOT_FOUND</code>;如果找到了流，但没找到对应的解码器，就返回<code>AVERROR_DECODER_NOT_FOUND</code>。</li>
+</ul>
+
+<p><code>avcodec_find_decoder</code>函数定义如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">AVCodec *avcodec_find_decoder(enum AVCodecID id);</span></code></pre></td></tr></table></div></figure>
+
+<p>该函数参数为<code>AVCodecID</code>指定了请求的解码器，成功返回解码器，否则返回 NULL。</p>
+
+<p><code>avcodec_open2</code>函数定义如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);</span></code></pre></td></tr></table></div></figure>
+
+<p>其中：</p>
+
+<ul>
+  <li>avctx:即将初始化的<code>AVCodecContext</code>结构体。</li>
+  <li>codec：打开的解码器，如果它是non-NULL codec,并在之前传递给了<code>avcodec_alloc_context3</code>或<code>avcodec_get_context_defaults3</code>，该参数必须为 NULL 或之前传递的 CODEC。</li>
+  <li>Options：此处我们设置为 NULL。</li>
+  <li>返回值：成功返回0，出错返回一个负值。</li>
+</ul>
+
+<p>该函数的主要作用是根据给定的<code>AVCodec</code>初始化<code>AVCodecContext</code>,在使用该函数之前，待初始化的<code>AVCodecContext</code>结构需要先使用<code>avcodec_alloc_context3</code>分配好。其中的参数
+<code>AVCodec</code>可以通过<code>avcodec_find_decoder_by_name</code><code>avcodec_find_encoder_by_name</code><code>avcodec_find_decoder</code>或<code>avcodec_find_endcoder</code>来获取。在进行真正的解码之前，必须调用该函数。
+下面给出使用的示例：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">avcodec_register_all</span><span class="p">();</span>
+</span><span class="line"><span class="n">av_dict_set</span><span class="p">(</span><span class="o">&amp;</span><span class="n">opts</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">,</span> <span class="s">&quot;2.5M&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line"><span class="n">codec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">AV_CODEC_ID_H264</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">codec</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="n">context</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>对于上面分析的部分，我们将其封装在一个函数里，代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">int</span> <span class="nf">open_codec_context</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">stream_idx</span><span class="p">,</span>
+</span><span class="line">                              <span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">fmt_ctx</span><span class="p">,</span>
+</span><span class="line">                              <span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">type</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">ret</span><span class="p">,</span> <span class="n">stream_index</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVStream</span> <span class="o">*</span><span class="n">pStream</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">codec_ctx</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">ret</span> <span class="o">=</span> <span class="n">av_find_best_stream</span><span class="p">(</span><span class="n">fmt_ctx</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Could not find %s stream in input file &#39;%s&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class="line">                <span class="n">av_get_media_type_string</span><span class="p">(</span><span class="n">type</span><span class="p">),</span> <span class="n">src_filename</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class="line">        <span class="n">stream_index</span> <span class="o">=</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class="line">        <span class="n">pStream</span> <span class="o">=</span> <span class="n">fmt_ctx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">stream_index</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">        <span class="c1">//find decoder for the stream</span>
+</span><span class="line">        <span class="n">codec_ctx</span> <span class="o">=</span> <span class="n">pStream</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">        <span class="n">codec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">codec_ctx</span><span class="o">-&gt;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">codec</span><span class="p">){</span>
+</span><span class="line">            <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Failed to find %s codec</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class="line">                    <span class="n">av_get_media_type_string</span><span class="p">(</span><span class="n">type</span><span class="p">));</span>
+</span><span class="line">            <span class="k">return</span> <span class="n">AVERROR</span><span class="p">(</span><span class="n">EINVAL</span><span class="p">);</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">        <span class="c1">//open the decoder</span>
+</span><span class="line">        <span class="k">if</span><span class="p">((</span><span class="n">ret</span> <span class="o">=</span> <span class="n">avcodec_open2</span><span class="p">(</span><span class="n">codec_ctx</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">))</span><span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">            <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Failed to open %s codec</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class="line">                    <span class="n">av_get_media_type_string</span><span class="p">(</span><span class="n">type</span><span class="p">));</span>
+</span><span class="line">            <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="o">*</span><span class="n">stream_idx</span> <span class="o">=</span> <span class="n">stream_index</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>针对音频、视频，分别调用该函数，示例代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">open_codec_context</span><span class="p">(</span><span class="o">&amp;</span><span class="n">video_stream_idx</span><span class="p">,</span> <span class="n">fmt_ctx</span><span class="p">,</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">        <span class="n">video_stream</span>    <span class="o">=</span> <span class="n">fmt_ctx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">video_stream_idx</span><span class="p">];</span>
+</span><span class="line">        <span class="n">video_codec_ctx</span> <span class="o">=</span> <span class="n">video_stream</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">        <span class="c1">//allocate image where the decoded image will be put</span>
+</span><span class="line">        <span class="n">width</span>   <span class="o">=</span> <span class="n">video_codec_ctx</span><span class="o">-&gt;</span><span class="n">width</span><span class="p">;</span>
+</span><span class="line">        <span class="n">height</span>  <span class="o">=</span> <span class="n">video_codec_ctx</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">;</span>
+</span><span class="line">        <span class="n">pix_fmt</span> <span class="o">=</span> <span class="n">video_codec_ctx</span><span class="o">-&gt;</span><span class="n">pix_fmt</span><span class="p">;</span>
+</span><span class="line">        <span class="n">ret</span> <span class="o">=</span> <span class="n">av_image_alloc</span><span class="p">(</span><span class="n">video_dst_data</span><span class="p">,</span> <span class="n">video_dst_linesize</span><span class="p">,</span>
+</span><span class="line">                             <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">pix_fmt</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">            <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Could not allocate raw video buffer</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="n">video_dst_bufsize</span> <span class="o">=</span> <span class="n">ret</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">open_codec_context</span><span class="p">(</span><span class="o">&amp;</span><span class="n">audio_stream_idx</span><span class="p">,</span> <span class="n">fmt_ctx</span><span class="p">,</span> <span class="n">AVMEDIA_TYPE_AUDIO</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">        <span class="n">audio_stream</span> <span class="o">=</span> <span class="n">fmt_ctx</span><span class="o">-&gt;</span><span class="n">streams</span><span class="p">[</span><span class="n">audio_stream_idx</span><span class="p">];</span>
+</span><span class="line">        <span class="n">audio_codec_ctx</span> <span class="o">=</span> <span class="n">audio_stream</span><span class="o">-&gt;</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 <p>完整实现过程请移步<a href="https://github.com/lazybing/ffmpeg-study-recording/blob/master/demuxer.c">解封在实现</a>.</p>
 
 <h2 id="ffmpeg--4">FFMpeg 转码的实现</h2>
