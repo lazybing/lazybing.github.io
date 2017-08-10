@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-06T09:14:14-07:00</updated>
+  <updated>2017-08-10T09:34:24-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -3283,7 +3283,7 @@ crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf
 </span><span class="line"><span class="p">}</span>
 </span><span class="line">
 </span><span class="line"><span class="c1">//write input file data to frame-&gt;data buffer</span>
-</span><span class="line"><span class="n">fread</span><span class="p">(</span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">frame</span><span class="o">-&gt;</span><span class="n">widht</span><span class="o">*</span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pInput_File</span><span class="p">);</span>
+</span><span class="line"><span class="n">fread</span><span class="p">(</span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">frame</span><span class="o">-&gt;</span><span class="n">width</span><span class="o">*</span><span class="n">frame</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">,</span> <span class="n">pInput_File</span><span class="p">);</span>
 </span><span class="line"><span class="p">...</span>
 </span><span class="line"><span class="n">av_frame_free</span><span class="p">(</span><span class="n">frame</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure>
@@ -4303,6 +4303,58 @@ crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf
 <h2 id="ffmpeg--4">FFMpeg 转码的实现</h2>
 
 <h2 id="ffmpeg--5">FFMpeg 视频缩放实现</h2>
+
+<p>针对视频的缩放，FFMpeg 提供了 libswscale 库，可以轻松实现视频的分辨率转换功能。除此之外，libswscale 库还可以
+实现颜色空间转换的功能。</p>
+
+<p>FFMpeg 中针对视频的缩放提供了一个示例代码，位于<code>doc\examples\scaling_video.c</code>中。分析该程序的流程大致分为如下几部分：</p>
+
+<ol>
+  <li>解析命令行参数，获取缩放的视频宽高，视频文件名。</li>
+  <li>创建<code>SwsContext</code>结构体。</li>
+  <li>分配源图像和目标图像的内存。</li>
+  <li>将源图像进行转换为目标图像的大小。</li>
+  <li>将缩放的图像写到输出文件中。</li>
+  <li>收尾工作，释放分配的内存，关闭打开的文件。</li>
+</ol>
+
+<p>首先解析期望的视频宽高，示例代码中使用的是<code>av_parse_video_size</code>函数，该函数的声明如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">av_parse_video_size</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">width_ptr</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">height_ptr</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>解析 str，并将解析出来的宽高信息赋值给 width_ptr, height_ptr;其中：</p>
+
+<ul>
+  <li>str：待解析的字符串，可以是格式为<code>widthxheight</code>的字符串，或者是一个合法的视频大小描述。</li>
+  <li>width_ptr,height_ptr,指向检测到的宽高变量的指针。</li>
+  <li>返回值，成功返回大于0，失败返回负值。</li>
+</ul>
+
+<p>之后，创建<code>SwsContext</code>结构体，示例代码中使用的是<code>sws_getContext</code>函数，该函数声明如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">struct</span> <span class="n">SwsContext</span> <span class="o">*</span><span class="nf">sws_getContext</span><span class="p">(</span><span class="kt">int</span> <span class="n">srcW</span><span class="p">,</span> <span class="kt">int</span> <span class="n">srcH</span><span class="p">,</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="n">srcFormat</span><span class="p">,</span>
+</span><span class="line">                                  <span class="kt">int</span> <span class="n">dstW</span><span class="p">,</span> <span class="kt">int</span> <span class="n">dstH</span><span class="p">,</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="n">dstFormat</span><span class="p">,</span>
+</span><span class="line">                                  <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="n">SwsFilter</span> <span class="o">*</span><span class="n">srcFilter</span><span class="p">,</span>
+</span><span class="line">                                  <span class="n">SwsFilter</span> <span class="o">*</span><span class="n">dstFilter</span><span class="p">,</span> <span class="k">const</span> <span class="kt">double</span> <span class="o">*</span><span class="n">param</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>该函数的作用是分配并返回一个<code>SwsContext</code>结构，后面如果需要实现缩放/转换操作时，需要使用<code>sws_scale</code>函数。其中：</p>
+
+<ul>
+  <li>srcW:源图像的宽</li>
+  <li>srcH:源图像的高</li>
+  <li>srcFormat:源图像的格式</li>
+  <li>dstW:目标图像的宽</li>
+  <li>dstH:目标图像的高</li>
+  <li>dstFormat:目标图像的格式</li>
+  <li>flags:指定了使用何种算法和选项进行缩放</li>
+</ul>
 
 <h2 id="ffmpeg--6">FFMpeg 添加水印实现</h2>
 
