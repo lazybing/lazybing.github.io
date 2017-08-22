@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-14T07:11:23-07:00</updated>
+  <updated>2017-08-22T08:47:41-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,44 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264源码解析之x264_mc_init函数]]></title>
+    <link href="http://lazybing.github.io/blog/2017/08/22/x264-mc-init/"/>
+    <updated>2017-08-22T07:48:31-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/08/22/x264-mc-init</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">参考资料</a></li>
+</ul>
+
+<p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
+完成了像素内插、拷贝、求平均的函数等等。</p>
+
+<!--more-->
+
+<h3 id="section">运动补偿原理</h3>
+
+<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
+
+<p>一个视频序列包含一定数量的图片–通常称为帧（frame）。相邻的图片通常很相似，也就是说，包含了很多冗余。使用运动补偿的目的是通过消除这种冗余，来提高压缩比。
+最早的运动补偿的设计只是简单的从当前帧中减去参考帧，从而得到通常含有较少能量（或者称为信息）的”残差”，从而可以用较低的码率进行编码。解码器可以通过简单的加法完全恢复编码帧。<br />
+一个稍微复杂一点的设计是估计一下整帧场景的移动和场景中物体的移动，并将这些运动通过一定的参数编码到码流中去。这样预测帧上的像素值就是由参考帧上具有一定位移的相应像素值而生成的。这样的方法比简单的相减可以获得能量更小的残差，从而获得更好的压缩比–当然，用来描述运动的参数不能在码流中占据太大的部分，否则就会抵消复杂的运动估计带来的好处。<br />
+通常，图像帧是一组一组进行处理的。每组的第一帧（通常是第一帧）在编码的时候不使用运动估计的办法，这种帧称为帧内编码帧（Intra frame）或者I帧。该组中的其它帧使用帧间编码帧（Inter frame），通常是P帧。这种编码方式通常被称为IPPPP，表示编码的时候第一帧是I帧，其它帧是P帧。<br />
+在进行预测的时候，不仅仅可以从过去的帧来预测当前帧，还可以使用未来的帧来预测当前帧。当然在编码的时候，未来的帧必须比当前帧更早的编码，也就是说，编码的顺序和播放的顺序是不同的。通常这样的当前帧是使用过去和未来的I帧或者P帧同时进行预测，被称为双向预测帧，即B帧。这种编码方式的编码顺序的一个例子为IBBPBBPBBPBB。</p>
+
+<p>运动补偿的方法包含：<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.85.A8.E5.B1.80.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">全局运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.8F.AF.E5.8F.98.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">可变分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E9.87.8D.E5.8F.A0.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">重叠分块运动个补偿</a>。</p>
+
+<p>运动估计就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
+
+<h3 id="section-1">参考资料</h3>
+
+<ol>
+  <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264源码解析之块滤波]]></title>
@@ -455,443 +493,6 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 
 <p>将 pix1 和 pix2 经过<code>pixel_sub_wxh</code>的计算后，得到矩阵d[4x4]为[(3,1,0,0),(1,1,2,1),(1,2,4,1),(0,1,0,0)]。<br />
 经第一个for循环后得到tmp[4x4]=[]</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264源码解析之x264_pixel_init函数]]></title>
-    <link href="http://lazybing.github.io/blog/2017/07/08/x264-pixel-init-function/"/>
-    <updated>2017-07-08T22:10:59-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/07/08/x264-pixel-init-function</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#sadsatdssd" id="markdown-toc-sadsatdssd">SAD、SATD、SSD等相关知识介绍</a></li>
-  <li><a href="#x264" id="markdown-toc-x264">X264中的函数实现</a></li>
-  <li><a href="#define-init2name-name1-name2-cpu--" id="markdown-toc-define-init2name-name1-name2-cpu--">define INIT2_NAME( name1, name2, cpu ) \</a></li>
-  <li><a href="#define-initads-cpu--" id="markdown-toc-define-initads-cpu--">define INIT_ADS( cpu ) \</a>    <ul>
-      <li><a href="#sad-" id="markdown-toc-sad-">SAD 实现过程</a></li>
-    </ul>
-  </li>
-  <li><a href="#define-pixelsadc-name-lx-ly--" id="markdown-toc-define-pixelsadc-name-lx-ly--">define PIXEL_SAD_C( name, lx, ly ) \</a>    <ul>
-      <li><a href="#ssd-" id="markdown-toc-ssd-">SSD 实现过程</a></li>
-    </ul>
-  </li>
-  <li><a href="#define-pixelssdc-name-lx-ly--" id="markdown-toc-define-pixelssdc-name-lx-ly--">define PIXEL_SSD_C( name, lx, ly ) \</a>    <ul>
-      <li><a href="#satd-" id="markdown-toc-satd-">SATD 实现过程</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p>本文主要记录<code>x264_pixel_init</code>函数的实现，该函数主要是与像素计算有关的函数，包括SAD、SATD、SSD、SSIM等，它会在打开编码器(x264_encoder_open)时被调用到。<br />
-<!--more--></p>
-
-<h2 id="sadsatdssd">SAD、SATD、SSD等相关知识介绍</h2>
-
-<ul>
-  <li>SAD(Sum of Absolute Difference)= SAE(Sum of Absolute Error)即绝对误差和</li>
-  <li>SATD（Sum of Absolute Transformed Difference）即hadamard变换后再绝对值求和</li>
-  <li>SSD（Sum of Squared Difference）=SSE（Sum of Squared Error)即差值的平方和</li>
-  <li>MAD（Mean Absolute Difference）=MAE（Mean Absolute Error)即平均绝对差值</li>
-  <li>MSD（Mean Squared Difference）=MSE（Mean Squared Error）即平均平方误差</li>
-</ul>
-
-<h2 id="x264">X264中的函数实现</h2>
-
-<p><code>x264_pixel_init</code>函数的定义位于 X264 项目中的<code>common/pixel.c</code>文件中。定义如下：</p>
-
-<p><figure class='code'><figcaption><span>x264_pixel_init </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">x264_pixel_init</span><span class="p">(</span> <span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_pixel_function_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pixf</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">memset</span><span class="p">(</span> <span class="n">pixf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pixf</span><span class="p">)</span> <span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-init2name-name1-name2-cpu--&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">INIT2_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_16x16</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span>\
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_16x8</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_16x8</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT4_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">INIT2_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_8x16</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span>\
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_8x8</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT5_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">INIT4_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_8x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_8x4</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT6_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">INIT5_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_4x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_4x8</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT7_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">INIT6_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_4x4</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT8_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">INIT7_NAME</span><span class="p">(</span> <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> \
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">name1</span><span class="p">[</span><span class="n">PIXEL_4x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_</span><span class="err">##</span><span class="n">name2</span><span class="err">##</span><span class="n">_4x16</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT2</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="n">INIT2_NAME</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT4</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="n">INIT4_NAME</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT5</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="n">INIT5_NAME</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT6</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="n">INIT6_NAME</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT7</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="n">INIT7_NAME</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="err">#</span><span class="n">define</span> <span class="n">INIT8</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span> <span class="n">INIT8_NAME</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cpu</span> <span class="p">)</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-initads-cpu--&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">INIT_ADS</span><span class="p">(</span> <span class="n">cpu</span> <span class="p">)</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ads</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_ads4</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span>\
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ads</span><span class="p">[</span><span class="n">PIXEL_16x8</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_ads2</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span>\
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ads</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_ads1</span><span class="err">##</span><span class="n">cpu</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">INIT8</span><span class="p">(</span> <span class="n">sad</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT8_NAME</span><span class="p">(</span> <span class="n">sad_aligned</span><span class="p">,</span> <span class="n">sad</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT7</span><span class="p">(</span> <span class="n">sad_x3</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT7</span><span class="p">(</span> <span class="n">sad_x4</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT8</span><span class="p">(</span> <span class="n">ssd</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT8</span><span class="p">(</span> <span class="n">satd</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT7</span><span class="p">(</span> <span class="n">satd_x3</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT7</span><span class="p">(</span> <span class="n">satd_x4</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT4</span><span class="p">(</span> <span class="n">hadamard_ac</span><span class="p">,</span> <span class="p">);</span>
-</span><span class='line'><span class="n">INIT_ADS</span><span class="p">(</span> <span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sa8d</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_sa8d_16x16</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sa8d</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sa8d_8x8</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">var</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_var_16x16</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">var</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_var_8x16</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">var</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_var_8x8</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">var2</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_var2_8x16</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">var2</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_var2_8x8</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd_nv12_core</span> <span class="o">=</span> <span class="n">pixel_ssd_nv12_core</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssim_4x4x2_core</span> <span class="o">=</span> <span class="n">ssim_4x4x2_core</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssim_end4</span> <span class="o">=</span> <span class="n">ssim_end4</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">vsad</span> <span class="o">=</span> <span class="n">pixel_vsad</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">asd8</span> <span class="o">=</span> <span class="n">pixel_asd8</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_sad_x3_4x4</span>    <span class="o">=</span> <span class="n">x264_intra_sad_x3_4x4</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_satd_x3_4x4</span>   <span class="o">=</span> <span class="n">x264_intra_satd_x3_4x4</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_sad_x3_8x8</span>    <span class="o">=</span> <span class="n">x264_intra_sad_x3_8x8</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_sa8d_x3_8x8</span>   <span class="o">=</span> <span class="n">x264_intra_sa8d_x3_8x8</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_sad_x3_8x8c</span>   <span class="o">=</span> <span class="n">x264_intra_sad_x3_8x8c</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_satd_x3_8x8c</span>  <span class="o">=</span> <span class="n">x264_intra_satd_x3_8x8c</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_sad_x3_8x16c</span>  <span class="o">=</span> <span class="n">x264_intra_sad_x3_8x16c</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_satd_x3_8x16c</span> <span class="o">=</span> <span class="n">x264_intra_satd_x3_8x16c</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_sad_x3_16x16</span>  <span class="o">=</span> <span class="n">x264_intra_sad_x3_16x16</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">intra_satd_x3_16x16</span> <span class="o">=</span> <span class="n">x264_intra_satd_x3_16x16</span><span class="p">;</span>
-</span><span class='line'><span class="p">...</span>
-</span><span class='line'><span class="c1">//后面是与 CPU 有关的函数定义，此处略去 } </span>
-</span></code></pre></td></tr></table></div></figure>
-</code></pre>
-
-<p>下面分别介绍 SAD、SSD、SATD 的实现过程。</p>
-
-<h3 id="sad-">SAD 实现过程</h3>
-
-<p>将上面代码中的<code>INIT8(sad,)</code>展开，可以得到如下代码：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_sad_16x16</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_16x8</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_sad_16x8</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_sad_8x16</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_8x8</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_8x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_8x4</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_4x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_4x8</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_sad_4x4</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sad</span><span class="p">[</span><span class="n">PIXEL_4x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_sad_4x16</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>我们选取其中最简单的<code>x264_pixel_sad_4x4</code>继续展开，它是通过一个宏来定义的：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">PIXEL_SAD_C</span><span class="p">(</span> <span class="n">x264_pixel_sad_4x4</span><span class="p">,</span>    <span class="mi">4</span><span class="p">,</span>  <span class="mi">4</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-pixelsadc-name-lx-ly--&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">PIXEL_SAD_C</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span> <span class="p">)</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">static</span> <span class="kt">int</span> <span class="n">name</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span>  \
-</span><span class='line'>                 <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span> <span class="p">)</span> \
-</span><span class='line'><span class="p">{</span>                                                   \
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>                                  \
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ly</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span> <span class="p">)</span>                   \
-</span><span class='line'>    <span class="p">{</span>                                               \
-</span><span class='line'>        <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">lx</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span> <span class="p">)</span>               \
-</span><span class='line'>        <span class="p">{</span>                                           \
-</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">abs</span><span class="p">(</span> <span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="p">);</span>      \
-</span><span class='line'>        <span class="p">}</span>                                           \
-</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>                      \
-</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>                      \
-</span><span class='line'>    <span class="p">}</span>                                               \
-</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>                                   \
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>展开后，可以得到如下代码：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">x264_pixel_sad_4x4</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">abs</span><span class="p">(</span><span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">]);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="ssd-">SSD 实现过程</h3>
-
-<p>将上面代码中的<code>INIT8(ssd,)</code>展开，可以得到如下代码：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_ssd_16x16</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_16x8</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_ssd_16x8</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_ssd_8x16</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_8x8</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_8x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_8x4</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_4x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_4x8</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_ssd_4x4</span><span class="p">;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ssd</span><span class="p">[</span><span class="n">PIXEL_4x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_ssd_4x16</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">PIXEL_SSD_C</span><span class="p">(</span> <span class="n">x264_pixel_ssd_4x4</span><span class="p">,</span>    <span class="mi">4</span><span class="p">,</span>  <span class="mi">4</span> <span class="p">)</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-pixelssdc-name-lx-ly--&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">PIXEL_SSD_C</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span> <span class="p">)</span> <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">static</span> <span class="kt">int</span> <span class="n">name</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span>  \
-</span><span class='line'>                 <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span> <span class="p">)</span> \
-</span><span class='line'><span class="p">{</span>                                                   \
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>                                  \
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ly</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span> <span class="p">)</span>                   \
-</span><span class='line'>    <span class="p">{</span>                                               \
-</span><span class='line'>        <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">lx</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span> <span class="p">)</span>               \
-</span><span class='line'>        <span class="p">{</span>                                           \
-</span><span class='line'>            <span class="kt">int</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>              \
-</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">d</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">d</span><span class="p">;</span>                           \
-</span><span class='line'>        <span class="p">}</span>                                           \
-</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>                      \
-</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>                      \
-</span><span class='line'>    <span class="p">}</span>                                               \
-</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>                                   \
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>此时，可以得到<code>x264_pixel_ssd_4x4</code>的定义如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">x264_pixel_ssd_4x4</span><span class="p">(</span><span class="n">pixel</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix1</span><span class="p">,</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_stride_pix2</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">j</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">int</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
-</span><span class='line'>            <span class="n">i_sum</span> <span class="o">+=</span> <span class="n">d</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">d</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_stride_pix1</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_stride_pix2</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">i_sum</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="satd-">SATD 实现过程</h3>
-
-<p>将代码中的<code>INIT8(satd,)</code>展开，可以得到如下代码：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_pixel_satd_16x16</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_16x8</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_satd_16x8</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_8x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_satd_8x16</span><span class="p">;</span><span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_satd_8x8</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_8x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_satd_8x4</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_4x8</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_satd_4x8</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">]</span>   <span class="o">=</span> <span class="n">x264_pixel_satd_4x4</span><span class="p">;</span> <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="n">pixf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">satd</span><span class="p">[</span><span class="n">PIXEL_4x16</span><span class="p">]</span>  <span class="o">=</span> <span class="n">x264_pixel_satd_4x16</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>同样，选取最简单的<code>x264_pixel_satd_4x4</code>继续展开，它的定义如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="n">NOINLINE</span> <span class="kt">int</span> <span class="nf">x264_pixel_satd_4x4</span><span class="p">(</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix1</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_pix1</span><span class="p">,</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">pix2</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_pix2</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">sum2_t</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="mi">2</span><span class="p">];</span>
-</span><span class='line'>    <span class="kt">sum2_t</span> <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">sum2_t</span> <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">,</span> <span class="n">pix1</span> <span class="o">+=</span> <span class="n">i_pix1</span><span class="p">,</span> <span class="n">pix2</span> <span class="o">+=</span> <span class="n">i_pix2</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">a0</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-</span><span class='line'>        <span class="n">a1</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-</span><span class='line'>        <span class="n">b0</span> <span class="o">=</span> <span class="p">(</span><span class="n">a0</span><span class="o">+</span><span class="n">a1</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">a0</span><span class="o">-</span><span class="n">a1</span><span class="p">)</span><span class="err">«</span><span class="n">BITS_PER_SUM</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">a2</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
-</span><span class='line'>        <span class="n">a3</span> <span class="o">=</span> <span class="n">pix1</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">pix2</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
-</span><span class='line'>        <span class="n">b1</span> <span class="o">=</span> <span class="p">(</span><span class="n">a2</span><span class="o">+</span><span class="n">a3</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">a2</span><span class="o">-</span><span class="n">a3</span><span class="p">)</span><span class="err">«</span><span class="n">BITS_PER_SUM</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">b1</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">b1</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">2</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">HADAMARD4</span><span class="p">(</span> <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span><span class="p">,</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="p">);</span>
-</span><span class='line'>        <span class="n">a0</span> <span class="o">=</span> <span class="n">abs2</span><span class="p">(</span><span class="n">a0</span><span class="p">)</span> <span class="o">+</span> <span class="n">abs2</span><span class="p">(</span><span class="n">a1</span><span class="p">)</span> <span class="o">+</span> <span class="n">abs2</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span> <span class="o">+</span> <span class="n">abs2</span><span class="p">(</span><span class="n">a3</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">sum</span> <span class="o">+=</span> <span class="p">((</span><span class="kt">sum_t</span><span class="p">)</span><span class="n">a0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">a0</span><span class="err">»</span><span class="n">BITS_PER_SUM</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">sum</span><span class="err"> »</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
   </entry>

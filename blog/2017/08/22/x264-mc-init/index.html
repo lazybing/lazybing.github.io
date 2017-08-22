@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>分类:编程工具 - 懒人李冰</title>
+  <title>X264源码解析之x264_mc_init函数 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Category: 编程工具">
+  <meta name="description" content="运动补偿原理 参考资料 本文主要记录 X264 中使用到的运动补偿。该函数主要对x264_mc_functions_t结构体中的函数指针进行赋值，
+完成了像素内插、拷贝、求平均的函数等等。 运动补偿原理 运动补偿是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/08/22/x264-mc-init/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -78,77 +79,99 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">分类:编程工具</h1>
+    
+      <h1 class="entry-title">X264源码解析之x264_mc_init函数</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2017-08-22T07:48:31-07:00'><span class='date'>2017 年 08 月 22 日</span> <span class='time'>7:48 am</span></time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">参考资料</a></li>
+</ul>
 
-  
-  <h2>2016</h2>
+<p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
+完成了像素内插、拷贝、求平均的函数等等。</p>
 
-<article>
-  
-<h1><a href="/blog/2016/12/22/addr2line-use/">Addr2line 的介绍与使用</a></h1>
-<time datetime="2016-12-22T07:26:02-08:00" pubdate><span class='month'>12 月</span> <span class='day'>22 日</span> <span class='year'>2016</span></time>
+<!--more-->
 
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
+<h3 id="section">运动补偿原理</h3>
 
+<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
 
-</article>
+<p>一个视频序列包含一定数量的图片–通常称为帧（frame）。相邻的图片通常很相似，也就是说，包含了很多冗余。使用运动补偿的目的是通过消除这种冗余，来提高压缩比。
+最早的运动补偿的设计只是简单的从当前帧中减去参考帧，从而得到通常含有较少能量（或者称为信息）的”残差”，从而可以用较低的码率进行编码。解码器可以通过简单的加法完全恢复编码帧。<br />
+一个稍微复杂一点的设计是估计一下整帧场景的移动和场景中物体的移动，并将这些运动通过一定的参数编码到码流中去。这样预测帧上的像素值就是由参考帧上具有一定位移的相应像素值而生成的。这样的方法比简单的相减可以获得能量更小的残差，从而获得更好的压缩比–当然，用来描述运动的参数不能在码流中占据太大的部分，否则就会抵消复杂的运动估计带来的好处。<br />
+通常，图像帧是一组一组进行处理的。每组的第一帧（通常是第一帧）在编码的时候不使用运动估计的办法，这种帧称为帧内编码帧（Intra frame）或者I帧。该组中的其它帧使用帧间编码帧（Inter frame），通常是P帧。这种编码方式通常被称为IPPPP，表示编码的时候第一帧是I帧，其它帧是P帧。<br />
+在进行预测的时候，不仅仅可以从过去的帧来预测当前帧，还可以使用未来的帧来预测当前帧。当然在编码的时候，未来的帧必须比当前帧更早的编码，也就是说，编码的顺序和播放的顺序是不同的。通常这样的当前帧是使用过去和未来的I帧或者P帧同时进行预测，被称为双向预测帧，即B帧。这种编码方式的编码顺序的一个例子为IBBPBBPBBPBB。</p>
 
+<p>运动补偿的方法包含：<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.85.A8.E5.B1.80.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">全局运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.8F.AF.E5.8F.98.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">可变分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E9.87.8D.E5.8F.A0.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">重叠分块运动个补偿</a>。</p>
 
+<p>运动估计就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
 
-<article>
-  
-<h1><a href="/blog/2016/09/22/how-to-use-gprof/">如何使用gprof</a></h1>
-<time datetime="2016-09-22T09:52:06-07:00" pubdate><span class='month'>09 月</span> <span class='day'>22 日</span> <span class='year'>2016</span></time>
+<h3 id="section-1">参考资料</h3>
 
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2016/07/07/how-to-use-vim/">将vim打造成IDE</a></h1>
-<time datetime="2016-07-07T08:17:10-07:00" pubdate><span class='month'>07 月</span> <span class='day'>07 日</span> <span class='year'>2016</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2016/04/01/how-to-use-gdb/">如何使用 GDB</a></h1>
-<time datetime="2016-04-01T07:48:51-07:00" pubdate><span class='month'>04 月</span> <span class='day'>01 日</span> <span class='year'>2016</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a></span>
-</footer>
-
-
-</article>
+<ol>
+  <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
+</ol>
 
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2017-08-22T07:48:31-07:00'><span class='date'>2017 年 08 月 22 日</span> <span class='time'>7:48 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/x264/'>x264</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/08/22/x264-mc-init/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/08/22/x264-mc-init/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2017/07/22/deblock-filter/" title="Previous Post: X264源码解析之块滤波">&laquo; X264源码解析之块滤波</a>
+      
+      
+    </p>
+  </footer>
 </article>
 
 </div>
