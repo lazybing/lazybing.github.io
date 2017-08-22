@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-22T08:47:41-07:00</updated>
+  <updated>2017-08-22T15:38:51-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -20,7 +20,8 @@
     <id>http://lazybing.github.io/blog/2017/08/22/x264-mc-init</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">运动补偿原理</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">参考资料</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">运动估计</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">参考资料</a></li>
 </ul>
 
 <p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
@@ -42,10 +43,21 @@
 
 <p>运动估计就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
 
-<h3 id="section-1">参考资料</h3>
+<h3 id="section-1">运动估计</h3>
+
+<p>运动估计的基本思想是将图像序列的每一帧分成许多互不重叠的宏块，并认为宏块内所有象素的位移量都相同，然后对每个宏块到参考帧某一给定特定搜索范围内根据一定的匹配准则找出与当前块最相似的块，即匹配块，匹配块与当前块的相对位移即为运动矢量。视频压缩的时候，只需保存运动矢量和残差数据就可以完全恢复出当前块。得到运动矢量的过程被称为运动估计。</p>
+
+<p>运动矢量和经过运动匹配后得到的预测误差共同发送到解码端，在解码端按照运动矢量指明的位置，从已经解码的邻近参考帧图像中找到相应的块或宏块，和预测误差相加后就得到了块或宏块在当前帧中的位置。</p>
+
+<p>实际应用时，只将运动矢量及最佳匹配块与当前块之间的差值块一起编码传输。在接收端，通过运动矢量在已经恢复的相邻帧中找到当前块的最佳匹配块，并与接收到的差值块相加恢复出当前块，这就是运动补偿基本过程。</p>
+
+<p>运动估计算法是视频压缩编码的核心算法之一。高质量的运动估计算法是高效视频编码的前提和基础。其中块匹配法（BMA, Block Match Algorithm）由于算法简单和易于硬件实现，被广泛应用于各视频编码标准中。块匹配法的基本思想是先将图像划分为许多子块，然后对当前帧中的每一块根据一定的匹配准则在相邻帧中找出当前块的匹配块，由此得到两者的相对位移，即当前块的运动矢量。在H.264标准的搜索算法中，图像序列的当前帧被划分成互不重叠16×16大小的子块，而每个子块又可划分成更小的子块，当前子块按一定的块匹配准则在参考帧中对应位置的一定搜索范围内寻找最佳匹配块，由此得到运动矢量和匹配误差。运动估计的估计精度和运算复杂度取决于搜索策略和块匹配准则。</p>
+
+<h3 id="section-2">参考资料</h3>
 
 <ol>
   <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
+  <li><a href="http://www.cnblogs.com/AndyJee/p/3724917.html">运动估计</a></li>
 </ol>
 
 ]]></content>
