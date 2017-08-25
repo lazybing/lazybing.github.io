@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="1. 几个概念 2.字节序、字节对齐和时间格式 3. RTMP Chunk Stream 3.1 消息格式 3.2 握手(HandShake) 握手序列: C 和 S 格式： 握手框图(HandShake Diagram) 3.3 分块(Chunking) Chunk 格式 Chunk &hellip;">
+  <meta name="description" content="FLV Header FLV File Body FLV tags Audio tags Video tags Video Data AVCVIDEOPACKET onMetaData FFmpeg FLV Demuxer源码分析 FLV 是 FLASH VIDEO 的简称，FLV &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,101 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/07/24/flv-parse/">媒体文件格式分析之FLV</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-07-24T00:22:21-07:00'><span class='date'>2016 年 07 月 24 日</span> <span class='time'>12:22 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#flv-header" id="markdown-toc-flv-header">FLV Header</a></li>
+  <li><a href="#flv-file-body" id="markdown-toc-flv-file-body">FLV File Body</a>    <ul>
+      <li><a href="#flv-tags" id="markdown-toc-flv-tags">FLV tags</a>        <ul>
+          <li><a href="#audio-tags" id="markdown-toc-audio-tags">Audio tags</a></li>
+          <li><a href="#video-tags" id="markdown-toc-video-tags">Video tags</a></li>
+          <li><a href="#video-data" id="markdown-toc-video-data">Video Data</a></li>
+          <li><a href="#avcvideopacket" id="markdown-toc-avcvideopacket">AVCVIDEOPACKET</a></li>
+          <li><a href="#onmetadata" id="markdown-toc-onmetadata">onMetaData</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#ffmpeg-flv-demuxer" id="markdown-toc-ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Flash_Video">FLV</a> 是 FLASH VIDEO 的简称，FLV 流媒体是随着Flash MX 的推出发展而来的视频格式。FLV 一般由文件头(FLV header) 和文件体(FLV body) 组成。其中文件体(FLV body)由一些列tag组成，tag又可分成三类:audio/video/script，分别代表音频流、视频流、脚本流(关键字或文件信息之类)。
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/07/24/flv-parse/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/07/20/lib-trmp-source-code-study/">RTMP协议学习（中）：源码分析</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
+  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
+  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
+  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
+  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
+  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
+  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
+  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
+  <li><a href="#download" id="markdown-toc-download">Download</a></li>
+  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
+</ul>
+
+<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/07/20/lib-trmp-source-code-study/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -428,80 +523,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/06/28/avframe-structure/">AVFrame 结构体解析</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-06-28T09:10:38-07:00'><span class='date'>2016 年 06 月 28 日</span> <span class='time'>9:10 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><code>AVFrame</code> 这个结构体主要描述了解码后的未压缩的视频和音频数据，比如视频的 YUV 数据、RGB 数据，音频的 PCM 数据。<br />
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/06/28/avframe-structure/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/06/27/profiles-tiers-levels/">Profiles-Tiers-Levels</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-06-27T07:52:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>7:52 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
-</ul>
-
-<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
-
-<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
-Profile 指出码流中使用了哪些编码工具和算法。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/06/27/profiles-tiers-levels/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/5">&larr; Older</a>
@@ -520,9 +541,9 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
                 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (13)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (14)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (5)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
 <li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
@@ -534,6 +555,14 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2017/08/25/linux-command-find/">Linux常用命令之find</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/08/23/x264-quant-init/">X264源码解析之x264_quant_init函数</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2017/08/22/x264-mc-init/">X264源码解析之x264_mc_init函数</a>
       </li>
     
@@ -543,14 +572,6 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     
       <li class="post">
         <a href="/blog/2017/07/21/x264-zigzag-init/">X264源码解析之x264_zigzag_init函数</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2017/07/15/x264-rake-control/">X264源码解析之码流控制</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2017/07/10/x264-dct-init/">X264源码解析之x264_dct_init函数</a>
       </li>
     
   </ul>
