@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-25T08:50:21-07:00</updated>
+  <updated>2017-08-25T20:41:34-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,13 +18,129 @@
     <link href="http://lazybing.github.io/blog/2017/08/25/linux-command-find/"/>
     <updated>2017-08-25T08:39:05-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/08/25/linux-command-find</id>
-    <content type="html"><![CDATA[
-<p>本文主要记录 Linux 中常用命令之一 Find 命令的使用方法。</p>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#find-" id="markdown-toc-find-">Find 命令概述</a></li>
+  <li><a href="#find--1" id="markdown-toc-find--1">Find 命令示例</a></li>
+</ul>
+
+<p>本文主要记录 Linux 中常用命令之一Find 的使用方法。</p>
 
 <!--more-->
 
-<p>Linux 中的 Find 命令是 Linux 系统中最重要最常用的命令之一。它是用来在指定目录下查找文件的。任何位于参数之前的字符串都被视为搜索目录。
-它可以根据不同的命令参数选择不同的搜索方式，常用的参数包括<code>-type</code>指定搜索文件的类型、<code>-size</code>指定搜索文件的大小、<code>-time</code>指定搜索文件的修改时间</p>
+<h2 id="find-">Find 命令概述</h2>
+
+<p>Linux 中的 Find 命令是 Linux 系统中最重要最常用的命令之一。它是用来在指定目录下查找文件的，并对查找到的文件进行处理。它的使用格式如下：</p>
+
+<blockquote>
+  <p>$find <指定目录> <指定条件> <指定动作></指定动作></指定条件></指定目录></p>
+</blockquote>
+
+<ul>
+  <li>指定目录:所要搜索的目录，比如默认为当前目录，或指定特定的目录。</li>
+  <li>指定条件:所要搜索的文件特征比如文件名称、文件大小、文件属性等。</li>
+  <li>指定动作:对搜索结果进行特定的处理，比如对搜索到的结果删除、将搜索结果放到特定文件中。</li>
+</ul>
+
+<p>任何位于参数之前的字符串都被视为搜索目录。
+它可以根据不同的命令参数选择不同的搜索方式，常用的参数选项有：</p>
+
+<ul>
+  <li>-name <filename>:指定搜索文件名称。</filename></li>
+  <li>-type <filetype>:指定搜索文件的类型。</filetype></li>
+  <li>-size <filesize>:指定搜索文件的大小。</filesize></li>
+  <li>-user <username>:指定特定用户。</username></li>
+  <li>-group <groupname>:指定特定组。</groupname></li>
+  <li>-maxdepth/mindepth <num>:指定搜索目录级别。</num></li>
+  <li>-exec <command />:假设 find 指令的回传值为 TRUE，就执行 command 指令。</li>
+</ul>
+
+<h2 id="find--1">Find 命令示例</h2>
+
+<p>查看当前目录及其子目录下的所有文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">find</span></code></pre></td></tr></table></div></figure>
+
+<p>根据名字查找文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">//find [dir-path] -name [filename]
+</span><span class="line">$ find . -name testfile1.txt
+</span><span class="line">$ find /home -name testfile1.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>查找某种特定类型的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . -name "*.txt"</span></code></pre></td></tr></table></div></figure>
+
+<p>忽视大小写来查找文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">//find -iname [filename]
+</span><span class="line">$ find -iname testfile1.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>查找与搜索模式不匹配的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . -not -name "*.txt"
+</span><span class="line">$find . ! -name "*.txt"</span></code></pre></td></tr></table></div></figure>
+
+<p>限定搜索目录级别。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . -maxdepth 3 -name "*.txt"
+</span><span class="line">$find . -mindepth 3 -name "*.txt"
+</span><span class="line">$find . -mindepth 2 -maxdepth 4 -name "*.txt"</span></code></pre></td></tr></table></div></figure>
+
+<p>显示所有的空文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . -empty</span></code></pre></td></tr></table></div></figure>
+
+<p>查找某个特定组的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . -group bing -name "*.txt"</span></code></pre></td></tr></table></div></figure>
+
+<p>查找某个特定用户的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . -user bing -name "*.txt"</span></code></pre></td></tr></table></div></figure>
+
+<p>查找最近修改过的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . -mmin 1 -name "*.txt"</span></code></pre></td></tr></table></div></figure>
+
+<p>查找特定类型的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">// find -type &lt;filetype&gt;
+</span><span class="line">$find -type d //查找目录文件</span></code></pre></td></tr></table></div></figure>
+
+<p>查找两种类型的文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find . \( -name a.out -o -name '*.o' -o name 'core' \) -exec rm {} \;</span></code></pre></td></tr></table></div></figure>
+
+<p>对查找到的文件执行某些命令。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$find $HOME/. -name *.txt -exec head -n 1 -v {} \; &gt; report.txt</span></code></pre></td></tr></table></div></figure>
+
+<ol>
+  <li><a href="https://en.wikipedia.org/wiki/Find">Find Command Wiki</a></li>
+  <li><a href="http://man7.org/linux/man-pages/man1/find.1.html">Find Command Man Page</a></li>
+  <li><a href="https://www.howtoforge.com/tutorial/linux-find-command/">14 Practical Examples of Linux Find Command for Beginners</a></li>
+  <li><a href="https://www.ibm.com/developerworks/cn/aix/library/es-unix-find.html">使用 UNIX find 命令的高级技术</a></li>
+</ol>
 
 ]]></content>
   </entry>
