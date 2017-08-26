@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-25T20:47:12-07:00</updated>
+  <updated>2017-08-25T22:48:00-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,7 +14,20 @@
 
   
   <entry>
-    <title type="html"><![CDATA[linux常用命令之Find]]></title>
+    <title type="html"><![CDATA[Linux常用命令之Grep]]></title>
+    <link href="http://lazybing.github.io/blog/2017/08/25/linux-command-grep/"/>
+    <updated>2017-08-25T22:46:22-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/08/25/linux-command-grep</id>
+    <content type="html"><![CDATA[
+<p>本文主要记录 Linux 中常用命令之一 Grep 的使用方法。</p>
+
+<!--more-->
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Linux常用命令之Find]]></title>
     <link href="http://lazybing.github.io/blog/2017/08/25/linux-command-find/"/>
     <updated>2017-08-25T08:39:05-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/08/25/linux-command-find</id>
@@ -788,162 +801,6 @@ vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。
 
 
 </image>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[如何使用 GDB]]></title>
-    <link href="http://lazybing.github.io/blog/2016/04/01/how-to-use-gdb/"/>
-    <updated>2016-04-01T07:48:51-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/04/01/how-to-use-gdb</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">前期准备</a></li>
-  <li><a href="#gdb" id="markdown-toc-gdb">启动GDB</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">查看源码</a></li>
-  <li><a href="#break-" id="markdown-toc-break-">断点break 使用</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">运行程序</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">查看运行时数据</a></li>
-  <li><a href="#gdb-1" id="markdown-toc-gdb-1">启动GDB方法</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">查看内存数据</a></li>
-  <li><a href="#section-5" id="markdown-toc-section-5">分割窗口</a></li>
-  <li><a href="#section-6" id="markdown-toc-section-6">参考文献</a></li>
-</ul>
-
-<p><a href="https://www.gnu.org/software/gdb/">GDB</a>, The GNU Project debugger, allows you to see what is going on inside another program while it executes – or what another program was doing at the moment it crashed.</p>
-
-<!--more-->
-
-<p>GDB 主要完成以下四件事：</p>
-
-<ol>
-  <li>启动程序，指定影响程序运行的条件。</li>
-  <li>使程序在特定的条件下停止。</li>
-  <li>程序停止时，检查程序锁发生的事。</li>
-  <li>动态的改变程序的执行环境。</li>
-</ol>
-
-<h3 id="section">前期准备</h3>
-
-<p>GDB 一般用于调试<code>C/C++</code>程序，要想能够使用<code>GDB</code>调试<code>C/C++</code>程序，首先必须将调试信息添加到可执行程序中。使用<code>gcc/g++</code>的<code>-g</code>参数可以做到这一点。如：</p>
-
-<p><code>
-gcc -g programe.c -o programe
-</code>
-此时，可执行程序<code>programe</code>中就包含了调试需要的各种信息，如程序函数名、变量名等。
-对于 MAC OSX 系统，调试信息会包含在另外一个<code>programe.dSYM</code>（debug symbols）文件夹下面，可以使用<code>dwarfdump programe.dSYM</code>直接查看各符号信息。</p>
-
-<h3 id="gdb">启动GDB</h3>
-
-<p><code>
-gdb programe
-</code></p>
-
-<h3 id="section-1">查看源码</h3>
-
-<p><code>
-list linenum  //查看linenum行的源码
-list function //查看function的源码
-</code></p>
-
-<h3 id="break-">断点break 使用</h3>
-
-<p>设置断点的方法
-<code>
-break linenum  //在 linenum 处设置断点
-break function //在进入指定 function 时停住
-break filename:linenum  //在源文件 filename 的 linenum 行处停住
-break filename:function //在源文件 filename 的 function 函数的入口处停住
-break *address          //在程序运行的内存地址处停住
-</code></p>
-
-<p>查看断点信息
-<code>
-info break    //查看所有 break 的信息
-info break n //查看 n 断点号的信息
-</code></p>
-
-<h3 id="section-2">运行程序</h3>
-
-<p>运行程序如下
-<code>
-next //单步执行
-continue //继续执行程序，直到程序结束或遇到下一个断点
-</code></p>
-
-<h3 id="section-3">查看运行时数据</h3>
-
-<p><code>
-print parm //打印变量parm的值
-bt         //查看函数堆栈信息
-</code></p>
-
-<p>当运行程序到某个位置时，我们希望看看此时程序的状态，比如某个变量的值是否按照预期改变、某块内存的值是否被改。此时就需要用到查看程序运行数据的集中方法。</p>
-
-<p>查看格式 <code>print &lt;expr&gt;</code>或<code>print /&lt;f&gt; &lt;expr&gt;</code>，其中<code>&lt;expr&gt;</code>是要查看的表达式，可以是一个变量、数组、表达式等，<code>&lt;f&gt;</code>是输出时的格式，比如想要按照 16 进制输出，就使用<code>/x</code>。</p>
-
-<p>可以使用 examine 命令查看内存地址中的值。格式是<code>x /&lt;n/f/u&gt; &lt;addr&gt;</code>，其中<code>&lt;addr&gt;</code>是内存地址。</p>
-
-<h3 id="gdb-1">启动GDB方法</h3>
-
-<ol>
-  <li>gdb <programe> program就是执行的文件，一般在当前目录下。</programe></li>
-  <li>gdb <programe> core 用GDB同事调试一个运行程序和 core 文件，core 是程序非法执行后 core dump 后产生的文件。</programe></li>
-  <li>gdb <programe> <PID> 如果程序是一个服务程序，则可以指定服务程序运行时的进程ID。gdb 自动 attach 上去，并调试它。 program 应该在 PATH 环境变量中搜索得到。</PID></programe></li>
-</ol>
-
-<h3 id="section-4">查看内存数据</h3>
-
-<p>在调试代码时，经常需要查看某块内存的数据，此时就需要使用<code>GDB</code>中的<a href="http://www.delorie.com/gnu/docs/gdb/gdb_56.html">Examining memory</a>。<br />
-可以使用命令<code>x</code>(即<code>examine</code>)来检查任意格式的内存数据，不管你的程序数据类型。使用的格式为：</p>
-
-<p><code>
-x  /nfu addr
-x addr  
-</code></p>
-
-<p>其中n/f/u 是选项参数，指定内存的大小及显示格式；addr 指定显示的内存的起始地址。n 是十进制的整数，指定小时内存的大小；f 指定显示的格式，它的使用与 GDB 中的 print 使用的格式一样，如<code>x</code>指定使用 16 进制显示，
-<code>d</code>按十进制格式显示等；u 是指每个显示单元的大小，如<code>b</code>是指每个显示单元为 byte，<code>h</code>是指每个显示单元为半字（两个 byte）等；addr 指定要显示的内存的起始地址。</p>
-
-<p>如果需要查看的数据比较多，比如我们需要 dump 一块 buffer 的数据，与特定的数据进行比较，上面提到的<code>examine</code>就很难实现了。此时需要将块内存 dump 出来。使用到的命令是 <code>dump</code>或<code>append</code>或<code>restore</code>。此处主要介绍<code>dump</code>命令。<br />
-它的格式为:</p>
-
-<p><code>
-dump [format] memory filename start_addr end_addr
-</code></p>
-
-<p>从格式可以看出，它的含义是从<code>start_addr</code>开始到<code>end_addr</code>结束的 memory dump 到 指定的文件 filename 中。</p>
-
-<h3 id="section-5">分割窗口</h3>
-
-<p>layout 用于分割窗口，可以一边查看代码，一边测试。主要有以下几种用法：</p>
-
-<ul>
-  <li>layout src:显示源代码窗口</li>
-  <li>layout asm:显示汇编窗口</li>
-  <li>layout regs:显示源代码汇编和寄存器窗口</li>
-  <li>layout split:显示源代码和汇编窗口</li>
-  <li>layout next:显示下一个 layout</li>
-  <li>layout prev:显示上一个 layout</li>
-  <li>Ctrl+L:刷新窗口</li>
-  <li>Ctrl+x,再按1：单窗口模式，显示一个窗口</li>
-  <li>Ctrl+x,再按2：双窗口模式，显示两个窗口</li>
-  <li>Ctrl+x,再按a：回到传统模式，即退出 layout, 回到执行 layout 之前的调试窗口</li>
-</ul>
-
-<h3 id="section-6">参考文献</h3>
-
-<ol>
-  <li><a href="http://www.tutorialspoint.com/gnu_debugger/index.htm">GNU Debugger Tutorial</a></li>
-  <li><a href="https://sourceware.org/gdb/">GDB: The GNU Project Debugger</a></li>
-  <li><a href="https://en.wikipedia.org/wiki/GNU_Debugger">GNU Debugger</a></li>
-  <li><a href="http://cs.baylor.edu/~donahoo/tools/gdb/tutorial.html">How to Debug Using GDB</a></li>
-  <li><a href="http://web.mit.edu/gnu/doc/html/gdb_toc.html">Debugging with GDB</a></li>
-  <li><a href="http://blog.csdn.net/haoel/article/details/2879">用GDB调试程序</a></li>
-  <li><a href="https://www.amazon.com/Debugging-GDB-GNU-Source-Level-Debugger/dp/1882114884/httpwwwtuto0a-20">Debugging with GDB: The GNU Source-Level Debugger</a></li>
-  <li><a href="https://www.amazon.com/GDB-Pocket-Reference-OReilly/dp/0596100272/httpwwwtuto0a-20">GDB Pocket Reference: Debugging Quickly &amp; Painlessly with GDB</a></li>
-  <li><a href="https://www.amazon.com/Art-Debugging-GDB-DDD-Eclipse/dp/1593271743/ref=sr_1_fkmr1_1?s=books&amp;ie=UTF8&amp;qid=1488032361&amp;sr=1-1-fkmr1&amp;keywords=3.%09The+Art+of+Debugging+with+GDB%2C+DDD%2C+and+Eclipse">The Art of Debugging with GDB, DDD, and Eclipse</a></li>
-</ol>
-
 ]]></content>
   </entry>
   

@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>如何使用git - 懒人李冰</title>
+  <title>Linux常用命令之Grep - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="git 作为版本控制工具，已被广泛使用，公司从去年开始陆续将版本控制系统从 Perforce 向 git 转移。《Pro Git》作为官方推荐的学习 git 书籍，不可不读，而且该书已经有中文版。这篇就将记录自己学习使用 git 的过程。 开发项目时，使用 git &hellip;">
+  <meta name="description" content="
+本文主要记录 Linux 中常用命令之一 Grep 的使用方法。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/05/08/how-to-use-git/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/08/25/linux-command-grep/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +83,7 @@
   
   <header>
     
-      <h1 class="entry-title">如何使用git</h1>
+      <h1 class="entry-title">Linux常用命令之Grep</h1>
     
     
       <p class="meta">
@@ -91,106 +92,17 @@
 
 
 
-<time class='entry-date' datetime='2016-05-08T07:48:51-07:00'><span class='date'>2016 年 05 月 08 日</span> <span class='time'>7:48 am</span></time>
+<time class='entry-date' datetime='2017-08-25T22:46:22-07:00'><span class='date'>2017 年 08 月 25 日</span> <span class='time'>10:46 pm</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>git 作为版本控制工具，已被广泛使用，公司从去年开始陆续将版本控制系统从 Perforce 向 git 转移。<a href="https://git-scm.com/book/en/v2">《Pro Git》</a>作为官方推荐的学习 git 书籍，不可不读，而且该书已经有<a href="https://git-scm.com/book/zh">中文版</a>。这篇就将记录自己学习使用 git 的过程。
-<!--more--></p>
+<div class="entry-content">
+<p>本文主要记录 Linux 中常用命令之一 Grep 的使用方法。</p>
 
-<p>开发项目时，使用 git 主要的全过程可以大体概况为如下三个步骤：</p>
-
-<pre><code>1. 使用 git clone 命令从远程服务器上拉取源代码到本地。
-
-2. 按照自己的需要，本地修改从步骤 1 拉取下来的代码。
-
-3. 将修改好的代码 git push 到远程服务器上。
-</code></pre>
-
-<h3 id="section">拉取源码</h3>
-<hr />
-<p>以 octopress 为例，使用 <code>git clone</code> 命令从远程服务器拉起代码的命令一般如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$ git clone git@github.com:imathis/octopress.git octopress</span></code></pre></td></tr></table></div></figure>
-<p>此时，该命令就会将 octopress 的源码拉取到本地，并命名为 octopress 文件夹。如果使用 <code>git branch</code> 命令查看 branch 名称时，默认 branch 会是 <code>master</code> 。如果使用 <code>git remote -v</code> 来查看远程服务器名称时，默认名称会是 <code>origin</code>。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git branch
-</span><span class="line">* master
-</span><span class="line">binglis-Mac:octopress bingli$ git remote -v
-</span><span class="line">origin	git@github.com:imathis/octopress.git (fetch)
-</span><span class="line">origin	git@github.com:imathis/octopress.git (push)</span></code></pre></td></tr></table></div></figure>
-<p><code>git clone</code> 是 clone 仓库，它主要用于在服务器端已经存在源码目录的情况，该方法在程序开发过程中非常有用。但如果一开始并没有这样的远程仓库，而需要我们从头开始呢？<code>git init</code> 正是在现有目录中初始化仓库，该命令创建一个名为 <code>.git</code> 的子仓库，这个子目录含有你初始化的 Git 仓库中所有的必须文件。</p>
-
-<p>抓取代码除了用于初始化的 <code>git clone</code> 外，还有 <code>git fetch [remote name]</code> 和 <code>git pull</code>。其中 <code>git fetch</code>只是简单的从远程服务器拉取 code，但并捕鱼本地 branch 进行合并；而 <code>git pull</code> 不仅拉取远端服务器有而本地没有的 code 到本地，还会进行合并。</p>
-
-<h3 id="section-1">修改代码</h3>
-<hr />
-<p>git 仓库里的源码一共有 4 种状态，分别是：<code>Untracked</code> <code>Unmodified</code> <code>Modified</code> <code>Staged</code>。仓库里哪些文件处于哪些状态可以通过 <code>git status</code> 命令来查看。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git status
-</span><span class="line">On branch source
-</span><span class="line">Your branch is based on 'origin/master', but the upstream is gone.
-</span><span class="line">  (use "git branch --unset-upstream" to fixup)
-</span><span class="line">Changes not staged for commit:
-</span><span class="line">  (use "git add &lt;file&gt;..." to update what will be committed)
-</span><span class="line">  (use "git checkout -- &lt;file&gt;..." to discard changes in working directory)
-</span><span class="line">
-</span><span class="line">	modified:   source/_posts/2016-05-08-how-to-use-git.md
-</span><span class="line">
-</span><span class="line">no changes added to commit (use "git add" and/or "git commit -a")</span></code></pre></td></tr></table></div></figure>
-
-<p><code>git status</code> 不仅可以查看状态，还能够提示如果变更某些文件的状态，如上面的 <code>2016-05-08-how-to-use-git.md</code> 处于 <code>modified</code> 状态，可以使用 <code>git add</code> 或 <code>git checkout</code> 命令修改它的状态。</p>
-
-<h3 id="section-2">提交代码</h3>
-<hr />
-<p><code>git commit</code> 作为提交命令可以用于提交处于暂存区中的文件到仓库里。使用 <code>git commit</code> 时会自动启动一个编辑器用于添加提交说明。或者可以直接加 <code>-m</code> 选项，并在后面直接加上提交说明：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git commit -m "commit on how to use git blog"
-</span><span class="line">[source 6bf4d37] commit on how to use git blog
-</span><span class="line"> 1 file changed, 38 insertions(+)</span></code></pre></td></tr></table></div></figure>
-<p>提交后，会有信息显示当前是在哪个分之(<code>master</code>)下提交的，校验和(<code>6bf4d37</code>)，以及有多少文件修改过，多少行添加，多少行删除等信息。</p>
-
-<p><code>git commit</code> 只是提交到了本地仓库，如果有远程仓库，可以使用 <code>git push [remote name] [branch name]</code> 命令，将其推送到远程仓库。例如：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">binglis-Mac:octopress bingli$ git push origin source
-</span><span class="line">Counting objects: 5, done.
-</span><span class="line">Delta compression using up to 2 threads.
-</span><span class="line">Compressing objects: 100% (5/5), done.
-</span><span class="line">Writing objects: 100% (5/5), 1.85 KiB | 0 bytes/s, done.
-</span><span class="line">Total 5 (delta 2), reused 0 (delta 0)
-</span><span class="line">To git@github.com:lazybing/lazybing.github.io.git
-</span><span class="line">   df4de96..6bf4d37  source -&gt; source</span></code></pre></td></tr></table></div></figure>
+<!--more-->
 
 </div>
 
@@ -207,12 +119,12 @@
 
 
 
-<time class='entry-date' datetime='2016-05-08T07:48:51-07:00'><span class='date'>2016 年 05 月 08 日</span> <span class='time'>7:48 am</span></time>
+<time class='entry-date' datetime='2017-08-25T22:46:22-07:00'><span class='date'>2017 年 08 月 25 日</span> <span class='time'>10:46 pm</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/du-shu-bi-ji/'>读书笔记</a>
+    <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a>
   
 </span>
 
@@ -221,7 +133,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/05/08/how-to-use-git/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/05/08/how-to-use-git/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/08/25/linux-command-grep/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/08/25/linux-command-grep/" >Tweet</a>
   
   
   
@@ -230,10 +142,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/04/01/how-to-use-gdb/" title="Previous Post: 如何使用 GDB">&laquo; 如何使用 GDB</a>
+        <a class="basic-alignment left" href="/blog/2017/08/25/linux-command-find/" title="Previous Post: Linux常用命令之Find">&laquo; Linux常用命令之Find</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2016/05/09/ffmpeg-install-and-use/" title="Next Post: FFmpeg的介绍、安装及使用">FFmpeg的介绍、安装及使用 &raquo;</a>
       
     </p>
   </footer>

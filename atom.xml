@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-25T20:47:12-07:00</updated>
+  <updated>2017-08-25T22:48:00-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,7 +14,20 @@
 
   
   <entry>
-    <title type="html"><![CDATA[linux常用命令之Find]]></title>
+    <title type="html"><![CDATA[Linux常用命令之Grep]]></title>
+    <link href="http://lazybing.github.io/blog/2017/08/25/linux-command-grep/"/>
+    <updated>2017-08-25T22:46:22-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/08/25/linux-command-grep</id>
+    <content type="html"><![CDATA[
+<p>本文主要记录 Linux 中常用命令之一 Grep 的使用方法。</p>
+
+<!--more-->
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Linux常用命令之Find]]></title>
     <link href="http://lazybing.github.io/blog/2017/08/25/linux-command-find/"/>
     <updated>2017-08-25T08:39:05-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/08/25/linux-command-find</id>
@@ -4989,49 +5002,6 @@ crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf
 </span><span class="line">    <span class="k">return</span> <span class="n">avpkt</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">;</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[FFMPEG 源码分析：av_read_frame]]></title>
-    <link href="http://lazybing.github.io/blog/2016/12/15/av_read_frame/"/>
-    <updated>2016-12-15T06:18:07-08:00</updated>
-    <id>http://lazybing.github.io/blog/2016/12/15/av_read_frame</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">函数声明</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">函数调用关系</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">源码分析</a></li>
-</ul>
-
-<p><code>av_read_frame</code>函数的作用是返回文件中保存的数据。它会文件中保存的数据分成不同的帧，
-每次调用都会返回一帧。注意，该函数不会忽略帧与帧之间无效数据(非帧数据)，目的是给解码器
-最多的信息用于解码。</p>
-
-<!--more-->
-
-<h2 id="section">函数声明</h2>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">int av_read_frame(AVFormatContext *s, AVPacket *pkt);</span></code></pre></td></tr></table></div></figure>
-
-<p>如果<code>pkt-&gt;buf</code>是 NULL,包直到下一次调用<code>av_read_frame</code>或<code>avformat_close_input</code>时都是有效的。
-不需要时，包必须通过<code>av_free_packet</code>释放。对于视频，<code>packet</code>只包含一帧；对于音频，如果每帧有固定大小(如 PCM 或 ADPCM 数据)，
-<code>packet</code>可以包含多个音频帧（必须是整数帧）,如果音频帧大小可变(如MPEG 音频)，它只能包含一帧数据。</p>
-
-<p><code>pkt-&gt;pts</code><code>pkt-&gt;dts</code><code>pkt-&gt;duration</code>都是以<code>AVStream.time_base_units</code>为单位的。
-如果视频格式里包含 B 帧，<code>pkt-&gt;pts</code>可以是<code>AV_NOPTS_VALUE</code>,因此如果不解压缩数据，最好
-查看<code>pkt-&gt;dts</code>。</p>
-
-<p>如果函数返回0，正确；小于0，则为到文件尾或出错。</p>
-
-<h2 id="section-1">函数调用关系</h2>
-
-<p><img src="http://lazybing.github.io/images/av_read_frame/av_read_frame.png" /></p>
-
-<h2 id="section-2">源码分析</h2>
-
-<p><code>av_read_frame</code>函数会判断在未解码缓存中是否有数据，如果有数据则调用<code>read_from_packet_buffer</code>。</p>
 
 ]]></content>
   </entry>
