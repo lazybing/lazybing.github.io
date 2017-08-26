@@ -59,7 +59,7 @@ if(ret < 0){
 }
 
 //write input file data to frame->data buffer
-fread(frame->data[0], 1, frame->widht*frame->height, pInput_File);
+fread(frame->data[0], 1, frame->width*frame->height, pInput_File);
 ...
 av_frame_free(frame);
 {% endcodeblock %}
@@ -722,6 +722,49 @@ while(av_read_frame(fmt_ctx, &pkt) >= 0){
 ##FFMpeg 转码的实现
 
 ##FFMpeg 视频缩放实现
+
+针对视频的缩放，FFMpeg 提供了 libswscale 库，可以轻松实现视频的分辨率转换功能。除此之外，libswscale 库还可以
+实现颜色空间转换的功能。  
+
+FFMpeg 中针对视频的缩放提供了一个示例代码，位于`doc\examples\scaling_video.c`中。分析该程序的流程大致分为如下几部分：  
+
+1. 解析命令行参数，获取缩放的视频宽高，视频文件名。  
+2. 创建`SwsContext`结构体。
+3. 分配源图像和目标图像的内存。
+4. 将源图像进行转换为目标图像的大小。
+5. 将缩放的图像写到输出文件中。  
+6. 收尾工作，释放分配的内存，关闭打开的文件。  
+
+首先解析期望的视频宽高，示例代码中使用的是`av_parse_video_size`函数，该函数的声明如下：  
+
+{% codeblock lang:c %}
+int av_parse_video_size(int *width_ptr, int *height_ptr, const char *str);
+{% endcodeblock %}
+
+解析 str，并将解析出来的宽高信息赋值给 width_ptr, height_ptr;其中：  
+
+* str：待解析的字符串，可以是格式为`widthxheight`的字符串，或者是一个合法的视频大小描述。
+* width_ptr,height_ptr,指向检测到的宽高变量的指针。
+* 返回值，成功返回大于0，失败返回负值。  
+
+之后，创建`SwsContext`结构体，示例代码中使用的是`sws_getContext`函数，该函数声明如下：  
+
+{% codeblock lang:c %}
+struct SwsContext *sws_getContext(int srcW, int srcH, enum AVPixelFormat srcFormat,
+                                  int dstW, int dstH, enum AVPixelFormat dstFormat,
+                                  int flags, SwsFilter *srcFilter,
+                                  SwsFilter *dstFilter, const double *param);
+{% endcodeblock %}
+
+该函数的作用是分配并返回一个`SwsContext`结构，后面如果需要实现缩放/转换操作时，需要使用`sws_scale`函数。其中：  
+
+* srcW:源图像的宽  
+* srcH:源图像的高
+* srcFormat:源图像的格式
+* dstW:目标图像的宽  
+* dstH:目标图像的高  
+* dstFormat:目标图像的格式  
+* flags:指定了使用何种算法和选项进行缩放  
 
 ##FFMpeg 添加水印实现
 
