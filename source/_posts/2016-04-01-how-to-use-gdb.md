@@ -30,11 +30,22 @@ gcc -g programe.c -o programe
 此时，可执行程序`programe`中就包含了调试需要的各种信息，如程序函数名、变量名等。
 对于 MAC OSX 系统，调试信息会包含在另外一个`programe.dSYM`（debug symbols）文件夹下面，可以使用`dwarfdump programe.dSYM`直接查看各符号信息。
 
-### 启动GDB
+### 启动GDB方法
+
+1. gdb <programe> program就是执行的文件，一般在当前目录下。  
+2. gdb <programe> core 用GDB同事调试一个运行程序和 core 文件，core 是程序非法执行后 core dump 后产生的文件。  
+3. gdb <programe> <PID> 如果程序是一个服务程序，则可以指定服务程序运行时的进程ID。gdb 自动 attach 上去，并调试它。 program 应该在 PATH 环境变量中搜索得到。  
+
+如果出现`Segment Fault`，可以通过方法 2 来进行 Debug 程序，启动方式为`gdb {executable} {dump file}`,如果没有产生 core 文件，需要在执行 executable 之前先执行如下命令：  
 
 ```
-gdb programe
+$ulimit -c unlimited
 ```
+
+### 设置运行参数
+
+set args 可指定运行时参数。(如：set args 10 20 30)    
+show args 命令可以查看设置好的运行参数。  
 
 ### 查看源码
 
@@ -81,12 +92,6 @@ bt         //查看函数堆栈信息
 
 可以使用 examine 命令查看内存地址中的值。格式是`x /<n/f/u> <addr>`，其中`<addr>`是内存地址。
 
-### 启动GDB方法
-
-1. gdb <programe> program就是执行的文件，一般在当前目录下。  
-2. gdb <programe> core 用GDB同事调试一个运行程序和 core 文件，core 是程序非法执行后 core dump 后产生的文件。  
-3. gdb <programe> <PID> 如果程序是一个服务程序，则可以指定服务程序运行时的进程ID。gdb 自动 attach 上去，并调试它。 program 应该在 PATH 环境变量中搜索得到。  
-
 ### 查看内存数据
 
 在调试代码时，经常需要查看某块内存的数据，此时就需要使用`GDB`中的[Examining memory](http://www.delorie.com/gnu/docs/gdb/gdb_56.html)。  
@@ -123,7 +128,6 @@ layout 用于分割窗口，可以一边查看代码，一边测试。主要有�
 * Ctrl+x,再按1：单窗口模式，显示一个窗口
 * Ctrl+x,再按2：双窗口模式，显示两个窗口
 * Ctrl+x,再按a：回到传统模式，即退出 layout, 回到执行 layout 之前的调试窗口
-
 
 ### 参考文献
 

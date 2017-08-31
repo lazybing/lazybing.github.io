@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "linux常用命令之find"
+title: "Linux常用命令之Find"
 date: 2017-08-25 08:39:05 -0700
 comments: true
 categories: 编程工具
