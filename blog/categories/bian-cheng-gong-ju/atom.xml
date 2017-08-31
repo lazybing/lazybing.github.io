@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-31T08:36:37-07:00</updated>
+  <updated>2017-08-31T09:27:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -420,7 +420,11 @@ gprof test gmon.out &gt; analysis.txt
   </li>
   <li><a href="#vim--7" id="markdown-toc-vim--7">vim 寄存器</a></li>
   <li><a href="#vim--8" id="markdown-toc-vim--8">vim 分屏功能</a></li>
-  <li><a href="#vim--9" id="markdown-toc-vim--9">vim 插件安装</a></li>
+  <li><a href="#vim--9" id="markdown-toc-vim--9">vim 插件安装</a>    <ul>
+      <li><a href="#vim-fswitch" id="markdown-toc-vim-fswitch">vim-fswitch(接口与实现快速切换)插件</a></li>
+      <li><a href="#vim-protodef" id="markdown-toc-vim-protodef">vim-protodef(接口快速生成实现)插件</a></li>
+    </ul>
+  </li>
   <li><a href="#vim--10" id="markdown-toc-vim--10">vim 替换</a></li>
   <li><a href="#vim--11" id="markdown-toc-vim--11">vim 浏览代码</a></li>
 </ul>
@@ -764,6 +768,35 @@ filetype plugin indent on`
 
 <p><code>
 :PluginInstall
+</code></p>
+
+<h3 id="vim-fswitch">vim-fswitch(接口与实现快速切换)插件</h3>
+
+<p><a href="https://github.com/derekwyatt/vim-fswitch">vim-fswitch</a> 插件可以实现接口文件(<em>.h)和实现文件(</em>.cpp)中来回切换的操作，安装完该插件后，还需要增加配置信息：</p>
+
+<p><code>
+" *.cpp 和 *.h 间切换
+nmap &lt;silent&gt; &lt;Leader&gt;sw :FSHere&lt;cr&gt;
+</code></p>
+
+<p>此时只要键入<code>;sw</code>就可实现文件和接口文件间切换。</p>
+
+<h3 id="vim-protodef">vim-protodef(接口快速生成实现)插件</h3>
+
+<p>在 *.h 中写成语函数的声明后，然后手动在 *.cpp 中写成员函数的定义，效率非常低。<a href="https://github.com/derekwyatt/vim-protodef">vim-protodef</a> 可以快速完成此功能，即它可以根据类声明自动生成类实现的代码框架。注意该插件会依赖<code>FSwitch</code>，需要一起安装。安装完后，需要设置如下信息：</p>
+
+<p><code>
+" 设置 pullproto.pl 脚本路径
+let g:protodefprotogetter='~/.vim/bundle/vim-protodef/pullproto.pl'  
+" 成员函数的实现顺序与声明顺序一致  
+let g:disable_protodef_sorting=1
+</code></p>
+
+<p><code>pullproto.pl</code>是 protodef 自带的 perl 脚本。它的使用方法有下面两种：</p>
+
+<p><code>
+nmap &lt;buffer&gt; &lt;silent&gt; &lt;leader&gt; ;PP
+nmap &lt;buffer&gt; &lt;silent&gt; &lt;leader&gt; ;PN
 </code></p>
 
 <h2 id="vim--10">vim 替换</h2>
