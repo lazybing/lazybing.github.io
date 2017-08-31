@@ -223,35 +223,35 @@ window，通过插件`MiniBufExplorer`可以把所有 buffer 罗列出来，并�
 
 ## vim 分屏功能
 
-<image src="/images/vim_split_screen.png">
+{% img /images/vim_split_screen.png %}  
 
-vim 同时打开多个文件。
+`vim`同时打开多个文件。
 
 ```
 vim -o file1 file2              //小写 o 参数来水平分屏
 vim -O file1 file2              //大写 O 参数来垂直分屏
 ```
 
-vim 在多窗口打开。
+`vim`在多窗口打开。
 
 ```
 :vs path/file       //在新的垂直分屏中打开文件
 :sv path/file       //在新的水平分屏中打开文件
 ```
 
-多窗口间切换的3方法：`Ctrl+w+方向键``Ctrl+w+h/j/k/l``Ctrl+ww`。  
+多窗口间切换的3方法`Ctrl+w+方向键`或`Ctrl+w+h/j/k/l`或`Ctrl+ww`。  
 
 移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。  
 
 ## vim 插件安装
 
-首先安装插件管理插件
+首先安装插件管理插件  
 
 ```
 git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
 ```
 
-其次在`.vimrc`下增加配置信息如下。
+其次在`.vimrc`下增加配置信息如下。  
 
 ```
 " vundle 环境设置
@@ -292,14 +292,65 @@ call vundle#end()
 filetype plugin indent on`
 ```
 
-最后，进入`vim`执行
+最后，进入`vim`执行  
 
 ```
 :PluginInstall
 ```
+
+### vim-fswitch(接口与实现快速切换)插件  
+
+[vim-fswitch](https://github.com/derekwyatt/vim-fswitch) 插件可以实现接口文件(*.h)和实现文件(*.cpp)中来回切换的操作，安装完该插件后，还需要增加配置信息：  
+
+```
+" *.cpp 和 *.h 间切换
+nmap <silent> <Leader>sw :FSHere<cr>
+```
+
+此时只要键入`;sw`就可实现文件和接口文件间切换。  
+
+### vim-protodef(接口快速生成实现)插件
+
+在 *.h 中写成语函数的声明后，然后手动在 *.cpp 中写成员函数的定义，效率非常低。[vim-protodef](https://github.com/derekwyatt/vim-protodef) 可以快速完成此功能，即它可以根据类声明自动生成类实现的代码框架。注意该插件会依赖`FSwitch`，需要一起安装。安装完后，需要设置如下信息：  
+
+```
+" 设置 pullproto.pl 脚本路径
+let g:protodefprotogetter='~/.vim/bundle/vim-protodef/pullproto.pl'  
+" 成员函数的实现顺序与声明顺序一致  
+let g:disable_protodef_sorting=1
+```
+
+`pullproto.pl`是 protodef 自带的 perl 脚本。它的使用方法有下面两种：  
+
+```
+nmap <buffer> <silent> <leader> ;PP
+nmap <buffer> <silent> <leader> ;PN
+```
+
+## vim 替换
+
+简单替换表达式`:[range]s/from/to/[flags]`  
+
+* range:搜索范围，如果没有指定范围，则作用于当前行。 
+
+1. `:1,10s/from/to/`表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。  
+2. `:10s/from/to/`表示只在第 10 行搜索替换。  
+3. `:%s/from/to/`表示在所有行中搜索替换。  
+4. `1,$s/from/to/`同上。  
+
+* `flags`有如下四个选项：  
+
+1. `c`confirm,每次替换前询问。  
+2. `e`error,不显示错误。  
+3. `g`globe,不询问，整行替换。如果不加`g`选项，则只替换每行的第一个匹配到的字符串。  
+4. `i`ignore,忽略大小写。
+
+这些选项可以合并使用，如`cgi`表示不区分大小写，整行替换，替换前询问。  
+
 
 ## vim 浏览代码
 
 vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。  
 
 
+多窗口间切换的3方法：`Ctrl+w+方向键` `Ctrl+w+h/j/k/l` `Ctrl+ww`。  
