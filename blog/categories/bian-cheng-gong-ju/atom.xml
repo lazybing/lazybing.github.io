@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-08-31T08:32:10-07:00</updated>
+  <updated>2017-08-31T08:36:37-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -420,6 +420,9 @@ gprof test gmon.out &gt; analysis.txt
   </li>
   <li><a href="#vim--7" id="markdown-toc-vim--7">vim 寄存器</a></li>
   <li><a href="#vim--8" id="markdown-toc-vim--8">vim 分屏功能</a></li>
+  <li><a href="#vim--9" id="markdown-toc-vim--9">vim 插件安装</a></li>
+  <li><a href="#vim--10" id="markdown-toc-vim--10">vim 替换</a></li>
+  <li><a href="#vim--11" id="markdown-toc-vim--11">vim 浏览代码</a></li>
 </ul>
 
 <p><code>Vim</code> 是一个学习成本比较高的编辑器。本文主要记录对于编辑浏览代码时，如何配置<code>vim</code>才能更高效的编辑、浏览代码。</p>
@@ -688,141 +691,114 @@ window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列�
 
 <h2 id="vim--8">vim 分屏功能</h2>
 
-<image src="http://lazybing.github.io/images/vim_split_screen.png">  
+<p><img src="/images/vim_split_screen.png"></p>
 
-`vim`同时打开多个文件。
+<p><code>vim</code>同时打开多个文件。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>vim -o file1 file2              //小写 o 参数来水平分屏
-</span><span class='line'>vim -O file1 file2              //大写 O 参数来垂直分屏</span></code></pre></td></tr></table></div></figure>
+<p><code>
+vim -o file1 file2              //小写 o 参数来水平分屏
+vim -O file1 file2              //大写 O 参数来垂直分屏
+</code></p>
 
-`vim`在多窗口打开。
+<p><code>vim</code>在多窗口打开。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>:vs path/file       //在新的垂直分屏中打开文件
-</span><span class='line'>:sv path/file       //在新的水平分屏中打开文件</span></code></pre></td></tr></table></div></figure>
+<p><code>
+:vs path/file       //在新的垂直分屏中打开文件
+:sv path/file       //在新的水平分屏中打开文件
+</code></p>
 
-多窗口间切换的3方法`Ctrl+w+方向键`或`Ctrl+w+h/j/k/l`或`Ctrl+ww`。  
+<p>多窗口间切换的3方法<code>Ctrl+w+方向键</code>或<code>Ctrl+w+h/j/k/l</code>或<code>Ctrl+ww</code>。</p>
 
-移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。  
+<p>移动分屏的方法：<code>Ctrl+w L</code>向右移动分屏；<code>Ctrl+w H</code>向左移动分屏；<code>Ctrl+w K</code>向上移动分屏；<code>Ctrl+w J</code>向下移动分屏。</p>
 
-## vim 插件安装
+<h2 id="vim--9">vim 插件安装</h2>
 
-首先安装插件管理插件  
+<p>首先安装插件管理插件</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim</span></code></pre></td></tr></table></div></figure>
+<p><code>
+git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+</code></p>
 
-其次在`.vimrc`下增加配置信息如下。  
+<p>其次在<code>.vimrc</code>下增加配置信息如下。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>" vundle 环境设置
-</span><span class='line'>filetype off
-</span><span class='line'>set rtp+=~/.vim/bundle/Vundle.vim
-</span><span class='line'>" vundle 管理的插件列表必须位于 vundle#begin() 和 vundle#end() 之间
-</span><span class='line'>call vundle#begin()
-</span><span class='line'>Plugin 'VundleVim/Vundle.vim'
-</span><span class='line'>Plugin 'altercation/vim-colors-solarized'
-</span><span class='line'>Plugin 'tomasr/molokai'
-</span><span class='line'>Plugin 'vim-scripts/phd'
-</span><span class='line'>Plugin 'Lokaltog/vim-powerline'
-</span><span class='line'>Plugin 'octol/vim-cpp-enhanced-highlight'
-</span><span class='line'>Plugin 'nathanaelkane/vim-indent-guides'
-</span><span class='line'>Plugin 'derekwyatt/vim-fswitch'
-</span><span class='line'>Plugin 'kshenoy/vim-signature'
-</span><span class='line'>Plugin 'vim-scripts/BOOKMARKS—Mark-and-Highlight-Full-Lines'
-</span><span class='line'>Plugin 'majutsushi/tagbar'
-</span><span class='line'>Plugin 'vim-scripts/indexer.tar.gz'
-</span><span class='line'>Plugin 'vim-scripts/DfrankUtil'
-</span><span class='line'>Plugin 'vim-scripts/vimprj'
-</span><span class='line'>Plugin 'dyng/ctrlsf.vim'
-</span><span class='line'>Plugin 'terryma/vim-multiple-cursors'
-</span><span class='line'>Plugin 'scrooloose/nerdcommenter'
-</span><span class='line'>Plugin 'vim-scripts/DrawIt'
-</span><span class='line'>Plugin 'SirVer/ultisnips'
-</span><span class='line'>Plugin 'Valloric/YouCompleteMe'
-</span><span class='line'>Plugin 'derekwyatt/vim-protodef'
-</span><span class='line'>Plugin 'scrooloose/nerdtree'
-</span><span class='line'>Plugin 'fholgado/minibufexpl.vim'
-</span><span class='line'>Plugin 'gcmt/wildfire.vim'
-</span><span class='line'>Plugin 'sjl/gundo.vim'
-</span><span class='line'>Plugin 'Lokaltog/vim-easymotion'
-</span><span class='line'>Plugin 'suan/vim-instant-markdown'
-</span><span class='line'>Plugin 'lilydjwg/fcitx.vim'
-</span><span class='line'>" 插件列表结束
-</span><span class='line'>call vundle#end()
-</span><span class='line'>filetype plugin indent on`</span></code></pre></td></tr></table></div></figure>
+<p><code>
+" vundle 环境设置
+filetype off
+set rtp+=~/.vim/bundle/Vundle.vim
+" vundle 管理的插件列表必须位于 vundle#begin() 和 vundle#end() 之间
+call vundle#begin()
+Plugin 'VundleVim/Vundle.vim'
+Plugin 'altercation/vim-colors-solarized'
+Plugin 'tomasr/molokai'
+Plugin 'vim-scripts/phd'
+Plugin 'Lokaltog/vim-powerline'
+Plugin 'octol/vim-cpp-enhanced-highlight'
+Plugin 'nathanaelkane/vim-indent-guides'
+Plugin 'derekwyatt/vim-fswitch'
+Plugin 'kshenoy/vim-signature'
+Plugin 'vim-scripts/BOOKMARKS—Mark-and-Highlight-Full-Lines'
+Plugin 'majutsushi/tagbar'
+Plugin 'vim-scripts/indexer.tar.gz'
+Plugin 'vim-scripts/DfrankUtil'
+Plugin 'vim-scripts/vimprj'
+Plugin 'dyng/ctrlsf.vim'
+Plugin 'terryma/vim-multiple-cursors'
+Plugin 'scrooloose/nerdcommenter'
+Plugin 'vim-scripts/DrawIt'
+Plugin 'SirVer/ultisnips'
+Plugin 'Valloric/YouCompleteMe'
+Plugin 'derekwyatt/vim-protodef'
+Plugin 'scrooloose/nerdtree'
+Plugin 'fholgado/minibufexpl.vim'
+Plugin 'gcmt/wildfire.vim'
+Plugin 'sjl/gundo.vim'
+Plugin 'Lokaltog/vim-easymotion'
+Plugin 'suan/vim-instant-markdown'
+Plugin 'lilydjwg/fcitx.vim'
+" 插件列表结束
+call vundle#end()
+filetype plugin indent on`
+</code></p>
 
-最后，进入`vim`执行  
+<p>最后，进入<code>vim</code>执行</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>:PluginInstall</span></code></pre></td></tr></table></div></figure>
+<p><code>
+:PluginInstall
+</code></p>
 
-## vim 替换
+<h2 id="vim--10">vim 替换</h2>
 
-简单替换表达式`:[range]s/from/to/[flags]`  
+<p>简单替换表达式<code>:[range]s/from/to/[flags]</code></p>
 
-* range:搜索范围，如果没有指定范围，则作用于当前行。 
+<ul>
+  <li>range:搜索范围，如果没有指定范围，则作用于当前行。</li>
+</ul>
 
-1. `:1,10s/from/to/`表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。  
-2. `:10s/from/to/`表示只在第 10 行搜索替换。  
-3. `:%s/from/to/`表示在所有行中搜索替换。  
-4. `1,$s/from/to/`同上。  
+<ol>
+  <li><code>:1,10s/from/to/</code>表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。</li>
+  <li><code>:10s/from/to/</code>表示只在第 10 行搜索替换。</li>
+  <li><code>:%s/from/to/</code>表示在所有行中搜索替换。</li>
+  <li><code>1,$s/from/to/</code>同上。</li>
+</ol>
 
-* `flags`有如下四个选项：  
+<ul>
+  <li><code>flags</code>有如下四个选项：</li>
+</ul>
 
-1. `c`confirm,每次替换前询问。  
-2. `e`error,不显示错误。  
-3. `g`globe,不询问，整行替换。如果不加`g`选项，则只替换每行的第一个匹配到的字符串。  
-4. `i`ignore,忽略大小写。
+<ol>
+  <li><code>c</code>confirm,每次替换前询问。</li>
+  <li><code>e</code>error,不显示错误。</li>
+  <li><code>g</code>globe,不询问，整行替换。如果不加<code>g</code>选项，则只替换每行的第一个匹配到的字符串。</li>
+  <li><code>i</code>ignore,忽略大小写。</li>
+</ol>
 
-这些选项可以合并使用，如`cgi`表示不区分大小写，整行替换，替换前询问。  
+<p>这些选项可以合并使用，如<code>cgi</code>表示不区分大小写，整行替换，替换前询问。</p>
 
+<h2 id="vim--11">vim 浏览代码</h2>
 
-## vim 浏览代码
+<p>vim 浏览代码一般会与 <code>catgs</code> <code>cscope</code> <code>taglist</code> 等一起使用。</p>
 
-vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。  
-
-
-多窗口间切换的3方法：`Ctrl+w+方向键` `Ctrl+w+h/j/k/l` `Ctrl+ww`。  
-</image>
+<p>多窗口间切换的3方法：<code>Ctrl+w+方向键</code> <code>Ctrl+w+h/j/k/l</code> <code>Ctrl+ww</code>。</p>
 ]]></content>
   </entry>
   
