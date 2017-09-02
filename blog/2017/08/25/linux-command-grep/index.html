@@ -260,9 +260,89 @@ grep 是个命令行工具，它主要用于搜索文件中与规则表达式的
 
 <p>除了<code>options</code>外，下面记录下<code>PATTERN</code>的使用：</p>
 
+<ul>
+  <li><code>.</code> : 匹配一个字符。</li>
+  <li><code>?</code> : 最多匹配一个字符。</li>
+  <li><code>*</code> : 匹配若干个字符，或者空字符。</li>
+  <li><code>^</code> : 指代匹配字符位于一行的最开始。</li>
+  <li><code>$</code> : 指代匹配字符位于一行的最末尾。</li>
+  <li><code>{num}</code> : 重复匹配 num 次。</li>
+  <li><code>{n,}</code> : 重复匹配至少 n 次。</li>
+  <li><code>{,m}</code> : 重复匹配最多 m 次。</li>
+  <li><code>{n,m}</code> : 重复匹配最少 n 次，最多 m 次。</li>
+  <li><code>[   ]</code> : 包含匹配 [] 内的某个字符，如[a-d]代表’abcd’中的某个。</li>
+</ul>
+
 <h2 id="section-1">基础应用</h2>
 
+<p>搜索<code>text.txt</code>文件中是否包含<code>abc</code>的字符串，并提示匹配的行号。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -n abc text.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>搜索<code>text.txt</code>文件中不包含<code>abc</code>字符串的行，并显示出来。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -ni abc text.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>搜索<code>text.txt</code>文件中包含<code>abc</code>字符串的行，不区分大小写，并显示出来。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -nv abc text.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>搜索包含特殊字符的字符串，并显示出来，如搜索<code>a*b</code>。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -f "a*b" text.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>搜索当前目录下所有文件包含<code>abc</code>字符串的行。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -r abc *</span></code></pre></td></tr></table></div></figure>
+
+<p>搜索包含<code>abc</code>或<code>aabc</code>或<code>aaabc</code>字符串的行。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep "a\{1,3\}bc" text.txt   </span></code></pre></td></tr></table></div></figure>
+
+<p>边界表示<code>\b</code>。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep "\babc" text.txt //搜索起始字段为abc的字符串的行
+</span><span class="line">grep "abc\b" text.txt //搜索结尾字段为abc的字符串的行
+</span><span class="line">grep "\babc\b" text.txt //搜索起始结尾字段为abc的字符串的行，与-w选项相同</span></code></pre></td></tr></table></div></figure>
+
+<p>搜索多个文件，仅仅输出匹配到的文件名。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -l abc *</span></code></pre></td></tr></table></div></figure>
+
 <h2 id="section-2">高阶应用</h2>
+
+<p>使用<code>grep</code>的 OR/AND/NOT 操作。比如想要搜索某个文件中是否含有<code>abc</code>或<code>def</code>字符串，就会用到 grep 的 OR 操作；想要同时搜索既含有<code>abc</code>又含有<code>def</code>字符串，就会用到 grep 的 AND 操作；想要搜索不包含<code>abc</code>的字符串，就会用到 grep 的 NOT 操作。</p>
+
+<p>OR 操作方法：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep "abc\|def" text.txt   //or   
+</span><span class="line">grep -E "abc|def" text.txt //or  
+</span><span class="line">egrep "abc|def" text.txt   //or  
+</span><span class="line">grep -e "abc" -e "def" text.txt  //or  </span></code></pre></td></tr></table></div></figure>
+
+<p>AND 操作方法：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -E "pattern1.*pattern2|pattern2.*pattern1" text.txt //and
+</span><span class="line">grep -E "pattern1" text.txt | grep -E "pattern2"  //and</span></code></pre></td></tr></table></div></figure>
+
+<p>NOT 操作方法：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">grep -v "pattern1" text.txt</span></code></pre></td></tr></table></div></figure>
 
 <h2 id="section-3">参考文献</h2>
 
