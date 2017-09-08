@@ -124,19 +124,19 @@
       <li><a href="#vim--5" id="markdown-toc-vim--5">vim 切分窗口</a></li>
     </ul>
   </li>
-  <li><a href="#vim--6" id="markdown-toc-vim--6">vim 对多个文件的操作</a>    <ul>
+  <li><a href="#vim--6" id="markdown-toc-vim--6">vim 替换文本</a></li>
+  <li><a href="#vim--7" id="markdown-toc-vim--7">vim 对多个文件的操作</a>    <ul>
       <li><a href="#section-10" id="markdown-toc-section-10">工程文件浏览</a></li>
       <li><a href="#section-11" id="markdown-toc-section-11">多文档编辑</a></li>
     </ul>
   </li>
-  <li><a href="#vim--7" id="markdown-toc-vim--7">vim 寄存器</a></li>
-  <li><a href="#vim--8" id="markdown-toc-vim--8">vim 分屏功能</a></li>
-  <li><a href="#vim--9" id="markdown-toc-vim--9">vim 插件安装</a>    <ul>
+  <li><a href="#vim--8" id="markdown-toc-vim--8">vim 寄存器</a></li>
+  <li><a href="#vim--9" id="markdown-toc-vim--9">vim 分屏功能</a></li>
+  <li><a href="#vim--10" id="markdown-toc-vim--10">vim 插件安装</a>    <ul>
       <li><a href="#vim-fswitch" id="markdown-toc-vim-fswitch">vim-fswitch(接口与实现快速切换)插件</a></li>
       <li><a href="#vim-protodef" id="markdown-toc-vim-protodef">vim-protodef(接口快速生成实现)插件</a></li>
     </ul>
   </li>
-  <li><a href="#vim--10" id="markdown-toc-vim--10">vim 替换</a></li>
   <li><a href="#vim--11" id="markdown-toc-vim--11">vim 浏览代码</a></li>
 </ul>
 
@@ -327,7 +327,35 @@ CTRL-W t	move to the TOP window
 CTRL-W b	move to the BOTTOM window
 </code></pre>
 
-<h2 id="vim--6">vim 对多个文件的操作</h2>
+<h2 id="vim--6">vim 替换文本</h2>
+
+<p>简单替换表达式<code>:[range]s/from/to/[flags]</code></p>
+
+<ul>
+  <li>range:搜索范围，如果没有指定范围，则作用于当前行。</li>
+</ul>
+
+<ol>
+  <li><code>:1,10s/from/to/</code>表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。</li>
+  <li><code>:10s/from/to/</code>表示只在第 10 行搜索替换。</li>
+  <li><code>:%s/from/to/</code>表示在所有行中搜索替换。</li>
+  <li><code>1,$s/from/to/</code>同上。</li>
+</ol>
+
+<ul>
+  <li><code>flags</code>有如下四个选项：</li>
+</ul>
+
+<ol>
+  <li><code>c</code>confirm,每次替换前询问。</li>
+  <li><code>e</code>error,不显示错误。</li>
+  <li><code>g</code>globe,不询问，整行替换。如果不加<code>g</code>选项，则只替换每行的第一个匹配到的字符串。</li>
+  <li><code>i</code>ignore,忽略大小写。</li>
+</ol>
+
+<p>这些选项可以合并使用，如<code>cgi</code>表示不区分大小写，整行替换，替换前询问。</p>
+
+<h2 id="vim--7">vim 对多个文件的操作</h2>
 
 <h3 id="section-10">工程文件浏览</h3>
 
@@ -343,7 +371,7 @@ CTRL-W b	move to the BOTTOM window
 <p>vim中每打开一个文件，vim就对应的创建一个buffer,多个文件就有多个 buffer, 但默认你只能看到最后buffer对应
 window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列出来，并且可以显示多个 buffer 对应的Window。</p>
 
-<h2 id="vim--7">vim 寄存器</h2>
+<h2 id="vim--8">vim 寄存器</h2>
 
 <p>使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。</p>
 
@@ -404,7 +432,7 @@ window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列�
   </tbody>
 </table>
 
-<h2 id="vim--8">vim 分屏功能</h2>
+<h2 id="vim--9">vim 分屏功能</h2>
 
 <p><img src="/images/vim_split_screen.png" /></p>
 
@@ -426,7 +454,7 @@ window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列�
 
 <p>移动分屏的方法：<code>Ctrl+w L</code>向右移动分屏；<code>Ctrl+w H</code>向左移动分屏；<code>Ctrl+w K</code>向上移动分屏；<code>Ctrl+w J</code>向下移动分屏。</p>
 
-<h2 id="vim--9">vim 插件安装</h2>
+<h2 id="vim--10">vim 插件安装</h2>
 
 <p>首先安装插件管理插件</p>
 
@@ -544,39 +572,12 @@ window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列�
 </pre></td><td class="code"><pre><code class=""><span class="line">nmap &lt;buffer&gt; &lt;silent&gt; &lt;leader&gt; ;PP
 </span><span class="line">nmap &lt;buffer&gt; &lt;silent&gt; &lt;leader&gt; ;PN</span></code></pre></td></tr></table></div></figure>
 
-<h2 id="vim--10">vim 替换</h2>
-
-<p>简单替换表达式<code>:[range]s/from/to/[flags]</code></p>
-
-<ul>
-  <li>range:搜索范围，如果没有指定范围，则作用于当前行。</li>
-</ul>
-
-<ol>
-  <li><code>:1,10s/from/to/</code>表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。</li>
-  <li><code>:10s/from/to/</code>表示只在第 10 行搜索替换。</li>
-  <li><code>:%s/from/to/</code>表示在所有行中搜索替换。</li>
-  <li><code>1,$s/from/to/</code>同上。</li>
-</ol>
-
-<ul>
-  <li><code>flags</code>有如下四个选项：</li>
-</ul>
-
-<ol>
-  <li><code>c</code>confirm,每次替换前询问。</li>
-  <li><code>e</code>error,不显示错误。</li>
-  <li><code>g</code>globe,不询问，整行替换。如果不加<code>g</code>选项，则只替换每行的第一个匹配到的字符串。</li>
-  <li><code>i</code>ignore,忽略大小写。</li>
-</ol>
-
-<p>这些选项可以合并使用，如<code>cgi</code>表示不区分大小写，整行替换，替换前询问。</p>
-
 <h2 id="vim--11">vim 浏览代码</h2>
 
 <p>vim 浏览代码一般会与 <code>catgs</code> <code>cscope</code> <code>taglist</code> 等一起使用。</p>
 
 <p>多窗口间切换的3方法：<code>Ctrl+w+方向键</code> <code>Ctrl+w+h/j/k/l</code> <code>Ctrl+ww</code>。</p>
+
 </div>
 
 
