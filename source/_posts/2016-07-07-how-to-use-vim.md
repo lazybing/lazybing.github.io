@@ -186,6 +186,25 @@ C/C++ 程序员应该经常能遇到程序出错时，会有类似如下的提�
 	CTRL-W t	move to the TOP window
 	CTRL-W b	move to the BOTTOM window
 
+## vim 替换文本
+
+简单替换表达式`:[range]s/from/to/[flags]`  
+
+* range:搜索范围，如果没有指定范围，则作用于当前行。 
+
+1. `:1,10s/from/to/`表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。  
+2. `:10s/from/to/`表示只在第 10 行搜索替换。  
+3. `:%s/from/to/`表示在所有行中搜索替换。  
+4. `1,$s/from/to/`同上。  
+
+* `flags`有如下四个选项：  
+
+1. `c`confirm,每次替换前询问。  
+2. `e`error,不显示错误。  
+3. `g`globe,不询问，整行替换。如果不加`g`选项，则只替换每行的第一个匹配到的字符串。  
+4. `i`ignore,忽略大小写。
+
+这些选项可以合并使用，如`cgi`表示不区分大小写，整行替换，替换前询问。  
 
 ## vim 对多个文件的操作
 
@@ -245,6 +264,12 @@ vim -O file1 file2              //大写 O 参数来垂直分屏
 
 ## vim 插件安装
 
+### vundle 插件管理插件
+
+vim 默认的安装需要将插件的帮助文档和插件脚本文件分别放到`.vim`目录下的`doc`和`plugin`子目录下面，当要安装的插件较多时会非常繁琐并且
+相似功能的插件名称可能相同，导致插件安装难以处理，为此我们找到了专门用于管理插件的插件`vundle`，它会自动的将插件以插件名的形式安装到`.vim/bundle`子目录下面，
+如果想要删除或者升级某个插件，只需要使用一个命令即可完成，不需手动删除重装。  
+
 首先安装插件管理插件  
 
 ```
@@ -292,10 +317,38 @@ call vundle#end()
 filetype plugin indent on`
 ```
 
-最后，进入`vim`执行  
+使用方法非常简单，只需在`vundle#begin()`和`vundle#end()`中间，加入需要安装的插件名称，进入`~/.vimrc`执行
 
 ```
 :PluginInstall
+```
+
+即可完成插件的安装。执行
+
+```
+:PluginUpdate
+```
+
+即可完成插件的升级。想要卸载某个插件，只需要先在`.vimrc`中注释或删除对应插件的配置信息，然后执行
+
+```
+:PluginClean
+```
+
+即可完成。  
+
+### solarized/molokai/phd 主题风格插件
+
+素雅的[solarized](https://github.com/altercation/vim-colors-solarized)、多彩的[molokai](https://github.com/tomasr/molokai)、复古的[phd](http://www.vim.org/scripts/script.php?script_id=3139),这三种
+vim 主题风格是比较流行的三种，插件完成后，可以在`.vimrc`中选用某个主题，每个主题又有亮色系和暗色系两种,具体设置如下：  
+
+```
+“ 配色方案  
+set background=dark
+"set background=light
+colorscheme solarized
+"colorscheme molokai
+"colorscheme phd
 ```
 
 ### vim-fswitch(接口与实现快速切换)插件  
@@ -327,30 +380,9 @@ nmap <buffer> <silent> <leader> ;PP
 nmap <buffer> <silent> <leader> ;PN
 ```
 
-## vim 替换
-
-简单替换表达式`:[range]s/from/to/[flags]`  
-
-* range:搜索范围，如果没有指定范围，则作用于当前行。 
-
-1. `:1,10s/from/to/`表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。  
-2. `:10s/from/to/`表示只在第 10 行搜索替换。  
-3. `:%s/from/to/`表示在所有行中搜索替换。  
-4. `1,$s/from/to/`同上。  
-
-* `flags`有如下四个选项：  
-
-1. `c`confirm,每次替换前询问。  
-2. `e`error,不显示错误。  
-3. `g`globe,不询问，整行替换。如果不加`g`选项，则只替换每行的第一个匹配到的字符串。  
-4. `i`ignore,忽略大小写。
-
-这些选项可以合并使用，如`cgi`表示不区分大小写，整行替换，替换前询问。  
-
-
 ## vim 浏览代码
 
 vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。  
 
-
 多窗口间切换的3方法：`Ctrl+w+方向键` `Ctrl+w+h/j/k/l` `Ctrl+ww`。  
+
