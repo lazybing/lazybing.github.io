@@ -31,13 +31,19 @@ brew install macvim
 
 > To err is human. To really foul up you need a computer.  
 
+---
+
 ### 删除某个字符
 
 删除字符命令非常简单，就是单个字符`x`,例如上面的一行code，如果将光标至于`really`的`r`处执行`x`命令，就会将 `r` 删除。
 
+---
+
 ### 替换某个字符
 
 替换字符的命令`rx`将光标下的字符 replace 成字符`x`。如果发现连个相邻的字符颠倒了，可以直接在前一个字符处执行`xp`命令即可，其中的`x`时删除光标下的字符，`p`时黏贴。
+
+---
 
 ### 移动到某个字符
 
@@ -76,13 +82,19 @@ brew install macvim
 
 ## vim 对单字的操作
 
+---
+
 ### 删除某个单字
 
 删除某个单字非常简单，只需要在单字的开始执行`dw`即可。速记：`d`是`deleate`的简写。  
 
+---
+
 ### 修改某个单字
 
 修改某个单字时，只需要在单字的开始执行`cxxxxx`即可，`c`是`change`的简写，`xxxxx`即代表要修改的单字。
+
+---
 
 ### 移动到某个单字
 
@@ -109,6 +121,8 @@ brew install macvim
 
 ## vim 对整行的操作
 
+---
+
 ### 移动到行首或行尾
 
 `$`命令移动光标到一行的结尾，与`<End>`键作用相同。`^`命令移动到一行的第一个非空白字符处。`0`命令移动到一行的最前面第一个字符处，与`<Home>`键作用相同。  
@@ -121,7 +135,7 @@ brew install macvim
 
 (....指空白符)  
 
-
+---
 
 ### 移动到指定行
 
@@ -147,6 +161,8 @@ C/C++ 程序员应该经常能遇到程序出错时，会有类似如下的提�
 
 速记：`H`是`Home`的简写，`M`是`Middle`的简写，`L`是`Last`的简写。
 
+----
+
 ### 使用标签记录并跳转到某行
 
 在介绍标签之前，先了解另外两个命令`CTRL-O`和`CTRL-I`，其中`CTRL-O`是回到之前的位置，`CTRL-I`是回到下一个位置。例如：
@@ -166,12 +182,16 @@ C/C++ 程序员应该经常能遇到程序出错时，会有类似如下的提�
 
 ## vim 对单个文件的浏览
 
+---
+
 ### vim 滚动屏幕命令
 
 `CTRL-U`和`CTRL-D`命令向上或向下滚动半个屏幕。  
 `CTRL-E`和`CTRL-Y`分别向上和向下滚动一行。  
 `CTRL-F`和`CTRL-B`分别向前和向后滚动整个屏幕。
 有时当执行多个`j`命令时，光标会在屏幕的最底部，此时如果想让光标所在行位于中间位置，可以使用`zz`命令,`zt`命令将光标所在行至于顶部，`zb`命令将光标所在行至于底部。  
+
+----
 
 ### vim 切分窗口
 
@@ -208,12 +228,16 @@ C/C++ 程序员应该经常能遇到程序出错时，会有类似如下的提�
 
 ## vim 对多个文件的操作
 
+---
+
 ### 工程文件浏览
 
 在项目工程中，经常要用到插件，此处介绍一个插件`NERDTree`，通过`NERDtree`插件可以查看文件列表，要打开哪个文件，
 光标选中后回车即可在新`buffer`中打开。  
 
 常用操作：回车，打开选中文件;`r`刷新工程目录文件列表；`I`显示/影藏文件；`m`出现创建/删除/剪切/拷贝操作列表。键入<leader>fl后，右边子窗口为工程项目文件列表。
+
+---
 
 ### 多文档编辑
 `vim`的多文档编辑涉及三个概念:buffer、window、tab。vim把加载进内存的文件叫做buffer,buffer不一定可见；
@@ -263,6 +287,8 @@ vim -O file1 file2              //大写 O 参数来垂直分屏
 移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。  
 
 ## vim 插件安装
+
+---
 
 ### vundle 插件管理插件
 
@@ -337,6 +363,8 @@ filetype plugin indent on`
 
 即可完成。  
 
+---
+
 ### solarized/molokai/phd 主题风格插件
 
 素雅的[solarized](https://github.com/altercation/vim-colors-solarized)、多彩的[molokai](https://github.com/tomasr/molokai)、复古的[phd](http://www.vim.org/scripts/script.php?script_id=3139),这三种
@@ -351,6 +379,50 @@ colorscheme solarized
 "colorscheme phd
 ```
 
+---
+
+### Powerline 状态栏插件
+
+[Powerline](https://github.com/Lokaltog/vim-powerline)插件主要用于美化状态栏，需要在`.vimrc`中设定状态栏主题风格：  
+
+```
+" 设置状态栏主题风格
+let g:Powerline_colorscheme='solarized256'
+```
+
+增添后的状态栏，不仅界面漂亮多了，而且多了好多辅助信息(所在函数名、文件编码格式、文件类型)。  
+
+----
+
+### vim-cpp-enhanced-highlight 代码高亮插件
+
+[vim-cpp-enhanced-highlight](https://github.com/octol/vim-cpp-enhanced-highlight)主要是对 C++ 语法高亮进行增强。`vim-cpp-enhanced-highlight`主要通过`.vim/bundle/vim-cpp-enhanced-highlight/after/syntax/cpp.vim`控制高亮关键字及规则，所以，当发现某个 STL 容器类型未高亮，那么将该类型追加进`cpp.vim`即可。如`initializer_list`默认并不高亮，需要添加  
+
+```
+syntax keyword cppSTLtype initializer_list
+```
+
+----
+
+### NERD Commenter 快速开发注释
+
+[NERD Commenter](https://github.com/scrooloose/nerdcommenter)插件会根据编辑文档的扩展名自适应采用何种注释风格，如文档`*.cpp`采用
+`//`注释风格，而`*.c`则是`/**/`注释风格。此外，如果选中的代码并非整行，则该插件将用`/**/`只注释选中部分。  
+
+常用操作：  
+
+* <leader>cc，注释当前选中文本，如果选中的是整行则在每行首添加//  
+* <leader>cu，取消选中文本块的注释  
+
+---
+
+### YouCompleteMe 智能补全插件
+
+[YouCompleteMe](https://github.com/Valloric/YouCompleteMe)插件是一个随键而全的、支持模糊搜索的、高速补全的插件。  
+(未完待续)
+
+---
+
 ### vim-fswitch(接口与实现快速切换)插件  
 
 [vim-fswitch](https://github.com/derekwyatt/vim-fswitch) 插件可以实现接口文件(*.h)和实现文件(*.cpp)中来回切换的操作，安装完该插件后，还需要增加配置信息：  
@@ -361,6 +433,8 @@ nmap <silent> <Leader>sw :FSHere<cr>
 ```
 
 此时只要键入`;sw`就可实现文件和接口文件间切换。  
+
+---
 
 ### vim-protodef(接口快速生成实现)插件
 
@@ -379,6 +453,57 @@ let g:disable_protodef_sorting=1
 nmap <buffer> <silent> <leader> ;PP
 nmap <buffer> <silent> <leader> ;PN
 ```
+
+---
+
+### nerdtree 工程文件浏览插件
+
+当我们在用 vim 浏览工程时，可以通过[NERDtree](https://github.com/scrooloose/nerdtree)插件查看文件列表，打开要查看的文件，在新 buffer 中打开。  
+安装完 `NERDtree`后，只需要在`.vimrc`中添加如下信息即可：  
+
+```
+" 使用 NERDTree 插件查看工程文件。设置快捷键，速记：file list
+nmap <Leader>fl:NERDTreeToggle<CR>
+" 设置 NERDTree子窗口宽度
+let NERDTreeWinSize=16
+" 设置 NERDTree 子窗口位置
+let NERDTreeWinPos="right"
+" 显示隐藏文件
+let NERDTreeShowHidden=1
+" NERDTree 子窗口中不显示冗余帮助信息
+let NERDTreeMinimalUI=1
+" 删除文件时自动删除文件对应的 buffer
+let NERDTreeAutoDeleteBuffer=1
+```
+
+常用操作：  
+
+* 回车：打开选中文件    
+* r: 刷新工程目录文件列表     
+* I(大写)：显示/隐藏文件    
+* m:出现创建/删除/剪切/拷贝操作列表  
+* <leader>fl：右边子窗口为工程师项目文件列表。  
+
+----
+
+### MiniBufExplorer 多文档编辑插件
+
+[MiniBufExplorer](https://github.com/fholgado/minibufexpl.vim)主要用于同时编辑多个文档时会用到，它会涉及三个概念`buffer`、`window`、`tab`，其中`buffer`可以理解为每打开一个文件，就创建一个`buffer`。
+`buffer`的呈现要以`window`作为载体，而多个`window`组合成一个`tab`。
+
+安装完成`MiniBufExplorer`后，只需要在`.vimrc`中配置如下信息即可：  
+
+```
+" 显示/隐藏 MiniBufExplorer 窗口
+map <Leader>bl : MBEToggle<cr>
+" buffer 切换快捷键
+map <C-Tab> :MBEbn<cr>
+map <C-S-Tab> :MBEbp<cr>
+```
+
+默认时，打开的 window 占据几乎整个 vim 编辑区域，如果你想把多个 window 平铺成多个子窗口可以使用 MiniBufExplorer 的 s 和 v 命令：在某个 buffer 上键入 s 将该 buffer 对应 window 与先前 window 上下排列，键入 v 则左右排列（光标必须在 buffer 列表子窗口内）。  
+通过 vim 自身的 f 名字查找 buffer 序号可快速选择需要的 buffer。  
+
 
 ## vim 浏览代码
 

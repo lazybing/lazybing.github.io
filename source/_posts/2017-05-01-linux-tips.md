@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "linux tips"
+title: "linux 使用小技巧总结"
 date: 2017-05-01 19:03:52 -0700
 comments: true
 categories: 总结积累
