@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-09-09T23:45:09-07:00</updated>
+  <updated>2017-09-10T00:11:33-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -682,8 +682,10 @@ gprof test gmon.out &gt; analysis.txt
       <li><a href="#vim-fswitch" id="markdown-toc-vim-fswitch">vim-fswitch(接口与实现快速切换)插件</a></li>
       <li><a href="#vim-protodef" id="markdown-toc-vim-protodef">vim-protodef(接口快速生成实现)插件</a></li>
       <li><a href="#nerdtree-" id="markdown-toc-nerdtree-">nerdtree 工程文件浏览插件</a></li>
+      <li><a href="#minibufexplorer-" id="markdown-toc-minibufexplorer-">MiniBufExplorer 多文档编辑插件</a></li>
     </ul>
   </li>
+  <li><a href="#vim--11" id="markdown-toc-vim--11">vim 浏览代码</a></li>
 </ul>
 
 <p><code>Vim</code> 是一个学习成本比较高的编辑器。本文主要记录对于编辑浏览代码时，如何配置<code>vim</code>才能更高效的编辑、浏览代码。</p>
@@ -1138,22 +1140,32 @@ let NERDTreeMinimalUI=1
 let NERDTreeAutoDeleteBuffer=1
 </code></p>
 
-<p>常用操作：</p>
+<p>常用操作：<br />
+* 回车：打开选中文件  <br />
+* r: 刷新工程目录文件列表   <br />
+* I(大写)：显示/隐藏文件  <br />
+* m:出现创建/删除/剪切/拷贝操作列表<br />
+* <leader>fl：右边子窗口为工程师项目文件列表。</leader></p>
 
-<ul>
-  <li>回车：打开选中文件</li>
-  <li>r: 刷新工程目录文件列表</li>
-  <li>I(大写)：显示/隐藏文件</li>
-  <li>m:出现创建/删除/剪切/拷贝操作列表</li>
-  <li>
-    <leader>fl：右边子窗口为工程师项目文件列表。  
+<h3 id="minibufexplorer-">MiniBufExplorer 多文档编辑插件</h3>
 
+<p><a href="https://github.com/fholgado/minibufexpl.vim">MiniBufExplorer</a>主要用于同时编辑多个文档时会用到，它会涉及三个概念<code>buffer</code>、<code>window</code>、<code>tab</code>，其中<code>buffer</code>可以理解为每打开一个文件，就创建一个<code>buffer</code>。
+<code>buffer</code>的呈现要以<code>window</code>作为载体，而多个<code>window</code>组合成一个<code>tab</code>。</p>
 
+<p>安装完成<code>MiniBufExplorer</code>后，只需要在<code>.vimrc</code>中配置如下信息即可：</p>
 
-</leader>
-  </li>
-</ul>
-<p>## vim 浏览代码</p>
+<p><code>
+" 显示/隐藏 MiniBufExplorer 窗口
+map &lt;Leader&gt;bl : MBEToggle&lt;cr&gt;
+" buffer 切换快捷键
+map &lt;C-Tab&gt; :MBEbn&lt;cr&gt;
+map &lt;C-S-Tab&gt; :MBEbp&lt;cr&gt;
+</code></p>
+
+<p>默认时，打开的 window 占据几乎整个 vim 编辑区域，如果你想把多个 window 平铺成多个子窗口可以使用 MiniBufExplorer 的 s 和 v 命令：在某个 buffer 上键入 s 将该 buffer 对应 window 与先前 window 上下排列，键入 v 则左右排列（光标必须在 buffer 列表子窗口内）。<br />
+通过 vim 自身的 f 名字查找 buffer 序号可快速选择需要的 buffer。</p>
+
+<h2 id="vim--11">vim 浏览代码</h2>
 
 <p>vim 浏览代码一般会与 <code>catgs</code> <code>cscope</code> <code>taglist</code> 等一起使用。</p>
 
