@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-09-14T09:06:22-07:00</updated>
+  <updated>2017-09-29T14:27:36-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,108 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[编码小技巧]]></title>
+    <link href="http://lazybing.github.io/blog/2017/09/29/coding-tips/"/>
+    <updated>2017-09-29T13:35:57-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/09/29/coding-tips</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">获取文件路径后缀名</a>    <ul>
+      <li><a href="#c-" id="markdown-toc-c-">C 语言实现</a></li>
+      <li><a href="#c--1" id="markdown-toc-c--1">C++ 语言实现</a></li>
+      <li><a href="#shell-" id="markdown-toc-shell-">Shell 脚本实现</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
+工作中遇到某个问题时，自然而然能想到的解决方法，通常是一些比较通用的小技巧。</p>
+
+<!--more-->
+
+<h2 id="section">获取文件路径后缀名</h2>
+
+<p>工作中经常遇到对一批视频文件进行统一处理的情况，有时会根据文件名的不同后缀名进行不同的处理操作。此时就需要首先获取文件的后缀名，
+之后再根据后缀名的不同进行相应的操作。</p>
+
+<h3 id="c-">C 语言实现</h3>
+
+<p>实现思路：获取文件字符串的最后一个字符，依次向前寻找<code>.</code>，<code>.</code>后面即为后缀名。</p>
+
+<figure class="code"><figcaption><span>get_filename_extension </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">get_filename_extension</span><span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">ext</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span> <span class="n">filename</span> <span class="p">);</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="o">*</span><span class="n">ext</span> <span class="o">!=</span> <span class="sc">&#39;.&#39;</span> <span class="o">&amp;&amp;</span> <span class="n">ext</span> <span class="o">&gt;</span> <span class="n">filename</span> <span class="p">)</span>
+</span><span class="line">        <span class="n">ext</span><span class="o">--</span><span class="p">;</span>
+</span><span class="line">    <span class="n">ext</span> <span class="o">+=</span> <span class="o">*</span><span class="n">ext</span> <span class="o">==</span> <span class="sc">&#39;.&#39;</span><span class="p">;</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">ext</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="c--1">C++ 语言实现</h3>
+
+<p>实现思路：首先将文件或路径名转换为一个<code>string</code>类，使用它的成员函数<code>rfind</code>找到最后一个<code>.</code>的位置，最后使用<code>substr</code>成员函数返回<code>.</code>后的所有内容，即得后缀名。</p>
+
+<figure class="code"><figcaption><span>get_filename_extension </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c++"><span class="line"><span class="k">using</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">;</span>
+</span><span class="line"><span class="n">string</span> <span class="nf">getFileExt</span><span class="p">(</span><span class="k">const</span> <span class="n">string</span><span class="o">&amp;</span> <span class="n">s</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="sc">&#39;.&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">string</span><span class="o">::</span><span class="n">npos</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">return</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span><span class="p">));</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="shell-">Shell 脚本实现</h3>
+
+<figure class="code"><figcaption><span>get_filename_extension </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="sh"><span class="line"><span class="c">#!/bin/sh</span>
+</span><span class="line"><span class="nv">fullfilename</span><span class="o">=</span><span class="nv">$1</span>
+</span><span class="line"><span class="nv">filename</span><span class="o">=</span><span class="k">$(</span>basename <span class="s2">&quot;$fullfilename&quot;</span><span class="k">)</span>
+</span><span class="line"><span class="nv">fname</span><span class="o">=</span><span class="s2">&quot;${filename%.*}&quot;</span>
+</span><span class="line"><span class="nv">ext</span><span class="o">=</span><span class="s2">&quot;${filename##*.}&quot;</span>
+</span><span class="line">
+</span><span class="line"><span class="nb">echo</span> <span class="s2">&quot;Input File:$fullfilename&quot;</span>
+</span><span class="line"><span class="nb">echo</span> <span class="s2">&quot;Filename without Path:$filename&quot;</span>
+</span><span class="line"><span class="nb">echo</span> <span class="s2">&quot;Filename without Extension:$fname&quot;</span>
+</span><span class="line"><span class="nb">echo</span> <span class="s2">&quot;File Extension without Name:$ext&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[视频编解码算法之编码]]></title>
@@ -4917,37 +5019,6 @@ crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf
 </ul>
 
 <h2 id="ffmpeg--6">FFMpeg 添加水印实现</h2>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[FFMPEG 源码分析：avformat_find_stream_info]]></title>
-    <link href="http://lazybing.github.io/blog/2016/12/25/avformat_find_stream_info/"/>
-    <updated>2016-12-25T06:18:07-08:00</updated>
-    <id>http://lazybing.github.io/blog/2016/12/25/avformat_find_stream_info</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">函数声明</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">调用关系</a></li>
-</ul>
-
-<p><code>avformat_find_stream_info</code>主要是读媒体文件的包(packets)，然后从中提取出流的信息。
-对于没有头部信息的文件格式尤其有用，比如<code>MPEG</code>。文件的逻辑位置不会被改变，读取出来
-的包会被缓存起来供以后处理。</p>
-
-<!--more-->
-
-<h2 id="section">函数声明</h2>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options);</span></code></pre></td></tr></table></div></figure>
-<p>返回值：&gt;=0–&gt;OK,或出错返回AVERROR_xxx</p>
-
-<p>注意，该函数并不保证能够打开所有的 codec，因此将options 设置为非NULL用于返回一些信息是非常好的行为。</p>
-
-<h2 id="section-1">调用关系</h2>
-
-<p><img src="http://lazybing.github.io/images/avformat_find_stream_info/avformat_find_stream_info.png" /></p>
 
 ]]></content>
   </entry>
