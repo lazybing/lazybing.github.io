@@ -9,8 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="获取文件路径后缀名 C 语言实现 C++ 语言实现 Shell 脚本实现 本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
-工作中遇到某个问题时，自然而然能想到的解决方法，通常是一些比较通用的小技巧。 获取文件路径后缀名 &hellip;">
+  <meta name="description" content="获取文件路径后缀名 C 语言实现 C++ 语言实现 Shell 脚本实现 调试信息分级打印 本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
+工作中遇到某个问题时，自然而然能想到的解决方法，通常是一些比较通用的小技巧。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -106,6 +106,7 @@
       <li><a href="#shell-" id="markdown-toc-shell-">Shell 脚本实现</a></li>
     </ul>
   </li>
+  <li><a href="#section-1" id="markdown-toc-section-1">调试信息分级打印</a></li>
 </ul>
 
 <p>本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
@@ -193,6 +194,99 @@
 </span><span class="line"><span class="nb">echo</span> <span class="s2">&quot;File Extension without Name:$ext&quot;</span>
 </span></code></pre></td></tr></table></div></figure>
 
+<h2 id="section-1">调试信息分级打印</h2>
+
+<p>在工作中，经常遇到需要将调试信息分级打印的情况。比如在码流播放中可能默认要打印出码流的宽高、码流的 CODEC 类型等基本信息，可以定义此类信息级别为<code>LOG_INFO</code>级别；
+码流播放时，可能会出现错误，此类信息级别为<code>LOG_ERROR</code>等。</p>
+
+<p>实现思路：将需要打印的信息级别与默认打印信息级别进行比较，级别高时，将信息打印出来；级别低时，不打印信息。</p>
+
+<figure class="code"><figcaption><span>log_level </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define LOG_DEFAULT 2</span>
+</span><span class="line"><span class="cp">#define LOG_NONE    (-1)</span>
+</span><span class="line"><span class="cp">#define LOG_ERROR   0</span>
+</span><span class="line"><span class="cp">#define LOG_WARNING 1</span>
+</span><span class="line"><span class="cp">#define LOG_INFO    2</span>
+</span><span class="line"><span class="cp">#define LOG_DEBUG   3</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">Printf</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="kt">va_list</span> <span class="n">arg</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">   <span class="kt">char</span> <span class="o">*</span><span class="n">psz_prefix</span><span class="p">;</span>
+</span><span class="line">   <span class="k">switch</span><span class="p">(</span><span class="n">i_level</span><span class="p">)</span>
+</span><span class="line">   <span class="p">{</span>
+</span><span class="line">        <span class="k">case</span> <span class="nl">LOG_ERROR</span><span class="p">:</span>
+</span><span class="line">            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="s">&quot;error&quot;</span><span class="p">;</span>
+</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">        <span class="k">case</span> <span class="nl">LOG_WARNING</span><span class="p">:</span>
+</span><span class="line">            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="s">&quot;warning&quot;</span><span class="p">;</span>
+</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">        <span class="k">case</span> <span class="nl">LOG_INFO</span><span class="p">:</span>
+</span><span class="line">            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="s">&quot;info&quot;</span><span class="p">;</span>
+</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">        <span class="k">case</span> <span class="nl">LOG_DEBUG</span><span class="p">:</span>
+</span><span class="line">            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="s">&quot;debug&quot;</span><span class="p">;</span>
+</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">        <span class="k">default</span><span class="o">:</span>
+</span><span class="line">            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="s">&quot;unknown&quot;</span><span class="p">;</span>
+</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">   <span class="p">}</span>
+</span><span class="line">   <span class="n">vfprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="p">...);</span>
+</span><span class="line"><span class="kt">void</span> <span class="nf">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="p">...)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">i_level</span> <span class="o">&lt;=</span> <span class="n">LOG_DEFAULT</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">va_list</span> <span class="n">arg</span><span class="p">;</span>
+</span><span class="line">        <span class="n">va_start</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">);</span>
+</span><span class="line">        <span class="n">Printf</span><span class="p">(</span><span class="n">i_level</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
+</span><span class="line">        <span class="n">va_end</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 </div>
 
 
