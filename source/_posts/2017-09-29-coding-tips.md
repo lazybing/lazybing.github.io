@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "编码小技巧"
+title: "编程小技巧"
 date: 2017-09-29 13:35:57 -0700
 comments: true
 categories: 总结积累
@@ -66,5 +66,56 @@ echo "Filename without Extension:$fname"
 echo "File Extension without Name:$ext"
 {% endcodeblock %}
 
+## 调试信息分级打印
 
+在工作中，经常遇到需要将调试信息分级打印的情况。比如在码流播放中可能默认要打印出码流的宽高、码流的 CODEC 类型等基本信息，可以定义此类信息级别为`LOG_INFO`级别；
+码流播放时，可能会出现错误，此类信息级别为`LOG_ERROR`等。  
 
+实现思路：将需要打印的信息级别与默认打印信息级别进行比较，级别高时，将信息打印出来；级别低时，不打印信息。
+
+{% codeblock lang:c log_level %}
+
+#define LOG_DEFAULT 2
+#define LOG_NONE    (-1)
+#define LOG_ERROR   0
+#define LOG_WARNING 1
+#define LOG_INFO    2
+#define LOG_DEBUG   3
+
+void Printf(int i_level, const char *psz_fmt, va_list arg)
+{
+   char *psz_prefix;
+   switch(i_level) 
+   {
+        case LOG_ERROR:
+            psz_prefix = "error";
+            break;
+        case LOG_WARNING:
+            psz_prefix = "warning";
+            break;
+        case LOG_INFO:
+            psz_prefix = "info";
+            break;
+        case LOG_DEBUG:
+            psz_prefix = "debug";
+            break;
+        default:
+            psz_prefix = "unknown";
+            break;
+   }
+   vfprintf(stderr, psz_fmt, arg);
+}
+
+void LOG_PRINT(int i_level, const char *psz_fmt, ...); 
+void LOG_PRINT(int i_level, const char *psz_fmt, ...)
+{
+    if(i_level <= LOG_DEFAULT)
+    {
+        va_list arg;
+        va_start(arg, psz_fmt);
+        Printf(i_level, psz_fmt, arg);
+        va_end(arg);
+    }
+}
+
+{% endcodeblock %}
