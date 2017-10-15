@@ -311,36 +311,38 @@
 <h5 id="audio-data">Audio Data</h5>
 
 <table>
+  <thead>
+    <tr>
+      <th style="text-align: center">数据大小</th>
+      <th style="text-align: center">名称</th>
+      <th style="text-align: center">备注</th>
+    </tr>
+  </thead>
   <tbody>
     <tr>
-      <td>数据大小</td>
-      <td>名称</td>
-      <td>备注</td>
+      <td style="text-align: center">bit[4]</td>
+      <td style="text-align: center">Sound Format</td>
+      <td style="text-align: center">2(0x2)-MP3;3(0x3)-PCM;10(0xA)-AAC</td>
     </tr>
     <tr>
-      <td>bit[4]</td>
-      <td>Sound Format</td>
-      <td>2(0x2)-MP3;3(0x3)-PCM;10(0xA)-AAC</td>
+      <td style="text-align: center">bit[2]</td>
+      <td style="text-align: center">Sample Rate</td>
+      <td style="text-align: center">0(0x0)-5500Hz;1(0x1)-11025Hz;2(0x2)-22050Hz;3(0x3)-44100Hz</td>
     </tr>
     <tr>
-      <td>bit[2]</td>
-      <td>Sample Rate</td>
-      <td>0(0x0)-5500Hz;1(0x1)-11025Hz;2(0x2)-22050Hz;3(0x3)-44100Hz</td>
+      <td style="text-align: center">bit[1]</td>
+      <td style="text-align: center">Sample Size</td>
+      <td style="text-align: center">0(0x0)-8bit;1(0x1)-16bit</td>
     </tr>
     <tr>
-      <td>bit[1]</td>
-      <td>Sample Size</td>
-      <td>0(0x0)-8bit;1(0x1)-16bit</td>
+      <td style="text-align: center">bit[1]</td>
+      <td style="text-align: center">Channel Count</td>
+      <td style="text-align: center">0(0x0)-Mono;1(0x1)-Stereo</td>
     </tr>
     <tr>
-      <td>bit[1]</td>
-      <td>Channel Count</td>
-      <td>0(0x0)-Mono;1(0x1)-Stereo</td>
-    </tr>
-    <tr>
-      <td>byte[Payload Size -1]</td>
-      <td>Sound Data</td>
-      <td>音频数据，随 Sound Format 不同，格式也不同</td>
+      <td style="text-align: center">byte[Payload Size -1]</td>
+      <td style="text-align: center">Sound Data</td>
+      <td style="text-align: center">音频数据，随 Sound Format 不同，格式也不同</td>
     </tr>
   </tbody>
 </table>
@@ -348,51 +350,72 @@
 <p>如果 Sound Format 为 0xA(AAC)，Sound Data 为：</p>
 
 <table>
+  <thead>
+    <tr>
+      <th style="text-align: center">数据大小</th>
+      <th style="text-align: center">名称</th>
+      <th style="text-align: center">备注</th>
+    </tr>
+  </thead>
   <tbody>
     <tr>
-      <td>数据大小</td>
-      <td>名称</td>
-      <td>备注</td>
+      <td style="text-align: center">byte</td>
+      <td style="text-align: center">Type</td>
+      <td style="text-align: center">0(0x0)-Sequence Header;1(0x1)-Raw;一般 Sequence Header 为第一个 Audio Tag，并且全文件只出现一次</td>
     </tr>
     <tr>
-      <td>byte</td>
-      <td>Type</td>
-      <td>0(0x0)-Sequence Header;1(0x1)-Raw;一般 Sequence Header 为第一个 Audio Tag，并且全文件只出现一次</td>
+      <td style="text-align: center">bit[5]</td>
+      <td style="text-align: center">Object Type</td>
+      <td style="text-align: center">1(0x1)-AAC Main;2(0x2)-AAC LC;31(0xFE)-Escape</td>
     </tr>
     <tr>
-      <td>bit[5]</td>
-      <td>Object Type</td>
-      <td>1(0x1)-AAC Main;2(0x2)-AAC LC;31(0xFE)-Escape</td>
+      <td style="text-align: center">bit[6]</td>
+      <td style="text-align: center">Extend Object Type</td>
+      <td style="text-align: center">如果 Object Type 为 0xFE</td>
     </tr>
     <tr>
-      <td>bit[6]</td>
-      <td>Extend Object Type</td>
-      <td>如果 Object Type 为 0xFE</td>
+      <td style="text-align: center">bit[4]</td>
+      <td style="text-align: center">Sample Frequency Index</td>
+      <td style="text-align: center">0~12分别为96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350</td>
     </tr>
     <tr>
-      <td>bit[4]</td>
-      <td>Sample Frequency Index</td>
-      <td>0~12分别为96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350</td>
+      <td style="text-align: center">uint24</td>
+      <td style="text-align: center">Sample Frequeny</td>
+      <td style="text-align: center">如果 Sample Frequency Index 为 15，此处为 Sample Frequency</td>
     </tr>
     <tr>
-      <td>uint24</td>
-      <td>Sample Frequeny</td>
-      <td>如果 Sample Frequency Index 为 15，此处为 Sample Frequency</td>
-    </tr>
-    <tr>
-      <td>bit[4]</td>
-      <td>Channel Count</td>
-      <td>声道数，4 为 Stereo</td>
+      <td style="text-align: center">bit[4]</td>
+      <td style="text-align: center">Channel Count</td>
+      <td style="text-align: center">声道数，4 为 Stereo</td>
     </tr>
   </tbody>
 </table>
 
 <h5 id="aacaudiodata">AACAUDIODATA</h5>
 
-<p><code>AAC</code>格式在<code>Flash Player</code>中被支持。<br />
-| Field | Type | Comment | 
-| AACPacketType | UI8 | 0:AAC sequence header;1:AAC raw |
-| Data | UI8[n] | if AACPacketType == 0 AudioSpecificConfig else if AACPacketType == 1 Raw AAC frame data |</p>
+<p><code>AAC</code>格式在<code>Flash Player</code>中被支持。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">AACPacketType</td>
+      <td style="text-align: center">UI8</td>
+      <td style="text-align: center">0:AAC sequence header;1:AAC raw</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Data</td>
+      <td style="text-align: center">UI8[n]</td>
+      <td style="text-align: center">if AACPacketType == 0 AudioSpecificConfig else if AACPacketType == 1 Raw AAC frame data</td>
+    </tr>
+  </tbody>
+</table>
 
 <h4 id="video-tags">Video tags</h4>
 
