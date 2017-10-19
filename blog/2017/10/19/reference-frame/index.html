@@ -151,6 +151,26 @@
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+<p>当编码帧类型为<code>IDR</code>帧时，需要重置整个参考帧队列，<code>X264</code>中重置参考队列是通过<code>x264_reference_reset</code>函数完成，实现过程即为将<code>reference</code>队列
+所有的参考帧设置为<code>unused</code>队列中的<code>unused</code>帧；实现代码如下：</p>
+
+<figure class="code"><figcaption><span>x264_reference_reset </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">x264_reference_reset</span><span class="p">(</span> <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+</span><span class="line">        <span class="n">x264_frame_push_unused</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">x264_frame_pop</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span> <span class="p">)</span> <span class="p">);</span>
+</span><span class="line">    <span class="n">h</span><span class="o">-&gt;</span><span class="n">fdec</span><span class="o">-&gt;</span><span class="n">i_poc</span> <span class="o">=</span>
+</span><span class="line">    <span class="n">h</span><span class="o">-&gt;</span><span class="n">fenc</span><span class="o">-&gt;</span><span class="n">i_poc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
