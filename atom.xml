@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-10-15T07:32:33-07:00</updated>
+  <updated>2017-10-19T09:14:33-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,66 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264 源码解析之参考帧]]></title>
+    <link href="http://lazybing.github.io/blog/2017/10/19/reference-frame/"/>
+    <updated>2017-10-19T07:53:49-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/10/19/reference-frame</id>
+    <content type="html"><![CDATA[
+<p>本篇博客主要记录<code>X264</code>中关于参考帧管理。</p>
+
+<!--more-->
+
+<p><code>X264</code>中的帧可以大致分为以下几类：参考帧(ference frame)、当前编码帧(current frame)、未使用帧(unused frame)等。对帧的管理操作
+的基本操作由两种：从队列中获取帧(<code>x264_frame_pop</code>)、向队列中添加帧(<code>x264_frame_push_unused</code>)。</p>
+
+<p>关于帧队列的管理是通过数组来的，下面先介绍最基本的帧队列的一些基本操作。</p>
+
+<p>首先将<code>frame</code>帧插入到<code>list</code>队列中，实现代码如下：</p>
+
+<figure class="code"><figcaption><span>x264_frame_push </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_frame_push</span><span class="p">(</span><span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span><span class="p">,</span> <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>从<code>list</code>队列中获取<code>frame</code>帧，实现代码如下：</p>
+
+<figure class="code"><figcaption><span>x264_frame_pop </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">x264_frame_t</span> <span class="o">*</span><span class="nf">x264_frame_pop</span><span class="p">(</span> <span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">);</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="n">frame</span> <span class="o">=</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264 源码解析之判断帧类型]]></title>
@@ -3937,22 +3997,6 @@ crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf
 </pre></td><td class="code"><pre><code class=""><span class="line">x264 [options] -o outfile infile</span></code></pre></td></tr></table></div></figure>
 
 <p>其中的输入文件可以是<code>raw</code>文件、<code>.y4m</code>文件等，输出文件格式可以是<code>.264</code>、<code>.mkv</code>、<code>.flv</code>和<code>.mp4</code>；其中输入文件如果是<code>raw</code>文件，需要在 infile 后面通过输入参数（–input-res 640x360）来指定分辨率。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Linux 使用小技巧总结]]></title>
-    <link href="http://lazybing.github.io/blog/2017/05/01/linux-tips/"/>
-    <updated>2017-05-01T19:03:52-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/05/01/linux-tips</id>
-    <content type="html"><![CDATA[<p>Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。</p>
-
-<h2 id="section">快速搜索命令</h2>
-
-<p>Linux 使用大部分是在命令行下进行的，某些命令是前面使用到的，此时我们不想重新完整的输入命令，而是想根据命令中的某些关键字搜索到该命令，然后直接执行。
-此时第一个想到的方法可能是<code>history</code>命令，然后复制粘贴，其实还有一个更智能的命令搜索命令<code>Ctrl+r</code>。执行完<code>Ctrl+r</code>后，可直接输出要查找的命令中的某个
-关键字。然后直接回车即可！非常方便，尤其是命令行比较长的时候。</p>
-
 ]]></content>
   </entry>
   

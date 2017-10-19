@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>X264 源码解析之判断帧类型 - 懒人李冰</title>
+  <title>X264 源码解析之参考帧 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="
-">
+  <meta name="description" content="本篇博客主要记录X264中关于参考帧管理。 X264中的帧可以大致分为以下几类：参考帧(ference frame)、当前编码帧(current frame)、未使用帧(unused frame)等。对帧的管理操作
+的基本操作由两种：从队列中获取帧(x264_frame_pop)、向队列中添加帧 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2017/10/11/x264-slicetype-decide/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/10/19/reference-frame/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +83,7 @@
   
   <header>
     
-      <h1 class="entry-title">X264 源码解析之判断帧类型</h1>
+      <h1 class="entry-title">X264 源码解析之参考帧</h1>
     
     
       <p class="meta">
@@ -92,7 +92,7 @@
 
 
 
-<time class='entry-date' datetime='2017-10-11T08:59:17-07:00'><span class='date'>2017 年 10 月 11 日</span> <span class='time'>8:59 am</span></time>
+<time class='entry-date' datetime='2017-10-19T07:53:49-07:00'><span class='date'>2017 年 10 月 19 日</span> <span class='time'>7:53 am</span></time>
         
       </p>
     
@@ -100,6 +100,57 @@
 
 
 <div class="entry-content">
+<p>本篇博客主要记录<code>X264</code>中关于参考帧管理。</p>
+
+<!--more-->
+
+<p><code>X264</code>中的帧可以大致分为以下几类：参考帧(ference frame)、当前编码帧(current frame)、未使用帧(unused frame)等。对帧的管理操作
+的基本操作由两种：从队列中获取帧(<code>x264_frame_pop</code>)、向队列中添加帧(<code>x264_frame_push_unused</code>)。</p>
+
+<p>关于帧队列的管理是通过数组来的，下面先介绍最基本的帧队列的一些基本操作。</p>
+
+<p>首先将<code>frame</code>帧插入到<code>list</code>队列中，实现代码如下：</p>
+
+<figure class="code"><figcaption><span>x264_frame_push </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_frame_push</span><span class="p">(</span><span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span><span class="p">,</span> <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>从<code>list</code>队列中获取<code>frame</code>帧，实现代码如下：</p>
+
+<figure class="code"><figcaption><span>x264_frame_pop </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">x264_frame_t</span> <span class="o">*</span><span class="nf">x264_frame_pop</span><span class="p">(</span> <span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">);</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="n">frame</span> <span class="o">=</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
@@ -115,7 +166,7 @@
 
 
 
-<time class='entry-date' datetime='2017-10-11T08:59:17-07:00'><span class='date'>2017 年 10 月 11 日</span> <span class='time'>8:59 am</span></time>
+<time class='entry-date' datetime='2017-10-19T07:53:49-07:00'><span class='date'>2017 年 10 月 19 日</span> <span class='time'>7:53 am</span></time>
       
 
 <span class="categories">
@@ -129,7 +180,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/10/11/x264-slicetype-decide/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/10/11/x264-slicetype-decide/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/10/19/reference-frame/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/10/19/reference-frame/" >Tweet</a>
   
   
   
@@ -138,10 +189,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2017/09/29/coding-tips/" title="Previous Post: 编程小技巧">&laquo; 编程小技巧</a>
+        <a class="basic-alignment left" href="/blog/2017/10/11/x264-slicetype-decide/" title="Previous Post: x264 源码解析之判断帧类型">&laquo; x264 源码解析之判断帧类型</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2017/10/19/reference-frame/" title="Next Post: X264 源码解析之参考帧">X264 源码解析之参考帧 &raquo;</a>
       
     </p>
   </footer>
