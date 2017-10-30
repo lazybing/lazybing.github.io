@@ -4,7 +4,7 @@
   <title><![CDATA[分类:项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-10-19T09:35:43-07:00</updated>
+  <updated>2017-10-30T08:44:03-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,164 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[FFmpeg 和 SDL 使用教程（三）]]></title>
+    <link href="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial3/"/>
+    <updated>2016-05-10T17:22:59-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial3</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">音频</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">创建音频</a></li>
+  <li><a href="#queues" id="markdown-toc-queues">Queues</a></li>
+</ul>
+
+<p>接下来继续实现播放器的另一个功能：音频播放。</p>
+
+<!--more-->
+
+<h2 id="section">音频</h2>
+
+<p>接下来需要添加音频。<code>SDL</code>同样给了我们输出音频的方法，<code>SDL_OpenAudio()</code>函数用来打开音频设备，它接收<code>SDL_AudioSpec()</code>结构体作为函数的参数，该结构体包含了输出的音频的所有信息。</p>
+
+<p>开始之前，我们先来看一下音频是如何被计算机处理的。数字音频包含一些列的长流的采样，每个采样代表着音频波的大小。声音按照一个固定的采样率被记录，该采样率代表着播放的速度，表示每秒钟的采样个数。比如
+采样率是每秒钟 22050 和 44100，它们分别是无线电广播和 CD 的采样率。此外，很多立体声可能包含不止一个音频频道。</p>
+
+<h2 id="section-1">创建音频</h2>
+
+<p>暂时把这些都记在脑子里，因为现在我们还没有任何关于音频流的信息。让我们回到代码中关于寻找视频流的地方，并找到那个流是音频流。</p>
+
+<p><figure class='code'><figcaption><span>find_audio_video_stream </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Find the first video stream</span>
+</span><span class='line'><span class="n">videoStream</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="n">audioStream</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">pFormatCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nb_streams</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">streams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec_type</span> <span class="o">==</span> <span class="n">AVMEDIA_TYPE_VIDEO</span>
+</span><span class='line'>       <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">videoStream</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">videoStream</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">streams</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec_type</span> <span class="o">==</span> <span class="n">AVMEDIA_TYPE_AUDIO</span>
+</span><span class='line'>       <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">audioStream</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">audioStream</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">videoStream</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Didn’t find a video stream</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">audioStream</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>找到音频流后，就可以从音频流里获取我们所需要的<code>AVCodecContext</code>的所有信息，就像获取视频流的信息类似：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">aCodecCtxOrig</span><span class="p">;</span>
+</span><span class='line'><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">aCodecCtx</span><span class="p">;</span>
+</span><span class='line'><span class="n">aCodecCtxOrig</span> <span class="o">=</span> <span class="n">pFormatCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">streams</span><span class="p">[</span><span class="n">audioStream</span><span class="p">]</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>同样的，与视频相似，我们同样需要打开音频。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVCodec</span> <span class="o">*</span><span class="n">aCodec</span><span class="p">;</span>
+</span><span class='line'><span class="n">aCodec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">aCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">codec_id</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">aCodec</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Unsupported</span> <span class="n">codec</span><span class="o">!</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="c1">//copy context</span>
+</span><span class='line'><span class="n">aCodecCtx</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">aCodec</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avcodec_copy_context</span><span class="p">(</span><span class="n">aCodecCtx</span><span class="p">,</span> <span class="n">aCodecCtxOrig</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Couldn</span><span class="err">’</span><span class="n">t</span> <span class="n">copy</span> <span class="n">codec</span> <span class="n">context</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="c1">//Error copying codec context</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">set</span> <span class="n">up</span> <span class="n">SDL</span> <span class="n">Audio</span> <span class="n">here</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">aCodecCtx</span><span class="p">,</span> <span class="n">aCodec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><code>Codec Context</code>中的信息包含了所有我们需要用于初始化音频的信息：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">wanted_spec</span><span class="p">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">aCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sample_rate</span><span class="p">;</span>
+</span><span class='line'><span class="n">wanted_spec</span><span class="p">.</span><span class="n">format</span> <span class="o">=</span> <span class="n">AUDIO_S16SYS</span><span class="p">;</span>
+</span><span class='line'><span class="n">wanted_spec</span><span class="p">.</span><span class="n">channels</span> <span class="o">=</span> <span class="n">aCodecCtx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">channels</span><span class="p">;</span>
+</span><span class='line'><span class="n">wanted_spec</span><span class="p">.</span><span class="n">silence</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="n">wanted_spec</span><span class="p">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">SDL_AUDIO_BUFFER_SIZE</span><span class="p">;</span>
+</span><span class='line'><span class="n">wanted_spec</span><span class="p">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">audio_callback</span><span class="p">;</span>
+</span><span class='line'><span class="n">wanted_spec</span><span class="p">.</span><span class="n">userdata</span> <span class="o">=</span> <span class="n">aCodecCtx</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">SDL_OpenAudio</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">wanted_spec</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">spec</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="nl">SDL_OpenAudio</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">SDL_GetError</span><span class="p">());</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>其中：</p>
+
+<ul>
+  <li>freq:采样率。</li>
+  <li>format：告诉<code>SDL</code>我们将采用的格式。<code>S16SYS</code>中的<code>S</code>是<code>signed</code>的缩写。数字 16 表示每个采样占 16 位;<code>SYS</code>指大小端与系统本身有关。</li>
+  <li>channels: 声道数。</li>
+  <li>silence:</li>
+  <li>samples:音频空间的大小，一般大小控制在 512 至 8192,<code>ffplay</code>使用 1024。</li>
+  <li>callback:此处给真实的回调函数，稍后会详细的介绍该函数。</li>
+  <li>userdata:</li>
+</ul>
+
+<p>最后，使用<code>SDL_OpenAudio</code>打开音频。</p>
+
+<h2 id="queues">Queues</h2>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[FFmpeg 和 SDL 使用教程（二）]]></title>
