@@ -4,7 +4,7 @@
   <title><![CDATA[分类:项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-10-31T08:25:56-07:00</updated>
+  <updated>2017-10-31T09:17:34-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -25,6 +25,7 @@
   <li><a href="#in-case-of-fire" id="markdown-toc-in-case-of-fire">In Case of Fire</a></li>
   <li><a href="#feeding-packets" id="markdown-toc-feeding-packets">Feeding Packets</a></li>
   <li><a href="#fetching-packets" id="markdown-toc-fetching-packets">Fetching Packets</a></li>
+  <li><a href="#finally-decoding-the-audio" id="markdown-toc-finally-decoding-the-audio">Finally Decoding the Audio</a></li>
 </ul>
 
 <p>接下来继续实现播放器的另一个功能：音频播放。</p>
@@ -393,6 +394,73 @@ typedef struct PacketQueue{
 注意，此处将数据包<code>packet</code>放到队列后，并没有立即释放。该<code>packet</code>会在稍后的解码时释放掉。</p>
 
 <h2 id="fetching-packets">Fetching Packets</h2>
+
+<p>最后，让我们完成<code>audio_callback</code>函数来从队列中拉取数据包。回调函数必须是如下格式<code>void callback(void *userdata, Uint8 *stream, int len)</code>,此处的<code>userdata</code>是我们给 SDL 的指针，<code>stream</code>是将音频数据写到的缓存，<code>len</code>是缓存的长度。代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">audio_callback</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">userdata</span><span class="p">,</span> <span class="n">Uint8</span> <span class="o">*</span><span class="n">stream</span><span class="p">,</span> <span class="kt">int</span> <span class="n">len</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">aCodecCtx</span> <span class="o">=</span> <span class="p">(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="p">)</span><span class="n">userdata</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">len1</span><span class="p">,</span> <span class="n">audio_size</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">static</span> <span class="kt">uint8_t</span> <span class="n">audio_buf</span><span class="p">[(</span><span class="n">AVCODEC_MAX_AUDIO_FRAME_SIZE</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">];</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">audio_buf_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">audio_buf_index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">len</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">audio_buf_index</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="n">audio_buf_size</span><span class="p">){</span>
+</span><span class='line'>        <span class="cm">/*we have already sent all our data; get more*/</span>
+</span><span class='line'>        <span class="n">audio_size</span> <span class="o">=</span> <span class="n">audio_decode_frame</span><span class="p">(</span><span class="n">aCodecCtx</span><span class="p">,</span> <span class="n">audio_buf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">audio_buf</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">audio_size</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>            <span class="cm">/*If error, output silence*/</span>
+</span><span class='line'>            <span class="n">audio_buf_size</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">memset</span><span class="p">(</span><span class="n">audio_buf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">audio_buf_size</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class='line'>            <span class="n">audio_buf_size</span> <span class="o">=</span> <span class="n">audio_size</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">audio_buf_index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">len1</span> <span class="o">=</span> <span class="n">audio_buf_size</span> <span class="o">-</span> <span class="n">audio_buf_index</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">len1</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">len</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">len1</span> <span class="o">=</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">memcpy</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="p">)</span><span class="n">audio_buf</span> <span class="o">+</span> <span class="n">audio_buf_index</span><span class="p">,</span> <span class="n">len1</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">len</span> <span class="o">-=</span> <span class="n">len1</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">stream</span> <span class="o">+=</span> <span class="n">len1</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">audio_buf_index</span> <span class="o">+=</span> <span class="n">len1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h2 id="finally-decoding-the-audio">Finally Decoding the Audio</h2>
 
 ]]></content>
   </entry>
