@@ -4,7 +4,7 @@
   <title><![CDATA[分类:项目实践 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xiang-mu-shi-jian/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-10-30T08:44:03-07:00</updated>
+  <updated>2017-10-31T08:06:46-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -22,6 +22,7 @@
   <li><a href="#section" id="markdown-toc-section">音频</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">创建音频</a></li>
   <li><a href="#queues" id="markdown-toc-queues">Queues</a></li>
+  <li><a href="#in-case-of-fire" id="markdown-toc-in-case-of-fire">In Case of Fire</a></li>
 </ul>
 
 <p>接下来继续实现播放器的另一个功能：音频播放。</p>
@@ -167,6 +168,167 @@
 <p>最后，使用<code>SDL_OpenAudio</code>打开音频。</p>
 
 <h2 id="queues">Queues</h2>
+
+<p>现在我们需要从流中获取音频信息，接下来，我们将不断的从电影文件中获取数据包，但同时<code>SDL</code>会调用回调函数。我们需要做的是创建数据包队列。
+<code>FFMpeg</code>有一个数据结构<code>AVPacketList</code>帮助我们，它是一个数据包的链表。队列数据结构体为：</p>
+
+<p><code>
+typedef struct PacketQueue{
+    AVPacketList *first_pkt, *last_pkt;
+    int nb_packets;
+    int size;
+    SDL_mutex *mutex;
+    SDL_cond *cond;
+}PacketQueue;
+</code></p>
+
+<p>注意，<code>nb_packets</code>与<code>size</code>不同，<code>size</code>是从<code>packet-&gt;size</code>中获取的字节大小。该结构体中有<code>mutex</code>和<code>condition variable</code>，因为<code>SDL</code>处理音频是一个独立分开的线程。
+如果不锁住该队列，会有死锁等问题。后面会有队列的实现。</p>
+
+<p>首先，初始化队列：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">packet_queue_init</span><span class="p">(</span><span class="n">PacketQueue</span> <span class="o">*</span><span class="n">q</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">memset</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">PacketQueue</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mutext</span> <span class="o">=</span> <span class="n">SDL_CreateMutex</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cond</span>   <span class="o">=</span> <span class="n">SDL_CreateCond</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>之后，填充初始化的队列：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">packet_queue_put</span><span class="p">(</span><span class="n">PacketQueue</span> <span class="o">*</span><span class="n">q</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">pkt</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">AVPacketList</span> <span class="o">*</span><span class="n">pkt1</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">av_dup_packet</span><span class="p">(</span><span class="n">pkt</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">pkt1</span> <span class="o">=</span> <span class="n">av_malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">AVPacketList</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">pkt1</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">pkt1</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pkt</span> <span class="o">=</span> <span class="o">*</span><span class="n">pkt</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">pkt1</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">SDL_LockMutex</span><span class="p">(</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">last_pkt</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">first_pkt</span> <span class="o">=</span> <span class="n">pkt1</span><span class="p">;</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'>    <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">last_pkt</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span> <span class="o">=</span> <span class="n">pkt1</span><span class="p">;</span>
+</span><span class='line'><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">last_pkt</span> <span class="o">=</span> <span class="n">pkt1</span><span class="p">;</span>
+</span><span class='line'><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nb_packets</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">size</span> <span class="o">+=</span> <span class="n">pkt1</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pkt</span><span class="p">.</span><span class="n">size</span><span class="p">;</span>
+</span><span class='line'><span class="n">SDL_CondSignal</span><span class="p">(</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cond</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">SDL_UnlockMutex</span><span class="p">(</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p><code>SDL_LockMutex()</code>锁住队列中的互斥体，此时可以往队列中添加信息；之后用<code>SDL_CondSignal()</code>通过条件变量发送信号给获取函数，通知它有数据可以处理，之后释放互斥体。</p>
+
+<p>获取函数定义如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">quit</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">packet_queue_get</span><span class="p">(</span><span class="n">PacketQueue</span> <span class="o">*</span><span class="n">q</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">pkt</span><span class="p">,</span> <span class="kt">int</span> <span class="n">block</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">AVPacketList</span> <span class="o">*</span><span class="n">pkt1</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">SDL_LockMutex</span><span class="p">(</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span><span class="p">(;;){</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">quit</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">pkt1</span> <span class="o">=</span> <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">first_pkt</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">pkt1</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">first_pkt</span> <span class="o">=</span> <span class="n">pkt1</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">next</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">first_pkt</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">last_pkt</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nb_packets</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">size</span> <span class="o">-=</span> <span class="n">pkt1</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pkt</span><span class="p">.</span><span class="n">size</span><span class="p">;</span>
+</span><span class='line'>        <span class="o">*</span><span class="n">pkt</span> <span class="o">=</span> <span class="n">pkt1</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pkt</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">av_free</span><span class="p">(</span><span class="n">pkt1</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">ret</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span><span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">block</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">SDL_CondWait</span><span class="p">(</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cond</span><span class="p">,</span> <span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">SDL_UnlockMutex</span><span class="p">(</span><span class="n">q</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'><span class="k">return</span> <span class="n">ret</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>如上面所示，将函数封装为一个死循环中，目的是如果要 block 住，就一定要获取数据。为避免陷入死循环，我们使用了<code>SDL_CondWait()</code>函数，它的基本作用就是等待<code>SDL_CondSignal()</code>给的信号，之后继续。
+如果我们此处拿着锁，put 函数就无法向队列中添加任何东西，看起来此时处于死锁状态，其实<code>SDL_CondWait()</code>同样会解锁互斥体，一旦获得信号量，之后会再次锁住.</p>
+
+<h2 id="in-case-of-fire">In Case of Fire</h2>
 
 ]]></content>
   </entry>
