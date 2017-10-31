@@ -549,7 +549,134 @@
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+<p>这是简单的循环，从<code>audio_decode_frame()</code>中拉取数据，存储结果到一个中间缓存中，并写<code>len</code>字节到<code>stream</code>中。如果没有足够的数据，就获取更多数据。如果有剩余的数据，同样要保存下来。
+<code>audio_buf</code>的大小是 1.5 倍的最大音频帧的大小，这样会有一个更好的缓冲效果。</p>
+
 <h2 id="finally-decoding-the-audio">Finally Decoding the Audio</h2>
+
+<p>最后让我们看一下真真的音频解码器<code>audio_decode_frame</code>的实现：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">audio_decode_frame</span><span class="p">(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">aCodecCtx</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">audio_buf</span><span class="p">,</span>
+</span><span class="line">                       <span class="kt">int</span> <span class="n">buf_size</span><span class="p">){</span>
+</span><span class="line">    <span class="k">static</span> <span class="n">AVPacket</span> <span class="n">pkt</span><span class="p">;</span>
+</span><span class="line">    <span class="k">static</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">audio_pkt_data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="k">static</span> <span class="kt">int</span> <span class="n">audio_pkt_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="k">static</span> <span class="n">AVFrame</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int</span> <span class="n">len1</span><span class="p">,</span> <span class="n">data_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(;;){</span>
+</span><span class="line">        <span class="k">while</span><span class="p">(</span><span class="n">audio_pkt_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">            <span class="kt">int</span> <span class="n">go_frame</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">            <span class="n">len1</span> <span class="o">=</span> <span class="n">avcodec_decode_audio4</span><span class="p">(</span><span class="n">aCodecCtx</span><span class="p">,</span> <span class="err">$</span><span class="n">frame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">got_frame</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pkt</span><span class="p">);</span>
+</span><span class="line">            <span class="k">if</span><span class="p">(</span><span class="n">len1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">                <span class="cm">/*if error, skip frame*/</span>
+</span><span class="line">                <span class="n">audio_pkt_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">                <span class="k">break</span><span class="p">;</span>
+</span><span class="line">            <span class="p">}</span>
+</span><span class="line">            <span class="n">audio_pkt_data</span> <span class="o">+=</span> <span class="n">len1</span><span class="p">;</span>
+</span><span class="line">            <span class="n">audio_pkt_size</span> <span class="o">-=</span> <span class="n">len1</span><span class="p">;</span>
+</span><span class="line">            <span class="n">data_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">            <span class="k">if</span><span class="p">(</span><span class="n">got_frame</span><span class="p">){</span>
+</span><span class="line">                <span class="n">data_size</span> <span class="o">=</span> <span class="n">av_samples_get_buffer_size</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span>
+</span><span class="line">                                                       <span class="n">aCodecCtx</span><span class="o">-&gt;</span><span class="n">channels</span><span class="p">,</span>
+</span><span class="line">                                                       <span class="n">frame</span><span class="p">.</span><span class="n">nb_samples</span><span class="p">,</span>
+</span><span class="line">                                                       <span class="n">aCodecCtx</span><span class="o">-&gt;</span><span class="n">sample_fmt</span><span class="p">,</span>
+</span><span class="line">                                                       <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">                <span class="n">assert</span><span class="p">(</span><span class="n">data_size</span> <span class="o">&lt;=</span> <span class="n">buf_size</span><span class="p">);</span>
+</span><span class="line">                <span class="n">memcpy</span><span class="p">(</span><span class="n">audio_buf</span><span class="p">,</span> <span class="n">frame_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data_size</span><span class="p">);</span>
+</span><span class="line">            <span class="p">}</span>
+</span><span class="line">            <span class="k">if</span><span class="p">(</span><span class="n">data_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">                <span class="cm">/*No data yet, get more frames*/</span>
+</span><span class="line">                <span class="k">continue</span><span class="p">;</span>
+</span><span class="line">            <span class="p">}</span>
+</span><span class="line">            <span class="cm">/*we have data, return it and come back for more later*/</span>
+</span><span class="line">            <span class="k">return</span> <span class="n">data_size</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">pkt</span><span class="p">.</span><span class="n">data</span><span class="p">)</span>
+</span><span class="line">            <span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pkt</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">quit</span><span class="p">){</span>
+</span><span class="line">            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">packet_queue_get</span><span class="p">(</span><span class="o">&amp;</span><span class="n">audioq</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pkt</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="n">audio_pkt_data</span> <span class="o">=</span> <span class="n">pkt</span><span class="p">.</span><span class="n">data</span><span class="p">;</span>
+</span><span class="line">        <span class="n">audio_pkt_size</span> <span class="o">=</span> <span class="n">pkt</span><span class="p">.</span><span class="n">size</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>整个函数实际上从函数的末尾开始，调用<code>packet_queue_get()</code>，从队列中挑选数据包，并保存其信息。一旦有了可以处理的数据包，就调用
+<code>avcodec_decode_audio4()</code>,它的功能与函数<code>avcodec_decod_video()</code>类似，只有一点略微不同，即当数据包中包含多帧时,此时必须多次调用该函数以得到数据包的所有数据。一旦获取帧，就将获取的数据拷贝到音频缓存，但要确保<code>data_size</code>比音频缓存小。
+记得计算<code>audio_buf</code>的大小，因为<code>SDL</code>给出了一个 8bit 的缓存，而<code>ffmpeg</code>给出了一个 16bit 的缓存。而且要注意，<code>len1</code>和<code>data_size.len1</code>的差值就是我们已经消耗的数据的大小，而<code>data_size</code>即为返回的原始数据的大小。</p>
+
+<p>一旦得到数据，立即查看是否需要从队列中获取更多的数据。如果需要更多的数据包处理，就先保存下来以便后续处理。一旦完成了一个数据包，就释放掉它。</p>
+
+<p>总结，首先通过读循环获取音频数据到队列，之后通过<code>audio_callback</code>函数读数据，它处理数据到<code>SDL</code>，最后<code>SDL</code>将收到的数据送到声卡。</p>
+
+<p>编译：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">gcc -o tutorial03 tutorial03.c -lavutil -lavformat -lavcodec -lswscale -lz -lm  `sdl-config --cflags --libs`</span></code></pre></td></tr></table></div></figure>
+
+<p>现在，视频仍然播放非常快，而音频按照实际的时间在播放。原因是音频信息里会有采样率的标识。接下来，就可以同步音视频的数据了，但在此之前，我们需要
+重新组织该程序，单独的使用一个线程来处理音频数据是个非常好的主意，它使得程序更易于管理、更加模块化。因此，在对音视频进行同步之前，首先要使得代码更易于处理，下一步：<code>Spawning Threads!</code>;</p>
 
 </div>
 
