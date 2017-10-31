@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="音频 创建音频 Queues In Case of Fire 接下来继续实现播放器的另一个功能：音频播放。 音频 接下来需要添加音频。SDL同样给了我们输出音频的方法，SDL_OpenAudio()函数用来打开音频设备，它接收SDL_AudioSpec()结构体作为函数的参数， &hellip;">
+  <meta name="description" content="音频 创建音频 Queues In Case of Fire Feeding Packets Fetching Packets 接下来继续实现播放器的另一个功能：音频播放。 音频 接下来需要添加音频。SDL同样给了我们输出音频的方法，SDL_OpenAudio()函数用来打开音频设备， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -103,6 +103,8 @@
   <li><a href="#section-1" id="markdown-toc-section-1">创建音频</a></li>
   <li><a href="#queues" id="markdown-toc-queues">Queues</a></li>
   <li><a href="#in-case-of-fire" id="markdown-toc-in-case-of-fire">In Case of Fire</a></li>
+  <li><a href="#feeding-packets" id="markdown-toc-feeding-packets">Feeding Packets</a></li>
+  <li><a href="#fetching-packets" id="markdown-toc-fetching-packets">Fetching Packets</a></li>
 </ul>
 
 <p>接下来继续实现播放器的另一个功能：音频播放。</p>
@@ -416,6 +418,69 @@
 如果我们此处拿着锁，put 函数就无法向队列中添加任何东西，看起来此时处于死锁状态，其实<code>SDL_CondWait()</code>同样会解锁互斥体，一旦获得信号量，之后会再次锁住.</p>
 
 <h2 id="in-case-of-fire">In Case of Fire</h2>
+
+<p>我们有一个全局变量<code>quit</code>，可以通过检测该变量的来确认是否设置了程序的退出信号。如果未设置，程序将一直运行下去。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">SDL_PollEvent</span><span class="p">(</span><span class="o">&amp;</span><span class="n">event</span><span class="p">);</span>
+</span><span class="line"><span class="k">switch</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">type</span><span class="p">){</span>
+</span><span class="line">    <span class="k">case</span> <span class="nl">SDL_QUIT</span><span class="p">:</span>
+</span><span class="line">        <span class="n">quit</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="feeding-packets">Feeding Packets</h2>
+
+<p>剩下的唯一事情就是启动队列：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">PacketQueue</span> <span class="n">audioq</span><span class="p">;</span>
+</span><span class="line"><span class="n">main</span><span class="p">(){</span>
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line">    <span class="n">avcodec_open2</span><span class="p">(</span><span class="n">aCodecCtx</span><span class="p">,</span> <span class="n">aCodec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">packet_queue_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">audioq</span><span class="p">);</span>
+</span><span class="line">    <span class="n">SDL_PauseAudio</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>SDL_PauseAudio()</code>最后启动音频设备，如果没有得到数据，它就不会播放声音。</p>
+
+<p>现在已经初始化了队列，接下来就可以向队列中填充数据包。数据包读取循环如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">while</span><span class="p">(</span><span class="n">av_read_frame</span><span class="p">(</span><span class="n">pFormatCtx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">videoStream</span><span class="p">){</span>
+</span><span class="line">        <span class="c1">//Decode video frame</span>
+</span><span class="line">    <span class="p">}</span><span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">packet</span><span class="p">.</span><span class="n">stream_index</span> <span class="o">==</span> <span class="n">audioStream</span><span class="p">){</span>
+</span><span class="line">        <span class="n">packet_queue_put</span><span class="p">(</span><span class="o">&amp;</span><span class="n">audioq</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class="line">        <span class="n">av_free_packet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packet</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+<p>注意，此处将数据包<code>packet</code>放到队列后，并没有立即释放。该<code>packet</code>会在稍后的解码时释放掉。</p>
+
+<h2 id="fetching-packets">Fetching Packets</h2>
 
 </div>
 
