@@ -1,0 +1,518 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>FFmpeg 和 SDL 使用教程（四） - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="概述 简化代码 Our First Thread Getting the Frame:video_thread Queueing the Frame Displaying the Video 本节主要对前面几节的代码进行一下重构。 概述 上一小结，通过SDL的音频函数添加了支持音频的线程。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial4/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">FFmpeg 和 SDL 使用教程（四）</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-05-10T18:22:59-07:00'><span class='date'>2016 年 05 月 10 日</span> <span class='time'>6:22 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">概述</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">简化代码</a></li>
+  <li><a href="#our-first-thread" id="markdown-toc-our-first-thread">Our First Thread</a></li>
+  <li><a href="#getting-the-framevideothread" id="markdown-toc-getting-the-framevideothread">Getting the Frame:video_thread</a></li>
+  <li><a href="#queueing-the-frame" id="markdown-toc-queueing-the-frame">Queueing the Frame</a></li>
+  <li><a href="#displaying-the-video" id="markdown-toc-displaying-the-video">Displaying the Video</a></li>
+</ul>
+
+<p>本节主要对前面几节的代码进行一下重构。</p>
+
+<!--more-->
+
+<h2 id="section">概述</h2>
+
+<p>上一小结，通过<code>SDL</code>的音频函数添加了支持音频的线程。<code>SDL</code>启动一个线程。现在我们用相同的方法完成视频的显示。该方法会使得代码更加模块化、易于维护，尤其是当需要添加同步的时候。</p>
+
+<p>我们注意到之前的<code>main</code>函数中做了非常多的操作：loop 循环、读取数据包、解码视频。因此，我们接下来要将这些东西都分开：启动一个线程处理解码数据包，该数据包之后会添加到队列，而音频和视频的线程会从该队列中读取相应的数据；音频线程我们已经启动；视频线程由于包含了视频的显示部分，会略显复杂。
+我们即将添加真实的显示代码到<code>main loop</code>中，除了每次循环是只是显示视频，我们会将视频显示部分整合进事件循环中。整合的大体思路为：解码视频，保存解码的视频帧到另一个队列中，创建一个消耗视频帧的事件 (FF_REFRESH_EVENT) 添加到事件系统中，当事件循环发现该<code>event</code>时，他会显示队列中的下一帧。图示如下：</p>
+
+<p>通过<code>event loop</code>来移动控制视频显示的主要目的是：使用<code>SDL_Delay</code>线程，可以准确的控制何时显示视频的下一帧到屏幕上。下一节中当我们最后完成了同步视频时，它会在正确的时间显示正确的图片。</p>
+
+<h2 id="section-1">简化代码</h2>
+
+<p>我们同样会简化一下代码。我们已经获取了所有音频和视频的信息，并且我们会添加队列和缓存。所有的这一些的最终目的是可以看到电影。所以接下来我们会完成一个比较大的结构体，命名为<code>VideoState</code>,它会保存所有的信息。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">VideoState</span><span class="p">{</span>
+</span><span class="line">    <span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">pFormatCtx</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span>             <span class="n">videoStream</span><span class="p">,</span> <span class="n">audioStream</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVStream</span>        <span class="o">*</span><span class="n">audio_st</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodecContext</span>  <span class="o">*</span><span class="n">audio_ctx</span><span class="p">;</span>
+</span><span class="line">    <span class="n">PacketQueue</span>     <span class="n">qudioq</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span>         <span class="n">audio_buf</span><span class="p">[(</span><span class="n">AVCODEC_MAX_AUDIO_FRAME_SIZE</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">];</span>
+</span><span class="line">    <span class="n">unisgned</span> <span class="kt">int</span>    <span class="n">audio_buf_size</span><span class="p">;</span>
+</span><span class="line">    <span class="n">unisgned</span> <span class="kt">int</span>    <span class="n">audio_buf_index</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVPacket</span>        <span class="n">audio_pkt</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span>         <span class="o">*</span><span class="n">audio_pkt_data</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span>             <span class="n">audio_pkt_size</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVStream</span>        <span class="o">*</span><span class="n">video_st</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodecContext</span>  <span class="o">*</span><span class="n">video_ctx</span><span class="p">;</span>
+</span><span class="line">    <span class="n">PacketQueue</span>     <span class="n">videoq</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">VideoPicture</span>    <span class="n">pictq</span><span class="p">[</span><span class="n">VIDEO_PICTURE_QUEUE_SIZE</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">int</span>             <span class="n">pictq_size</span><span class="p">,</span> <span class="n">pictq_rindex</span><span class="p">,</span> <span class="n">pictq_windex</span><span class="p">;</span>
+</span><span class="line">    <span class="n">SDL_mutex</span>       <span class="o">*</span><span class="n">pictq_mutex</span><span class="p">;</span>
+</span><span class="line">    <span class="n">SDL_cond</span>        <span class="o">*</span><span class="n">pictq_cond</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">SDL_Thread</span>      <span class="o">*</span><span class="n">parse_tid</span><span class="p">;</span>
+</span><span class="line">    <span class="n">SDL_Thread</span>      <span class="o">*</span><span class="n">video_tid</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">char</span>            <span class="n">filename</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">int</span>             <span class="n">quit</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="n">VideoState</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>通过上面的结构体，简单看一下我们可能会获得的信息。首先我们可以看到基本的信息——格式内容以及视频流和音频流的索引，对应的<code>AVStream</code>对象。还有，我们可以看到我们已经将一些音频的缓存移到了该结构体内。
+这些信息（audio_buf,audio_buf_size）包含了音频的所有信息。同样的，我们为视频添加了另外一个队列，为解码的帧添加了新的缓存。<code>VideoPicture</code>结构体是我们自己定义的，后面会提到里面包含的内容。我们还看到为另外创建的两个线程
+分别分配指针，已经<code>quit</code>标志和电影名。</p>
+
+<p>现在让我们重新回到<code>main</code>函数的起点看看如何改动我们的程序，首先设置<code>VideoState</code>结构体：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">){</span>
+</span><span class="line">    <span class="n">SDL_Event</span> <span class="n">event</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">VideoState</span> <span class="o">*</span><span class="n">is</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">is</span> <span class="o">=</span> <span class="n">av_mallocz</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">VideoState</span><span class="p">));</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>av_mallocz()</code>函数可以分配内存，并对分配的内存清零。</p>
+
+<p>之后初始化显示缓存的锁<code>pictq</code>，因为事件循环里会调用显示函数，显示函数会从<code>pictq</code>中拉取已解码好的解码帧；同时视频解码器也会将信息放到<code>pictq</code>中，但此时并不知道什么时候谁去获取这些信息。
+此处就是竞争条件。因此在启动任何线程之前分配出来。同时要拷贝文件名到<code>VideoState</code>中。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">av_strlcpy</span><span class="p">(</span><span class="n">is</span><span class="o">-&gt;</span><span class="n">filename</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">is</span><span class="o">-&gt;</span><span class="n">filename</span><span class="p">));</span>
+</span><span class="line">
+</span><span class="line"><span class="n">is</span><span class="o">-&gt;</span><span class="n">pictq_mutex</span> <span class="o">=</span> <span class="n">SDL_CreateMutex</span><span class="p">();</span>
+</span><span class="line"><span class="n">is</span><span class="o">-&gt;</span><span class="n">pictq_cond</span>  <span class="o">=</span> <span class="n">SDL_CreateCond</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>av_strlcpy</code>是<code>FFMpeg</code>库中的一个函数。</p>
+
+<h2 id="our-first-thread">Our First Thread</h2>
+
+<p>现在让我们完成线程、完成真正的工作：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">schedule_refresh</span><span class="p">(</span><span class="n">is</span><span class="p">,</span> <span class="mi">40</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="n">is</span><span class="o">-&gt;</span><span class="n">parse_tid</span> <span class="o">=</span> <span class="n">SDL_CreateThread</span><span class="p">(</span><span class="n">decode_thread</span><span class="p">,</span> <span class="n">is</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">is</span><span class="o">-&gt;</span><span class="n">parse_tid</span><span class="p">){</span>
+</span><span class="line">    <span class="n">av_free</span><span class="p">(</span><span class="n">is</span><span class="p">);</span>
+</span><span class="line">    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p><code>schedule_refresh</code>函数稍后会详细介绍，上面的代码主要完成的是告知系统特定长度时间后产生一个<code>FF_REFRESH_EVENT</code>时间。这会反过来调用刷新函数。
+<code>SDL_CreateThread()</code></p>
+
+<h2 id="getting-the-framevideothread">Getting the Frame:video_thread</h2>
+
+<h2 id="queueing-the-frame">Queueing the Frame</h2>
+
+<h2 id="displaying-the-video">Displaying the Video</h2>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-05-10T18:22:59-07:00'><span class='date'>2016 年 05 月 10 日</span> <span class='time'>6:22 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/xiang-mu-shi-jian/'>项目实践</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial4/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial4/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial3/" title="Previous Post: FFmpeg 和 SDL 使用教程（三）">&laquo; FFmpeg 和 SDL 使用教程（三）</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/05/23/the-data-layout/" title="Next Post: YUV 数据分析">YUV 数据分析 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (17)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/10/19/reference-frame/">X264 源码解析之参考帧</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/10/11/x264-slicetype-decide/">X264 源码解析之判断帧类型</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/08/25/linux-command-grep/">Linux常用命令之Grep</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2017 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
