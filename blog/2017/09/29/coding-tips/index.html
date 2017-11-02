@@ -9,8 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="获取文件路径后缀名 C 语言实现 C++ 语言实现 Shell 脚本实现 调试信息分级打印 本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
-工作中遇到某个问题时，自然而然能想到的解决方法，通常是一些比较通用的小技巧。 &hellip;">
+  <meta name="description" content="获取文件路径后缀名 C 语言实现 C++ 语言实现 Shell 脚本实现 调试信息分级打印 分析特定格式的文件 fopen 函数个数限制 本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
+工作中遇到某个问题时， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -107,6 +107,8 @@
     </ul>
   </li>
   <li><a href="#section-1" id="markdown-toc-section-1">调试信息分级打印</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">分析特定格式的文件</a></li>
+  <li><a href="#fopen-" id="markdown-toc-fopen-">fopen 函数个数限制</a></li>
 </ul>
 
 <p>本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
@@ -267,7 +269,7 @@
 </span><span class="line">            <span class="k">break</span><span class="p">;</span>
 </span><span class="line">        <span class="k">case</span> <span class="nl">LOG_DEBUG</span><span class="p">:</span>
 </span><span class="line">            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="s">&quot;debug&quot;</span><span class="p">;</span>
-</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">            <span class="n">brengak</span><span class="p">;</span>
 </span><span class="line">        <span class="k">default</span><span class="o">:</span>
 </span><span class="line">            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="s">&quot;unknown&quot;</span><span class="p">;</span>
 </span><span class="line">            <span class="k">break</span><span class="p">;</span>
@@ -287,6 +289,92 @@
 </span><span class="line">    <span class="p">}</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section-2">分析特定格式的文件</h2>
+
+<p>工作中在验证芯片的<code>vdec</code>模块是否正常工作时，需要大量的跑一些码流，这些码流通常会放到一个<code>filelist</code>中，因为需要测试的项不同，此时就可以
+通过按照一定的格式并列存放这些码流，例如根据不同的<code>codec</code>、测试比较<code>YUV</code>或<code>CRC</code>，是要连续测试，还是要中途停止方便<code>Debug</code>问题，我们可以按照如下格式对<code>filelist</code>进行定义：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">Codec_Type  Compare_Type Test_Type Bitstream_Full_Path</span></code></pre></td></tr></table></div></figure>
+
+<p>对于上面这种<code>filelist</code>，可以通过<code>fscanf</code>来逐个的获取特定的字符串，并通过<code>feof</code>来判断文件文件是否读取完毕， 之后使用<code>strcmp</code>来与特定的字符串进行匹配。例如，有如下的一个<code>filelist.txt</code>：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">HEVC Compare_CRC Debug F:\FFmpeg\hevc_bitstream1.bin
+</span><span class="line">H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin</span></code></pre></td></tr></table></div></figure>
+
+<p>分析<code>filelist.txt</code>示例代码：</p>
+
+<figure class="code"><figcaption><span>parse_filelist </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">char</span> <span class="n">Codec_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
+</span><span class="line"><span class="kt">char</span> <span class="n">Compare_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
+</span><span class="line"><span class="kt">char</span> <span class="n">Release_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
+</span><span class="line"><span class="kt">char</span> <span class="n">Bitstream_Path</span><span class="p">[</span><span class="mi">200</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;./filelist.txt&quot;</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;open file fail %s&quot;</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">pFile</span><span class="p">))</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">fscanf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="s">&quot;%s %s %s %s&quot;</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">,</span> <span class="n">Compare_Type</span><span class="p">,</span> <span class="n">Release_Type</span><span class="p">,</span> <span class="n">Bitstream_Path</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="s">&quot;HEVC&quot;</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Codec Type is HEVC</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="s">&quot;H264&quot;</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Codec Type is H264</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line"><span class="p">...</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="s">&quot;hevc&quot;</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Codec Type is HEVC</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>注意上面表示出来了通过<code>strcmp</code>来判断<code>Codec_Type</code>的类型，后面的<code>Compare_Type</code>可以用同样的方法来给出。</p>
+
+<p>在使用过程中，人们并不会特别在意字母的大小写，但要表达的意思通常是一样的，比如<code>HEVC</code><code>hevc</code><code>Hevc</code>通过都是一样的，如果此时还用<code>strcmp</code>来判断，会出错，为此，我们提出了<code>strcasecmp</code>的使用方法，来避免大小写带来的问题，这也算是编写类似代码的一个小技巧。</p>
+
+<h2 id="fopen-">fopen 函数个数限制</h2>
+
+<p>严格来讲，这个并不是编程的一些小的技巧，而是自己在工作中遇到的一个小问题，最近在每晚上跑测试时，经常遇到一晚上跑完 503 个测试后，程序就会崩溃掉，给出的提示信息是”Open File Fail”,起初是通过观察<code>errno</code>的类型来<code>Debug</code>出错的原因，最后定位到问题是，
+对每个文件都打开了两次，而关闭只有一次，导致文件描述符的个数爆掉了。这个问题的原因是在不同的系统中，都会有对文件描述符的最大个数有一定的限制。</p>
+
+<p>在&lt;UNIX环境高级编程:文件I/O&gt;中有这样的解释：</p>
+
+<blockquote>
+  <p>当读或写一个文件时，使用<code>open</code>返回的文件描述符标识该文件，将其作为参数传送给<code>read</code>或<code>write</code>。文件描述符的变化范围是<code>0~OPEN_MAX</code>。</p>
+</blockquote>
+
+<p>关于文件描述符的最大个数问题，从<code>stackoverflow</code>上找到了以下几个问题的回复，可参考：</p>
+
+<p><a href="https://stackoverflow.com/questions/870173/is-there-a-limit-on-number-of-open-files-in-windows">1.Is there a limit on number of open files in Windows</a><br />
+<a href="https://stackoverflow.com/questions/17931583/maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux">2.maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux</a><br />
+<a href="https://stackoverflow.com/questions/3184345/fopen-problem-too-many-open-files">3.fopen-problem-too-many-open-files</a></p>
+
 </div>
 
 
