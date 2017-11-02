@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-02T08:05:20-07:00</updated>
+  <updated>2017-11-02T08:25:05-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -382,6 +382,25 @@
 <p><a href="https://stackoverflow.com/questions/870173/is-there-a-limit-on-number-of-open-files-in-windows">1.Is there a limit on number of open files in Windows</a><br />
 <a href="https://stackoverflow.com/questions/17931583/maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux">2.maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux</a><br />
 <a href="https://stackoverflow.com/questions/3184345/fopen-problem-too-many-open-files">3.fopen-problem-too-many-open-files</a></p>
+
+<p>关于<code>fopen</code>的使用，通常会判断返回值是否<code>NULL</code>来判断是否打开成功，其实除此之外，还可以继续监测出错的类型<code>errno</code>，并用<code>strerror()</code>函数直接显示出错的具体原因。技巧如下：</p>
+
+<figure class="code"><figcaption><span>fopen_tips </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;error.h&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;file_full_path&quot;</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Open File Fail:%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
