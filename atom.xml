@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-12T08:09:48-08:00</updated>
+  <updated>2017-11-12T08:13:58-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -74,10 +74,16 @@
   <li>解码过程开始时，解码器把其当前的位置初始化为字节流的起始位置。然后提取，并丢弃每一个<code>leading_zero_8bits</code>语法元素(如果存在的话)，移动当前位置至某一时刻的字节处，直到比特流的当前位置紧接的四个字节为四字节序列<code>0x00000001</code>。</li>
   <li>当字节流里的紧接的四个字节构成四字节序列<code>0x00000001</code>，对比特流中下一个字节(为 zero_byte 语法元素)进行提取并丢弃时，字节流的当前位置设为紧接被丢弃的字节的字节位置。</li>
   <li>提取与丢弃比特流中下一个三字节序列(为 start_code_prefix_one_3bytes)，且比特流当前位置设为此紧接被丢弃的 3 字节序列的字节的位置。</li>
-  <li>NumBytesInNALunit 设为自当前字节位置起至下述条件前的位置的最后一个字节，且包括最后一个字节的编号。
-&gt; a. 一个三字节序列的排列等于<code>0x000000</code>，或
-&gt; b. 字一个三字节序列的排列等于<code>0x000001</code>，或
-&gt; c. 字节流的结束，由未规定的方式判决。</li>
+  <li>NumBytesInNALunit 设为自当前字节位置起至下述条件前的位置的最后一个字节，且包括最后一个字节的编号。</li>
+</ol>
+
+<ul>
+  <li>a. 一个三字节序列的排列等于<code>0x000000</code>，或</li>
+  <li>b. 字一个三字节序列的排列等于<code>0x000001</code>，或</li>
+  <li>c. 字节流的结束，由未规定的方式判决。</li>
+</ul>
+
+<ol>
   <li>NumBytesInNALunit 字节从比特流中移除，字节流的当前位置前移 NumBytesInNALunit 字节。这个字节序列为 <code>nal_unit(NumBytesInNALunit)</code>,并用 NAL 单元解码过程进行解码。</li>
   <li>当字节流中的当前位置不为字节流的结尾(由未规定的方式判决)，且字节流中的下一个字节不是等于<code>0x000001</code>开始的三字节序列，也不是等于<code>0x00000001</code>开始的四字节序列。解码器提取并丢弃每一个<code>trailing_zero_8bits</code>语法元素，移动字节流中的当前位置到某一时刻的一个字节处，直到字节流里的当前位置接下来的四个字节构成四字节的序列<code>0x00000001</code>或已至字节流的结尾(由未规定的当时判决)。</li>
 </ol>
