@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Profiles-Tiers-Levels - 懒人李冰</title>
+  <title>X264源码解析之X264_bitstream_init函数 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Profile、Tier 和 Level 的概念 Profile、Tier 和 Level 的概念 HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。
-Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
+  <meta name="description" content="H264 SPEC Annex B 本文主要记录 X264 中对于 bitstream 的处理方法，它主要实现 SPEC 中Annex B:Byte stream format中的规定。 H264 SPEC Annex B 首先看一下，H264 的 SPEC 中关于 Bitstream 中的规定 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +18,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/11/12/bitstream-init/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +82,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Profiles-Tiers-Levels</h1>
+      <h1 class="entry-title">X264源码解析之X264_bitstream_init函数</h1>
     
     
       <p class="meta">
@@ -92,7 +91,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
 
 
 
-<time class='entry-date' datetime='2016-06-27T07:52:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>7:52 am</span></time>
+<time class='entry-date' datetime='2017-11-12T06:48:31-08:00'><span class='date'>2017 年 11 月 12 日</span> <span class='time'>6:48 am</span></time>
         
       </p>
     
@@ -100,28 +99,18 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
+  <li><a href="#h264-spec-annex-b" id="markdown-toc-h264-spec-annex-b">H264 SPEC Annex B</a></li>
 </ul>
 
-<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
+<p>本文主要记录 X264 中对于 bitstream 的处理方法，它主要实现 SPEC 中<code>Annex B:Byte stream format</code>中的规定。
+<!--more--></p>
 
-<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
-Profile 指出码流中使用了哪些编码工具和算法。</p>
+<h2 id="h264-spec-annex-b">H264 SPEC Annex B</h2>
 
-<!--more-->
+<p>首先看一下，H264 的 SPEC 中关于 Bitstream 中的规定。</p>
 
-<p>Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
-值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。</p>
-
-<p>在 HEVC 的设计中，应用可以只依据最大的码率和 CPB 大小就可以区分。为了解决这个问题，有些 Level 定义了
-两个 Tier——Main Tier 用于大多数应用，High Tier 用于那些最苛刻的应用。</p>
-
-<p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
-<code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
-
-<p>HM 中关于 ProfileTierLevel 的定义如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><figcaption><span>AnndexB </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -139,104 +128,39 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 <span class="line-number">16</span>
 <span class="line-number">17</span>
 <span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-<span class="line-number">42</span>
-<span class="line-number">43</span>
-<span class="line-number">44</span>
-<span class="line-number">45</span>
-<span class="line-number">46</span>
-<span class="line-number">47</span>
-<span class="line-number">48</span>
-<span class="line-number">49</span>
-<span class="line-number">50</span>
-<span class="line-number">51</span>
-<span class="line-number">52</span>
-<span class="line-number">53</span>
-<span class="line-number">54</span>
-<span class="line-number">55</span>
-<span class="line-number">56</span>
-<span class="line-number">57</span>
-<span class="line-number">58</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">namespace Profile
-</span><span class="line">{
-</span><span class="line">    enum Name
-</span><span class="line">    {
-</span><span class="line">        NONE               = 0,
-</span><span class="line">        MAIN               = 1,
-</span><span class="line">        MAIN10             = 2,
-</span><span class="line">        MAINSTILLPICTURE   = 3,
-</span><span class="line">        MAINREXT           = 4,
-</span><span class="line">        HIGHTHROUGHPUTREXT = 5
-</span><span class="line">    };
-</span><span class="line">}
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">byte_stream_nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">          <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class="line">        <span class="n">leading_zero_8bits</span> <span class="c1">//equal to 0x00 f(8)</span>
 </span><span class="line">
-</span><span class="line">namespace Level
-</span><span class="line">{
-</span><span class="line">    enum Tier
-</span><span class="line">    {
-</span><span class="line">        MAIN = 0,
-</span><span class="line">        HIGH = 1,
-</span><span class="line">    };
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span><span class="p">)</span>
+</span><span class="line">        <span class="n">zero_byte</span>  <span class="c1">//equal to 0x00 f(8)</span>
 </span><span class="line">
-</span><span class="line">    enum Name
-</span><span class="line">    {
-</span><span class="line">        NONE       = 0,
-</span><span class="line">        LEVEL1     = 30,
-</span><span class="line">        LEVEL2     = 60,
-</span><span class="line">        LEVEL2_1   = 63,
-</span><span class="line">        LEVEL3     = 90,
-</span><span class="line">        LEVEL3_1   = 93,
-</span><span class="line">        LEVEL4     = 120,
-</span><span class="line">        LEVEL4_1   = 123,
-</span><span class="line">        LEVEL5     = 150,
-</span><span class="line">        LEVEL5_1   = 153,
-</span><span class="line">        LEVEL5_2   = 156,
-</span><span class="line">        LEVEL6     = 180,
-</span><span class="line">        LEVEL6_1   = 183,
-</span><span class="line">        LEVEL6_2   = 186,
-</span><span class="line">        LEVEL8_5   = 255,
-</span><span class="line">    };
-</span><span class="line">}
+</span><span class="line">    <span class="n">start_code_prefix_one_3bytes</span> <span class="c1">//equal to 0x000001 f(24)</span>
 </span><span class="line">
-</span><span class="line">class ProfileTierLevel
-</span><span class="line">{
-</span><span class="line">    Int            m_profileSpace;
-</span><span class="line">    Level::Tier    m_tierFlag;
-</span><span class="line">    Profile::Name  m_profileIdc;
-</span><span class="line">    Bool           m_profileCompatibilityFlag[32];
-</span><span class="line">    Level::Name    m_levelIdc;
+</span><span class="line">    <span class="n">nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
 </span><span class="line">
-</span><span class="line">    Bool           m_progressiveSourceFlag;
-</span><span class="line">    Bool           m_interlacedSourceFlag;
-</span><span class="line">    Bool           m_nonPackedConstraintFlag;
-</span><span class="line">    Bool           m_frameOnlyConstraintFlag;
-</span><span class="line">    UInt           m_bitDepthConstraintValue;
-</span><span class="line">    ChromaFormat   m_chromaFormatConstraintValue;
-</span><span class="line">    Bool           m_intraConstraintFlag;
-</span><span class="line">    Bool           m_lowerBitRateConstraintFlag;
-</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">more_data_in_byte_stream</span><span class="p">()</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">          <span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">          <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class="line">        <span class="n">trailing_zero_8bits</span> <span class="c1">//equal to 0x00 f(8)</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>SPEC 中定义的解码的部分，因为我们根据上面的描述，可以理出 H264 的大致解析过程：</p>
+
+<ol>
+  <li>解码过程开始时，解码器把其当前的位置初始化为字节流的起始位置。然后提取，并丢弃每一个<code>leading_zero_8bits</code>语法元素(如果存在的话)，移动当前位置至某一时刻的字节处，直到比特流的当前位置紧接的四个字节为四字节序列<code>0x00000001</code>。</li>
+  <li>当字节流里的紧接的四个字节构成四字节序列<code>0x00000001</code>，对比特流中下一个字节(为 zero_byte 语法元素)进行提取并丢弃时，字节流的当前位置设为紧接被丢弃的字节的字节位置。</li>
+  <li>提取与丢弃比特流中下一个三字节序列(为 start_code_prefix_one_3bytes)，且比特流当前位置设为此紧接被丢弃的 3 字节序列的字节的位置。</li>
+  <li>NumBytesInNALunit 设为自当前字节位置起至下述条件前的位置的最后一个字节，且包括最后一个字节的编号。
+&gt; a. 一个三字节序列的排列等于<code>0x000000</code>，或
+&gt; b. 字一个三字节序列的排列等于<code>0x000001</code>，或
+&gt; c. 字节流的结束，由未规定的方式判决。</li>
+  <li>NumBytesInNALunit 字节从比特流中移除，字节流的当前位置前移 NumBytesInNALunit 字节。这个字节序列为 <code>nal_unit(NumBytesInNALunit)</code>,并用 NAL 单元解码过程进行解码。</li>
+  <li>当字节流中的当前位置不为字节流的结尾(由未规定的方式判决)，且字节流中的下一个字节不是等于<code>0x000001</code>开始的三字节序列，也不是等于<code>0x00000001</code>开始的四字节序列。解码器提取并丢弃每一个<code>trailing_zero_8bits</code>语法元素，移动字节流中的当前位置到某一时刻的一个字节处，直到字节流里的当前位置接下来的四个字节构成四字节的序列<code>0x00000001</code>或已至字节流的结尾(由未规定的当时判决)。</li>
+</ol>
 
 </div>
 
@@ -253,12 +177,12 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 
 
 
-<time class='entry-date' datetime='2016-06-27T07:52:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>7:52 am</span></time>
+<time class='entry-date' datetime='2017-11-12T06:48:31-08:00'><span class='date'>2017 年 11 月 12 日</span> <span class='time'>6:48 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+    <a class='category' href='/blog/categories/x264/'>x264</a>
   
 </span>
 
@@ -267,7 +191,7 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/11/12/bitstream-init/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/11/12/bitstream-init/" >Tweet</a>
   
   
   
@@ -276,10 +200,8 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/06/19/ffmpeg-basics/" title="Previous Post: FFmpeg 使用">&laquo; FFmpeg 使用</a>
+        <a class="basic-alignment left" href="/blog/2017/10/19/reference-frame/" title="Previous Post: X264 源码解析之参考帧">&laquo; X264 源码解析之参考帧</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2016/06/28/avframe-structure/" title="Next Post: AVFrame 结构体解析">AVFrame 结构体解析 &raquo;</a>
       
     </p>
   </footer>

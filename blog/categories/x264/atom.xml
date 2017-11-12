@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-04T19:33:16-07:00</updated>
+  <updated>2017-11-12T08:09:48-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,77 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264源码解析之X264_bitstream_init函数]]></title>
+    <link href="http://lazybing.github.io/blog/2017/11/12/bitstream-init/"/>
+    <updated>2017-11-12T06:48:31-08:00</updated>
+    <id>http://lazybing.github.io/blog/2017/11/12/bitstream-init</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#h264-spec-annex-b" id="markdown-toc-h264-spec-annex-b">H264 SPEC Annex B</a></li>
+</ul>
+
+<p>本文主要记录 X264 中对于 bitstream 的处理方法，它主要实现 SPEC 中<code>Annex B:Byte stream format</code>中的规定。
+<!--more--></p>
+
+<h2 id="h264-spec-annex-b">H264 SPEC Annex B</h2>
+
+<p>首先看一下，H264 的 SPEC 中关于 Bitstream 中的规定。</p>
+
+<p><figure class='code'><figcaption><span>AnndexB </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">byte_stream_nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">while</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">leading_zero_8bits</span> <span class="c1">//equal to 0x00 f(8)&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">zero_byte</span>  <span class="c1">//equal to 0x00 f(8)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">start_code_prefix_one_3bytes</span> <span class="c1">//equal to 0x000001 f(24)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">more_data_in_byte_stream</span><span class="p">()</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">trailing_zero_8bits</span> <span class="c1">//equal to 0x00 f(8) } </span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>SPEC 中定义的解码的部分，因为我们根据上面的描述，可以理出 H264 的大致解析过程：</p>
+
+<ol>
+  <li>解码过程开始时，解码器把其当前的位置初始化为字节流的起始位置。然后提取，并丢弃每一个<code>leading_zero_8bits</code>语法元素(如果存在的话)，移动当前位置至某一时刻的字节处，直到比特流的当前位置紧接的四个字节为四字节序列<code>0x00000001</code>。</li>
+  <li>当字节流里的紧接的四个字节构成四字节序列<code>0x00000001</code>，对比特流中下一个字节(为 zero_byte 语法元素)进行提取并丢弃时，字节流的当前位置设为紧接被丢弃的字节的字节位置。</li>
+  <li>提取与丢弃比特流中下一个三字节序列(为 start_code_prefix_one_3bytes)，且比特流当前位置设为此紧接被丢弃的 3 字节序列的字节的位置。</li>
+  <li>NumBytesInNALunit 设为自当前字节位置起至下述条件前的位置的最后一个字节，且包括最后一个字节的编号。
+&gt; a. 一个三字节序列的排列等于<code>0x000000</code>，或
+&gt; b. 字一个三字节序列的排列等于<code>0x000001</code>，或
+&gt; c. 字节流的结束，由未规定的方式判决。</li>
+  <li>NumBytesInNALunit 字节从比特流中移除，字节流的当前位置前移 NumBytesInNALunit 字节。这个字节序列为 <code>nal_unit(NumBytesInNALunit)</code>,并用 NAL 单元解码过程进行解码。</li>
+  <li>当字节流中的当前位置不为字节流的结尾(由未规定的方式判决)，且字节流中的下一个字节不是等于<code>0x000001</code>开始的三字节序列，也不是等于<code>0x00000001</code>开始的四字节序列。解码器提取并丢弃每一个<code>trailing_zero_8bits</code>语法元素，移动字节流中的当前位置到某一时刻的一个字节处，直到字节流里的当前位置接下来的四个字节构成四字节的序列<code>0x00000001</code>或已至字节流的结尾(由未规定的当时判决)。</li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264 源码解析之参考帧]]></title>
@@ -194,56 +265,6 @@
 </span><span class='line'><span class="cp">    nz |= (coef); \</span>
 </span><span class='line'><span class="cp">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264源码解析之x264_mc_init函数]]></title>
-    <link href="http://lazybing.github.io/blog/2017/08/22/x264-mc-init/"/>
-    <updated>2017-08-22T07:48:31-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/08/22/x264-mc-init</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">运动估计</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">参考资料</a></li>
-</ul>
-
-<p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
-完成了像素内插、拷贝、求平均的函数等等。</p>
-
-<!--more-->
-
-<h3 id="section">运动补偿原理</h3>
-
-<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
-
-<p>一个视频序列包含一定数量的图片–通常称为帧（frame）。相邻的图片通常很相似，也就是说，包含了很多冗余。使用运动补偿的目的是通过消除这种冗余，来提高压缩比。
-最早的运动补偿的设计只是简单的从当前帧中减去参考帧，从而得到通常含有较少能量（或者称为信息）的”残差”，从而可以用较低的码率进行编码。解码器可以通过简单的加法完全恢复编码帧。<br />
-一个稍微复杂一点的设计是估计一下整帧场景的移动和场景中物体的移动，并将这些运动通过一定的参数编码到码流中去。这样预测帧上的像素值就是由参考帧上具有一定位移的相应像素值而生成的。这样的方法比简单的相减可以获得能量更小的残差，从而获得更好的压缩比–当然，用来描述运动的参数不能在码流中占据太大的部分，否则就会抵消复杂的运动估计带来的好处。<br />
-通常，图像帧是一组一组进行处理的。每组的第一帧（通常是第一帧）在编码的时候不使用运动估计的办法，这种帧称为帧内编码帧（Intra frame）或者I帧。该组中的其它帧使用帧间编码帧（Inter frame），通常是P帧。这种编码方式通常被称为IPPPP，表示编码的时候第一帧是I帧，其它帧是P帧。<br />
-在进行预测的时候，不仅仅可以从过去的帧来预测当前帧，还可以使用未来的帧来预测当前帧。当然在编码的时候，未来的帧必须比当前帧更早的编码，也就是说，编码的顺序和播放的顺序是不同的。通常这样的当前帧是使用过去和未来的I帧或者P帧同时进行预测，被称为双向预测帧，即B帧。这种编码方式的编码顺序的一个例子为IBBPBBPBBPBB。</p>
-
-<p>运动补偿的方法包含：<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.85.A8.E5.B1.80.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">全局运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.8F.AF.E5.8F.98.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">可变分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E9.87.8D.E5.8F.A0.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">重叠分块运动个补偿</a>。</p>
-
-<p>运动估计就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
-
-<h3 id="section-1">运动估计</h3>
-
-<p>运动估计的基本思想是将图像序列的每一帧分成许多互不重叠的宏块，并认为宏块内所有象素的位移量都相同，然后对每个宏块到参考帧某一给定特定搜索范围内根据一定的匹配准则找出与当前块最相似的块，即匹配块，匹配块与当前块的相对位移即为运动矢量。视频压缩的时候，只需保存运动矢量和残差数据就可以完全恢复出当前块。得到运动矢量的过程被称为运动估计。</p>
-
-<p>运动矢量和经过运动匹配后得到的预测误差共同发送到解码端，在解码端按照运动矢量指明的位置，从已经解码的邻近参考帧图像中找到相应的块或宏块，和预测误差相加后就得到了块或宏块在当前帧中的位置。</p>
-
-<p>实际应用时，只将运动矢量及最佳匹配块与当前块之间的差值块一起编码传输。在接收端，通过运动矢量在已经恢复的相邻帧中找到当前块的最佳匹配块，并与接收到的差值块相加恢复出当前块，这就是运动补偿基本过程。</p>
-
-<p>运动估计算法是视频压缩编码的核心算法之一。高质量的运动估计算法是高效视频编码的前提和基础。其中块匹配法（BMA, Block Match Algorithm）由于算法简单和易于硬件实现，被广泛应用于各视频编码标准中。块匹配法的基本思想是先将图像划分为许多子块，然后对当前帧中的每一块根据一定的匹配准则在相邻帧中找出当前块的匹配块，由此得到两者的相对位移，即当前块的运动矢量。在H.264标准的搜索算法中，图像序列的当前帧被划分成互不重叠16×16大小的子块，而每个子块又可划分成更小的子块，当前子块按一定的块匹配准则在参考帧中对应位置的一定搜索范围内寻找最佳匹配块，由此得到运动矢量和匹配误差。运动估计的估计精度和运算复杂度取决于搜索策略和块匹配准则。</p>
-
-<h3 id="section-2">参考资料</h3>
-
-<ol>
-  <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
-  <li><a href="http://www.cnblogs.com/AndyJee/p/3724917.html">运动估计</a></li>
-</ol>
 
 ]]></content>
   </entry>

@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-04T19:33:16-07:00</updated>
+  <updated>2017-11-12T08:09:48-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,78 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264源码解析之X264_bitstream_init函数]]></title>
+    <link href="http://lazybing.github.io/blog/2017/11/12/bitstream-init/"/>
+    <updated>2017-11-12T06:48:31-08:00</updated>
+    <id>http://lazybing.github.io/blog/2017/11/12/bitstream-init</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#h264-spec-annex-b" id="markdown-toc-h264-spec-annex-b">H264 SPEC Annex B</a></li>
+</ul>
+
+<p>本文主要记录 X264 中对于 bitstream 的处理方法，它主要实现 SPEC 中<code>Annex B:Byte stream format</code>中的规定。
+<!--more--></p>
+
+<h2 id="h264-spec-annex-b">H264 SPEC Annex B</h2>
+
+<p>首先看一下，H264 的 SPEC 中关于 Bitstream 中的规定。</p>
+
+<figure class="code"><figcaption><span>AnndexB </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">byte_stream_nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">          <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class="line">        <span class="n">leading_zero_8bits</span> <span class="c1">//equal to 0x00 f(8)</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span><span class="p">)</span>
+</span><span class="line">        <span class="n">zero_byte</span>  <span class="c1">//equal to 0x00 f(8)</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">start_code_prefix_one_3bytes</span> <span class="c1">//equal to 0x000001 f(24)</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">more_data_in_byte_stream</span><span class="p">()</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">          <span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">          <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class="line">        <span class="n">trailing_zero_8bits</span> <span class="c1">//equal to 0x00 f(8)</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>SPEC 中定义的解码的部分，因为我们根据上面的描述，可以理出 H264 的大致解析过程：</p>
+
+<ol>
+  <li>解码过程开始时，解码器把其当前的位置初始化为字节流的起始位置。然后提取，并丢弃每一个<code>leading_zero_8bits</code>语法元素(如果存在的话)，移动当前位置至某一时刻的字节处，直到比特流的当前位置紧接的四个字节为四字节序列<code>0x00000001</code>。</li>
+  <li>当字节流里的紧接的四个字节构成四字节序列<code>0x00000001</code>，对比特流中下一个字节(为 zero_byte 语法元素)进行提取并丢弃时，字节流的当前位置设为紧接被丢弃的字节的字节位置。</li>
+  <li>提取与丢弃比特流中下一个三字节序列(为 start_code_prefix_one_3bytes)，且比特流当前位置设为此紧接被丢弃的 3 字节序列的字节的位置。</li>
+  <li>NumBytesInNALunit 设为自当前字节位置起至下述条件前的位置的最后一个字节，且包括最后一个字节的编号。
+&gt; a. 一个三字节序列的排列等于<code>0x000000</code>，或
+&gt; b. 字一个三字节序列的排列等于<code>0x000001</code>，或
+&gt; c. 字节流的结束，由未规定的方式判决。</li>
+  <li>NumBytesInNALunit 字节从比特流中移除，字节流的当前位置前移 NumBytesInNALunit 字节。这个字节序列为 <code>nal_unit(NumBytesInNALunit)</code>,并用 NAL 单元解码过程进行解码。</li>
+  <li>当字节流中的当前位置不为字节流的结尾(由未规定的方式判决)，且字节流中的下一个字节不是等于<code>0x000001</code>开始的三字节序列，也不是等于<code>0x00000001</code>开始的四字节序列。解码器提取并丢弃每一个<code>trailing_zero_8bits</code>语法元素，移动字节流中的当前位置到某一时刻的一个字节处，直到字节流里的当前位置接下来的四个字节构成四字节的序列<code>0x00000001</code>或已至字节流的结尾(由未规定的当时判决)。</li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264 源码解析之参考帧]]></title>
@@ -4079,51 +4151,6 @@ crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">x264_encoder widthxheight input.yuv output.264</span></code></pre></td></tr></table></div></figure>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264 下载、安装和使用]]></title>
-    <link href="http://lazybing.github.io/blog/2017/06/09/x264-download-install-and-use/"/>
-    <updated>2017-06-09T08:51:11-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/06/09/x264-download-install-and-use</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#x264-" id="markdown-toc-x264-">x264 获取代码：</a></li>
-  <li><a href="#x264--1" id="markdown-toc-x264--1">x264 编译和安装</a></li>
-  <li><a href="#x264--2" id="markdown-toc-x264--2">x264 的使用</a></li>
-</ul>
-
-<p><a href="http://www.videolan.org/developers/x264.html">x264官网</a>对 x264 项目进行了简单的描述，包括
-<!--more--></p>
-
-<h2 id="x264-">x264 获取代码：</h2>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">git clone http://git.videolan.org/git/x264.git</span></code></pre></td></tr></table></div></figure>
-
-<h2 id="x264--1">x264 编译和安装</h2>
-
-<p>此处记录的是在Linux下的编译和安装：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">cd x264
-</span><span class="line">.configure
-</span><span class="line">sudo make
-</span><span class="line">sudo make install</span></code></pre></td></tr></table></div></figure>
-
-<p>注意，如果想要在 Linux 下使用 GDB 进行逐步调试，需要修改<code>.configure</code>后生成的<code>config.mak</code>文件，将里面的<code>CC=gcc</code>改为<code>CC=gcc -g</code>。</p>
-
-<p>之后就可以使用 X264 来进行编码 H264 格式的视频了。</p>
-
-<h2 id="x264--2">x264 的使用</h2>
-<p>x264 的使用可以通过命令行<code>x264 --help</code>来获取。格式一般为</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">x264 [options] -o outfile infile</span></code></pre></td></tr></table></div></figure>
-
-<p>其中的输入文件可以是<code>raw</code>文件、<code>.y4m</code>文件等，输出文件格式可以是<code>.264</code>、<code>.mkv</code>、<code>.flv</code>和<code>.mp4</code>；其中输入文件如果是<code>raw</code>文件，需要在 infile 后面通过输入参数（–input-res 640x360）来指定分辨率。</p>
 ]]></content>
   </entry>
   
