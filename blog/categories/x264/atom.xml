@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-13T05:48:54-08:00</updated>
+  <updated>2017-11-13T07:10:12-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,18 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[X264 源码解析之x264_macroblock_analyse函数]]></title>
+    <link href="http://lazybing.github.io/blog/2017/11/13/x264-macroblock-analyse/"/>
+    <updated>2017-11-13T07:06:23-08:00</updated>
+    <id>http://lazybing.github.io/blog/2017/11/13/x264-macroblock-analyse</id>
+    <content type="html"><![CDATA[
+<p>本文主要记录 X264 中对于<code>x264_macroblock_analyse</code>函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 <br />
+<!--more--></p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[X264源码解析之X264_bitstream_init函数]]></title>
@@ -759,57 +771,6 @@ int GetAnnexbNALU(NALU_t *nalu);
   <li><a href="http://wobblycucumber.blogspot.com/2013/12/cavlc-encoder-demo.html">CAVLC Encoder Demo</a></li>
   <li><a href="http://wobblycucumber.blogspot.com/2013/12/cavlc-encoding-tutorial.html">CAVLC Encoding Tutorial</a></li>
 </ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264源码解析之x264_quant_init函数]]></title>
-    <link href="http://lazybing.github.io/blog/2017/08/23/x264-quant-init/"/>
-    <updated>2017-08-23T08:43:19-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/08/23/x264-quant-init</id>
-    <content type="html"><![CDATA[
-<p>本文主要记录 X264 中使用到的量化。该函数主要对<code>x264_quant_functions_t</code>结构体中的函数指针进行赋值，</p>
-
-<!--more-->
-
-<p>首先看其中的一个例子<code>quant_8x8</code>函数，它的定义位于<code>common/quant.c</code>中，定义如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">quant_8x8</span><span class="p">(</span> <span class="n">dctcoef</span> <span class="n">dct</span><span class="p">[</span><span class="mi">64</span><span class="p">],</span> <span class="n">udctcoef</span> <span class="n">mf</span><span class="p">[</span><span class="mi">64</span><span class="p">],</span> <span class="n">udctcoef</span> <span class="n">bias</span><span class="p">[</span><span class="mi">64</span><span class="p">]</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">nz</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">64</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>
-</span><span class='line'>        <span class="n">QUANT_ONE</span><span class="p">(</span> <span class="n">dct</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">mf</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">bias</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="o">!!</span><span class="n">nz</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>其中<code>QUANT_ONE</code>定义如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define QUANT_ONE( coef, mf, f ) \</span>
-</span><span class='line'><span class="cp">{ \</span>
-</span><span class='line'><span class="cp">    if( (coef) &amp;gt; 0 ) \</span>
-</span><span class='line'><span class="cp">        (coef) = (f + (coef)) * (mf) » 16; \</span>
-</span><span class='line'><span class="cp">    else \</span>
-</span><span class='line'><span class="cp">        (coef) = - ((f - (coef)) * (mf) » 16); \</span>
-</span><span class='line'><span class="cp">    nz |= (coef); \</span>
-</span><span class='line'><span class="cp">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
   </entry>

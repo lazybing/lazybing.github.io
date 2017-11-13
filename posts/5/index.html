@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Mac OSX 下安装 gvim 基本设置 vim 对单个字符的操作 删除某个字符 替换某个字符 移动到某个字符 vim 对单字的操作 删除某个单字 修改某个单字 移动到某个单字 vim 对整行的操作 移动到行首或行尾 移动到指定行 使用标签记录并跳转到某行 vim 对单个文件的浏览 vim &hellip;">
+  <meta name="description" content="1. 几个概念 2.字节序、字节对齐和时间格式 3. RTMP Chunk Stream 3.1 消息格式 3.2 握手(HandShake) 握手序列: C 和 S 格式： 握手框图(HandShake Diagram) 3.3 分块(Chunking) Chunk 格式 Chunk &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,85 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/07/17/rtmp-protocol-standard/">RTMP 协议学习（上）: 协议规范</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-07-17T08:17:38-07:00'><span class='date'>2016 年 07 月 17 日</span> <span class='time'>8:17 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">1. 几个概念</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">2.字节序、字节对齐和时间格式</a></li>
+  <li><a href="#rtmp-chunk-stream" id="markdown-toc-rtmp-chunk-stream">3. RTMP Chunk Stream</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">3.1 消息格式</a></li>
+      <li><a href="#handshake" id="markdown-toc-handshake">3.2 握手(HandShake)</a>        <ul>
+          <li><a href="#section-3" id="markdown-toc-section-3">握手序列:</a></li>
+          <li><a href="#c--s-" id="markdown-toc-c--s-">C 和 S 格式：</a></li>
+          <li><a href="#handshake-diagram" id="markdown-toc-handshake-diagram">握手框图(HandShake Diagram)</a></li>
+        </ul>
+      </li>
+      <li><a href="#chunking" id="markdown-toc-chunking">3.3 分块(Chunking)</a>        <ul>
+          <li><a href="#chunk-" id="markdown-toc-chunk-">Chunk 格式</a>            <ul>
+              <li><a href="#chunk-basic-header" id="markdown-toc-chunk-basic-header">Chunk Basic Header</a></li>
+              <li><a href="#chunk-message-header" id="markdown-toc-chunk-message-header">Chunk Message Header</a></li>
+              <li><a href="#extended-timestamp" id="markdown-toc-extended-timestamp">Extended Timestamp</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><a href="#protocol-control-message" id="markdown-toc-protocol-control-message">3.4 协议控制消息(Protocol Control Message)</a>        <ul>
+          <li><a href="#set-chunk-size-1" id="markdown-toc-set-chunk-size-1">设置块大小1(Set Chunk Size 1)</a></li>
+          <li><a href="#acknowledgement-3" id="markdown-toc-acknowledgement-3">确认消息3(Acknowledgement 3)</a></li>
+          <li><a href="#window-acknowledgement-size-5" id="markdown-toc-window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</a></li>
+          <li><a href="#set-peer-bandwidth-6" id="markdown-toc-set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a>    <ul>
+      <li><a href="#rtmprtmp-message-format" id="markdown-toc-rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</a>        <ul>
+          <li><a href="#message-header" id="markdown-toc-message-header">消息头部(Message Header)</a></li>
+          <li><a href="#message-payload" id="markdown-toc-message-payload">消息负载(Message Payload)</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-4" id="markdown-toc-section-4">4.2 使用控制消息(4)</a></li>
+    </ul>
+  </li>
+  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a>    <ul>
+      <li><a href="#types-of-message" id="markdown-toc-types-of-message">5.1 消息类型(Types of Message)</a></li>
+      <li><a href="#types-of-commands" id="markdown-toc-types-of-commands">5.2 指令类型(Types of Commands)</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">6. 参考文献</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/07/17/rtmp-protocol-standard/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -438,52 +517,6 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/06/19/ffmpeg-basics/">FFmpeg 使用</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-06-19T09:59:26-07:00'><span class='date'>2016 年 06 月 19 日</span> <span class='time'>9:59 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#bit-rate-frame-rate--file-size" id="markdown-toc-bit-rate-frame-rate--file-size">Bit Rate, Frame Rate 和 File Size</a></li>
-  <li><a href="#resizing-and-scaling-video" id="markdown-toc-resizing-and-scaling-video">Resizing and Scaling Video</a></li>
-  <li><a href="#cropping-video" id="markdown-toc-cropping-video">Cropping Video</a></li>
-  <li><a href="#padding-video" id="markdown-toc-padding-video">Padding Video</a></li>
-  <li><a href="#filpping-and-rotating-video" id="markdown-toc-filpping-and-rotating-video">Filpping and Rotating Video</a></li>
-  <li><a href="#blur-sharpen-adn-other-denoising" id="markdown-toc-blur-sharpen-adn-other-denoising">Blur Sharpen adn Other Denoising</a></li>
-  <li><a href="#overlay---picture-in-picture" id="markdown-toc-overlay---picture-in-picture">Overlay - Picture in Picture</a></li>
-  <li><a href="#adding-text-on-video" id="markdown-toc-adding-text-on-video">Adding Text on Video</a></li>
-  <li><a href="#conversion-between-formats" id="markdown-toc-conversion-between-formats">Conversion Between Formats</a></li>
-</ul>
-
-<p>FFmpeg Basics —Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/06/19/ffmpeg-basics/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/6">&larr; Older</a>
@@ -502,7 +535,7 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
                 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (18)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (19)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
@@ -514,6 +547,10 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 <section>
   <h1>最新文章</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之X264_bitstream_init函数</a>
@@ -529,10 +566,6 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     
       <li class="post">
         <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
       </li>
     
   </ul>
