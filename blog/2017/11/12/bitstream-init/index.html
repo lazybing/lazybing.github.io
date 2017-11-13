@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="H264 SPEC Annex B JM 中关于 AnndexB 的源码分析 本文主要记录 X264 中对于 bitstream 的处理方法，它主要实现 SPEC 中Annex B:Byte stream format中的规定。 H264 SPEC Annex B 首先看一下，H264 的 &hellip;">
+  <meta name="description" content="H264 SPEC Annex B JM 中关于 AnnexB 的源码分析 X264 中 Bitstream 的源码分析 本文主要记录 X264 中对于 bitstream 的处理方法，它主要实现 SPEC 中Annex B:Byte stream format中的规定。 H264 SPEC &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -100,7 +100,8 @@
 
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#h264-spec-annex-b" id="markdown-toc-h264-spec-annex-b">H264 SPEC Annex B</a></li>
-  <li><a href="#jm--anndexb-" id="markdown-toc-jm--anndexb-">JM 中关于 AnndexB 的源码分析</a></li>
+  <li><a href="#jm--annexb-" id="markdown-toc-jm--annexb-">JM 中关于 AnnexB 的源码分析</a></li>
+  <li><a href="#x264--bitstream-" id="markdown-toc-x264--bitstream-">X264 中 Bitstream 的源码分析</a></li>
 </ul>
 
 <p>本文主要记录 X264 中对于 bitstream 的处理方法，它主要实现 SPEC 中<code>Annex B:Byte stream format</code>中的规定。
@@ -163,9 +164,396 @@ c. 字节流的结束，由未规定的方式判决。</li>
   <li>当字节流中的当前位置不为字节流的结尾(由未规定的方式判决)，且字节流中的下一个字节不是等于<code>0x000001</code>开始的三字节序列，也不是等于<code>0x00000001</code>开始的四字节序列。解码器提取并丢弃每一个<code>trailing_zero_8bits</code>语法元素，移动字节流中的当前位置到某一时刻的一个字节处，直到字节流里的当前位置接下来的四个字节构成四字节的序列<code>0x00000001</code>或已至字节流的结尾(由未规定的当时判决)。</li>
 </ol>
 
-<h2 id="jm--anndexb-">JM 中关于 AnndexB 的源码分析</h2>
+<h2 id="jm--annexb-">JM 中关于 AnnexB 的源码分析</h2>
 
-<p>在看<code>X264</code>源码之前，让我们先看一下 JM 中关于 AnndexB 的解码的源码实现部分。</p>
+<p>在看<code>X264</code>源码之前，让我们先看一下 JM 中关于 AnnexB 的解码的源码实现部分。</p>
+
+<p><code>JM</code>中关于 AnnexB 部分的描述在<code>jm\decod\src\annexb.c</code>中,首先看一下其中最重要的一个函数<code>int GetAnnexbNALU(NALU_t *nalu)</code>,该函数的声明如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">/*
+</span><span class="line"> * Brief: Returns the size of the NALU( bits between start codes in case of
+</span><span class="line"> *        Annex B, nalu-&gt;buf and nalu-&gt;len are filled. Other field in
+</span><span class="line"> *        nalu-&gt;remain uninitialized( will be taken care of by NALUtoRBSP.
+</span><span class="line"> * Return: 0 if there is nothing any more to read(EOF)
+</span><span class="line"> *         -1 in case of any error
+</span><span class="line"> * note Side-effect: Returns length of start-code in bytes.
+</span><span class="line"> * 
+</span><span class="line"> * Note: GetAnnexbNALU expects start codes at byte aligned positions in the file
+</span><span class="line"> */
+</span><span class="line">int GetAnnexbNALU(NALU_t *nalu);</span></code></pre></td></tr></table></div></figure>
+
+<p><code>GetAnnexbNALU</code>的定义如下：</p>
+
+<figure class="code"><figcaption><span>GetAnnexbNALU </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+<span class="line-number">63</span>
+<span class="line-number">64</span>
+<span class="line-number">65</span>
+<span class="line-number">66</span>
+<span class="line-number">67</span>
+<span class="line-number">68</span>
+<span class="line-number">69</span>
+<span class="line-number">70</span>
+<span class="line-number">71</span>
+<span class="line-number">72</span>
+<span class="line-number">73</span>
+<span class="line-number">74</span>
+<span class="line-number">75</span>
+<span class="line-number">76</span>
+<span class="line-number">77</span>
+<span class="line-number">78</span>
+<span class="line-number">79</span>
+<span class="line-number">80</span>
+<span class="line-number">81</span>
+<span class="line-number">82</span>
+<span class="line-number">83</span>
+<span class="line-number">84</span>
+<span class="line-number">85</span>
+<span class="line-number">86</span>
+<span class="line-number">87</span>
+<span class="line-number">88</span>
+<span class="line-number">89</span>
+<span class="line-number">90</span>
+<span class="line-number">91</span>
+<span class="line-number">92</span>
+<span class="line-number">93</span>
+<span class="line-number">94</span>
+<span class="line-number">95</span>
+<span class="line-number">96</span>
+<span class="line-number">97</span>
+<span class="line-number">98</span>
+<span class="line-number">99</span>
+<span class="line-number">100</span>
+<span class="line-number">101</span>
+<span class="line-number">102</span>
+<span class="line-number">103</span>
+<span class="line-number">104</span>
+<span class="line-number">105</span>
+<span class="line-number">106</span>
+<span class="line-number">107</span>
+<span class="line-number">108</span>
+<span class="line-number">109</span>
+<span class="line-number">110</span>
+<span class="line-number">111</span>
+<span class="line-number">112</span>
+<span class="line-number">113</span>
+<span class="line-number">114</span>
+<span class="line-number">115</span>
+<span class="line-number">116</span>
+<span class="line-number">117</span>
+<span class="line-number">118</span>
+<span class="line-number">119</span>
+<span class="line-number">120</span>
+<span class="line-number">121</span>
+<span class="line-number">122</span>
+<span class="line-number">123</span>
+<span class="line-number">124</span>
+<span class="line-number">125</span>
+<span class="line-number">126</span>
+<span class="line-number">127</span>
+<span class="line-number">128</span>
+<span class="line-number">129</span>
+<span class="line-number">130</span>
+<span class="line-number">131</span>
+<span class="line-number">132</span>
+<span class="line-number">133</span>
+<span class="line-number">134</span>
+<span class="line-number">135</span>
+<span class="line-number">136</span>
+<span class="line-number">137</span>
+<span class="line-number">138</span>
+<span class="line-number">139</span>
+<span class="line-number">140</span>
+<span class="line-number">141</span>
+<span class="line-number">142</span>
+<span class="line-number">143</span>
+<span class="line-number">144</span>
+<span class="line-number">145</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">GetAnnexbNALU</span><span class="p">(</span><span class="n">NALU_t</span> <span class="o">*</span><span class="n">nalu</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="kt">int</span> <span class="n">info2</span><span class="p">,</span> <span class="n">info3</span><span class="p">,</span> <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="kt">int</span> <span class="n">StartCodeFound</span><span class="p">,</span> <span class="n">rewind</span><span class="p">;</span>
+</span><span class="line">  <span class="kt">char</span> <span class="o">*</span><span class="n">Buf</span><span class="p">;</span>
+</span><span class="line">  <span class="kt">int</span> <span class="n">LeadingZero8BitsCount</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">TrailingZero8Bits</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span> <span class="p">((</span><span class="n">Buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">calloc</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">max_size</span> <span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">)))</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="n">no_mem_exit</span><span class="p">(</span><span class="s">&quot;GetAnnexbNALU: Buf&quot;</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">//如果start_code前还有数据，丢弃start_code前leading_zero_8bits</span>
+</span><span class="line">  <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">++</span><span class="p">]</span><span class="o">=</span><span class="n">fgetc</span><span class="p">(</span><span class="n">bits</span><span class="p">))</span><span class="o">==</span><span class="mi">0</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">feof</span><span class="p">(</span><span class="n">bits</span><span class="p">))</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">pos</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">      <span class="n">printf</span><span class="p">(</span> <span class="s">&quot;GetAnnexbNALU can&#39;t read start code</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">      <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class="line">      <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">!=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;GetAnnexbNALU: no Start Code at the begin of the NALU, return -1</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class="line">    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">pos</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">)</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;GetAnnexbNALU: no Start Code at the begin of the NALU, return -1</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class="line">    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">  <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">pos</span><span class="o">==</span><span class="mi">3</span><span class="p">)</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class="line">    <span class="n">LeadingZero8BitsCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">  <span class="k">else</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="n">LeadingZero8BitsCount</span> <span class="o">=</span> <span class="n">pos</span><span class="o">-</span><span class="mi">4</span><span class="p">;</span>
+</span><span class="line">    <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">//the 1st byte stream NAL unit can has leading_zero_8bits, but subsequent ones are not</span>
+</span><span class="line">  <span class="c1">//allowed to contain it since these zeros(if any) are considered trailing_zero_8bits</span>
+</span><span class="line">  <span class="c1">//of the previous byte stream NAL unit.</span>
+</span><span class="line">  <span class="c1">//字节流数据的第一个 NAL 单元才会有leading_zero_8bits;后面的 NALU 不会包含 leading_zero_8bits,</span>
+</span><span class="line">  <span class="c1">//因为这些 leading_zero_8bits 会被看做前一个 NAL 单元后面的 trailing_zero_8bits</span>
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">IsFirstByteStreamNALU</span> <span class="o">&amp;&amp;</span> <span class="n">LeadingZero8BitsCount</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;GetAnnexbNALU: The leading_zero_8bits syntax can only be present in the first byte stream NAL unit, return -1</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class="line">    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">  <span class="n">IsFirstByteStreamNALU</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">StartCodeFound</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="n">info2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="n">info3</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">StartCodeFound</span><span class="p">)</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">feof</span> <span class="p">(</span><span class="n">bits</span><span class="p">))</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">      <span class="c1">//Count the trailing_zero_8bits</span>
+</span><span class="line">      <span class="k">while</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">        <span class="n">TrailingZero8Bits</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">      <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">len</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span><span class="o">-</span><span class="n">LeadingZero8BitsCount</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">;</span>
+</span><span class="line">      <span class="n">memcpy</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Buf</span><span class="p">[</span><span class="n">LeadingZero8BitsCount</span><span class="o">+</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span><span class="p">],</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">);</span>
+</span><span class="line">      <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">forbidden_bit</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">7</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">      <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_reference_idc</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class="line">      <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_unit_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="mh">0x1f</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="c1">// printf (&quot;GetAnnexbNALU, eof case: pos %d nalu-&gt;len %d, nalu-&gt;reference_idc %d, nal_unit_type %d \n&quot;, pos, nalu-&gt;len, nalu-&gt;nal_reference_idc, nalu-&gt;nal_unit_type);</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#if TRACE</span>
+</span><span class="line">  <span class="n">fprintf</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">Last NALU in File</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">  <span class="n">fprintf</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">,</span> <span class="s">&quot;Annex B NALU w/ %s startcode, len %d, forbidden_bit %d, nal_reference_idc %d, nal_unit_type %d</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span> <span class="o">==</span> <span class="mi">4</span><span class="o">?</span><span class="s">&quot;long&quot;</span><span class="o">:</span><span class="s">&quot;short&quot;</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">forbidden_bit</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_reference_idc</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_unit_type</span><span class="p">);</span>
+</span><span class="line">  <span class="n">fflush</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">);</span>
+</span><span class="line"><span class="cp">#endif</span>
+</span><span class="line">      <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class="line">      <span class="k">return</span> <span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="c1">//找 start_code，先找0x00000001,后找0x000001</span>
+</span><span class="line">    <span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">++</span><span class="p">]</span> <span class="o">=</span> <span class="n">fgetc</span> <span class="p">(</span><span class="n">bits</span><span class="p">);</span>
+</span><span class="line">    <span class="n">info3</span> <span class="o">=</span> <span class="n">FindStartCode</span><span class="p">(</span><span class="o">&amp;</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">4</span><span class="p">],</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">info3</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">      <span class="n">info2</span> <span class="o">=</span> <span class="n">FindStartCode</span><span class="p">(</span><span class="o">&amp;</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">3</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class="line">    <span class="n">StartCodeFound</span> <span class="o">=</span> <span class="p">(</span><span class="n">info2</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">||</span> <span class="n">info3</span> <span class="o">==</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">//Count the trailing_zero_8bits</span>
+</span><span class="line">  <span class="c1">//计算 trailing_zero_8bits,如果start_code为0x000001,trailing_zero_8bits 肯定不存在</span>
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">info3</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span>	<span class="c1">//if the detected start code is 00 00 01, trailing_zero_8bits is sure not to be present</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">5</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">      <span class="n">TrailingZero8Bits</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">  <span class="c1">// Here, we have found another start code (and read length of startcode bytes more than we should</span>
+</span><span class="line">  <span class="c1">// have.  Hence, go back in the file</span>
+</span><span class="line">  <span class="n">rewind</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">info3</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">    <span class="n">rewind</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span><span class="p">;</span>
+</span><span class="line">  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">info2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">    <span class="n">rewind</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span><span class="p">;</span>
+</span><span class="line">  <span class="k">else</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot; Panic: Error in next start code search </span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">!=</span> <span class="n">fseek</span> <span class="p">(</span><span class="n">bits</span><span class="p">,</span> <span class="n">rewind</span><span class="p">,</span> <span class="n">SEEK_CUR</span><span class="p">))</span>
+</span><span class="line">  <span class="p">{</span>
+</span><span class="line">    <span class="n">snprintf</span> <span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="n">ET_SIZE</span><span class="p">,</span> <span class="s">&quot;GetAnnexbNALU: Cannot fseek %d in the bit stream file&quot;</span><span class="p">,</span> <span class="n">rewind</span><span class="p">);</span>
+</span><span class="line">    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class="line">    <span class="n">error</span><span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="mi">600</span><span class="p">);</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">// Here the leading zeros(if any), Start code, the complete NALU, trailing zeros(if any)</span>
+</span><span class="line">  <span class="c1">// and the next start code is in the Buf.</span>
+</span><span class="line">  <span class="c1">// The size of Buf is pos, pos+rewind are the number of bytes excluding the next</span>
+</span><span class="line">  <span class="c1">// start code, and (pos+rewind)-startcodeprefix_len-LeadingZero8BitsCount-TrailingZero8Bits</span>
+</span><span class="line">  <span class="c1">// is the size of the NALU.</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">len</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="o">+</span><span class="n">rewind</span><span class="p">)</span><span class="o">-</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span><span class="o">-</span><span class="n">LeadingZero8BitsCount</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">;</span>
+</span><span class="line">  <span class="n">memcpy</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Buf</span><span class="p">[</span><span class="n">LeadingZero8BitsCount</span><span class="o">+</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span><span class="p">],</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">);</span>
+</span><span class="line">  <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">forbidden_bit</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">7</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">  <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_reference_idc</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class="line">  <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_unit_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="mh">0x1f</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">
+</span><span class="line"><span class="c1">//printf (&quot;GetAnnexbNALU, regular case: pos %d nalu-&gt;len %d, nalu-&gt;reference_idc %d, nal_unit_type %d \n&quot;, pos, nalu-&gt;len, nalu-&gt;nal_reference_idc, nalu-&gt;nal_unit_type);</span>
+</span><span class="line"><span class="cp">#if TRACE</span>
+</span><span class="line">  <span class="n">fprintf</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\n\n</span><span class="s">Annex B NALU w/ %s startcode, len %d, forbidden_bit %d, nal_reference_idc %d, nal_unit_type %d</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class="line">    <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">startcodeprefix_len</span> <span class="o">==</span> <span class="mi">4</span><span class="o">?</span><span class="s">&quot;long&quot;</span><span class="o">:</span><span class="s">&quot;short&quot;</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">forbidden_bit</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_reference_idc</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&gt;</span><span class="n">nal_unit_type</span><span class="p">);</span>
+</span><span class="line">  <span class="n">fflush</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">);</span>
+</span><span class="line"><span class="cp">#endif</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">return</span> <span class="p">(</span><span class="n">pos</span><span class="o">+</span><span class="n">rewind</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>找<code>start_code</code>的定义如下：</p>
+
+<figure class="code"><figcaption><span>FindStartCode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/*!</span>
+</span><span class="line"><span class="cm"> ************************************************************************</span>
+</span><span class="line"><span class="cm"> * \brief</span>
+</span><span class="line"><span class="cm"> *    returns if new start code is found at byte aligned position buf.</span>
+</span><span class="line"><span class="cm"> *    new-startcode is of form N 0x00 bytes, followed by a 0x01 byte.</span>
+</span><span class="line"><span class="cm"> *</span>
+</span><span class="line"><span class="cm"> *  \return</span>
+</span><span class="line"><span class="cm"> *     1 if start-code is found or                      \n</span>
+</span><span class="line"><span class="cm"> *     0, indicating that there is no start code</span>
+</span><span class="line"><span class="cm"> *</span>
+</span><span class="line"><span class="cm"> *  \param Buf</span>
+</span><span class="line"><span class="cm"> *     pointer to byte-stream</span>
+</span><span class="line"><span class="cm"> *  \param zeros_in_startcode</span>
+</span><span class="line"><span class="cm"> *     indicates number of 0x00 bytes in start-code.</span>
+</span><span class="line"><span class="cm"> ************************************************************************</span>
+</span><span class="line"><span class="cm"> */</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">int</span> <span class="nf">FindStartCode</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">Buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">zeros_in_startcode</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="kt">int</span> <span class="n">info</span><span class="p">;</span>
+</span><span class="line">  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">info</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">  <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">zeros_in_startcode</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">      <span class="n">info</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">    <span class="n">info</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="k">return</span> <span class="n">info</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="x264--bitstream-">X264 中 Bitstream 的源码分析</h2>
 
 </div>
 
