@@ -488,7 +488,7 @@ c. 字节流的结束，由未规定的方式判决。</li>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<p>找<code>start_code</code>的定义如下：</p>
+<p>找<code>start_code</code>的定义如下,该函数的参数<code>zeros_in_startcode</code>可能为 3 或 4,寻找<code>0x000001</code>或<code>0x00000001</code>。</p>
 
 <figure class="code"><figcaption><span>FindStartCode </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -554,6 +554,167 @@ c. 字节流的结束，由未规定的方式判决。</li>
 </span></code></pre></td></tr></table></div></figure>
 
 <h2 id="x264--bitstream-">X264 中 Bitstream 的源码分析</h2>
+
+<p><code>X264</code>中关于<code>AnnexB</code>部分的描述主要是在<code>common/bitstream.c</code>中的<code>void x264_bitstream_init(int cpu, x264_bitstream_function_t *pf)</code>完成。
+其中的<code>x264_bitstream_function_t</code>结构体定义如下：</p>
+
+<figure class="code"><figcaption><span>x264_bitstream_function_t </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">nal_escape</span><span class="p">)</span> <span class="p">(</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">cabac_block_residual_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class="line">                                           <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">cabac_block_residual_rd_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class="line">                                              <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">cabac_block_residual_8x8_rd_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class="line">                                                  <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class="line"><span class="p">}</span> <span class="kt">x264_bitstream_function_t</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中<code>x264_bitstream_init</code>的定义如下：</p>
+
+<figure class="code"><figcaption><span>X264_bitstream_init </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">X264_bitstream_init</span><span class="p">(</span><span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_bitstream_function_t</span> <span class="o">*</span><span class="n">pf</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">memset</span><span class="p">(</span><span class="n">pf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">pf</span><span class="p">));</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">nal_escape</span> <span class="o">=</span> <span class="n">x264_nal_escape_c</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">cabac_block_residual_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_internal_sse2</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">cabac_block_residual_rd_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_rd_internal_sse2</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">cabac_block_residual_8x8_rd_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_8x8_rd_internal_sse2</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中的<code>x264_nal_escape_c</code>定义如下：</p>
+
+<figure class="code"><figcaption><span>x264_nal_escape_c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="nf">x264_nal_escape_c</span><span class="p">(</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">src</span> <span class="o">&lt;</span> <span class="n">end</span> <span class="p">)</span> <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">src</span> <span class="o">&lt;</span> <span class="n">end</span> <span class="p">)</span> <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">src</span> <span class="o">&lt;</span> <span class="n">end</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mh">0x03</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">dst</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">dst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+</span><span class="line">            <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x03</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">dst</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>最后，给出 X264 中关于每个 NALU 的编码的实现：</p>
+
+<figure class="code"><figcaption><span>x264_nal_encode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/****************************************************************************</span>
+</span><span class="line"><span class="cm"> * x264_nal_encode:</span>
+</span><span class="line"><span class="cm"> ****************************************************************************/</span>
+</span><span class="line"><span class="kt">void</span> <span class="nf">x264_nal_encode</span><span class="p">(</span> <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">x264_nal_t</span> <span class="o">*</span><span class="n">nal</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span> <span class="o">=</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="o">=</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span> <span class="o">+</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_payload</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">orig_dst</span> <span class="o">=</span> <span class="n">dst</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">b_long_startcode</span> <span class="p">)</span>
+</span><span class="line">            <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x01</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">else</span> <span class="cm">/* save room for size later */</span>
+</span><span class="line">        <span class="n">dst</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* nal header */</span>
+</span><span class="line">    <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="p">(</span> <span class="mh">0x00</span> <span class="o">&lt;&lt;</span> <span class="mi">7</span> <span class="p">)</span> <span class="o">|</span> <span class="p">(</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_ref_idc</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span> <span class="p">)</span> <span class="o">|</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_type</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">dst</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">bsf</span><span class="p">.</span><span class="n">nal_escape</span><span class="p">(</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">end</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">dst</span> <span class="o">-</span> <span class="n">orig_dst</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* Write the size header for mp4/etc */</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="cm">/* Size doesn&#39;t include the size of the header we&#39;re writing now. */</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span><span class="mi">24</span><span class="p">;</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span><span class="mi">16</span><span class="p">;</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">;</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_payload</span> <span class="o">=</span> <span class="n">size</span><span class="o">+</span><span class="mi">4</span><span class="p">;</span>
+</span><span class="line">    <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span> <span class="o">=</span> <span class="n">orig_dst</span><span class="p">;</span>
+</span><span class="line">    <span class="n">x264_emms</span><span class="p">();</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 </div>
 
