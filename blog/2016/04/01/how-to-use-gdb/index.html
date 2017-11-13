@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="前期准备 启动GDB 查看源码 断点break 使用 查看运行时数据 参考文献 GDB, The GNU Project debugger, allows you to see what is going on inside another program while it executes &hellip;">
+  <meta name="description" content="前期准备 启动GDB方法 设置运行参数 查看源码 断点break 使用 运行程序 查看运行时数据 查看内存数据 分割窗口 参考文献 GDB, The GNU Project debugger, allows you to see what is going on inside another &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -93,7 +93,6 @@
 
 <time class='entry-date' datetime='2016-04-01T07:48:51-07:00'><span class='date'>2016 年 04 月 01 日</span> <span class='time'>7:48 am</span></time>
         
-        
       </p>
     
   </header>
@@ -101,11 +100,15 @@
 
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">前期准备</a></li>
-  <li><a href="#gdb" id="markdown-toc-gdb">启动GDB</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">查看源码</a></li>
+  <li><a href="#gdb" id="markdown-toc-gdb">启动GDB方法</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">设置运行参数</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">查看源码</a></li>
   <li><a href="#break-" id="markdown-toc-break-">断点break 使用</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">查看运行时数据</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">参考文献</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">运行程序</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">查看运行时数据</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">查看内存数据</a></li>
+  <li><a href="#section-6" id="markdown-toc-section-6">分割窗口</a></li>
+  <li><a href="#section-7" id="markdown-toc-section-7">参考文献</a></li>
 </ul>
 
 <p><a href="https://www.gnu.org/software/gdb/">GDB</a>, The GNU Project debugger, allows you to see what is going on inside another program while it executes – or what another program was doing at the moment it crashed.</p>
@@ -130,12 +133,25 @@
 <p>此时，可执行程序<code>programe</code>中就包含了调试需要的各种信息，如程序函数名、变量名等。
 对于 MAC OSX 系统，调试信息会包含在另外一个<code>programe.dSYM</code>（debug symbols）文件夹下面，可以使用<code>dwarfdump programe.dSYM</code>直接查看各符号信息。</p>
 
-<h3 id="gdb">启动GDB</h3>
+<h3 id="gdb">启动GDB方法</h3>
+
+<ol>
+  <li>gdb <programe> program就是执行的文件，一般在当前目录下。</programe></li>
+  <li>gdb <programe> core 用GDB同事调试一个运行程序和 core 文件，core 是程序非法执行后 core dump 后产生的文件。</programe></li>
+  <li>gdb <programe> <PID> 如果程序是一个服务程序，则可以指定服务程序运行时的进程ID。gdb 自动 attach 上去，并调试它。 program 应该在 PATH 环境变量中搜索得到。</PID></programe></li>
+</ol>
+
+<p>如果出现<code>Segment Fault</code>，可以通过方法 2 来进行 Debug 程序，启动方式为<code>gdb {executable} {dump file}</code>,如果没有产生 core 文件，需要在执行 executable 之前先执行如下命令：</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">gdb programe</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class="code"><pre><code class=""><span class="line">$ulimit -c unlimited</span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-1">查看源码</h3>
+<h3 id="section-1">设置运行参数</h3>
+
+<p>set args 可指定运行时参数。(如：set args 10 20 30)  <br />
+show args 命令可以查看设置好的运行参数。</p>
+
+<h3 id="section-2">查看源码</h3>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -162,7 +178,20 @@
 </pre></td><td class="code"><pre><code class=""><span class="line">info break    //查看所有 break 的信息
 </span><span class="line">info break n //查看 n 断点号的信息</span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-2">查看运行时数据</h3>
+<h3 id="section-3">运行程序</h3>
+
+<p>运行程序如下</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">next //单步执行
+</span><span class="line">continue //继续执行程序，直到程序结束或遇到下一个断点</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-4">查看运行时数据</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">print parm //打印变量parm的值
+</span><span class="line">bt         //查看函数堆栈信息</span></code></pre></td></tr></table></div></figure>
 
 <p>当运行程序到某个位置时，我们希望看看此时程序的状态，比如某个变量的值是否按照预期改变、某块内存的值是否被改。此时就需要用到查看程序运行数据的集中方法。</p>
 
@@ -170,7 +199,45 @@
 
 <p>可以使用 examine 命令查看内存地址中的值。格式是<code>x /&lt;n/f/u&gt; &lt;addr&gt;</code>，其中<code>&lt;addr&gt;</code>是内存地址。</p>
 
-<h3 id="section-3">参考文献</h3>
+<h3 id="section-5">查看内存数据</h3>
+
+<p>在调试代码时，经常需要查看某块内存的数据，此时就需要使用<code>GDB</code>中的<a href="http://www.delorie.com/gnu/docs/gdb/gdb_56.html">Examining memory</a>。<br />
+可以使用命令<code>x</code>(即<code>examine</code>)来检查任意格式的内存数据，不管你的程序数据类型。使用的格式为：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">x  /nfu addr
+</span><span class="line">x addr  </span></code></pre></td></tr></table></div></figure>
+
+<p>其中n/f/u 是选项参数，指定内存的大小及显示格式；addr 指定显示的内存的起始地址。n 是十进制的整数，指定小时内存的大小；f 指定显示的格式，它的使用与 GDB 中的 print 使用的格式一样，如<code>x</code>指定使用 16 进制显示，
+<code>d</code>按十进制格式显示等；u 是指每个显示单元的大小，如<code>b</code>是指每个显示单元为 byte，<code>h</code>是指每个显示单元为半字（两个 byte）等；addr 指定要显示的内存的起始地址。</p>
+
+<p>如果需要查看的数据比较多，比如我们需要 dump 一块 buffer 的数据，与特定的数据进行比较，上面提到的<code>examine</code>就很难实现了。此时需要将块内存 dump 出来。使用到的命令是 <code>dump</code>或<code>append</code>或<code>restore</code>。此处主要介绍<code>dump</code>命令。<br />
+它的格式为:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">dump [format] memory filename start_addr end_addr</span></code></pre></td></tr></table></div></figure>
+
+<p>从格式可以看出，它的含义是从<code>start_addr</code>开始到<code>end_addr</code>结束的 memory dump 到 指定的文件 filename 中。</p>
+
+<h3 id="section-6">分割窗口</h3>
+
+<p>layout 用于分割窗口，可以一边查看代码，一边测试。主要有以下几种用法：</p>
+
+<ul>
+  <li>layout src:显示源代码窗口</li>
+  <li>layout asm:显示汇编窗口</li>
+  <li>layout regs:显示源代码汇编和寄存器窗口</li>
+  <li>layout split:显示源代码和汇编窗口</li>
+  <li>layout next:显示下一个 layout</li>
+  <li>layout prev:显示上一个 layout</li>
+  <li>Ctrl+L:刷新窗口</li>
+  <li>Ctrl+x,再按1：单窗口模式，显示一个窗口</li>
+  <li>Ctrl+x,再按2：双窗口模式，显示两个窗口</li>
+  <li>Ctrl+x,再按a：回到传统模式，即退出 layout, 回到执行 layout 之前的调试窗口</li>
+</ul>
+
+<h3 id="section-7">参考文献</h3>
 
 <ol>
   <li><a href="http://www.tutorialspoint.com/gnu_debugger/index.htm">GNU Debugger Tutorial</a></li>
@@ -231,7 +298,6 @@
   </footer>
 </article>
 
-
 </div>
 
 <aside class="sidebar">
@@ -239,13 +305,15 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
-<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (18)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
 </section>
@@ -254,23 +322,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2016/12/23/code-complete/">Code Complete</a>
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之X264_bitstream_init函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/22/addr2line-use/">Addr2line 的介绍与使用</a>
+        <a href="/blog/2017/10/19/reference-frame/">X264 源码解析之参考帧</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/07/avio-open2/">FFMPEG源码分析：avio_open2</a>
+        <a href="/blog/2017/10/11/x264-slicetype-decide/">X264 源码解析之判断帧类型</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/06/av-find-encdec/">FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder</a>
+        <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/05/avcodec-register-all/">FFMPEG 源码分析：avcodec_register_all</a>
+        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
       </li>
     
   </ul>
@@ -394,6 +462,37 @@ $(document).ready(function(){
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
 
 </footer>
   

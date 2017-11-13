@@ -93,7 +93,6 @@
 
 <time class='entry-date' datetime='2016-07-26T04:31:32-07:00'><span class='date'>2016 年 07 月 26 日</span> <span class='time'>4:31 am</span></time>
         
-        
       </p>
     
   </header>
@@ -115,6 +114,7 @@
           <li><a href="#media-header-box" id="markdown-toc-media-header-box">Media Header Box</a></li>
           <li><a href="#handler-reference-box" id="markdown-toc-handler-reference-box">Handler Reference Box</a></li>
           <li><a href="#media-informatino-box" id="markdown-toc-media-informatino-box">Media Informatino Box</a></li>
+          <li><a href="#data-informatino-boxdinf" id="markdown-toc-data-informatino-boxdinf">Data Informatino Box(dinf)</a></li>
         </ul>
       </li>
     </ul>
@@ -527,6 +527,138 @@
 
 <p>Media Information Header Boxes 根据类型分为 vmhd、smhd、hmhd、nmhd。</p>
 
+<p>其中 vmhd 格式如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">graphics mode</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">视频合成模式，为0时拷贝原图像，否则与opcolor进行合成</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">opcolor</td>
+      <td style="text-align: center">2x3</td>
+      <td style="text-align: center">{red, green, blue}</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>smhd 格式如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">balance</td>
+      <td style="text-align: center">2 bytes</td>
+      <td style="text-align: center">立体声平衡，[8.8]格式</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">2 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="data-informatino-boxdinf">Data Informatino Box(dinf)</h4>
+
+<p><code>dinf</code>解释如何定位媒体信息，是一个container box。<code>dinf</code>一般包含一个<code>dref</code>，即 data reference box；
+<code>dref</code>下会包含若干个<code>url</code>或<code>urn</code>，这些box组成一个表，用来定位track数据。</p>
+
+<p><code>dref</code>的结构如下表。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">entry count</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center"><code>url</code>或<code>urn</code>表的元素个数</td>
+    </tr>
+  </tbody>
+</table>
+
 </div>
 
 
@@ -547,7 +679,7 @@
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+    <a class='category' href='/blog/categories/shi-pin-ji-chu/'>视频基础</a>
   
 </span>
 
@@ -568,34 +700,11 @@
         <a class="basic-alignment left" href="/blog/2016/07/24/avi-parse-format/" title="Previous Post: 媒体文件格式分析之AVI">&laquo; 媒体文件格式分析之AVI</a>
       
       
-        <a class="basic-alignment right" href="/blog/2016/07/26/ts-parse-format/" title="Next Post: 媒体文件格式分析之TS">媒体文件格式分析之TS &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2016/09/22/how-to-use-gprof/" title="Next Post: 如何使用gprof">如何使用gprof &raquo;</a>
       
     </p>
   </footer>
 </article>
-
-
-  <section>
-    <h1>Comments</h1>
-    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2016/07/26/mp4-parse-format" data-title="媒体文件格式分析之MP4" data-url="http://lazybing.github.io/blog/2016/07/26/mp4-parse-format//"></div>
-<!-- Duoshuo Comment end -->
-<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-var duoshuoQuery = {short_name:"lazybing"};
-    (function() {
-                var ds = document.createElement('script');
-                ds.type = 'text/javascript';ds.async = true;
-                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-                ds.charset = 'UTF-8';
-                (document.getElementsByTagName('head')[0] 
-                || document.getElementsByTagName('body')[0]).appendChild(ds);
-    })();
-    </script>
-<!-- 多说公共JS代码 end -->
-
-</div>
-  </section>
 
 </div>
 
@@ -604,13 +713,15 @@ var duoshuoQuery = {short_name:"lazybing"};
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
-<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (18)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
 </section>
@@ -619,23 +730,23 @@ var duoshuoQuery = {short_name:"lazybing"};
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2016/12/23/code-complete/">Code Complete</a>
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之X264_bitstream_init函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/22/addr2line-use/">Addr2line 的介绍与使用</a>
+        <a href="/blog/2017/10/19/reference-frame/">X264 源码解析之参考帧</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/07/avio-open2/">FFMPEG源码分析：avio_open2</a>
+        <a href="/blog/2017/10/11/x264-slicetype-decide/">X264 源码解析之判断帧类型</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/06/av-find-encdec/">FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder</a>
+        <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/05/avcodec-register-all/">FFMPEG 源码分析：avcodec_register_all</a>
+        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
       </li>
     
   </ul>
@@ -759,6 +870,37 @@ $(document).ready(function(){
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
 
 </footer>
   

@@ -1,0 +1,1472 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:视频基础 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/shi-pin-ji-chu/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2017-11-12T18:55:10-08:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之MP4]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/26/mp4-parse-format/"/>
+    <updated>2016-07-26T04:31:32-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/26/mp4-parse-format</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#box" id="markdown-toc-box">最小组单元 BOX</a></li>
+  <li><a href="#mp4-" id="markdown-toc-mp4-">MP4 文件整体结构</a>    <ul>
+      <li><a href="#file-type-box" id="markdown-toc-file-type-box">File Type Box</a></li>
+      <li><a href="#movie-box" id="markdown-toc-movie-box">Movie Box</a>        <ul>
+          <li><a href="#movie-header-box" id="markdown-toc-movie-header-box">Movie Header Box</a></li>
+        </ul>
+      </li>
+      <li><a href="#track-box" id="markdown-toc-track-box">Track Box</a>        <ul>
+          <li><a href="#track-header-box" id="markdown-toc-track-header-box">Track Header Box</a></li>
+        </ul>
+      </li>
+      <li><a href="#media-box" id="markdown-toc-media-box">Media Box</a>        <ul>
+          <li><a href="#media-header-box" id="markdown-toc-media-header-box">Media Header Box</a></li>
+          <li><a href="#handler-reference-box" id="markdown-toc-handler-reference-box">Handler Reference Box</a></li>
+          <li><a href="#media-informatino-box" id="markdown-toc-media-informatino-box">Media Informatino Box</a></li>
+          <li><a href="#data-informatino-boxdinf" id="markdown-toc-data-informatino-boxdinf">Data Informatino Box(dinf)</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/MPEG-4_Part_14">MP4</a>是由许多 Box 和 FullBox 组成的，每个 Box 是由 Header 和 Data 组成的，FullBox 是 Box 的扩展，Box 结构的基础上在 Header 中增加 8bits version 和 24bits flags。
+<!--more--></p>
+
+<h2 id="box">最小组单元 BOX</h2>
+
+<p>MP4 是由一些列的 box 组成，它的最小组成单元是 box。MP4 文件中的所有数据都装在 box 中，即 MP4 文件由若干个 box 组成，每个
+ box 有类型和长度，可以将 box 理解为一个数据对象块。box 中可以包含另一个 box，这种 box 称为 container box。一个 MP4 文件首先会有且仅有
+ 一个<code>ftype</code>类型的 box,作为 MP4 格式的标志并包含关于文件的一些信息，之后会有且只有一个<code>moov</code>类型的box(Movie Box)，她是一种 container box,
+ 可以有多个，也可以没有，媒体数据的结构由 metadata 进行描述。</p>
+
+<p><img src="/images/MP4/mp4_box.png"></p>
+
+<ul>
+  <li>size：指明了 box 所占用的大小，包括 header 部分。</li>
+  <li>type: 表示这个 box 的类型。</li>
+  <li>largesize: 如果 box 很大超过 uint32 的最大数值,size 就被设置为 1,并用接下来的 largesize 来存放大小。</li>
+</ul>
+
+<p>一些基本概念：</p>
+
+<ul>
+  <li>track 表示一些 sample 的集合，对于媒体数据来说， track 表示一个视频或音频序列。</li>
+  <li>hint track 这个特殊的 track 并不包含媒体数据，而是包含了一些将其他数据 track 打包成流媒体的指示信息。</li>
+  <li>sample 对于非 hint track 来说， video  sample 即为一帧视频，或一组连续视频帧，audio sample 即为一段连续的压缩音频，统称为 sample。对于 hint track，sample 定义一个或多个流媒体包的格式。</li>
+  <li>sample table 指明 sample 时序和物理布局的表。</li>
+  <li>chunk 一个track的几个 sample 组成的单元。</li>
+</ul>
+
+<h2 id="mp4-">MP4 文件整体结构</h2>
+
+<p><img src="/images/MP4/box.png"></p>
+
+<h3 id="file-type-box">File Type Box</h3>
+
+<p><code>ftyp</code>类型会出现在 MP4 文件的开头，作为 MP4 容器格式的可表示信息。<code>ftyp box</code>内容结构如下：</p>
+
+<p><img src="/images/MP4/filetypebox.png"></p>
+
+<p><code>
+class FileTypeBox
+extends Box('ftyp'){
+unsigned int(32) major_brand;
+unsigned int(32) minor_version;
+unsigned int(32) compatible_brands[];
+}
+</code></p>
+
+<h3 id="movie-box">Movie Box</h3>
+
+<p><code>moov</code>里面包含了很多个 box,一般情况下 moov 会紧跟着 ftype。moov 里面包含着 MP4 文件中的 metedata。音视频相关
+的基础信息。</p>
+
+<h4 id="movie-header-box">Movie Header Box</h4>
+
+<p><img src="/images/MP4/movie_header.png"></p>
+
+<p>```
+class MovieHeader extends FullBox(‘mvhd’, version, 0)
+{
+    if(version == 1)
+    {
+        unsinged int(64) creation_time;
+        unsinged int(64) modification_time;
+        unsinged int(64) timescale;
+        unsinged int(64) duration;
+    }else{
+        unsinged int(32) creation_time;
+        unsinged int(32) modification_time;
+        unsinged int(32) timescale;
+        unsinged int(32) duration;
+    }</p>
+
+<pre><code>template int(32) rate = 0x00010000;
+template int(16) volume = 0x0100;
+const bit(16) reserved = 0;
+const ungigned int(32)[2] reserved = 0;
+template int(32)[9] matrix = 
+{ 0x0001000, 0, 0, 0, 0x0001000, 0, 0, 0, 0x40000000};
+bit(32)[6] pre_defined = 0;
+unsigned int(32) next_track_ID; } ```
+</code></pre>
+
+<p>各个 Field 含义表格：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">box 版本</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">flags</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">creation time</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">创建时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">modification time</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">修改时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">time scale</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">文件媒体在 1s 时间内的刻度值，可以理解为 1s 长度的时间单元数，一般情况下视频都是90000</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">duration</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">该 track 的时间长度，用 duration 和 time scale 值可以计算 track 时长</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">rate</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">推荐播放速率</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">volume</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">与 rate 类似</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">matrix</td>
+      <td style="text-align: center">36</td>
+      <td style="text-align: center">视频变化矩阵</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">pre-defined</td>
+      <td style="text-align: center">24</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">nex track id</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">下一个 track 使用过的id 号</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="track-box">Track Box</h3>
+
+<p>在<code>moov</code>这个box中会含有若干个track box每个track都是相对独立，track box里面会包含很多别的box，有2个很关键
+<code>Track Header Box</code><code>Media Box</code>。</p>
+
+<h4 id="track-header-box">Track Header Box</h4>
+
+<p><img src="/images/MP4/movie_header.png"></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">box类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">box版本</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">按位或操作结果值，预定义如下：0x000001 track_enabled,否则该track不被播放；0x000002 track_in_movie，表示该track在播放中被引用。</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">track id</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">id号</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">duration</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">track的时间长度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">8</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">layer</td>
+      <td style="text-align: center">2 视频层，默认为0， 值小的在上层</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">alternate group</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">track 分组信息，默认为0表示该track未与其他track组有关系</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">volume</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">[8.8]格式，如果为音频track,1.0表示最大音量，否则为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">保留位</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">matrix</td>
+      <td style="text-align: center">36</td>
+      <td style="text-align: center">视频变化矩阵</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">width</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">宽</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">height</td>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">高</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="media-box">Media Box</h3>
+
+<h4 id="media-header-box">Media Header Box</h4>
+
+<p><img src="/images/MP4/media_header_box.png"></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Field</td>
+      <td>Type</td>
+      <td>Comment</td>
+    </tr>
+    <tr>
+      <td>box size</td>
+      <td>4</td>
+      <td>box 大小</td>
+    </tr>
+    <tr>
+      <td>box type</td>
+      <td>4</td>
+      <td>box 类型</td>
+    </tr>
+    <tr>
+      <td>version</td>
+      <td>1</td>
+      <td>box 版本</td>
+    </tr>
+    <tr>
+      <td>creation_time</td>
+      <td>4</td>
+      <td>创建时间</td>
+    </tr>
+    <tr>
+      <td>modification_time</td>
+      <td>4</td>
+      <td>修改时间</td>
+    </tr>
+    <tr>
+      <td>time scale</td>
+      <td>4</td>
+      <td>文件媒体在1s内的刻度值</td>
+    </tr>
+    <tr>
+      <td>duration</td>
+      <td>4</td>
+      <td>该 track 的时间长度</td>
+    </tr>
+    <tr>
+      <td>langurage</td>
+      <td>2</td>
+      <td>媒体语言码</td>
+    </tr>
+    <tr>
+      <td>pre_defined</td>
+      <td>2</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="handler-reference-box">Handler Reference Box</h4>
+
+<p><img src="/images/MP4/media_header_box.png"></p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Field</td>
+      <td>Type</td>
+      <td>Comment</td>
+    </tr>
+    <tr>
+      <td>box size</td>
+      <td>4</td>
+      <td>box 大小</td>
+    </tr>
+    <tr>
+      <td>box type</td>
+      <td>4</td>
+      <td>box 类型</td>
+    </tr>
+    <tr>
+      <td>flags</td>
+      <td>3</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>pre_defined</td>
+      <td>4</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>handler_type</td>
+      <td>4</td>
+      <td>Video track(vide)/Audio track(soun)/Hint track(hint)a</td>
+    </tr>
+    <tr>
+      <td>reserved</td>
+      <td>12</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>string</td>
+      <td>字符串 tracke type name</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="media-informatino-box">Media Informatino Box</h4>
+
+<p><code>minf</code>里面包含着一系列的box，里面是track相关的特征信息。一般
+情况minf包含:Media Information Header Boxes、Data Information Box(dinf)、Sample Table Box。</p>
+
+<p>Media Information Header Boxes 根据类型分为 vmhd、smhd、hmhd、nmhd。</p>
+
+<p>其中 vmhd 格式如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">graphics mode</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">视频合成模式，为0时拷贝原图像，否则与opcolor进行合成</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">opcolor</td>
+      <td style="text-align: center">2x3</td>
+      <td style="text-align: center">{red, green, blue}</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>smhd 格式如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">balance</td>
+      <td style="text-align: center">2 bytes</td>
+      <td style="text-align: center">立体声平衡，[8.8]格式</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">reserved</td>
+      <td style="text-align: center">2 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="data-informatino-boxdinf">Data Informatino Box(dinf)</h4>
+
+<p><code>dinf</code>解释如何定位媒体信息，是一个container box。<code>dinf</code>一般包含一个<code>dref</code>，即 data reference box；
+<code>dref</code>下会包含若干个<code>url</code>或<code>urn</code>，这些box组成一个表，用来定位track数据。</p>
+
+<p><code>dref</code>的结构如下表。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">box size</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">box type</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">box 类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">box版本，通常为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">flags</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">entry count</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center"><code>url</code>或<code>urn</code>表的元素个数</td>
+    </tr>
+  </tbody>
+</table>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之AVI]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/24/avi-parse-format/"/>
+    <updated>2016-07-24T01:04:52-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/24/avi-parse-format</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">基本数据结构</a></li>
+  <li><a href="#avi-" id="markdown-toc-avi-">AVI 文件类型</a></li>
+  <li><a href="#avi--1" id="markdown-toc-avi--1">AVI 文件布局</a>    <ul>
+      <li><a href="#mainaviheaderavih" id="markdown-toc-mainaviheaderavih">MainAVIHeader(avih)</a></li>
+      <li><a href="#stream-header-list" id="markdown-toc-stream-header-list">Stream Header List</a></li>
+      <li><a href="#stream-header-list-elementstrh" id="markdown-toc-stream-header-list-elementstrh">Stream Header List Element(strh)</a></li>
+      <li><a href="#stream-header-list-elementstrf" id="markdown-toc-stream-header-list-elementstrf">Stream Header List Element(strf)</a></li>
+      <li><a href="#stream-header-list-elementindx" id="markdown-toc-stream-header-list-elementindx">Stream Header List Element(indx)</a></li>
+      <li><a href="#stream-header-list-elementstrn" id="markdown-toc-stream-header-list-elementstrn">Stream Header List Element(strn)</a></li>
+    </ul>
+  </li>
+  <li><a href="#avi-indexes" id="markdown-toc-avi-indexes">AVI Indexes</a>    <ul>
+      <li><a href="#old-style-index" id="markdown-toc-old-style-index">old style index</a></li>
+      <li><a href="#open-dml-index" id="markdown-toc-open-dml-index">Open-DML Index</a></li>
+      <li><a href="#using-the-open-dml-index" id="markdown-toc-using-the-open-dml-index">Using the Open-DML index</a></li>
+    </ul>
+  </li>
+  <li><a href="#the-movi---lists" id="markdown-toc-the-movi---lists">The movi - Lists</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">参考文献</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">AVI</a> 是音视频交错(Audio Video Interleaved)的缩写，它是 Microsoft 公司开发的一种符合 RIFF 文件规范的数字音频与视频文件格式。
+<!--more--></p>
+
+<h2 id="section">基本数据结构</h2>
+
+<p>AVI 文件中有两种类型结构:Chunks 和 Lists。</p>
+
+<p><code>
+//Chunks
+typedef struct {
+    DWORD dwFourCC;
+    DWORD dwSize;
+    BYTE  data[dwSize];
+}CHUNK;
+//Lists
+typedef struct{
+    DWORD dwList;
+    DWORD dwSize;
+    DWORD dwFourCC;
+    BYTE  data[dwSize - 4];
+}LIST;
+</code></p>
+
+<p>一个包含了<code>video</code>、<code>audio</code>或<code>subtitle</code>数据的<code>chunk</code>使用一个<code>dwFourCC</code>，
+<code>dwFourCC</code>包含 2 个十六进制数字表示 stream number，2 个字母表示数据类型( dc 表示 video， wb 表示 audio, tx 表示 text)。
+<code>dwFourCC</code>和<code>dwSize</code>在<code>Chunks</code>和<code>Lists</code>中有相同的含义。</p>
+
+<p><code>dwFourCC</code>描述chunk 的类型（如<code>hdrl</code>表示 <code>header list</code>），<code>dwSize</code>表示该 chunk 或 list 的大小，
+包含<code>dwSize</code>后的所有 byte。在 List 中，<code>dwSize</code>包含了<code>dwFourCC</code>所占有的4 bytes.</p>
+
+<p><code>dwList</code>的值可以是<code>RIFF（RIFF-List</code>或<code>LIST(List)</code>。</p>
+
+<h2 id="avi-">AVI 文件类型</h2>
+
+<p>通常来讲，有 3 种类型的 AVI 文件：</p>
+
+<ul>
+  <li>AVI 1.0, 最初始的 AVI 文件类型。</li>
+  <li>Open-DML, AVI 文件格式的扩展。1.02版本相对于1.0版本有两个提高：基本没有文件大小的限制、负载降低了33%。</li>
+  <li>Hybride-Files，Open-DML 文件因为兼容的原因有个额外的限制，Hybride-Files 虽然不是官方致命的文件类型，但确实是一个不错的类型。</li>
+</ul>
+
+<h2 id="avi--1">AVI 文件布局</h2>
+<p>一个<code>dwFourCC=AVI</code>的<code>RIFF-List</code>称为<code>RIFF-AVI-List</code>，
+一个<code>dwFourCC=AVIX</code>的<code>RIFF-List</code>称为<code>RIFF-AVIX-List</code>。</p>
+
+<p>每个 AVI 文件都有如下布局：
+<code>
+RIFF AVI    //mandatory
+{RIFF AVIX} //only for Open-DML files
+</code></p>
+
+<p>并非之受限于 uint32 的限制，文件大小的极限并非 4G,而是</p>
+
+<ul>
+  <li>对于 AVI 1.0: sizeof(RIFF-AVI) &lt; 2G</li>
+  <li>对于 Open-DML, sizeof(RIFF-AVI) &lt; 1G(!!), sizeof(RIFF-AVIX) &lt; 2G</li>
+</ul>
+
+<p>一般来讲，RIFF-AVI-Lists被创建的越小越好。</p>
+
+<h3 id="mainaviheaderavih">MainAVIHeader(avih)</h3>
+
+<p><code>avih</code>结构定义如下：<br />
+```
+typedef struct
+{
+    DWORD dwMicroSecPerFrame;   //frame display rate(or 0)
+    DWORD dwMaxBytesPerSec;     //max transfer rate
+    DWORD dwPaddingGranularity; //pad to multiples of this size
+    DWORD dwFlags               //the ever-present flags
+    DWORD dwTotalFrames;        //frames in file
+    DWORD dwInitialFrames;
+    DWORD dwStreams;
+    DWORD dwSuggestedBufferSize;</p>
+
+<pre><code>DWORD dwWidth;
+DWORD dwHeight;
+
+DWORD dwReserved[4]; }MainAVIHeader; ``` * dwMicroSecPerFrame 以微妙为单位，包含了一个视频帧的持续时间。该值可以被忽略。注意，某些程序中可能会把它写成 framerate 值，因此 dwMicroSecPerFrame 并不可靠。   * dwMaxBytesPerSec 文件中最大的数据率，该值同样的不是特别重要。   * dwPaddingGranularity 填充的数据。   * dwFlags `AVIF_HASINDEX`（该文件有index）、`AVIF_MUSTUSEINDEX`（）、`AVIF_ISINTERLEAVED` `AVIF_WASCAPTUREFILE` `AVIF_COPYRIGHTED` `AVIF_TRUSTCKTYPE`。   * dwTotalFrames 包含了`RIFF-AVI list`中视频帧数。如果文件中包含`RIFF-AVIX-Lists`，它不会包含其中的视频帧。因为某些`muxer`会写一些错误的值，因此该值同样的不可靠。   * dwInitialFrames 忽略 * dwStreams 文件中`streams`的数量。   * dwSuggestedBufferSize 文件chunks 所需要的内存大小。同样不要高估它的可靠性。   * dwWidth 视频的宽。   * dwHeight 视频的高。  
+</code></pre>
+
+<h3 id="stream-header-list">Stream Header List</h3>
+
+<p>针对每个<code>stream</code>都有一个<code>strl</code>，如果<code>strl</code>的数量与<code>MainAVIHeader::dwStreams</code>不同，就需要发出一个<code>fatal error report</code>。</p>
+
+<h3 id="stream-header-list-elementstrh">Stream Header List Element(strh)</h3>
+
+<p><code>
+typedef struct{
+    FOURCC fccType;
+    FOURCC fccHandler;
+    DWORD  dwFlags;
+    WORD   wPriority;
+    WORD   wLanguage;
+    DWORD  dwInitialFrames;
+    DWORD  dwScale;
+    DWORD  dwRate;  // dwRate / dwScale == samples /second
+    DWORD  dwStart;
+    DWORD  dwLength;  //In units above
+    DWORD  dwSuggestedBufferSize;
+    DWORD  dwQuality;
+    DWORD  dwSampleSize;
+    RECT   rcFrame;
+}AVIStreamHeader;
+</code></p>
+
+<ul>
+  <li>fccType <code>vids</code>代表 video, <code>auds</code>代表 audio, <code>txts</code>代表 subtitle。</li>
+  <li>fccHandler</li>
+  <li>dwFlags <code>AVISF_DISABLED</code> <code>AVISF_VIDEO_PALCHANGES</code></li>
+  <li>dwInitialFrames</li>
+  <li>dwRate / dwScale = samples / second(audio) or frames / second(video)</li>
+  <li>dwStart</li>
+  <li>dwLength</li>
+  <li>dwSuggestedBufferSize</li>
+  <li>dwQuality</li>
+  <li>dwSampleSize</li>
+</ul>
+
+<h3 id="stream-header-list-elementstrf">Stream Header List Element(strf)</h3>
+
+<p><code>strf</code>的结构依据媒体类型。对于 video，使用<code>BITMAPINFOHEADER</code>结构，而 audion，使用<code>WAVEFORMATEX</code>结构。</p>
+
+<p><code>
+typedef struct tagBITMAPINFOHEADER{
+    DWORD biSize;
+    LONG  biWidth;
+    LONG  biHeight;
+    WORD  biPlanes;
+    WORD  biBitCount;
+    DWORD biCompression;
+    DWORD biSizeImage;
+    LONG  biXPelsPerMeter;
+    LONG  biYPelsPerMeter;
+    DWORD biClrUsed;
+    DWORD biClrImportant;
+}BITMAPINFOHEADER, *PBITMAPINFOHEADER;
+</code></p>
+
+<ul>
+  <li>biSize  该结构体所需要的 byte 大小。</li>
+  <li>biWidth 图像的宽度。如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，<code>biWidth</code>成员相应的指解压缩后的<code>JPEG</code>或<code>PNG</code>图像文件的宽。</li>
+  <li>biHeight 位图的高度。如果<code>biHeight</code>是正数，位图是自底向上的<code>DIB</code>,它的原点是右下角地点；。如果<code>biHeight</code>是正数，位图是自顶向下的<code>DIB</code>,它的原点是右上角地点；
+如果<code>biHeight</code>是负数，<code>biCompression</code>要么是<code>BI_RGB</code>或<code>BI_BITFIELDS</code>，自顶向下的<code>DIB</code>不能被压缩。
+如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，则<code>biHeight</code>程序分别指解压缩后的<code>JPEG</code>或<code>PNG</code>图像的高。</li>
+  <li>biPlanes 目标设备的<code>planes</code>的数量，该值必须是1。</li>
+  <li>biBitCount 每个像素所用的 bit 数，<code>BITMAPINFOHEADER</code>的成员<code>biBitCount</code>决定了每个 pixel 所占的 bit 数、以及位图中表示颜色所能用到的最大数。该值可以是<code>0/1/4/8/16/24/32</code>。</li>
+  <li>biCompression 压缩的自底向上的位图的压缩类型，可以是<code>BI_RGB</code><code>BI_RLE8</code><code>BI_RLE4</code><code>BI_BITFIELDS</code><code>BI_JPEG</code><code>BI_PNG</code>.</li>
+  <li>biSizeImage 图像的大小，单位 byte。如果是<code>BI_RGB</code>位图，该值被设置为0。如果<code>biCompression</code>是<code>BI_JPEG</code>或<code>BI_PNG</code>，该值分别指示 JPEG 或 PNG 图像的大小。</li>
+  <li>biXPelsPerMeter 水平分辨率。</li>
+  <li>biYPelsPerMeter 垂直分辨率。</li>
+  <li>biClrUsed 颜色表中该位图实际使用的颜色指针。</li>
+  <li>biClrImportant</li>
+</ul>
+
+<p><code>
+typedef struct{
+    WORD  wFormatTag;
+    WORD  nChannels;
+    DWORD nSamplesPerSec;
+    DWORD nAvgBytesPerSec;
+    WORD  nBlocAlign;
+    WORD  wBitsPerSample;
+    WORD  cbSize;
+}WAVEFORMATEX;
+</code>
+(待续…)</p>
+
+<h3 id="stream-header-list-elementindx">Stream Header List Element(indx)</h3>
+
+<p>该结构请看下面的<code>AVI index</code>小结。</p>
+
+<h3 id="stream-header-list-elementstrn">Stream Header List Element(strn)</h3>
+
+<p>该部分包含了<code>stream</code>的的名字。该名字只能使用标准的<code>ASCII</code>，尤其不能使用<code>UTF-8</code>。</p>
+
+<h2 id="avi-indexes">AVI Indexes</h2>
+
+<h3 id="old-style-index">old style index</h3>
+
+<p><code>
+AVIINDEXENTRY index_entry[n]  
+typedef struct{
+    DWORD ckid;
+    DWORD dwFlags;
+    DWORD dwChunkOffset;
+    DWORD dwChunkLength;
+}AVIINDEXENTRY;
+</code></p>
+
+<h3 id="open-dml-index">Open-DML Index</h3>
+
+<p><code>
+typedef struct _aviindex_chunk{
+    FOURCC fcc;
+    DWORD  cb;
+    WORD   wLongsPerEntry;
+    BYTE   bIndexSubType;
+    BYTE   bIndexType;
+    DWORD  nEntriesInUse;
+    DWORD  dwChunkId;
+    DWORD  dwReserved[3];
+    struct _aviindex_entry{
+        DWORD adw[wLongsPerEntry];
+    }aIndex[];
+}AVIINDEXCHUNK;
+</code></p>
+
+<h3 id="using-the-open-dml-index">Using the Open-DML index</h3>
+
+<h2 id="the-movi---lists">The movi - Lists</h2>
+
+<p><code>Movi-List</code>包含<code>Video</code><code>Audio</code><code>Subtitle</code>和<code>index data</code>。它们可以打包进<code>rec-List</code>。如：</p>
+
+<p><code>
+LIST movi
+    LIST rec
+        01wb
+        02wb
+        03dc
+    LIST rec
+        01wb
+        02wb
+    LIST rec
+        ...
+        ...
+        ix01
+        ix02
+        ...
+</code>
+其中的<code>chunks</code> ID 分别定义如下：</p>
+
+<ul>
+  <li>..wb : audio chunk</li>
+  <li>..dc : video chunk</li>
+  <li>..tx : subtitle chunk</li>
+  <li>ix.. : standard index block</li>
+</ul>
+
+<h2 id="section-1">参考文献</h2>
+
+<ol>
+  <li><a href="http://www.ezr8.com/avi.html">What is avi?</a></li>
+  <li><a href="http://pvdtools.sourceforge.net/aviformat.txt">BETA DOCUMENTATION OF RIFF-AVI FILE FORMAT</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Audio_Video_Interleave">Audio Video Interleave</a></li>
+  <li><a href="http://blog.csdn.net/jszj/article/category/614875">AVI 文件格式</a></li>
+  <li><a href="http://blog.csdn.net/njuitjf/article/details/5680632">AVI 文件解析</a></li>
+  <li><a href="https://www.ffmpeg.org/doxygen/0.6/avidec_8c-source.html">FFmpeg AVI</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[媒体文件格式分析之FLV]]></title>
+    <link href="http://lazybing.github.io/blog/2016/07/24/flv-parse/"/>
+    <updated>2016-07-24T00:22:21-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/07/24/flv-parse</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#flv-" id="markdown-toc-flv-">FLV 视频标准格式标准</a>    <ul>
+      <li><a href="#flv-header" id="markdown-toc-flv-header">FLV Header</a></li>
+      <li><a href="#flv-file-body" id="markdown-toc-flv-file-body">FLV File Body</a>        <ul>
+          <li><a href="#flv-tags" id="markdown-toc-flv-tags">FLV tags</a>            <ul>
+              <li><a href="#audio-tags" id="markdown-toc-audio-tags">Audio tags</a>                <ul>
+                  <li><a href="#audio-data" id="markdown-toc-audio-data">Audio Data</a></li>
+                  <li><a href="#aacaudiodata" id="markdown-toc-aacaudiodata">AACAUDIODATA</a></li>
+                </ul>
+              </li>
+              <li><a href="#video-tags" id="markdown-toc-video-tags">Video tags</a>                <ul>
+                  <li><a href="#video-data" id="markdown-toc-video-data">Video Data</a></li>
+                  <li><a href="#avcvideopacket" id="markdown-toc-avcvideopacket">AVCVIDEOPACKET</a></li>
+                </ul>
+              </li>
+              <li><a href="#data-tags" id="markdown-toc-data-tags">Data tags</a></li>
+              <li><a href="#onmetadata" id="markdown-toc-onmetadata">onMetaData</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#ffmpeg-flv-demuxer" id="markdown-toc-ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Flash_Video">FLV</a> 是 FLASH VIDEO 的简称，FLV 流媒体是随着Flash MX 的推出发展而来的视频格式。FLV 一般由文件头(FLV header) 和文件体(FLV body) 组成。其中文件体(FLV body)由一些列tag组成，tag又可分成三类:audio/video/script，分别代表音频流、视频流、脚本流(关键字或文件信息之类)。
+<!--more-->
+在 FLV 文件中，每种 tag 类型都由一个单独的流组成，即在 FLV 文件中最多有一个视频流和一个音频流，对同一种类型的流，FLV 中不能够定义多个独立的流。
+与 SWF 文件不同,FLV 文件以大字节序存储多字节。比如，0x300(0x12C) 在 SWF 文件中的字节序为 0x2C 0x01,在FLV 文件中则为 0x01 0x2C。</p>
+
+<p>FLV 文件的整体结构如下图所示：</p>
+
+<p><img src="/images/flv/flv_structure.png"></p>
+
+<h1 id="flv-">FLV 视频标准格式标准</h1>
+
+<h2 id="flv-header">FLV Header</h2>
+
+<p>以 FLV Header <code>46 4C 56 01 05 00 00 00 09</code>为例：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">必须为’F’(0x46)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">必须为’L’(0x4C)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Signature</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">必须为’V’(0x56)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">(版本)Version</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">通常为0x01</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsReserved</td>
+      <td style="text-align: center">5 bits</td>
+      <td style="text-align: center">必须为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsAudio</td>
+      <td style="text-align: center">1 bit</td>
+      <td style="text-align: center">表示是否含有音频</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsReserved</td>
+      <td style="text-align: center">1 bit</td>
+      <td style="text-align: center">必须为0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TypeFlagsVideo</td>
+      <td style="text-align: center">1 bit</td>
+      <td style="text-align: center">表示是否含有视频</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">DataOffset</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">文件头部的大小(从文件开始位置到body的偏移量),通常为9</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>FLV Header 的前三个字节是固定的<code>FLV</code>的 ASCII 码的值<code>0x46 0x4C 0x56</code>; 接下来的一个字节表示 FLV 的版本号,例如 0x01 代表 FLV 版本号为 1。第 5 个字节中的第0位和第2位分别表示video和audio的存在情况（1表示存在，0表示不存在）,其余6位必须为0.最后的4字节表示FLV Header的长度，对于version 1，此处为9.</p>
+
+<h2 id="flv-file-body">FLV File Body</h2>
+
+<p>FLV Header 之后，FLV 文件的剩余部分称为 Body，它是由tag组成，它们交替如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">PreviousTagSize0</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Tag1</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">第一个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSize0</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">上一个tag的大小，包含了tag的头部。对FLV版本1来讲，它的值等于上一个tag的数据大小+11</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Tag2</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">第二个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSizeN - 1</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">倒数第二个tag的大小</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">TagN</td>
+      <td style="text-align: center">FLVTAG结构</td>
+      <td style="text-align: center">最后一个tag</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">PreviousTagSizeN</td>
+      <td style="text-align: center">4 bytes</td>
+      <td style="text-align: center">最后一个tag的大小</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="flv-tags">FLV tags</h3>
+
+<p>FLV tag格式如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Tag类型(TagType)</td>
+      <td style="text-align: center">1 bytes</td>
+      <td style="text-align: center">8：音频、9：视频、18：script数据</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">数据大小(DataSize)</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center">数据字段的长度</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">时间戳(Timestamp)</td>
+      <td style="text-align: center">3 bytes</td>
+      <td style="text-align: center">毫秒为单位，第一个tag时，该值总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">时间戳扩展(TimeStampExtended)</td>
+      <td style="text-align: center">1 bytes</td>
+      <td style="text-align: center">时间戳扩展为4bytes,代表高8位，很少用到</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">流ID</td>
+      <td style="text-align: center">3bytes</td>
+      <td style="text-align: center">总是0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">数据(Data)</td>
+      <td style="text-align: center">音频、视频或script</td>
+      <td style="text-align: center">数据实体</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>以 Tag <code>12 00 12 A9 00 00 00 00 00 00 00 02 00 0A……</code>为例，<code>0x12</code>代表该 tag 为script data，<code>00 12 A9</code>代表该 tag 的 DataSize 为 681 byte，<code>00 00 00</code>代表该 tag 的 TimeStamp 为 0，<code>00</code>代表该 tag 的 TimeStampExtended 为 0，StreamID 总是 0，接下来的 681 byte 为script data 的内容。</p>
+
+<p>播放过程中，FLV tag的时间信息完全依赖于 FLV 时间戳，内置的其他时间信息都被忽略掉。</p>
+
+<h4 id="audio-tags">Audio tags</h4>
+
+<p>Audio Tag 与 SWF 文件格式中的 DefineSound Tag 类似。它们的 Payload 数据除了额外的<code>Nellymoser 8-kHz</code>格式外是相同的，该格式在 SWF 格式中不被允许。关于 SWF 文件格式的介绍，请看<a href="www.adobe.com/go/swf_file_formt">SWF(File Format Sepecification)</a>.</p>
+
+<h5 id="audio-data">Audio Data</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">数据大小</th>
+      <th style="text-align: center">名称</th>
+      <th style="text-align: center">备注</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">bit[4]</td>
+      <td style="text-align: center">Sound Format</td>
+      <td style="text-align: center">2(0x2)-MP3;3(0x3)-PCM;10(0xA)-AAC</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bit[2]</td>
+      <td style="text-align: center">Sample Rate</td>
+      <td style="text-align: center">0(0x0)-5500Hz;1(0x1)-11025Hz;2(0x2)-22050Hz;3(0x3)-44100Hz</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bit[1]</td>
+      <td style="text-align: center">Sample Size</td>
+      <td style="text-align: center">0(0x0)-8bit;1(0x1)-16bit</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bit[1]</td>
+      <td style="text-align: center">Channel Count</td>
+      <td style="text-align: center">0(0x0)-Mono;1(0x1)-Stereo</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">byte[Payload Size -1]</td>
+      <td style="text-align: center">Sound Data</td>
+      <td style="text-align: center">音频数据，随 Sound Format 不同，格式也不同</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>如果 Sound Format 为 0xA(AAC)，Sound Data 为：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">数据大小</th>
+      <th style="text-align: center">名称</th>
+      <th style="text-align: center">备注</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">byte</td>
+      <td style="text-align: center">Type</td>
+      <td style="text-align: center">0(0x0)-Sequence Header;1(0x1)-Raw;一般 Sequence Header 为第一个 Audio Tag，并且全文件只出现一次</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bit[5]</td>
+      <td style="text-align: center">Object Type</td>
+      <td style="text-align: center">1(0x1)-AAC Main;2(0x2)-AAC LC;31(0xFE)-Escape</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bit[6]</td>
+      <td style="text-align: center">Extend Object Type</td>
+      <td style="text-align: center">如果 Object Type 为 0xFE</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bit[4]</td>
+      <td style="text-align: center">Sample Frequency Index</td>
+      <td style="text-align: center">0~12分别为96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">uint24</td>
+      <td style="text-align: center">Sample Frequeny</td>
+      <td style="text-align: center">如果 Sample Frequency Index 为 15，此处为 Sample Frequency</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bit[4]</td>
+      <td style="text-align: center">Channel Count</td>
+      <td style="text-align: center">声道数，4 为 Stereo</td>
+    </tr>
+  </tbody>
+</table>
+
+<h5 id="aacaudiodata">AACAUDIODATA</h5>
+
+<p><code>AAC</code>格式在<code>Flash Player</code>中被支持。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">AACPacketType</td>
+      <td style="text-align: center">UI8</td>
+      <td style="text-align: center">0:AAC sequence header;1:AAC raw</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Data</td>
+      <td style="text-align: center">UI8[n]</td>
+      <td style="text-align: center">if AACPacketType == 0 AudioSpecificConfig else if AACPacketType == 1 Raw AAC frame data</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="video-tags">Video tags</h4>
+
+<p>Video Tag 与 SWF 文件格式中的 VideoFrame Tag 类似，它们的 Payload 数据是同一的。关于 SWF 文件格式的介绍，请看<a href="www.adobe.com/go/swf_file_format">SWF(File Format Specification)</a>。</p>
+
+<p>以<code>09 00 00 2D 00 00 00 00 00 00 00 17 00 00 00 00 01 4D 40 1F FF E1 00 19 67 4D 40 ……</code>为例，<code>09</code>表示 Tag Type 为 Video Tag;<code>00 00 2D</code>表示 DataSize 为 45；<code>00 00 00</code>表示 Timestamp 为 0；<code>00</code>表示 TimestampExtended 为 0；<code>00 00 00</code>表示 StreamID 为 0；<code>17</code>中的 8 bit，其中前 4 bit<code>1</code>表示 FrameType 为 keyframe,后 4 bit<code>7</code>表示 CodecID 为 AVC；之后的 45 byte 为 VideoData;</p>
+
+<h5 id="video-data">Video Data</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">帧类型(FrameType)</td>
+      <td style="text-align: center">4bits</td>
+      <td style="text-align: center">1.关键帧 2.inter frame(for AVC, a non-seekable frame) 3.disposable inter frame(H.263 only) 4.generated keyframe(reserved for serve use only) 5.video info/command frame</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">CodeID</td>
+      <td style="text-align: center">4bits</td>
+      <td style="text-align: center">1:JPEG 2:H.263 3:Screen video 4:VP6 5:VP6 6:Screen video version 2 7:AVC</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">视频数据(VideoData)</td>
+      <td style="text-align: center">if CodecID == 7 AVCVIDEOPACKET</td>
+      <td style="text-align: center">Video frame payload or UI8(see note following table)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>如果 FrameType = 5,此时的 VideoData 含义如下：</p>
+
+<ul>
+  <li>0 = Start of client-side seeking video frame sequence</li>
+  <li>1 = End of client-side seeking video frame sequence</li>
+</ul>
+
+<h5 id="avcvideopacket">AVCVIDEOPACKET</h5>
+
+<p>AVCVIDEOPACKET 携带一个AVC video data。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Field</th>
+      <th style="text-align: center">Type</th>
+      <th style="text-align: center">Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">AVCPacketType</td>
+      <td style="text-align: center">1 byte</td>
+      <td style="text-align: center">0:AVC sequence header 1:AVC NALU 2:AVC end of sequence</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">CompositionTime</td>
+      <td style="text-align: center">SI24</td>
+      <td style="text-align: center">if AVCPacketType == 1 CompositionTime offset else 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Data</td>
+      <td style="text-align: center">UI8[n]</td>
+      <td style="text-align: center">if AVCPacketType == 0 AVCDecoderConfigurationRecord else if AVCPacketType == 1 one or more NALUs</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="data-tags">Data tags</h4>
+
+<h4 id="onmetadata">onMetaData</h4>
+<ul>
+  <li>duration : 一个 DOUBLE 指定了整个文件的总时长，单位 seconds</li>
+  <li>width : 一个 DOUBLE 指定了视频的宽，单位 pixel</li>
+  <li>height : 一个 DOUBLE 指定了视频的高,danwei pixel</li>
+  <li>videodatarate : 一个DOUBLE 指定了 video bit rate，单位 kilobits per second</li>
+  <li>framerate : 一个DOUBLE 指定了每秒的 frame 数</li>
+  <li>videocodeid : 一个DOUBLE 指定了 video codec ID</li>
+  <li>audiosamplerate : 一个 DOUBLE 指定了音频采样的分辨率</li>
+  <li>stereo : 一个 BOOL 指定了data 是否是stereo</li>
+  <li>filesize : 一个 DOUBLE 指定了文件的总大小，单位 byte.</li>
+</ul>
+
+<h1 id="ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</h1>
+
+<p>FFmpeg 中关于flv demuxer的定义如下：</p>
+
+<p><figure class='code'><figcaption><span>ff_flv_demuxer </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVInputFormat</span> <span class="n">ff_flv_demuxer</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">name</span>           <span class="o">=</span> <span class="err">“</span><span class="n">flv</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">long_name</span>      <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="err">“</span><span class="n">FLV</span> <span class="p">(</span><span class="n">Flash</span> <span class="n">Video</span><span class="p">)</span><span class="err">”</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">priv_data_size</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">FLVContext</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_probe</span>     <span class="o">=</span> <span class="n">flv_probe</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_header</span>    <span class="o">=</span> <span class="n">flv_read_header</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_packet</span>    <span class="o">=</span> <span class="n">flv_read_packet</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_seek</span>      <span class="o">=</span> <span class="n">flv_read_seek</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">read_close</span>     <span class="o">=</span> <span class="n">flv_read_close</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">extensions</span>     <span class="o">=</span> <span class="err">“</span><span class="n">flv</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">priv_class</span>     <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">flv_class</span><span class="p">,</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>其中的<code>flv_read_header</code>是分析 FLV 的header函数，分析代码如下：</p>
+
+<p><figure class='code'><figcaption><span>flv_read_header </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">flv_read_header</span><span class="p">(</span><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">offset</span><span class="p">,</span> <span class="n">flags</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span> <span class="c1">//将flv的头去掉</span>
+</span><span class='line'><span class="n">flags</span> <span class="o">=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//读取flv的video和audio flag信息</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ctx_flags</span> <span class="o">|=</span> <span class="n">AVFMTCTX_NOHEADER</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">FLV_HEADER_FLAG_HASVIDEO</span><span class="p">)</span> <span class="c1">//如果flv中包含video, 创建视频流</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">create_stream</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">))</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">AVERROR</span><span class="p">(</span><span class="n">ENOMEM</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">FLV_HEADER_FLAG_HASAUDIO</span><span class="p">)</span> <span class="c1">//如果flv中包含audio,创建音频流</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">create_stream</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AVMEDIA_TYPE_AUDIO</span><span class="p">))</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">AVERROR</span><span class="p">(</span><span class="n">ENOMEM</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">offset</span> <span class="o">=</span> <span class="n">avio_rb32</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//获取文件头长度,通常为9</span>
+</span><span class='line'><span class="n">avio_seek</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">SEEK_SET</span><span class="p">);</span><span class="c1">//跳过DataOffset字段</span>
+</span><span class='line'><span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span><span class="c1">//跳过Body中的PreviousTagSize0字段，大小即为4bytes</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">start_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>FLV中关于tag的处理使用<code>flv_read_packet</code>,代码如下：</p>
+
+<p><figure class='code'><figcaption><span>flv_read_packet </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">flv_read_packet</span><span class="p">(</span><span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="n">AVPacket</span> <span class="o">*</span><span class="n">pkt</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">FLVContext</span> <span class="o">*</span><span class="n">flv</span> <span class="o">=</span> <span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">enum</span> <span class="n">FlvTagType</span> <span class="n">type</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">stream_type</span><span class="o">=-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">next</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">meta_pos</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int64_t</span> <span class="n">dts</span><span class="p">,</span> <span class="n">pts</span> <span class="o">=</span> <span class="n">AV_NOPTS_VALUE</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">av_uninit</span><span class="p">(</span><span class="n">channels</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">av_uninit</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">AVStream</span> <span class="o">*</span><span class="n">st</span>    <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="cm">/* pkt size is repeated at end. skip it */</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(;;</span> <span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">pos</span>  <span class="o">=</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">type</span> <span class="o">=</span> <span class="p">(</span><span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mh">0x1F</span><span class="p">);</span><span class="c1">//获取tag的类型，分为三种:0x08:AUDIO,0x09:VIDOE0x12:META</span>
+</span><span class='line'>    <span class="n">size</span> <span class="o">=</span> <span class="n">avio_rb24</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//tag的长度</span>
+</span><span class='line'>    <span class="n">dts</span>  <span class="o">=</span> <span class="n">avio_rb24</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span><span class="c1">//获取时间戳</span>
+</span><span class='line'>    <span class="n">dts</span> <span class="o">|=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">24</span><span class="p">;</span><span class="c1">//获取时间戳扩展</span>
+</span><span class='line'>    <span class="n">av_log</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AV_LOG_TRACE</span><span class="p">,</span> <span class="s">&quot;type:%d, size:%d, dts:%&quot;</span><span class="n">PRId64</span><span class="s">&quot; pos:%&quot;</span><span class="n">PRId64</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">dts</span><span class="p">,</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">avio_feof</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">))</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">AVERROR_EOF</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">avio_skip</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="cm">/* stream id, always 0 */</span>
+</span><span class='line'>    <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">continue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">next</span> <span class="o">=</span> <span class="n">size</span> <span class="o">+</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">FLV_TAG_TYPE_AUDIO</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">stream_type</span> <span class="o">=</span> <span class="n">FLV_STREAM_TYPE_AUDIO</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">flags</span>    <span class="o">=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">size</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">FLV_TAG_TYPE_VIDEO</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">stream_type</span> <span class="o">=</span> <span class="n">FLV_STREAM_TYPE_VIDEO</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">flags</span>    <span class="o">=</span> <span class="n">avio_r8</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">size</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">((</span><span class="n">flags</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">FLV_VIDEO_FRAMETYPE_MASK</span><span class="p">)</span> <span class="o">==</span> <span class="n">FLV_FRAME_VIDEO_INFO_CMD</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">goto</span> <span class="n">skip</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">FLV_TAG_TYPE_META</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">stream_type</span><span class="o">=</span><span class="n">FLV_STREAM_TYPE_DATA</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">size</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">13</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// Header-type metadata stuff</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">type</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">meta_pos</span> <span class="o">=</span> <span class="n">avio_tell</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">type</span> <span class="o">=</span> <span class="n">flv_read_metabody</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">next</span><span class="p">);</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">dts</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">type</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">type</span> <span class="o">==</span> <span class="n">TYPE_UNKNOWN</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">goto</span> <span class="n">skip</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">TYPE_ONTEXTDATA</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">avpriv_request_sample</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;OnTextData packet&quot;</span><span class="p">);</span>
+</span><span class='line'>                <span class="k">return</span> <span class="n">flv_data_packet</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">dts</span><span class="p">,</span> <span class="n">next</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">TYPE_ONCAPTION</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="n">flv_data_packet</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">pkt</span><span class="p">,</span> <span class="n">dts</span><span class="p">,</span> <span class="n">next</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="n">avio_seek</span><span class="p">(</span><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pb</span><span class="p">,</span> <span class="n">meta_pos</span><span class="p">,</span> <span class="n">SEEK_SET</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">av_log</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AV_LOG_DEBUG</span><span class="p">,</span>
+</span><span class='line'>               <span class="s">&quot;Skipping flv packet: type %d, size %d, flags %d.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="n">type</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+</feed>

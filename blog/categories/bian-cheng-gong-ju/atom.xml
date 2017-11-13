@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-03-28T23:41:02-07:00</updated>
+  <updated>2017-11-12T18:55:10-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,415 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Linux常用命令之Grep]]></title>
+    <link href="http://lazybing.github.io/blog/2017/08/25/linux-command-grep/"/>
+    <updated>2017-08-25T22:46:22-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/08/25/linux-command-grep</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">语法结构</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">基础应用</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">高阶应用</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">参考文献</a></li>
+</ul>
+
+<p>本文主要记录 Linux 中常用命令之一 Grep 的使用方法。
+<a href="https://en.wikipedia.org/wiki/Grep">grep</a> 是个命令行工具，它主要用于搜索文件中与规则表达式的纯文本数据相匹配的行。它是<code>globally search a regular expression and print</code>的简写，主要用在类 Unix 系统中。</p>
+
+<!--more-->
+
+<h2 id="section">语法结构</h2>
+
+<blockquote>
+  <p>grep [options] PATTERN [FILES…]</p>
+</blockquote>
+
+<p>先来总结几个基本的<code>options</code>的作用：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">选项</th>
+      <th style="text-align: center">含义</th>
+      <th style="text-align: center">示例</th>
+      <th style="text-align: center">备注</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">–help</td>
+      <td style="text-align: center">显示帮助信息</td>
+      <td style="text-align: center">grep –help</td>
+      <td style="text-align: center">一般选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-V(–version)</td>
+      <td style="text-align: center">显示版本号信息</td>
+      <td style="text-align: center">grep -V</td>
+      <td style="text-align: center">一般选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-e pattern</td>
+      <td style="text-align: center">匹配 pattern 所指的选项，可与<code>-f file</code>一起使用</td>
+      <td style="text-align: center">grep -e “abc” -e “def” test.txt</td>
+      <td style="text-align: center">匹配选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-f file</td>
+      <td style="text-align: center">从 file 中获取 pattern，每行</td>
+      <td style="text-align: center">grep -f file test.txt</td>
+      <td style="text-align: center">匹配选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-i(–ignore-case)/-y</td>
+      <td style="text-align: center">忽略匹配大小写</td>
+      <td style="text-align: center">grep -i “abc” test.txt</td>
+      <td style="text-align: center">匹配选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-v(–invert-match)</td>
+      <td style="text-align: center">不匹配 pattern 中的某行</td>
+      <td style="text-align: center">grep -v “abc” test.txt</td>
+      <td style="text-align: center">匹配选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-w(–word-regexp)</td>
+      <td style="text-align: center">只匹配全 pattern 字的行</td>
+      <td style="text-align: center">grep -w “abc” test.txt</td>
+      <td style="text-align: center">匹配选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-x(–line-regexp)</td>
+      <td style="text-align: center">匹配全 pattern 行</td>
+      <td style="text-align: center">grep -x “abc” test.txt</td>
+      <td style="text-align: center">匹配选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-c(–count)</td>
+      <td style="text-align: center">输出匹配的行数</td>
+      <td style="text-align: center">grep -c “abc” test.txt</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-L(–files-without-match)</td>
+      <td style="text-align: center">输出没有匹配的文件</td>
+      <td style="text-align: center">grep -L “abc” *</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-l(–files-with-matches)</td>
+      <td style="text-align: center">输出匹配的文件</td>
+      <td style="text-align: center">grep -l “abc” *</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-m num(–max-count=num)</td>
+      <td style="text-align: center">输出匹配的前 num 个</td>
+      <td style="text-align: center">grep -m 3 “abc” test.txt</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-b(–byte-offset)</td>
+      <td style="text-align: center">每行输出匹配字符在文件中的偏移</td>
+      <td style="text-align: center">grep -b “abc” test.txt</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-H(–with-filename)</td>
+      <td style="text-align: center">输出匹配的文件名</td>
+      <td style="text-align: center">grep -H “abc” *</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-h(–no-filenmae)</td>
+      <td style="text-align: center">输出不匹配的文件名</td>
+      <td style="text-align: center">grep -h “abc” *</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-n(–line-number)</td>
+      <td style="text-align: center">输出匹配所在文件的行号</td>
+      <td style="text-align: center">grep -n “abc” test.txt</td>
+      <td style="text-align: center">输出格式选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-A num(–after-context=num)</td>
+      <td style="text-align: center">输出匹配行后的 num 行内容</td>
+      <td style="text-align: center">grep -A 2 “abc” test.txt</td>
+      <td style="text-align: center">输出内容选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-B num(–before-context=num)</td>
+      <td style="text-align: center">输出匹配行前的 num 行内容</td>
+      <td style="text-align: center">grep -B 2 “abc” test.txt</td>
+      <td style="text-align: center">输出内容选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-C num(-num/–context=num)</td>
+      <td style="text-align: center">输出匹配行前后 num 行的内容</td>
+      <td style="text-align: center">grep -C 2 “abc” test.txt</td>
+      <td style="text-align: center">输出内容选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-r(–recursive)</td>
+      <td style="text-align: center">递归搜索目录文件，但不搜索链接文件</td>
+      <td style="text-align: center">grep -r “abc” ./</td>
+      <td style="text-align: center">文件和目录选项</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-R(–dereference-recursive)</td>
+      <td style="text-align: center">递归搜索所有目录文件，包含链接文件</td>
+      <td style="text-align: center">grep -R “abc” ./</td>
+      <td style="text-align: center">文件和目录选项</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>除了<code>options</code>外，下面记录下<code>PATTERN</code>的使用：</p>
+
+<ul>
+  <li><code>.</code> : 匹配一个字符。</li>
+  <li><code>?</code> : 最多匹配一个字符。</li>
+  <li><code>*</code> : 匹配若干个字符，或者空字符。</li>
+  <li><code>^</code> : 指代匹配字符位于一行的最开始。</li>
+  <li><code>$</code> : 指代匹配字符位于一行的最末尾。</li>
+  <li><code>{num}</code> : 重复匹配 num 次。</li>
+  <li><code>{n,}</code> : 重复匹配至少 n 次。</li>
+  <li><code>{,m}</code> : 重复匹配最多 m 次。</li>
+  <li><code>{n,m}</code> : 重复匹配最少 n 次，最多 m 次。</li>
+  <li><code>[   ]</code> : 包含匹配 [] 内的某个字符，如[a-d]代表’abcd’中的某个。</li>
+</ul>
+
+<h2 id="section-1">基础应用</h2>
+
+<p>搜索<code>text.txt</code>文件中是否包含<code>abc</code>的字符串，并提示匹配的行号。</p>
+
+<p><code>
+grep -n abc text.txt
+</code></p>
+
+<p>搜索<code>text.txt</code>文件中不包含<code>abc</code>字符串的行，并显示出来。
+<code>
+grep -ni abc text.txt
+</code></p>
+
+<p>搜索<code>text.txt</code>文件中包含<code>abc</code>字符串的行，不区分大小写，并显示出来。
+<code>
+grep -nv abc text.txt
+</code></p>
+
+<p>搜索包含特殊字符的字符串，并显示出来，如搜索<code>a*b</code>。</p>
+
+<p><code>
+grep -f "a*b" text.txt
+</code></p>
+
+<p>搜索当前目录下所有文件包含<code>abc</code>字符串的行。</p>
+
+<p><code>
+grep -r abc *
+</code></p>
+
+<p>搜索包含<code>abc</code>或<code>aabc</code>或<code>aaabc</code>字符串的行。</p>
+
+<p><code>
+grep "a\{1,3\}bc" text.txt   
+</code></p>
+
+<p>边界表示<code>\b</code>。</p>
+
+<p><code>
+grep "\babc" text.txt //搜索起始字段为abc的字符串的行
+grep "abc\b" text.txt //搜索结尾字段为abc的字符串的行
+grep "\babc\b" text.txt //搜索起始结尾字段为abc的字符串的行，与-w选项相同
+</code></p>
+
+<p>搜索多个文件，仅仅输出匹配到的文件名。</p>
+
+<p><code>
+grep -l abc *
+</code></p>
+
+<h2 id="section-2">高阶应用</h2>
+
+<p>使用<code>grep</code>的 OR/AND/NOT 操作。比如想要搜索某个文件中是否含有<code>abc</code>或<code>def</code>字符串，就会用到 grep 的 OR 操作；想要同时搜索既含有<code>abc</code>又含有<code>def</code>字符串，就会用到 grep 的 AND 操作；想要搜索不包含<code>abc</code>的字符串，就会用到 grep 的 NOT 操作。</p>
+
+<p>OR 操作方法：</p>
+
+<p><code>
+grep "abc\|def" text.txt   //or   
+grep -E "abc|def" text.txt //or  
+egrep "abc|def" text.txt   //or  
+grep -e "abc" -e "def" text.txt  //or  
+</code></p>
+
+<p>AND 操作方法：</p>
+
+<p><code>
+grep -E "pattern1.*pattern2|pattern2.*pattern1" text.txt //and
+grep -E "pattern1" text.txt | grep -E "pattern2"  //and
+</code></p>
+
+<p>NOT 操作方法：</p>
+
+<p><code>
+grep -v "pattern1" text.txt
+</code></p>
+
+<h2 id="section-3">参考文献</h2>
+
+<ol>
+  <li><a href="https://www.gnu.org/software/grep/manual/grep.html">GNU Grep 3.0 - GNU.org</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Grep">GREP Command Wiki</a></li>
+  <li><a href="https://www.computerhope.com/unix/ugrep.htm">Linux grep command</a></li>
+</ol>
+
+<!--more-->
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Linux常用命令之Find]]></title>
+    <link href="http://lazybing.github.io/blog/2017/08/25/linux-command-find/"/>
+    <updated>2017-08-25T08:39:05-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/08/25/linux-command-find</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#find-" id="markdown-toc-find-">Find 命令概述</a></li>
+  <li><a href="#find--1" id="markdown-toc-find--1">Find 命令示例</a></li>
+  <li><a href="#section" id="markdown-toc-section">参考资料</a></li>
+</ul>
+
+<p>本文主要记录 Linux 中常用命令之一Find 的使用方法。</p>
+
+<!--more-->
+
+<h2 id="find-">Find 命令概述</h2>
+
+<p>Linux 中的 Find 命令是 Linux 系统中最重要最常用的命令之一。它是用来在指定目录下查找文件的，并对查找到的文件进行处理。它的使用格式如下：</p>
+
+<blockquote>
+  <p>$find <指定目录> <指定条件> <指定动作></指定动作></指定条件></指定目录></p>
+</blockquote>
+
+<ul>
+  <li>指定目录:所要搜索的目录，比如默认为当前目录，或指定特定的目录。</li>
+  <li>指定条件:所要搜索的文件特征比如文件名称、文件大小、文件属性等。</li>
+  <li>指定动作:对搜索结果进行特定的处理，比如对搜索到的结果删除、将搜索结果放到特定文件中。</li>
+</ul>
+
+<p>任何位于参数之前的字符串都被视为搜索目录。
+它可以根据不同的命令参数选择不同的搜索方式，常用的参数选项有：</p>
+
+<ul>
+  <li>-name <filename>:指定搜索文件名称。</filename></li>
+  <li>-type <filetype>:指定搜索文件的类型。</filetype></li>
+  <li>-size <filesize>:指定搜索文件的大小。</filesize></li>
+  <li>-user <username>:指定特定用户。</username></li>
+  <li>-group <groupname>:指定特定组。</groupname></li>
+  <li>-maxdepth/mindepth <num>:指定搜索目录级别。</num></li>
+  <li>-exec <command />:假设 find 指令的回传值为 TRUE，就执行 command 指令。</li>
+</ul>
+
+<h2 id="find--1">Find 命令示例</h2>
+
+<p>查看当前目录及其子目录下的所有文件。</p>
+
+<p><code>
+find
+</code></p>
+
+<p>根据名字查找文件。</p>
+
+<p><code>
+//find [dir-path] -name [filename]
+$ find . -name testfile1.txt
+$ find /home -name testfile1.txt
+</code></p>
+
+<p>查找某种特定类型的文件。</p>
+
+<p><code>
+$find . -name "*.txt"
+</code></p>
+
+<p>忽视大小写来查找文件。</p>
+
+<p><code>
+//find -iname [filename]
+$ find -iname testfile1.txt
+</code></p>
+
+<p>查找与搜索模式不匹配的文件。</p>
+
+<p><code>
+$find . -not -name "*.txt"
+$find . ! -name "*.txt"
+</code></p>
+
+<p>限定搜索目录级别。</p>
+
+<p><code>
+$find . -maxdepth 3 -name "*.txt"
+$find . -mindepth 3 -name "*.txt"
+$find . -mindepth 2 -maxdepth 4 -name "*.txt"
+</code></p>
+
+<p>显示所有的空文件。</p>
+
+<p><code>
+$find . -empty
+</code></p>
+
+<p>查找某个特定组的文件。</p>
+
+<p><code>
+$find . -group bing -name "*.txt"
+</code></p>
+
+<p>查找某个特定用户的文件。</p>
+
+<p><code>
+$find . -user bing -name "*.txt"
+</code></p>
+
+<p>查找最近修改过的文件。</p>
+
+<p><code>
+$find . -mmin 1 -name "*.txt"
+</code></p>
+
+<p>查找特定类型的文件。</p>
+
+<p><code>
+// find -type &lt;filetype&gt;
+$find -type d //查找目录文件
+</code></p>
+
+<p>查找两种类型的文件。</p>
+
+<p><code>
+$find . \( -name a.out -o -name '*.o' -o name 'core' \) -exec rm {} \;
+</code></p>
+
+<p>对查找到的文件执行某些命令。</p>
+
+<p><code>
+$find $HOME/. -name *.txt -exec head -n 1 -v {} \; &gt; report.txt
+</code></p>
+
+<h2 id="section">参考资料</h2>
+
+<ol>
+  <li><a href="https://en.wikipedia.org/wiki/Find">Find Command Wiki</a></li>
+  <li><a href="http://man7.org/linux/man-pages/man1/find.1.html">Find Command Man Page</a></li>
+  <li><a href="https://www.howtoforge.com/tutorial/linux-find-command/">14 Practical Examples of Linux Find Command for Beginners</a></li>
+  <li><a href="https://www.ibm.com/developerworks/cn/aix/library/es-unix-find.html">使用 UNIX find 命令的高级技术</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Addr2line 的介绍与使用]]></title>
@@ -28,7 +437,7 @@
 <!--more--></p>
 
 <h2 id="addr2line-">addr2line 简介</h2>
-<p>在编写程序时，经常会遇到出现程序 crax 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。</p>
+<p>在编写程序时，经常会遇到出现程序 crah 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。</p>
 
 <p><code>addr2line</code>能够将地址转换为文件名和行号。给定一个可执行文件的地址或者一个可重定位目标的目标偏移，addr2line 就会利用 debug 信息来计算出与该地址关联的文件名和行号。</p>
 
@@ -259,13 +668,28 @@ gprof test gmon.out &gt; analysis.txt
       <li><a href="#vim--5" id="markdown-toc-vim--5">vim 切分窗口</a></li>
     </ul>
   </li>
-  <li><a href="#vim--6" id="markdown-toc-vim--6">vim 对多个文件的操作</a>    <ul>
+  <li><a href="#vim--6" id="markdown-toc-vim--6">vim 替换文本</a></li>
+  <li><a href="#vim--7" id="markdown-toc-vim--7">vim 对多个文件的操作</a>    <ul>
       <li><a href="#section-10" id="markdown-toc-section-10">工程文件浏览</a></li>
       <li><a href="#section-11" id="markdown-toc-section-11">多文档编辑</a></li>
     </ul>
   </li>
-  <li><a href="#vim--7" id="markdown-toc-vim--7">vim 寄存器</a></li>
-  <li><a href="#vim--8" id="markdown-toc-vim--8">vim 分屏功能</a></li>
+  <li><a href="#vim--8" id="markdown-toc-vim--8">vim 寄存器</a></li>
+  <li><a href="#vim--9" id="markdown-toc-vim--9">vim 分屏功能</a></li>
+  <li><a href="#vim--10" id="markdown-toc-vim--10">vim 插件安装</a>    <ul>
+      <li><a href="#vundle-" id="markdown-toc-vundle-">vundle 插件管理插件</a></li>
+      <li><a href="#solarizedmolokaiphd-" id="markdown-toc-solarizedmolokaiphd-">solarized/molokai/phd 主题风格插件</a></li>
+      <li><a href="#powerline-" id="markdown-toc-powerline-">Powerline 状态栏插件</a></li>
+      <li><a href="#vim-cpp-enhanced-highlight-" id="markdown-toc-vim-cpp-enhanced-highlight-">vim-cpp-enhanced-highlight 代码高亮插件</a></li>
+      <li><a href="#nerd-commenter-" id="markdown-toc-nerd-commenter-">NERD Commenter 快速开发注释</a></li>
+      <li><a href="#youcompleteme-" id="markdown-toc-youcompleteme-">YouCompleteMe 智能补全插件</a></li>
+      <li><a href="#vim-fswitch" id="markdown-toc-vim-fswitch">vim-fswitch(接口与实现快速切换)插件</a></li>
+      <li><a href="#vim-protodef" id="markdown-toc-vim-protodef">vim-protodef(接口快速生成实现)插件</a></li>
+      <li><a href="#nerdtree-" id="markdown-toc-nerdtree-">nerdtree 工程文件浏览插件</a></li>
+      <li><a href="#minibufexplorer-" id="markdown-toc-minibufexplorer-">MiniBufExplorer 多文档编辑插件</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--11" id="markdown-toc-vim--11">vim 浏览代码</a></li>
 </ul>
 
 <p><code>Vim</code> 是一个学习成本比较高的编辑器。本文主要记录对于编辑浏览代码时，如何配置<code>vim</code>才能更高效的编辑、浏览代码。</p>
@@ -291,13 +715,19 @@ gprof test gmon.out &gt; analysis.txt
   <p>To err is human. To really foul up you need a computer.</p>
 </blockquote>
 
+<hr />
+
 <h3 id="section-1">删除某个字符</h3>
 
 <p>删除字符命令非常简单，就是单个字符<code>x</code>,例如上面的一行code，如果将光标至于<code>really</code>的<code>r</code>处执行<code>x</code>命令，就会将 <code>r</code> 删除。</p>
 
+<hr />
+
 <h3 id="section-2">替换某个字符</h3>
 
 <p>替换字符的命令<code>rx</code>将光标下的字符 replace 成字符<code>x</code>。如果发现连个相邻的字符颠倒了，可以直接在前一个字符处执行<code>xp</code>命令即可，其中的<code>x</code>时删除光标下的字符，<code>p</code>时黏贴。</p>
+
+<hr />
 
 <h3 id="section-3">移动到某个字符</h3>
 
@@ -339,13 +769,19 @@ gprof test gmon.out &gt; analysis.txt
 
 <h2 id="vim--1">vim 对单字的操作</h2>
 
+<hr />
+
 <h3 id="section-4">删除某个单字</h3>
 
 <p>删除某个单字非常简单，只需要在单字的开始执行<code>dw</code>即可。速记：<code>d</code>是<code>deleate</code>的简写。</p>
 
+<hr />
+
 <h3 id="section-5">修改某个单字</h3>
 
 <p>修改某个单字时，只需要在单字的开始执行<code>cxxxxx</code>即可，<code>c</code>是<code>change</code>的简写，<code>xxxxx</code>即代表要修改的单字。</p>
+
+<hr />
 
 <h3 id="section-6">移动到某个单字</h3>
 
@@ -375,6 +811,8 @@ gprof test gmon.out &gt; analysis.txt
 
 <h2 id="vim--2">vim 对整行的操作</h2>
 
+<hr />
+
 <h3 id="section-7">移动到行首或行尾</h3>
 
 <p><code>$</code>命令移动光标到一行的结尾，与<code>&lt;End&gt;</code>键作用相同。<code>^</code>命令移动到一行的第一个非空白字符处。<code>0</code>命令移动到一行的最前面第一个字符处，与<code>&lt;Home&gt;</code>键作用相同。</p>
@@ -387,6 +825,8 @@ gprof test gmon.out &gt; analysis.txt
 </code></pre>
 
 <p>(….指空白符)</p>
+
+<hr />
 
 <h3 id="section-8">移动到指定行</h3>
 
@@ -414,6 +854,8 @@ gprof test gmon.out &gt; analysis.txt
 
 <p>速记：<code>H</code>是<code>Home</code>的简写，<code>M</code>是<code>Middle</code>的简写，<code>L</code>是<code>Last</code>的简写。</p>
 
+<hr />
+
 <h3 id="section-9">使用标签记录并跳转到某行</h3>
 
 <p>在介绍标签之前，先了解另外两个命令<code>CTRL-O</code>和<code>CTRL-I</code>，其中<code>CTRL-O</code>是回到之前的位置，<code>CTRL-I</code>是回到下一个位置。例如：</p>
@@ -434,12 +876,16 @@ gprof test gmon.out &gt; analysis.txt
 
 <h2 id="vim--3">vim 对单个文件的浏览</h2>
 
+<hr />
+
 <h3 id="vim--4">vim 滚动屏幕命令</h3>
 
 <p><code>CTRL-U</code>和<code>CTRL-D</code>命令向上或向下滚动半个屏幕。<br />
 <code>CTRL-E</code>和<code>CTRL-Y</code>分别向上和向下滚动一行。<br />
 <code>CTRL-F</code>和<code>CTRL-B</code>分别向前和向后滚动整个屏幕。
 有时当执行多个<code>j</code>命令时，光标会在屏幕的最底部，此时如果想让光标所在行位于中间位置，可以使用<code>zz</code>命令,<code>zt</code>命令将光标所在行至于顶部，<code>zb</code>命令将光标所在行至于底部。</p>
+
+<hr />
 
 <h3 id="vim--5">vim 切分窗口</h3>
 
@@ -455,7 +901,37 @@ CTRL-W t	move to the TOP window
 CTRL-W b	move to the BOTTOM window
 </code></pre>
 
-<h2 id="vim--6">vim 对多个文件的操作</h2>
+<h2 id="vim--6">vim 替换文本</h2>
+
+<p>简单替换表达式<code>:[range]s/from/to/[flags]</code></p>
+
+<ul>
+  <li>range:搜索范围，如果没有指定范围，则作用于当前行。</li>
+</ul>
+
+<ol>
+  <li><code>:1,10s/from/to/</code>表示在第 1 到第 10 行（包含第 1，第 10 行）之间搜索替换。</li>
+  <li><code>:10s/from/to/</code>表示只在第 10 行搜索替换。</li>
+  <li><code>:%s/from/to/</code>表示在所有行中搜索替换。</li>
+  <li><code>1,$s/from/to/</code>同上。</li>
+</ol>
+
+<ul>
+  <li><code>flags</code>有如下四个选项：</li>
+</ul>
+
+<ol>
+  <li><code>c</code>confirm,每次替换前询问。</li>
+  <li><code>e</code>error,不显示错误。</li>
+  <li><code>g</code>globe,不询问，整行替换。如果不加<code>g</code>选项，则只替换每行的第一个匹配到的字符串。</li>
+  <li><code>i</code>ignore,忽略大小写。</li>
+</ol>
+
+<p>这些选项可以合并使用，如<code>cgi</code>表示不区分大小写，整行替换，替换前询问。</p>
+
+<h2 id="vim--7">vim 对多个文件的操作</h2>
+
+<hr />
 
 <h3 id="section-10">工程文件浏览</h3>
 
@@ -464,6 +940,8 @@ CTRL-W b	move to the BOTTOM window
 
 <p>常用操作：回车，打开选中文件;<code>r</code>刷新工程目录文件列表；<code>I</code>显示/影藏文件；<code>m</code>出现创建/删除/剪切/拷贝操作列表。键入<leader>fl后，右边子窗口为工程项目文件列表。</leader></p>
 
+<hr />
+
 <h3 id="section-11">多文档编辑</h3>
 <p><code>vim</code>的多文档编辑涉及三个概念:buffer、window、tab。vim把加载进内存的文件叫做buffer,buffer不一定可见；
 若要buffer可见，则必须通过window作为载体呈现；同个看面上的多个window组合成一个tab。</p>
@@ -471,7 +949,7 @@ CTRL-W b	move to the BOTTOM window
 <p>vim中每打开一个文件，vim就对应的创建一个buffer,多个文件就有多个 buffer, 但默认你只能看到最后buffer对应
 window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列出来，并且可以显示多个 buffer 对应的Window。</p>
 
-<h2 id="vim--7">vim 寄存器</h2>
+<h2 id="vim--8">vim 寄存器</h2>
 
 <p>使用 vim 时，不管是复制、删除或粘贴，在 vim 中都是借助 register 实现的，vim 共有 9 类寄存器。</p>
 
@@ -532,212 +1010,264 @@ window，通过插件<code>MiniBufExplorer</code>可以把所有 buffer 罗列�
   </tbody>
 </table>
 
-<h2 id="vim--8">vim 分屏功能</h2>
+<h2 id="vim--9">vim 分屏功能</h2>
 
-<image src="http://lazybing.github.io/images/vim_split_screen.png">
+<p><img src="/images/vim_split_screen.png"></p>
 
-vim 同时打开多个文件。
+<p><code>vim</code>同时打开多个文件。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>vim -o file1 file2              //小写 o 参数来水平分屏
-</span><span class='line'>vim -O file1 file2              //大写 O 参数来垂直分屏</span></code></pre></td></tr></table></div></figure>
+<p><code>
+vim -o file1 file2              //小写 o 参数来水平分屏
+vim -O file1 file2              //大写 O 参数来垂直分屏
+</code></p>
 
-vim 在多窗口打开。
+<p><code>vim</code>在多窗口打开。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>:vs path/file       //在新的垂直分屏中打开文件
-</span><span class='line'>:sv path/file       //在新的水平分屏中打开文件</span></code></pre></td></tr></table></div></figure>
+<p><code>
+:vs path/file       //在新的垂直分屏中打开文件
+:sv path/file       //在新的水平分屏中打开文件
+</code></p>
 
-多窗口间切换的3方法：`Ctrl+w+方向键``Ctrl+w+h/j/k/l``Ctrl+ww`。  
+<p>多窗口间切换的3方法<code>Ctrl+w+方向键</code>或<code>Ctrl+w+h/j/k/l</code>或<code>Ctrl+ww</code>。</p>
 
-移动分屏的方法：`Ctrl+w L`向右移动分屏；`Ctrl+w H`向左移动分屏；`Ctrl+w K`向上移动分屏；`Ctrl+w J`向下移动分屏。  
+<p>移动分屏的方法：<code>Ctrl+w L</code>向右移动分屏；<code>Ctrl+w H</code>向左移动分屏；<code>Ctrl+w K</code>向上移动分屏；<code>Ctrl+w J</code>向下移动分屏。</p>
 
-## vim 插件安装
+<h2 id="vim--10">vim 插件安装</h2>
 
-首先安装插件管理插件
+<hr />
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim</span></code></pre></td></tr></table></div></figure>
+<h3 id="vundle-">vundle 插件管理插件</h3>
 
-其次在`.vimrc`下增加配置信息如下。
+<p>vim 默认的安装需要将插件的帮助文档和插件脚本文件分别放到<code>.vim</code>目录下的<code>doc</code>和<code>plugin</code>子目录下面，当要安装的插件较多时会非常繁琐并且
+相似功能的插件名称可能相同，导致插件安装难以处理，为此我们找到了专门用于管理插件的插件<code>vundle</code>，它会自动的将插件以插件名的形式安装到<code>.vim/bundle</code>子目录下面，
+如果想要删除或者升级某个插件，只需要使用一个命令即可完成，不需手动删除重装。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>" vundle 环境设置
-</span><span class='line'>filetype off
-</span><span class='line'>set rtp+=~/.vim/bundle/Vundle.vim
-</span><span class='line'>" vundle 管理的插件列表必须位于 vundle#begin() 和 vundle#end() 之间
-</span><span class='line'>call vundle#begin()
-</span><span class='line'>Plugin 'VundleVim/Vundle.vim'
-</span><span class='line'>Plugin 'altercation/vim-colors-solarized'
-</span><span class='line'>Plugin 'tomasr/molokai'
-</span><span class='line'>Plugin 'vim-scripts/phd'
-</span><span class='line'>Plugin 'Lokaltog/vim-powerline'
-</span><span class='line'>Plugin 'octol/vim-cpp-enhanced-highlight'
-</span><span class='line'>Plugin 'nathanaelkane/vim-indent-guides'
-</span><span class='line'>Plugin 'derekwyatt/vim-fswitch'
-</span><span class='line'>Plugin 'kshenoy/vim-signature'
-</span><span class='line'>Plugin 'vim-scripts/BOOKMARKS—Mark-and-Highlight-Full-Lines'
-</span><span class='line'>Plugin 'majutsushi/tagbar'
-</span><span class='line'>Plugin 'vim-scripts/indexer.tar.gz'
-</span><span class='line'>Plugin 'vim-scripts/DfrankUtil'
-</span><span class='line'>Plugin 'vim-scripts/vimprj'
-</span><span class='line'>Plugin 'dyng/ctrlsf.vim'
-</span><span class='line'>Plugin 'terryma/vim-multiple-cursors'
-</span><span class='line'>Plugin 'scrooloose/nerdcommenter'
-</span><span class='line'>Plugin 'vim-scripts/DrawIt'
-</span><span class='line'>Plugin 'SirVer/ultisnips'
-</span><span class='line'>Plugin 'Valloric/YouCompleteMe'
-</span><span class='line'>Plugin 'derekwyatt/vim-protodef'
-</span><span class='line'>Plugin 'scrooloose/nerdtree'
-</span><span class='line'>Plugin 'fholgado/minibufexpl.vim'
-</span><span class='line'>Plugin 'gcmt/wildfire.vim'
-</span><span class='line'>Plugin 'sjl/gundo.vim'
-</span><span class='line'>Plugin 'Lokaltog/vim-easymotion'
-</span><span class='line'>Plugin 'suan/vim-instant-markdown'
-</span><span class='line'>Plugin 'lilydjwg/fcitx.vim'
-</span><span class='line'>" 插件列表结束
-</span><span class='line'>call vundle#end()
-</span><span class='line'>filetype plugin indent on`</span></code></pre></td></tr></table></div></figure>
+<p>首先安装插件管理插件</p>
 
-最后，进入`vim`执行
+<p><code>
+git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+</code></p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>:PluginInstall</span></code></pre></td></tr></table></div></figure>
+<p>其次在<code>.vimrc</code>下增加配置信息如下。</p>
 
-## vim 浏览代码
+<p><code>
+" vundle 环境设置
+filetype off
+set rtp+=~/.vim/bundle/Vundle.vim
+" vundle 管理的插件列表必须位于 vundle#begin() 和 vundle#end() 之间
+call vundle#begin()
+Plugin 'VundleVim/Vundle.vim'
+Plugin 'altercation/vim-colors-solarized'
+Plugin 'tomasr/molokai'
+Plugin 'vim-scripts/phd'
+Plugin 'Lokaltog/vim-powerline'
+Plugin 'octol/vim-cpp-enhanced-highlight'
+Plugin 'nathanaelkane/vim-indent-guides'
+Plugin 'derekwyatt/vim-fswitch'
+Plugin 'kshenoy/vim-signature'
+Plugin 'vim-scripts/BOOKMARKS—Mark-and-Highlight-Full-Lines'
+Plugin 'majutsushi/tagbar'
+Plugin 'vim-scripts/indexer.tar.gz'
+Plugin 'vim-scripts/DfrankUtil'
+Plugin 'vim-scripts/vimprj'
+Plugin 'dyng/ctrlsf.vim'
+Plugin 'terryma/vim-multiple-cursors'
+Plugin 'scrooloose/nerdcommenter'
+Plugin 'vim-scripts/DrawIt'
+Plugin 'SirVer/ultisnips'
+Plugin 'Valloric/YouCompleteMe'
+Plugin 'derekwyatt/vim-protodef'
+Plugin 'scrooloose/nerdtree'
+Plugin 'fholgado/minibufexpl.vim'
+Plugin 'gcmt/wildfire.vim'
+Plugin 'sjl/gundo.vim'
+Plugin 'Lokaltog/vim-easymotion'
+Plugin 'suan/vim-instant-markdown'
+Plugin 'lilydjwg/fcitx.vim'
+" 插件列表结束
+call vundle#end()
+filetype plugin indent on`
+</code></p>
 
-vim 浏览代码一般会与 `catgs` `cscope` `taglist` 等一起使用。  
+<p>使用方法非常简单，只需在<code>vundle#begin()</code>和<code>vundle#end()</code>中间，加入需要安装的插件名称，进入<code>~/.vimrc</code>执行</p>
 
+<p><code>
+:PluginInstall
+</code></p>
 
-</image>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[如何使用 GDB]]></title>
-    <link href="http://lazybing.github.io/blog/2016/04/01/how-to-use-gdb/"/>
-    <updated>2016-04-01T07:48:51-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/04/01/how-to-use-gdb</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">前期准备</a></li>
-  <li><a href="#gdb" id="markdown-toc-gdb">启动GDB</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">查看源码</a></li>
-  <li><a href="#break-" id="markdown-toc-break-">断点break 使用</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">查看运行时数据</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">参考文献</a></li>
+<p>即可完成插件的安装。执行</p>
+
+<p><code>
+:PluginUpdate
+</code></p>
+
+<p>即可完成插件的升级。想要卸载某个插件，只需要先在<code>.vimrc</code>中注释或删除对应插件的配置信息，然后执行</p>
+
+<p><code>
+:PluginClean
+</code></p>
+
+<p>即可完成。</p>
+
+<hr />
+
+<h3 id="solarizedmolokaiphd-">solarized/molokai/phd 主题风格插件</h3>
+
+<p>素雅的<a href="https://github.com/altercation/vim-colors-solarized">solarized</a>、多彩的<a href="https://github.com/tomasr/molokai">molokai</a>、复古的<a href="http://www.vim.org/scripts/script.php?script_id=3139">phd</a>,这三种
+vim 主题风格是比较流行的三种，插件完成后，可以在<code>.vimrc</code>中选用某个主题，每个主题又有亮色系和暗色系两种,具体设置如下：</p>
+
+<p><code>
+“ 配色方案  
+set background=dark
+"set background=light
+colorscheme solarized
+"colorscheme molokai
+"colorscheme phd
+</code></p>
+
+<hr />
+
+<h3 id="powerline-">Powerline 状态栏插件</h3>
+
+<p><a href="https://github.com/Lokaltog/vim-powerline">Powerline</a>插件主要用于美化状态栏，需要在<code>.vimrc</code>中设定状态栏主题风格：</p>
+
+<p><code>
+" 设置状态栏主题风格
+let g:Powerline_colorscheme='solarized256'
+</code></p>
+
+<p>增添后的状态栏，不仅界面漂亮多了，而且多了好多辅助信息(所在函数名、文件编码格式、文件类型)。</p>
+
+<hr />
+
+<h3 id="vim-cpp-enhanced-highlight-">vim-cpp-enhanced-highlight 代码高亮插件</h3>
+
+<p><a href="https://github.com/octol/vim-cpp-enhanced-highlight">vim-cpp-enhanced-highlight</a>主要是对 C++ 语法高亮进行增强。<code>vim-cpp-enhanced-highlight</code>主要通过<code>.vim/bundle/vim-cpp-enhanced-highlight/after/syntax/cpp.vim</code>控制高亮关键字及规则，所以，当发现某个 STL 容器类型未高亮，那么将该类型追加进<code>cpp.vim</code>即可。如<code>initializer_list</code>默认并不高亮，需要添加</p>
+
+<p><code>
+syntax keyword cppSTLtype initializer_list
+</code></p>
+
+<hr />
+
+<h3 id="nerd-commenter-">NERD Commenter 快速开发注释</h3>
+
+<p><a href="https://github.com/scrooloose/nerdcommenter">NERD Commenter</a>插件会根据编辑文档的扩展名自适应采用何种注释风格，如文档<code>*.cpp</code>采用
+<code>//</code>注释风格，而<code>*.c</code>则是<code>/**/</code>注释风格。此外，如果选中的代码并非整行，则该插件将用<code>/**/</code>只注释选中部分。</p>
+
+<p>常用操作：</p>
+
+<ul>
+  <li>
+    <leader>cc，注释当前选中文本，如果选中的是整行则在每行首添加//  
+</leader>
+  </li>
+  <li>
+    <leader>cu，取消选中文本块的注释  
+
+</leader>
+  </li>
 </ul>
+<hr />
 
-<p><a href="https://www.gnu.org/software/gdb/">GDB</a>, The GNU Project debugger, allows you to see what is going on inside another program while it executes – or what another program was doing at the moment it crashed.</p>
+<h3 id="youcompleteme-">YouCompleteMe 智能补全插件</h3>
 
-<!--more-->
+<p><a href="https://github.com/Valloric/YouCompleteMe">YouCompleteMe</a>插件是一个随键而全的、支持模糊搜索的、高速补全的插件。<br />
+(未完待续)</p>
 
-<p>GDB 主要完成以下四件事：</p>
+<hr />
 
-<ol>
-  <li>启动程序，指定影响程序运行的条件。</li>
-  <li>使程序在特定的条件下停止。</li>
-  <li>程序停止时，检查程序锁发生的事。</li>
-  <li>动态的改变程序的执行环境。</li>
-</ol>
+<h3 id="vim-fswitch">vim-fswitch(接口与实现快速切换)插件</h3>
 
-<h3 id="section">前期准备</h3>
-
-<p>GDB 一般用于调试<code>C/C++</code>程序，要想能够使用<code>GDB</code>调试<code>C/C++</code>程序，首先必须将调试信息添加到可执行程序中。使用<code>gcc/g++</code>的<code>-g</code>参数可以做到这一点。如：</p>
+<p><a href="https://github.com/derekwyatt/vim-fswitch">vim-fswitch</a> 插件可以实现接口文件(<em>.h)和实现文件(</em>.cpp)中来回切换的操作，安装完该插件后，还需要增加配置信息：</p>
 
 <p><code>
-gcc -g programe.c -o programe
-</code>
-此时，可执行程序<code>programe</code>中就包含了调试需要的各种信息，如程序函数名、变量名等。
-对于 MAC OSX 系统，调试信息会包含在另外一个<code>programe.dSYM</code>（debug symbols）文件夹下面，可以使用<code>dwarfdump programe.dSYM</code>直接查看各符号信息。</p>
+" *.cpp 和 *.h 间切换
+nmap &lt;silent&gt; &lt;Leader&gt;sw :FSHere&lt;cr&gt;
+</code></p>
 
-<h3 id="gdb">启动GDB</h3>
+<p>此时只要键入<code>;sw</code>就可实现文件和接口文件间切换。</p>
+
+<hr />
+
+<h3 id="vim-protodef">vim-protodef(接口快速生成实现)插件</h3>
+
+<p>在 *.h 中写成语函数的声明后，然后手动在 *.cpp 中写成员函数的定义，效率非常低。<a href="https://github.com/derekwyatt/vim-protodef">vim-protodef</a> 可以快速完成此功能，即它可以根据类声明自动生成类实现的代码框架。注意该插件会依赖<code>FSwitch</code>，需要一起安装。安装完后，需要设置如下信息：</p>
 
 <p><code>
-gdb programe
+" 设置 pullproto.pl 脚本路径
+let g:protodefprotogetter='~/.vim/bundle/vim-protodef/pullproto.pl'  
+" 成员函数的实现顺序与声明顺序一致  
+let g:disable_protodef_sorting=1
 </code></p>
 
-<h3 id="section-1">查看源码</h3>
+<p><code>pullproto.pl</code>是 protodef 自带的 perl 脚本。它的使用方法有下面两种：</p>
 
 <p><code>
-list linenum  //查看linenum行的源码
-list function //查看function的源码
+nmap &lt;buffer&gt; &lt;silent&gt; &lt;leader&gt; ;PP
+nmap &lt;buffer&gt; &lt;silent&gt; &lt;leader&gt; ;PN
 </code></p>
 
-<h3 id="break-">断点break 使用</h3>
+<hr />
 
-<p>设置断点的方法
-<code>
-break linenum  //在 linenum 处设置断点
-break function //在进入指定 function 时停住
-break filename:linenum  //在源文件 filename 的 linenum 行处停住
-break filename:function //在源文件 filename 的 function 函数的入口处停住
-break *address          //在程序运行的内存地址处停住
+<h3 id="nerdtree-">nerdtree 工程文件浏览插件</h3>
+
+<p>当我们在用 vim 浏览工程时，可以通过<a href="https://github.com/scrooloose/nerdtree">NERDtree</a>插件查看文件列表，打开要查看的文件，在新 buffer 中打开。<br />
+安装完 <code>NERDtree</code>后，只需要在<code>.vimrc</code>中添加如下信息即可：</p>
+
+<p><code>
+" 使用 NERDTree 插件查看工程文件。设置快捷键，速记：file list
+nmap &lt;Leader&gt;fl:NERDTreeToggle&lt;CR&gt;
+" 设置 NERDTree子窗口宽度
+let NERDTreeWinSize=16
+" 设置 NERDTree 子窗口位置
+let NERDTreeWinPos="right"
+" 显示隐藏文件
+let NERDTreeShowHidden=1
+" NERDTree 子窗口中不显示冗余帮助信息
+let NERDTreeMinimalUI=1
+" 删除文件时自动删除文件对应的 buffer
+let NERDTreeAutoDeleteBuffer=1
 </code></p>
 
-<p>查看断点信息
-<code>
-info break    //查看所有 break 的信息
-info break n //查看 n 断点号的信息
+<p>常用操作：</p>
+
+<ul>
+  <li>回车：打开选中文件</li>
+  <li>r: 刷新工程目录文件列表</li>
+  <li>I(大写)：显示/隐藏文件</li>
+  <li>m:出现创建/删除/剪切/拷贝操作列表</li>
+  <li>
+    <leader>fl：右边子窗口为工程师项目文件列表。  
+
+</leader>
+  </li>
+</ul>
+<hr />
+
+<h3 id="minibufexplorer-">MiniBufExplorer 多文档编辑插件</h3>
+
+<p><a href="https://github.com/fholgado/minibufexpl.vim">MiniBufExplorer</a>主要用于同时编辑多个文档时会用到，它会涉及三个概念<code>buffer</code>、<code>window</code>、<code>tab</code>，其中<code>buffer</code>可以理解为每打开一个文件，就创建一个<code>buffer</code>。
+<code>buffer</code>的呈现要以<code>window</code>作为载体，而多个<code>window</code>组合成一个<code>tab</code>。</p>
+
+<p>安装完成<code>MiniBufExplorer</code>后，只需要在<code>.vimrc</code>中配置如下信息即可：</p>
+
+<p><code>
+" 显示/隐藏 MiniBufExplorer 窗口
+map &lt;Leader&gt;bl : MBEToggle&lt;cr&gt;
+" buffer 切换快捷键
+map &lt;C-Tab&gt; :MBEbn&lt;cr&gt;
+map &lt;C-S-Tab&gt; :MBEbp&lt;cr&gt;
 </code></p>
 
-<h3 id="section-2">查看运行时数据</h3>
+<p>默认时，打开的 window 占据几乎整个 vim 编辑区域，如果你想把多个 window 平铺成多个子窗口可以使用 MiniBufExplorer 的 s 和 v 命令：在某个 buffer 上键入 s 将该 buffer 对应 window 与先前 window 上下排列，键入 v 则左右排列（光标必须在 buffer 列表子窗口内）。<br />
+通过 vim 自身的 f 名字查找 buffer 序号可快速选择需要的 buffer。</p>
 
-<p>当运行程序到某个位置时，我们希望看看此时程序的状态，比如某个变量的值是否按照预期改变、某块内存的值是否被改。此时就需要用到查看程序运行数据的集中方法。</p>
+<h2 id="vim--11">vim 浏览代码</h2>
 
-<p>查看格式 <code>print &lt;expr&gt;</code>或<code>print /&lt;f&gt; &lt;expr&gt;</code>，其中<code>&lt;expr&gt;</code>是要查看的表达式，可以是一个变量、数组、表达式等，<code>&lt;f&gt;</code>是输出时的格式，比如想要按照 16 进制输出，就使用<code>/x</code>。</p>
+<p>vim 浏览代码一般会与 <code>catgs</code> <code>cscope</code> <code>taglist</code> 等一起使用。</p>
 
-<p>可以使用 examine 命令查看内存地址中的值。格式是<code>x /&lt;n/f/u&gt; &lt;addr&gt;</code>，其中<code>&lt;addr&gt;</code>是内存地址。</p>
-
-<h3 id="section-3">参考文献</h3>
-
-<ol>
-  <li><a href="http://www.tutorialspoint.com/gnu_debugger/index.htm">GNU Debugger Tutorial</a></li>
-  <li><a href="https://sourceware.org/gdb/">GDB: The GNU Project Debugger</a></li>
-  <li><a href="https://en.wikipedia.org/wiki/GNU_Debugger">GNU Debugger</a></li>
-  <li><a href="http://cs.baylor.edu/~donahoo/tools/gdb/tutorial.html">How to Debug Using GDB</a></li>
-  <li><a href="http://web.mit.edu/gnu/doc/html/gdb_toc.html">Debugging with GDB</a></li>
-  <li><a href="http://blog.csdn.net/haoel/article/details/2879">用GDB调试程序</a></li>
-  <li><a href="https://www.amazon.com/Debugging-GDB-GNU-Source-Level-Debugger/dp/1882114884/httpwwwtuto0a-20">Debugging with GDB: The GNU Source-Level Debugger</a></li>
-  <li><a href="https://www.amazon.com/GDB-Pocket-Reference-OReilly/dp/0596100272/httpwwwtuto0a-20">GDB Pocket Reference: Debugging Quickly &amp; Painlessly with GDB</a></li>
-  <li><a href="https://www.amazon.com/Art-Debugging-GDB-DDD-Eclipse/dp/1593271743/ref=sr_1_fkmr1_1?s=books&amp;ie=UTF8&amp;qid=1488032361&amp;sr=1-1-fkmr1&amp;keywords=3.%09The+Art+of+Debugging+with+GDB%2C+DDD%2C+and+Eclipse">The Art of Debugging with GDB, DDD, and Eclipse</a></li>
-</ol>
+<p>多窗口间切换的3方法：<code>Ctrl+w+方向键</code> <code>Ctrl+w+h/j/k/l</code> <code>Ctrl+ww</code>。</p>
 
 ]]></content>
   </entry>

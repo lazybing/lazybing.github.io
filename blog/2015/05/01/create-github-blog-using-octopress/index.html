@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="安装octorpess 部署octopress 发布新帖 基本配置 主题修改 添加图片 添加文章目录 添加表格 多台Mac上同时使用 在新的Mac上创建 ssh key 并添加到 github 中。 配置环境。 使用技巧 详细记录使用Octopress的搭建和使用过程中遇到的问题。 &hellip;">
+  <meta name="description" content="安装octorpess 部署octopress 发布新帖 基本配置 主题修改 添加图片 添加视频 添加文章目录 添加表格 多台Mac上同时使用 在新的Mac上创建 ssh key 并添加到 github 中。 配置环境。 使用技巧 octopress中添加Latex支持 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -93,7 +93,6 @@
 
 <time class='entry-date' datetime='2015-05-01T19:47:37-07:00'><span class='date'>2015 年 05 月 01 日</span> <span class='time'>7:47 pm</span></time>
         
-        
       </p>
     
   </header>
@@ -106,14 +105,16 @@
   <li><a href="#section-1" id="markdown-toc-section-1">基本配置</a></li>
   <li><a href="#section-2" id="markdown-toc-section-2">主题修改</a></li>
   <li><a href="#section-3" id="markdown-toc-section-3">添加图片</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">添加文章目录</a></li>
-  <li><a href="#section-5" id="markdown-toc-section-5">添加表格</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">添加视频</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">添加文章目录</a></li>
+  <li><a href="#section-6" id="markdown-toc-section-6">添加表格</a></li>
   <li><a href="#mac" id="markdown-toc-mac">多台Mac上同时使用</a>    <ul>
       <li><a href="#mac-ssh-key--github-" id="markdown-toc-mac-ssh-key--github-">在新的Mac上创建 ssh key 并添加到 github 中。</a></li>
-      <li><a href="#section-6" id="markdown-toc-section-6">配置环境。</a></li>
-      <li><a href="#section-7" id="markdown-toc-section-7">使用技巧</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">配置环境。</a></li>
+      <li><a href="#section-8" id="markdown-toc-section-8">使用技巧</a></li>
     </ul>
   </li>
+  <li><a href="#octopresslatex" id="markdown-toc-octopresslatex">octopress中添加Latex支持</a></li>
 </ul>
 
 <p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
@@ -255,7 +256,77 @@
 
 <p>更多技巧，请参见 Octopress 官网提供的<a href="http://octopress.org/docs/plugins/image-tag/">技术支持</a>。</p>
 
-<h2 id="section-4">添加文章目录</h2>
+<h2 id="section-4">添加视频</h2>
+
+<p>在写 blog 的过程中，经常需要在博客里添加视频。在此记录添加 YouKu 视频的方法。
+首先添加 ruby 插件，添加文件<code>octopress/plugins/youku.rb</code>，代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">class Youku &lt; Liquid::Tag
+</span><span class="line">
+</span><span class="line">def initialize(tagName, markup, tokens)
+</span><span class="line">  super
+</span><span class="line">  
+</span><span class="line">  @params = markup.split(" ")
+</span><span class="line">  if @params.count &gt;= 1
+</span><span class="line">    @id = @params[0]
+</span><span class="line">    if @params.count &gt;= 3
+</span><span class="line">      @width = @params[1]
+</span><span class="line">      @height = @params[2]
+</span><span class="line">    else
+</span><span class="line">      @width = 560
+</span><span class="line">      @height = 420
+</span><span class="line">    end
+</span><span class="line">  else
+</span><span class="line">    raise "No Youku ID provided in the \"youku\" tag"    
+</span><span class="line">  end
+</span><span class="line">end
+</span><span class="line">
+</span><span class="line">def render(context)
+</span><span class="line"># "&lt;iframe height=498 width=510 src="http://player.youku.com/embed/XNTEzNzcwNDI0" frameborder=0 allowfullscreen&gt;&lt;/iframe&gt;"
+</span><span class="line">"&lt;iframe style=\"margin:0 auto; display: block\" height=\"#{@height}\" width=\"#{@width}\" src=\"http://player.youku.com/embed/#{@id}?color=white&amp;theme=light\"&gt;&lt;/iframe&gt;"
+</span><span class="line">end
+</span><span class="line">
+</span><span class="line">Liquid::Template.register_tag "youku", self
+</span><span class="line">end</span></code></pre></td></tr></table></div></figure>
+
+<p>添加完上述文件后，就可添加 youku 视频文件了，方法是在需要添加视频的位置添加如下 Tag：</p>
+
+<p><code>youku id width height</code></p>
+
+<p>其中的youku 是关键字;id 是打开的youku视频的id，可以从网址里找到；width/height 是视频的宽高。</p>
+
+<p>示例如下:</p>
+
+<iframe style="margin:0 auto; display: block" height="586" width="720" src="http://player.youku.com/embed/XNDQ4ODQxNTI0?color=white&amp;theme=light"></iframe>
+
+<h2 id="section-5">添加文章目录</h2>
 
 <p>文章一旦长了之后，想要找某个点就需要目录来索引。添加文章目录方法：</p>
 
@@ -313,7 +384,7 @@
 
 <p>参考博文：<a href="http://shengmingzhiqing.com/blog/octopress-lean-modification-5.html/#section-1">Octopress 精益修改</a> 和 <a href="http://blog.riemann.cc/2013/04/10/table-of-contents-in-octopress/">Table Of Contents in Octopress</a></p>
 
-<h2 id="section-5">添加表格</h2>
+<h2 id="section-6">添加表格</h2>
 
 <p>语法说明：</p>
 
@@ -373,10 +444,10 @@
 <span class="line-number">3</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">$ git clone -b source git@github.com:lazybing/lazybing.github.io octopress
 </span><span class="line">$ cd octopress
-</span><span class="line">$ git clone git @github.com:lazybing/lazybing.github.io _deploy</span></code></pre></td></tr></table></div></figure>
+</span><span class="line">$ git clone git@github.com:lazybing/lazybing.github.io _deploy</span></code></pre></td></tr></table></div></figure>
 <p>参见 github 官方<a href="https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac">帮助文档</a>。</p>
 
-<h3 id="section-6">配置环境。</h3>
+<h3 id="section-7">配置环境。</h3>
 
 <p>执行以下命令配置环境：</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -388,7 +459,7 @@
 </span><span class="line">$ bundle install
 </span><span class="line">$ rake setup_github_pages </span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-7">使用技巧</h3>
+<h3 id="section-8">使用技巧</h3>
 
 <p>及时提交本地修改</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -421,6 +492,78 @@
 </span><span class="line">$ git pull origin master  # update the local master branch</span></code></pre></td></tr></table></div></figure>
 
 <p>参考博文:<a href="http://foggry.com/blog/2014/04/02/ru-he-pei-zhi-rang-ni-de-octopressbo-ke-zai-duo-tai-macshang-tong-shi-shi-yong/">让Octopress博客在多台Mac上同时使用</a></p>
+
+<h2 id="octopresslatex">octopress中添加Latex支持</h2>
+
+<ol>
+  <li>首先要安装 kramdown,安装命令：gem install kramdown</li>
+  <li>在<code>source/_includes/custom/footer.html</code>添加如下代码：</li>
+</ol>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">&lt;!-- MathJax --&gt;  
+</span><span class="line">&lt;script type="text/x-mathjax-config"&gt;  
+</span><span class="line">    MathJax.Hub.Config({  
+</span><span class="line">                       tex2jax: {  
+</span><span class="line">                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+</span><span class="line">                       processEscapes: true  
+</span><span class="line">                       }  
+</span><span class="line">                       });  
+</span><span class="line">    &lt;/script&gt;  
+</span><span class="line">  
+</span><span class="line">&lt;script type="text/x-mathjax-config"&gt;  
+</span><span class="line">    MathJax.Hub.Config({  
+</span><span class="line">                       tex2jax: {  
+</span><span class="line">                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+</span><span class="line">                       }  
+</span><span class="line">                       });  
+</span><span class="line">    &lt;/script&gt;  
+</span><span class="line">  
+</span><span class="line">&lt;script type="text/x-mathjax-config"&gt;  
+</span><span class="line">    MathJax.Hub.Queue(function() {  
+</span><span class="line">                      var all = MathJax.Hub.getAllJax(), i;  
+</span><span class="line">                      for(i=0; i &lt; all.length; i += 1) {  
+</span><span class="line">                      all[i].SourceElement().parentNode.className += ' has-jax';  
+</span><span class="line">                      }  
+</span><span class="line">                      });  
+</span><span class="line">    &lt;/script&gt;  
+</span><span class="line">  
+</span><span class="line">&lt;script type="text/javascript"  
+</span><span class="line">    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"&gt;  
+</span><span class="line">    &lt;/script&gt;</span></code></pre></td></tr></table></div></figure>
+
+<p>这样就引入了 MathJax 的 js 包。<br />
+3. 在<code>_config.yml</code>文件中，用<code>markdown: kramdown</code>替换<code>markdown: rdiscount</code>。</p>
+
+<p>完成上述步骤后，即可使用 Latex 公式了。<a href="http://blog.csdn.net/hankai1024/article/details/18048999">参考文献</a></p>
 
 </div>
 
@@ -467,29 +610,6 @@
   </footer>
 </article>
 
-
-  <section>
-    <h1>Comments</h1>
-    <div id="comments" aria-live="polite"><!-- Duoshuo Comment start -->
-<div class="ds-thread" data-thread-key="/blog/2015/05/01/create-github-blog-using-octopress" data-title="使用Octopress 搭建个人博客" data-url="http://lazybing.github.io/blog/2015/05/01/create-github-blog-using-octopress//"></div>
-<!-- Duoshuo Comment end -->
-<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-var duoshuoQuery = {short_name:"lazybing"};
-    (function() {
-                var ds = document.createElement('script');
-                ds.type = 'text/javascript';ds.async = true;
-                ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-                ds.charset = 'UTF-8';
-                (document.getElementsByTagName('head')[0] 
-                || document.getElementsByTagName('body')[0]).appendChild(ds);
-    })();
-    </script>
-<!-- 多说公共JS代码 end -->
-
-</div>
-  </section>
-
 </div>
 
 <aside class="sidebar">
@@ -497,13 +617,15 @@ var duoshuoQuery = {short_name:"lazybing"};
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (4)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
-<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (18)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
 </section>
@@ -512,23 +634,23 @@ var duoshuoQuery = {short_name:"lazybing"};
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2016/12/23/code-complete/">Code Complete</a>
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之X264_bitstream_init函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/22/addr2line-use/">Addr2line 的介绍与使用</a>
+        <a href="/blog/2017/10/19/reference-frame/">X264 源码解析之参考帧</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/07/avio-open2/">FFMPEG源码分析：avio_open2</a>
+        <a href="/blog/2017/10/11/x264-slicetype-decide/">X264 源码解析之判断帧类型</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/06/av-find-encdec/">FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder</a>
+        <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2016/12/05/avcodec-register-all/">FFMPEG 源码分析：avcodec_register_all</a>
+        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
       </li>
     
   </ul>
@@ -652,6 +774,37 @@ $(document).ready(function(){
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
 
 </footer>
   
