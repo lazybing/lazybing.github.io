@@ -98,7 +98,7 @@ void Printf(int i_level, const char *psz_fmt, va_list arg)
             break;
         case LOG_DEBUG:
             psz_prefix = "debug";
-            break;
+            brengak;
         default:
             psz_prefix = "unknown";
             break;
@@ -119,3 +119,78 @@ void LOG_PRINT(int i_level, const char *psz_fmt, ...)
 }
 
 {% endcodeblock %}
+
+## 分析特定格式的文件
+
+工作中在验证芯片的`vdec`模块是否正常工作时，需要大量的跑一些码流，这些码流通常会放到一个`filelist`中，因为需要测试的项不同，此时就可以
+通过按照一定的格式并列存放这些码流，例如根据不同的`codec`、测试比较`YUV`或`CRC`，是要连续测试，还是要中途停止方便`Debug`问题，我们可以按照如下格式对`filelist`进行定义：  
+
+```
+Codec_Type  Compare_Type Test_Type Bitstream_Full_Path
+```
+
+对于上面这种`filelist`，可以通过`fscanf`来逐个的获取特定的字符串，并通过`feof`来判断文件文件是否读取完毕， 之后使用`strcmp`来与特定的字符串进行匹配。例如，有如下的一个`filelist.txt`：  
+
+```
+HEVC Compare_CRC Debug F:\FFmpeg\hevc_bitstream1.bin
+H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
+```
+
+分析`filelist.txt`示例代码：
+
+{% codeblock lang:c parse_filelist %}
+char Codec_Type[10];
+char Compare_Type[10];
+char Release_Type[10];
+char Bitstream_Path[200];
+
+FILE *pFile = fopen("./filelist.txt", "rb");
+if(pFile == NULL)
+{
+    fprintf(stderr, "open file fail %s", strerror(errno));
+}
+
+while(!feof(pFile))
+{
+    fscanf(pFile, "%s %s %s %s", Codec_Type, Compare_Type, Release_Type, Bitstream_Path);
+}
+
+if(!strcmp("HEVC", Codec_Type)) printf("Codec Type is HEVC\n");
+if(!strcmp("H264", Codec_Type)) printf("Codec Type is H264\n");
+...
+
+if(!strcasecmp("hevc", Codec_Type)) printf("Codec Type is HEVC\n");
+...
+{% endcodeblock %}
+
+注意上面表示出来了通过`strcmp`来判断`Codec_Type`的类型，后面的`Compare_Type`可以用同样的方法来给出。
+
+在使用过程中，人们并不会特别在意字母的大小写，但要表达的意思通常是一样的，比如`HEVC``hevc``Hevc`通过都是一样的，如果此时还用`strcmp`来判断，会出错，为此，我们提出了`strcasecmp`的使用方法，来避免大小写带来的问题，这也算是编写类似代码的一个小技巧。  
+
+## fopen 函数个数限制
+
+严格来讲，这个并不是编程的一些小的技巧，而是自己在工作中遇到的一个小问题，最近在每晚上跑测试时，经常遇到一晚上跑完 503 个测试后，程序就会崩溃掉，给出的提示信息是"Open File Fail",起初是通过观察`errno`的类型来`Debug`出错的原因，最后定位到问题是，
+对每个文件都打开了两次，而关闭只有一次，导致文件描述符的个数爆掉了。这个问题的原因是在不同的系统中，都会有对文件描述符的最大个数有一定的限制。
+
+在<UNIX环境高级编程:文件I/O>中有这样的解释：  
+
+> 当读或写一个文件时，使用`open`返回的文件描述符标识该文件，将其作为参数传送给`read`或`write`。文件描述符的变化范围是`0~OPEN_MAX`。
+
+关于文件描述符的最大个数问题，从`stackoverflow`上找到了以下几个问题的回复，可参考：
+
+[1.Is there a limit on number of open files in Windows](https://stackoverflow.com/questions/870173/is-there-a-limit-on-number-of-open-files-in-windows)  
+[2.maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux](https://stackoverflow.com/questions/17931583/maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux)  
+[3.fopen-problem-too-many-open-files](https://stackoverflow.com/questions/3184345/fopen-problem-too-many-open-files)  
+
+关于`fopen`的使用，通常会判断返回值是否`NULL`来判断是否打开成功，其实除此之外，还可以继续监测出错的类型`errno`，并用`strerror()`函数直接显示出错的具体原因。技巧如下：  
+
+{% codeblock lang:c fopen_tips %}
+#include <error.h>
+
+FILE *pFile = fopen("file_full_path", "rb");
+if(pFile == NULL)
+{
+    fprintf(stderr, "Open File Fail:%s\n", strerror(errno));
+}
+{% endcodeblock %}
+
