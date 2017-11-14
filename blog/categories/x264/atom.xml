@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-14T06:45:29-08:00</updated>
+  <updated>2017-11-14T06:52:31-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -67,10 +67,19 @@ else if(h-&gt;sh.i_type == SLICE_TYPE_B)
 
 <ol>
   <li>如果当前是I Slice, 调用<code>x264_mb_analyse_intra()</code>进行Intra宏块的帧内预测模式分析。</li>
-  <li>如果当前是P Slice, 则进行下面流程的分析：a.调用<code>x264_macroblock_probe_pskip()</code>分析是否为skip宏块，如果是skip宏块，则不再进行下面分析。b.调用<code>x264_mb_analyse_inter_p16x16()</code>分析P16x16帧间预测的代价。c.调用<code>x264_mb_analyse_inter_p8x8</code>分析P8x8帧间预测的代价。d.如果 P8x8 代价值小于 P16x16，则依次对 4 个 8x8 的子宏块分割进行判断： 
-* 调用<code>x264_mb_analyse_inter_p4x4()</code>分析 P4x4 帧间预测的代价。<br />
-* 如果P4x4代价值小于P8x8，则调用<code>x264_mb_analyse_inter_p8x4()</code>和<code>x264_mb_analyse_inter_p4x8()</code>分析P8x4和P4x8帧间预测的代价。
-e.如果P8x8代价值小于P16x16,调用<code>x264_mb_analyse_inter_p16x8()</code>和<code>x264_mb_analyse_inter_p8x16()</code>分析P16x8和P8x16帧间预测的代价。f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块作为 Intra 宏块编码的代价是否小于作为 P 宏块编码的代价。</li>
+  <li>如果当前是P Slice, 则进行下面流程的分析：</li>
+</ol>
+
+<p>…a.调用<code>x264_macroblock_probe_pskip()</code>分析是否为skip宏块，如果是skip宏块，则不再进行下面分析。
+…b.调用<code>x264_mb_analyse_inter_p16x16()</code>分析P16x16帧间预测的代价。
+…c.调用<code>x264_mb_analyse_inter_p8x8</code>分析P8x8帧间预测的代价。
+…d.如果 P8x8 代价值小于 P16x16，则依次对 4 个 8x8 的子宏块分割进行判断： 
+……* 调用<code>x264_mb_analyse_inter_p4x4()</code>分析 P4x4 帧间预测的代价。<br />
+……* 如果P4x4代价值小于P8x8，则调用<code>x264_mb_analyse_inter_p8x4()</code>和<code>x264_mb_analyse_inter_p4x8()</code>分析P8x4和P4x8帧间预测的代价。
+…e.如果P8x8代价值小于P16x16,调用<code>x264_mb_analyse_inter_p16x8()</code>和<code>x264_mb_analyse_inter_p8x16()</code>分析P16x8和P8x16帧间预测的代价。
+…f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块作为 Intra 宏块编码的代价是否小于作为 P 宏块编码的代价。</p>
+
+<ol>
   <li>如果当前是B Slice，则进行和 P Slice 类似的处理。</li>
 </ol>
 
