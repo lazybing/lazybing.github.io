@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevcxue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-24T22:51:26-08:00</updated>
+  <updated>2017-11-25T05:49:01-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,137 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC 学习之 Frame Rate]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/25/hevc-fps/"/>
+    <updated>2016-11-25T00:13:47-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/25/hevc-fps</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#sps-frame-rate" id="markdown-toc-sps-frame-rate">SPS Frame Rate</a></li>
+  <li><a href="#vps-frame-rate" id="markdown-toc-vps-frame-rate">VPS Frame Rate</a></li>
+  <li><a href="#container-frame-rate" id="markdown-toc-container-frame-rate">Container Frame Rate</a></li>
+  <li><a href="#pts-frame-rate" id="markdown-toc-pts-frame-rate">PTS Frame Rate</a></li>
+</ul>
+
+<p><code>Frame Rate</code>是显示器上显示图像的频率,单位是 Hz,它作为视频文件的一个重要参数，本文记录<code>HEVC</code>码流中它的计算方法。</p>
+
+<!--more-->
+
+<p>HEVC 中关于<code>Frame Rate</code>的计算可以包含五中：从<code>SPS</code>中获取、从<code>VPS</code>中获取、从视频文件的<code>Container</code>层获取、根据PTS获取、选择默认值。</p>
+
+<h2 id="sps-frame-rate">SPS Frame Rate</h2>
+
+<ul>
+  <li>vui_parameters_present_flag 值为 1 表示该码流中<code>vui_parameters()</code>语法结构存在。否则，该码流中不存在 VUI 结构。</li>
+  <li>vui_timing_info_present_flag 值为 1 表示该码流中<code>vui_num_units_in_tick</code>、<code>vui_time_scale</code>、<code>vui_poc_proportional_to_timing_flag</code>和<code>vui_hrd_parameters_present_flag</code>存在，否则这些语法元素不存在。</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">if(vui_timing_info_present_flag){</th>
+      <th style="text-align: center"> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">vui_num_units_in_tick</td>
+      <td style="text-align: center">u(u32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vui_time_scale</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vui_poc_proportional_to_timing_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>vui_num_units_in_tick 是运行在<code>time_scale Hz</code>的频率（相应地时钟跳变计数器加一，称作一个时钟跳变）下的时钟的时间单元的数量。<code>vui_num_units_in_tick</code>应该大于 0。
+一个时钟跳变(单位是秒)，它等于<code>vui_num_units_in_tick</code>除以<code>vui_time_scale</code>的四分之一。例如，视频信号的采样率是 25Hz,<code>vui_time_scale</code>值为 27000000,<code>vui_num_units_in_tick</code>值为1080000,因此一个时钟跳变值为 0.04 秒。</li>
+</ul>
+
+<p>当 SPS 参考的 VPS 中有<code>vps_num_units_in_tick</code>存在时，<code>vui_num_units_in_tick</code>如果存在，就应该等于<code>vps_num_units_in_tick</code>,<code>vui_num_units_in_tick</code>如果不存在，被推断为<code>vps_num_units_in_tick</code>。</p>
+
+<ul>
+  <li>vui_time_scale 是一秒内时间单元的数量。例如，一个以 27MHz 的时钟测量时间的时间坐标系的<code>time_scale</code>为 27000000。<code>vui_time_scale</code>的值应该大于 0。</li>
+</ul>
+
+<p>当 SPS 参考的 VPS 中有<code>vps_time_scale</code>存在时，<code>vui_time_scale</code>如果存在，就应该等于<code>vps_time_scale</code>,<code>vui_time_scale</code>如果不存在，被推断为<code>vps_num_units_in_tick</code>。</p>
+
+<p>通过 SPS 计算的 FPS 的值为<code>fps = sps-&gt;vui-&gt;time_scale/sps-&gt;vui_num_units_in_tick</code>。</p>
+
+<h2 id="vps-frame-rate">VPS Frame Rate</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">if(vps_timing_info_present_flag){</th>
+      <th style="text-align: center"> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">vps_num_units_in_tick</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vps_time_scale</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vps_poc_proporitonal_to_timing_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>
+    <p>vps_num_units_in_tick 是运行在<code>vps_time_scale Hz</code>的频率（相应地时钟跳变计数器加一，称作一个时钟跳变）下的时钟的时间单元的数量。<code>vps_num_units_in_tick</code>应该大于 0。
+一个时钟跳变(单位是秒)，它等于<code>vps_num_units_in_tick</code>除以<code>vps_time_scale</code>的四分之一。例如，视频信号的采样率是 25Hz,<code>vps_time_scale</code>值为 27000000,<code>vps_num_units_in_tick</code>值为1080000,因此一个时钟跳变值为 0.04 秒。</p>
+  </li>
+  <li>
+    <p>vps_time_scale 是一秒内时间单元的数量。例如，一个以 27MHz 的时钟测量时间的时间坐标系的<code>vps_time_scale</code>为 27000000。<code>vps_time_scale</code>的值应该大于 0。</p>
+  </li>
+</ul>
+
+<p>通过 VPS 计算的 FPS 的值为<code>fps = vps-&gt;time_scale / vps-&gt;num_units_in_tick</code>。</p>
+
+<h2 id="container-frame-rate">Container Frame Rate</h2>
+
+<p>这种方法得到的<code>Frame Rate</code>，其实并不是通过解码器得到的，而是通过从 DMX 端通过分析<code>Container</code>得到的，此处不做分析。</p>
+
+<h2 id="pts-frame-rate">PTS Frame Rate</h2>
+
+<p>如果上面都没有<code>Frame Rate</code>的信息，就可以通过<code>PTS</code>来计算出<code>Frame Rate</code>。方法就是通过计算 PTS 的间隔，然后得出<code>Frame Rate</code>的值。</p>
+
+<blockquote>
+  <p>注意，对于<code>HEVC</code>中，如果是<code>Interlace</code>码流，<code>Frame Rate</code>需要减半。</p>
+</blockquote>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HEVC SPEC 学习之SEI——Recovery_Point]]></title>
