@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:学习 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/xue-xi/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2017-11-24T19:35:16-08:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC 学习之SEI——Recovery_Point]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/24/hevc-sei-recovery-point/"/>
+    <updated>2016-11-24T18:05:50-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/24/hevc-sei-recovery-point</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#recovery-point-sei-message-syntx" id="markdown-toc-recovery-point-sei-message-syntx">Recovery point SEI message syntx</a></li>
+  <li><a href="#recovery-point-sei-" id="markdown-toc-recovery-point-sei-">Recovery point SEI 消息语义</a></li>
+  <li><a href="#hm--recoverypoint" id="markdown-toc-hm--recoverypoint">HM 中的 Recovery_Point</a></li>
+</ul>
+
+<p>本文主要记录 HEVC 中的 Recovery_Point 这一类 SEI PayloadType 的介绍。<code>recovery point</code>与<code>H264</code>中<code>recovery point</code>的功能是相似的，主要作用是帮助解码器确认，在解码器凯斯随机
+访问或解码器遇到序列中断的链接以后，解码过程生成能够合格显示的图像的时间。</p>
+
+<!--more-->
+
+<h2 id="recovery-point-sei-message-syntx">Recovery point SEI message syntx</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">recovery_point(payloadSize)</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">recovery_poc_cnt</td>
+      <td style="text-align: center">se(v)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">exact_match_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">broken_link_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="recovery-point-sei-">Recovery point SEI 消息语义</h2>
+
+<p>当解码过程从一个解码顺序中与<code>recovery point sei payloadType</code>关联的访问单元开始时，所有此<code>SEI</code>消息指明的输出
+顺序中<code>recovery point</code>以后的解码图像都是内容正确或大致正确的(即显示时不会有明显的马赛克)。有<code>recovery point sei payloadType</code>关联
+的图像之前的随机访问单元生成的解码图像在内容上不一定是正确的，直到指定的<code>recovery point</code>。从与<code>recovery point sei payloadType</code>的访问
+单元开始的解码过程操作可以包含对解码图像缓冲区不存在的图像的引用。</p>
+
+<ul>
+  <li>
+    <p>recovery_poc_cnt 指定输出顺序中解码图像的恢复点。如果存在图像A, 以解码顺序看它在当前图像(与当前的 SEI 消息关联的图像)的后面，并且
+它的 POC 等于当前图像的 POC 加上<code>recovery_poc_cnt</code>的值，则图像A被认定为<code>recovery point picture</code>。否则，显示顺序中第一个 POC 大于当前
+图像 POC 加上 <code>recovery_poc_cnt</code>值的图像被认定为<code>recovery point picture</code>。<code>recovery point</code>图像在解码顺序中不能再当前图像的前面。以显示
+顺序来看，从<code>recovery point</code>图像之后的所有解码图像在内容上都是正确或基本正确的。<code>recovery_poc_cnt</code>的值应当在<code>-MaxPicOrderCntLsb / 2</code>和
+<code>MaxPicOrderCntLsb / 2 - 1</code>的范围内。</p>
+  </li>
+  <li>
+    <p>exact_match_flag 表示在与恢复点 SEI 消息关联的访问单元处开始的解码过程输出的特定恢复点之后的解码图像，是否应该是一个与 NAL 单元流中
+的前一个 IDR 访问单元位置处开始的解码过程生成的图像精确匹配的图像。值为 0 表示不一定精确匹配，为 1 表示精确匹配。</p>
+  </li>
+</ul>
+
+<p>当解码从恢复点 SEI 消息开始时，所有对不可获得的参考图像的引用应当推断为对只包含用内部宏块预测方式编码的宏块，样点值为 Y 等于 128, Cb 和 Cr 等于
+128（中度灰）的图像的引用，目的是确定与<code>exact_match_flag</code>的取值的一致性。</p>
+
+<ul>
+  <li>broken_link_flag 表示在恢复点 SEI 消息处 NAL 单元流的链接是否出现中断。它的语义如下：
+—— 如果<code>broken_link_flag</code>值为 1， 在前一个 IDR 访问单元位置处开始的解码过程生成的图像可能包含不希望的视觉假象，以致于在输出顺序中关联恢复点 SEI 消息的访问单元之后
+的解码图像不可显示，直到指定的输出顺序中的恢复点。<br />
+—— 如果<code>broken_link_flag</code>值为 0, 没有预示会出现潜在的视觉假象。</li>
+</ul>
+
+<h2 id="hm--recoverypoint">HM 中的 Recovery_Point</h2>
+
+<p>HM 源码中只是对<code>Recovery_Point</code>这一 SEI 信息做了 parse，但并没有使用解析出来的信息，可以认为 HM 中是不支持 <code>recovery_point</code>的。 其中解析的源码如下：</p>
+
+<p><figure class='code'><figcaption><span>recovery_point </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">Void</span> <span class="n">SEIReader</span><span class="o">::</span><span class="n">xParseSEIRecoveryPoint</span><span class="p">(</span><span class="n">SEIRecoveryPoint</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">sei</span><span class="p">,</span> <span class="n">UInt</span> <span class="n">payloadSize</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">ostream</span> <span class="o">*</span><span class="n">pDecodedMessageOutputStream</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">Int</span>  <span class="n">iCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">uiCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">output_sei_message_header</span><span class="p">(</span><span class="n">sei</span><span class="p">,</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">payloadSize</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">sei_read_svlc</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">iCode</span><span class="p">,</span>  <span class="err">“</span><span class="n">recovery_poc_cnt</span><span class="err">”</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_recoveryPocCnt</span>     <span class="o">=</span> <span class="n">iCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="err">“</span><span class="n">exact_matching_flag</span><span class="err">”</span> <span class="p">);</span>   <span class="n">sei</span><span class="p">.</span><span class="n">m_exactMatchingFlag</span>  <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="err">“</span><span class="n">broken_link_flag</span><span class="err">”</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_brokenLinkFlag</span>     <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">xParseByteAlign</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+</feed>
