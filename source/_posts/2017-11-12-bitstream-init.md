@@ -218,7 +218,7 @@ int GetAnnexbNALU(NALU_t *nalu)
 }
 {% endcodeblock %}
 
-找`start_code`的定义如下：  
+找`start_code`的定义如下,该函数的参数`zeros_in_startcode`可能为 3 或 4,寻找`0x000001`或`0x00000001`。  
 
 {% codeblock lang:c FindStartCode %}
 /*!
@@ -254,4 +254,95 @@ static int FindStartCode (unsigned char *Buf, int zeros_in_startcode)
 {% endcodeblock %}
 
 ## X264 中 Bitstream 的源码分析
+
+`X264`中关于`AnnexB`部分的描述主要是在`common/bitstream.c`中的`void x264_bitstream_init(int cpu, x264_bitstream_function_t *pf)`完成。
+其中的`x264_bitstream_function_t`结构体定义如下：  
+
+{% codeblock lang:c x264_bitstream_function_t %}
+typedef struct
+{
+    uint8_t *(*nal_escape) ( uint8_t *dst, uint8_t *src, uint8_t *end );
+    void (*cabac_block_residual_internal)( dctcoef *l, int b_interlaced,
+                                           intptr_t ctx_block_cat, x264_cabac_t *cb );
+    void (*cabac_block_residual_rd_internal)( dctcoef *l, int b_interlaced,
+                                              intptr_t ctx_block_cat, x264_cabac_t *cb );
+    void (*cabac_block_residual_8x8_rd_internal)( dctcoef *l, int b_interlaced,
+                                                  intptr_t ctx_block_cat, x264_cabac_t *cb );
+} x264_bitstream_function_t;
+{% endcodeblock %}
+
+其中`x264_bitstream_init`的定义如下：  
+
+{% codeblock lang:c X264_bitstream_init %}
+void X264_bitstream_init(int cpu, x264_bitstream_function_t *pf)
+{
+    memset(pf, 0, sizeof(*pf));
+    pf->nal_escape = x264_nal_escape_c;
+    pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2;
+    pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_sse2;
+    pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_sse2;
+}
+{% endcodeblock %}
+
+其中的`x264_nal_escape_c`定义如下：  
+
+{% codeblock lang:c x264_nal_escape_c %}
+static uint8_t *x264_nal_escape_c( uint8_t *dst, uint8_t *src, uint8_t *end )
+{
+    if( src < end ) *dst++ = *src++;
+    if( src < end ) *dst++ = *src++;
+    while( src < end )
+    {
+        if( src[0] <= 0x03 && !dst[-2] && !dst[-1] )
+            *dst++ = 0x03;
+        *dst++ = *src++;
+    }
+    return dst;
+}
+{% endcodeblock %}
+
+最后，给出 X264 中关于每个 NALU 的编码的实现：  
+
+{% codeblock lang:c x264_nal_encode %}
+/****************************************************************************
+ * x264_nal_encode:
+ ****************************************************************************/
+void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal )
+{
+    uint8_t *src = nal->p_payload;
+    uint8_t *end = nal->p_payload + nal->i_payload;
+    uint8_t *orig_dst = dst;
+
+    if( h->param.b_annexb )
+    {
+        if( nal->b_long_startcode )
+            *dst++ = 0x00;
+        *dst++ = 0x00;
+        *dst++ = 0x00;
+        *dst++ = 0x01;
+    }
+    else /* save room for size later */
+        dst += 4;
+
+    /* nal header */
+    *dst++ = ( 0x00 << 7 ) | ( nal->i_ref_idc << 5 ) | nal->i_type;
+
+    dst = h->bsf.nal_escape( dst, src, end );
+    int size = (dst - orig_dst) - 4;
+
+    /* Write the size header for mp4/etc */
+    if( !h->param.b_annexb )
+    {
+        /* Size doesn't include the size of the header we're writing now. */
+        orig_dst[0] = size>>24;
+        orig_dst[1] = size>>16;
+        orig_dst[2] = size>> 8;
+        orig_dst[3] = size>> 0;
+    }
+
+    nal->i_payload = size+4;
+    nal->p_payload = orig_dst;
+    x264_emms();
+}
+{% endcodeblock %}
 
