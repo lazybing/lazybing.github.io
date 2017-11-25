@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Addr2line 的介绍与使用 - 懒人李冰</title>
+  <title>HEVC SPEC 学习之SEI——Pic_Timing - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="addr2line 简介 addr2line 的使用示例 addr2line 的原理 addr2line的作用是将地址转化为文件名和行号。 addr2line 简介
-在编写程序时，经常会遇到出现程序 crah 的情况，此时如果有 core stack 打印出来还好，但如果没有 core &hellip;">
+  <meta name="description" content="Pic Timing SEI 消息语法 Pic Timing SEI 消息语义 本文主要记录 HEVC 中的 Picture timing 这一类 SEI PayloadType 的介绍。 Pic Timing SEI 消息语法 pic_timing(payloadSize){ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/22/addr2line-use/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/11/24/hevc-sei-pic-timing/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">Addr2line 的介绍与使用</h1>
+      <h1 class="entry-title">HEVC SPEC 学习之SEI——Pic_Timing</h1>
     
     
       <p class="meta">
@@ -92,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2016-12-22T07:26:02-08:00'><span class='date'>2016 年 12 月 22 日</span> <span class='time'>7:26 am</span></time>
+<time class='entry-date' datetime='2016-11-24T18:05:50-08:00'><span class='date'>2016 年 11 月 24 日</span> <span class='time'>6:05 pm</span></time>
         
       </p>
     
@@ -100,101 +99,44 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#addr2line-" id="markdown-toc-addr2line-">addr2line 简介</a></li>
-  <li><a href="#addr2line--1" id="markdown-toc-addr2line--1">addr2line 的使用示例</a></li>
-  <li><a href="#addr2line--2" id="markdown-toc-addr2line--2">addr2line 的原理</a></li>
+  <li><a href="#pic-timing-sei-" id="markdown-toc-pic-timing-sei-">Pic Timing SEI 消息语法</a></li>
+  <li><a href="#pic-timing-sei--1" id="markdown-toc-pic-timing-sei--1">Pic Timing SEI 消息语义</a></li>
 </ul>
 
-<p><code>addr2line</code>的作用是将地址转化为文件名和行号。<br />
-<!--more--></p>
+<p>本文主要记录 HEVC 中的 Picture timing 这一类 SEI PayloadType 的介绍。</p>
 
-<h2 id="addr2line-">addr2line 简介</h2>
-<p>在编写程序时，经常会遇到出现程序 crah 的情况，此时如果有 core stack 打印出来还好，但如果没有 core stack 的话，debug 就会比较困难。addr2line 可以很好地解决这个问题。</p>
+<!--more-->
 
-<p><code>addr2line</code>能够将地址转换为文件名和行号。给定一个可执行文件的地址或者一个可重定位目标的目标偏移，addr2line 就会利用 debug 信息来计算出与该地址关联的文件名和行号。</p>
+<h2 id="pic-timing-sei-">Pic Timing SEI 消息语法</h2>
 
-<p>使用的可执行文件或可重定位目标使用<code>-e</code>选项来指定、可重定位目标的部分使用<code>-j</code>选项来指定。</p>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">pic_timing(payloadSize){</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">if(frame_field_info_present_flag){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">pic_struct</td>
+      <td style="text-align: center">u(4)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">source_scan_type</td>
+      <td style="text-align: center">u(2)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">duplicate_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+  </tbody>
+</table>
 
-<p><code>addr2line</code>有两种操作模式：<br />
-1. 在命令行下，直接指定十六进制的地址，addr2line 为每个地址显示文件名和行号。<br />
-2. addr2line 从标准输入中读取十六进制地址，并且为每个地址输出文件名和行号到标准输出中。</p>
-
-<p>输出格式为<code>FILENAME:LINENO</code>，默认情况下，每个输入地址对应一行输出。</p>
-
-<h2 id="addr2line--1">addr2line 的使用示例</h2>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">div</span><span class="p">(</span><span class="kt">int</span> <span class="n">numerator</span><span class="p">,</span> <span class="kt">int</span> <span class="n">denominator</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">numerator</span>   <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">denominator</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">return</span> <span class="n">div</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>编译：gcc -o div -g div.c
-生成可执行文件<code>div</code>后，执行该文件：./div 得到如下error:</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">Floating point exception (core dumped)</span></code></pre></td></tr></table></div></figure>
-
-<p>此时并没有任何其他提示信息，我们可以通过<code>dmesg</code>查看信息：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">[ 4709.210137] traps: div[2500] trap divide error ip:400524 sp:7ffcd27fd630 error:0 in div[400000+1000]</span></code></pre></td></tr></table></div></figure>
-<p>通过该信息可以看出，ip 指向的地址为<code>400524</code>，得到该地址后，我们就可以使用 addr2line 来定位出错的位置。 
-<code>addr2line -e div 400524</code> 得到结果如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">/home/bing/work/study/div.c:5</span></code></pre></td></tr></table></div></figure>
-
-<p>可以很直观的显示，该 core  dump 信息是在<code>div.c</code>的 line 5。</p>
-
-<h2 id="addr2line--2">addr2line 的原理</h2>
-<p><code>addr2line</code>之所以能够利用可执行文件将地址信息转换为行号，是因为在可执行 ELF 文件中存有这些对应的信息。可以使用<code>readelf</code>来查看这些信息。例如上面的<code>div</code>文件，通过readelf div 可以看到如下信息：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-</pre></td><td class="code"><pre><code class=""><span class="line"> Line Number Statements:
-</span><span class="line">  [0x00000026]  Extended opcode 2: set Address to 0x400516
-</span><span class="line">  [0x00000031]  Special opcode 8: advance Address by 0 to 0x400516 and Line by 3 to 4
-</span><span class="line">  [0x00000032]  Special opcode 146: advance Address by 10 to 0x400520 and Line by 1 to 5
-</span><span class="line">  [0x00000033]  Special opcode 104: advance Address by 7 to 0x400527 and Line by 1 to 6
-</span><span class="line">  [0x00000034]  Special opcode 36: advance Address by 2 to 0x400529 and Line by 3 to 9
-</span><span class="line">  [0x00000035]  Special opcode 216: advance Address by 15 to 0x400538 and Line by 1 to 10
-</span><span class="line">  [0x00000036]  Special opcode 104: advance Address by 7 to 0x40053f and Line by 1 to 11
-</span><span class="line">  [0x00000037]  Special opcode 105: advance Address by 7 to 0x400546 and Line by 2 to 13
-</span><span class="line">  [0x00000038]  Special opcode 216: advance Address by 15 to 0x400555 and Line by 1 to 14
-</span><span class="line">  [0x00000039]  Advance PC by 2 to 0x400557
-</span><span class="line">  [0x0000003b]  Extended opcode 1: End of Sequence</span></code></pre></td></tr></table></div></figure>
-<p>从上面可以看出到 addr 在 0x400520-0x400527之间时，行号为5.</p>
-
+<h2 id="pic-timing-sei--1">Pic Timing SEI 消息语义</h2>
 </div>
 
 
@@ -210,12 +152,12 @@
 
 
 
-<time class='entry-date' datetime='2016-12-22T07:26:02-08:00'><span class='date'>2016 年 12 月 22 日</span> <span class='time'>7:26 am</span></time>
+<time class='entry-date' datetime='2016-11-24T18:05:50-08:00'><span class='date'>2016 年 11 月 24 日</span> <span class='time'>6:05 pm</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a>
+    <a class='category' href='/blog/categories/hevcxue-xi/'>hevc学习</a>
   
 </span>
 
@@ -224,7 +166,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/22/addr2line-use/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/22/addr2line-use/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/11/24/hevc-sei-pic-timing/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/11/24/hevc-sei-pic-timing/" >Tweet</a>
   
   
   
@@ -233,10 +175,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/12/20/avcodec_decode_video/" title="Previous Post: FFMPEG 源码分析：avcodec_decode_video2">&laquo; FFMPEG 源码分析：avcodec_decode_video2</a>
+        <a class="basic-alignment left" href="/blog/2016/11/16/par-sar-dar-analyse/" title="Previous Post: PAR、DAR、SAR分析">&laquo; PAR、DAR、SAR分析</a>
       
       
-        <a class="basic-alignment right" href="/blog/2016/12/25/avformat_find_stream_info/" title="Next Post: FFMPEG 源码分析：avformat_find_stream_info">FFMPEG 源码分析：avformat_find_stream_info &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2016/11/24/hevc-sei-recovery-point/" title="Next Post: HEVC SPEC 学习之SEI——Recovery_Point">HEVC SPEC 学习之SEI——Recovery_Point &raquo;</a>
       
     </p>
   </footer>
