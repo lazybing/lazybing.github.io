@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevcxue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-25T05:54:38-08:00</updated>
+  <updated>2017-11-25T18:49:16-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -244,6 +244,100 @@
 </span><span class='line'>  <span class="n">xParseByteAlign</span><span class="p">();</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC学习之PAR、DAR、SAR]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/16/par-sar-dar-analyse/"/>
+    <updated>2016-11-16T08:11:53-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/16/par-sar-dar-analyse</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Aspect_ratio_(image)">Aspect Ratio</a> 是图片的宽高比。<br />
+<!--more--></p>
+
+<p>主要有 3 种<code>aspect ratio</code>：PAR(Pixel Aspect Ratio)、DAR(Display Aspect Ratio)、SAR(Sample Aspect Ratio)。</p>
+
+<p>PAR(Pixel Aspect Ratio): 像素纵横比；<br />
+DAR(Display Aspect Ratio):显示纵横比；<br />
+SAR(Sample Aspect Ratio):采样纵横比；</p>
+
+<p>三者的关系为PAR x SAR = DAR 或者 PAR = DAR / SAR。</p>
+
+<h2 id="sarsample-aspect-ration">SAR(Sample Aspect Ration)采样纵横比</h2>
+
+<p>HEVC SPEC 中关于 SAR 语法元素的描述如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">vui_parameters(){</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">aspect_ratio_info_present_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">if(aspect_ratio_info_present_flag){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">aspect_ratio_idc</td>
+      <td style="text-align: center">u(8)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">if(aspect_ratio_idc == EXTENDED_SRA){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">sar_width</td>
+      <td style="text-align: center">u(16)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">sar_height</td>
+      <td style="text-align: center">u(16)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>上面提到的 SAR 语法元素的语义如下：</p>
+
+<ul>
+  <li>
+    <p>aspect_ratio_info_present_flag 值为 1，指定<code>aspect_ratio_idc</code>在码流中存在；否则该语法元素不存在。</p>
+  </li>
+  <li>
+    <p>aspect_ratio_idc 指定亮度采样的<code>SAR</code>的值。下面的表格展示它的含义。当<code>aspect_ratio_idc</code>值为 255，表明<code>EXTENDED_SRA</code>时，<code>SAR</code>的值
+等于<code>sar_width:sar_height</code>。当<code>aspect_ratio_idc</code>语法不存在时，该值可以被认为是 0。<code>aspect_ratio_idc</code>的范围是<code>17-254</code>时，未使用，并且不该出现在码流中，此时解码器可以指定为 0。</p>
+  </li>
+  <li>sar_width 表示<code>SAR</code>的水平大小。</li>
+  <li>sar_height 表示<code>SAR</code>的竖直大小。</li>
+</ul>
+
+<p><code>sar_width</code>和<code>sar_height</code>等于0、或<code>aspect_ratio_idc</code>等于0时，SPEC 未定义它的行为。</p>
+
+<p>PAR 示例如下：</p>
+
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-1to1.svg.png" title="‘1to1_PAR’" ></p>
+
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-2to1.svg.png" title="‘2to1_PAR’" ></p>
+
+<p>DAR 示例如下：</p>
+
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="‘16to9_DAR’" ></p>
+
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="‘4to3_DAR’" ></p>
 
 ]]></content>
   </entry>
