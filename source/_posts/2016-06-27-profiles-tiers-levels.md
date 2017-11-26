@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "Profiles-Tiers-Levels"
+title: "HEVC SPEC学习之Profiles-Tiers-Levels"
 date: 2016-06-27 07:52:00 -0700
 comments: true
-categories: 总结积累
+categories: hevc学习
 ---
 
 * list element with functor item
@@ -25,6 +25,28 @@ Levle 指出一些对解码端的负载和内存占用影响较大的关键参�
 HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对`maximum bit rate``maximum luma sample rate``maximum luma picture size`
 `minimum compression ratio``maximum number of slices`和`maximum number of tiles`等。  
 
+## HEVC SPEC 中 Profile Tier Level 语法
+
+| profle_tier_level(profilePresentFlag, maxNumSubLayersMinus1){ | Descriptor |
+| :---: | :---: |
+| if(profilePresentFlag){ | |
+| general_profile_space | u(2) |
+| general_tier_flag | u(1) |
+| general_profile_idc | u(5) |
+| for(j = 0; j < 32; j++) |  |
+| general_profile_compatibility_flag[i] | u(1) |
+| general_progressive_source_flag | u(1) |
+| general_interlaced_source_flag | u(1) |
+| ... | |
+| general_level_idc | u(8) |
+| ... | |
+
+* general_profile_idc 当`general_profile_space`等于 0，该值表明了`profile`的标准，它的值必须是`Annex A`中包含的值，其他值未定义，保留。  
+* general_level_idc 表明该视频流遵守的 level 值，它是在`Annex A`中定义的。码流中不应包含`Annex A`中未定义的值。  
+
+> 注意，`general_level_idc`值越大，表示更高的 level。同一个`CVS`中，码流中`VPS`指定的最大 level 可能大于`SPS`指定的最大 level。
+
+## HM 中 Profile Tier Level 实现
 
 HM 中关于 ProfileTierLevel 的定义如下：  
 
@@ -88,7 +110,5 @@ class ProfileTierLevel
     Bool           m_lowerBitRateConstraintFlag;
 }
 ```
-
-
 
 
