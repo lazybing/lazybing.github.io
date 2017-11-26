@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Profiles-Tiers-Levels - 懒人李冰</title>
+  <title>HEVC SPEC学习之Profiles-Tiers-Levels - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Profile、Tier 和 Level 的概念 Profile、Tier 和 Level 的概念 HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。
-Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
+  <meta name="description" content="Profile、Tier 和 Level 的概念 HEVC SPEC 中 Profile Tier Level 语法 HM 中 Profile Tier Level 实现 Profile、Tier 和 Level 的概念 HEVC 中定义了三类 Profile: Main、Main10 和 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -83,7 +82,7 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Profiles-Tiers-Levels</h1>
+      <h1 class="entry-title">HEVC SPEC学习之Profiles-Tiers-Levels</h1>
     
     
       <p class="meta">
@@ -101,6 +100,8 @@ Profile 指出码流中使用了哪些编码工具和算法。 Levle &hellip;">
 
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
+  <li><a href="#hevc-spec--profile-tier-level-" id="markdown-toc-hevc-spec--profile-tier-level-">HEVC SPEC 中 Profile Tier Level 语法</a></li>
+  <li><a href="#hm--profile-tier-level-" id="markdown-toc-hm--profile-tier-level-">HM 中 Profile Tier Level 实现</a></li>
 </ul>
 
 <h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
@@ -118,6 +119,74 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 
 <p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
 <code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
+
+<h2 id="hevc-spec--profile-tier-level-">HEVC SPEC 中 Profile Tier Level 语法</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">profle_tier_level(profilePresentFlag, maxNumSubLayersMinus1){</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">if(profilePresentFlag){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_profile_space</td>
+      <td style="text-align: center">u(2)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_tier_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_profile_idc</td>
+      <td style="text-align: center">u(5)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">for(j = 0; j &lt; 32; j++)</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_profile_compatibility_flag[i]</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_progressive_source_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_interlaced_source_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_level_idc</td>
+      <td style="text-align: center">u(8)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>general_profile_idc 当<code>general_profile_space</code>等于 0，该值表明了<code>profile</code>的标准，它的值必须是<code>Annex A</code>中包含的值，其他值未定义，保留。</li>
+  <li>general_level_idc 表明该视频流遵守的 level 值，它是在<code>Annex A</code>中定义的。码流中不应包含<code>Annex A</code>中未定义的值。</li>
+</ul>
+
+<blockquote>
+  <p>注意，<code>general_level_idc</code>值越大，表示更高的 level。同一个<code>CVS</code>中，码流中<code>VPS</code>指定的最大 level 可能大于<code>SPS</code>指定的最大 level。</p>
+</blockquote>
+
+<h2 id="hm--profile-tier-level-">HM 中 Profile Tier Level 实现</h2>
 
 <p>HM 中关于 ProfileTierLevel 的定义如下：</p>
 
@@ -258,7 +327,7 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+    <a class='category' href='/blog/categories/hevcxue-xi/'>hevc学习</a>
   
 </span>
 
@@ -293,11 +362,11 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
-<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (4)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (5)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (19)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (5)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
 <li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
