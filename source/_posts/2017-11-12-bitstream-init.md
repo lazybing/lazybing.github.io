@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "X264源码解析之X264_bitstream_init函数"
+title: "X264源码解析之x264_bitstream_init函数"
 date: 2017-11-12 06:48:31 -0800
 comments: true
 categories: X264 
