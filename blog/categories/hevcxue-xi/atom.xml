@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevcxue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-25T22:31:51-08:00</updated>
+  <updated>2017-11-27T07:31:21-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,39 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC学习之RPS(待整理)]]></title>
+    <link href="http://lazybing.github.io/blog/2017/11/27/hevc-rps/"/>
+    <updated>2017-11-27T06:20:37-08:00</updated>
+    <id>http://lazybing.github.io/blog/2017/11/27/hevc-rps</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#hevc-spec-rps" id="markdown-toc-hevc-spec-rps">HEVC SPEC 中RPS</a></li>
+</ul>
+
+<p>HEVC 对于参考帧的管理会有专门的参数集 RPS(Reference Picture Set) 来进行管理。RPS 技术，通过直接在每一帧开始的片头码流中传输 DPB 中各个帧的状态变化。<br />
+<!--more--></p>
+
+<h2 id="hevc-spec-rps">HEVC SPEC 中RPS</h2>
+
+<p>关于 RPS 部分的描述，SPEC 中在 7.4.8 中：<br />
+<code>st_ref_pic_set(stRpsIdx)</code>语法结构可能存在<code>SPS</code>或<code>Slice Header</code>中，根据 RPS 语法结构是否存在 SPS 或 Slice Header 中，应用如下：</p>
+
+<blockquote>
+  <p>如果 RPS 存在 Slice Header 中，<code>st_ref_pic_set(stRpsIdx)</code>语法结构指定了当前图像的 short-term RPS：<br />
+&gt; 当前图片的所有 slice header 中<code>st_ref_pic_set(stRpsIdx)</code>语法结构全部相同。<br />
+&gt; stRpsIdx 的值应该与当前图像参考的 SPS 的 num_short_term_ref_pic_sets 相同。<br />
+&gt; 
+如果 RPS 存在在 SPS 中，</p>
+</blockquote>
+
+<p><img src="/images/rps/hevc_rps.png"></p>
+
+<ul>
+  <li>inter_ref_pic_set_prediction_flag 值为1</li>
+</ul>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HEVC SPEC 学习之 Frame Rate]]></title>
@@ -560,241 +593,6 @@ UInt           m_bitDepthConstraintValue;
 ChromaFormat   m_chromaFormatConstraintValue;
 Bool           m_intraConstraintFlag;
 Bool           m_lowerBitRateConstraintFlag; } ```
-</code></pre>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[HEVC SPEC 学习之SEI——Pic_Timing]]></title>
-    <link href="http://lazybing.github.io/blog/2015/11/24/hevc-sei-pic-timing/"/>
-    <updated>2015-11-24T18:05:50-08:00</updated>
-    <id>http://lazybing.github.io/blog/2015/11/24/hevc-sei-pic-timing</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#pic-timing-sei-" id="markdown-toc-pic-timing-sei-">Pic Timing SEI 消息语法</a></li>
-  <li><a href="#pic-timing-sei--1" id="markdown-toc-pic-timing-sei--1">Pic Timing SEI 消息语义</a></li>
-  <li><a href="#hmpicturetiming" id="markdown-toc-hmpicturetiming">HM中的Picture_Timing</a></li>
-</ul>
-
-<p>本文主要记录 HEVC 中的 Picture timing 这一类 SEI PayloadType 的介绍。</p>
-
-<!--more-->
-
-<h2 id="pic-timing-sei-">Pic Timing SEI 消息语法</h2>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">pic_timing(payloadSize){</th>
-      <th style="text-align: center">Descriptor</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">if(frame_field_info_present_flag){</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">pic_struct</td>
-      <td style="text-align: center">u(4)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">source_scan_type</td>
-      <td style="text-align: center">u(2)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">duplicate_flag</td>
-      <td style="text-align: center">u(1)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">}</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">}</td>
-      <td style="text-align: center"> </td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="pic-timing-sei--1">Pic Timing SEI 消息语义</h2>
-
-<ul>
-  <li>pic_struct 指明了图像是按照帧图或场图显示；如果是作为帧图显示，当<code>fixed_pic_rate_within_cvs_flag</code>值为 1 时，可以表明帧图像在显示时会重复两次或三次，帧的刷新间隔为固定的<code>DpbOutputElementalInterval[n]</code>。
-<code>pic_struct</code>的含义如下图所示。对于未列出的<code>pic_struct</code>值，作为保留值用于将来使用，一般不会出现在码流中，如果出现，解码器可以忽略它的值。</li>
-</ul>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">Value</th>
-      <th style="text-align: center">Indicated display of picture</th>
-      <th style="text-align: center">Restrictions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">0</td>
-      <td style="text-align: center">(progressive)Frame</td>
-      <td style="text-align: center">field_seq_flag 为 0</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">1</td>
-      <td style="text-align: center">Top Field</td>
-      <td style="text-align: center">field_seq_flag 为 1</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">2</td>
-      <td style="text-align: center">Bottom Field</td>
-      <td style="text-align: center">field_seq_flag 为 1</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">3</td>
-      <td style="text-align: center">Top Field, Bottom Field, in that order</td>
-      <td style="text-align: center">field_seq_flag 为 0</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">4</td>
-      <td style="text-align: center">Bottom Field, Top Field, in that order</td>
-      <td style="text-align: center">field_seq_flag 为 0</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">5</td>
-      <td style="text-align: center">Top Field, Bottom Field, Top Field, in that order</td>
-      <td style="text-align: center">field_seq_flag 为 0</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">6</td>
-      <td style="text-align: center">Bottom Field, Top Field, Bottom Field, in that order</td>
-      <td style="text-align: center">field_seq_flag 为 0</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">7</td>
-      <td style="text-align: center">Frame doubling</td>
-      <td style="text-align: center">field_seq_flag 为 0, fixed_pic_rate_within_cvs_flag 为 1</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">8</td>
-      <td style="text-align: center">Frame tripling</td>
-      <td style="text-align: center">field_seq_flag 为 0, fixed_pic_rate_within_cvs_flag 为 1</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">9</td>
-      <td style="text-align: center">Top Field paired with previous bottom field in that order</td>
-      <td style="text-align: center">field_seq_flag 为 1</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">10</td>
-      <td style="text-align: center">Bottom Field paired with previous top field in that order</td>
-      <td style="text-align: center">field_seq_flag 为 1</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">11</td>
-      <td style="text-align: center">Top Field paired with next bottom field in that order</td>
-      <td style="text-align: center">field_seq_flag 为 1</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">12</td>
-      <td style="text-align: center">Bottom Field paired with next top field in that order</td>
-      <td style="text-align: center">field_seq_flag 为 1</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>如果码流中存在<code>pic_struct</code>,它必须严格遵守下面的条件：
-—— 同一个<code>CVS</code>中，所有图像的<code>pic_struct</code>的值等于0、7 或 8。
-—— 同一个<code>CVS</code>中，所有图像的<code>pic_struct</code>的值等于1、2、9、10、11 或 12。
-—— 同一个<code>CVS</code>中，所有图像的<code>pic_struct</code>的值等于3、4、5、或 6。</p>
-
-<ul>
-  <li>source_scan_type 如果其值为 1，表明该图像的扫描类型为<code>progressive</code>；如果其值为 0,表明该图像的扫描类型为<code>interlace</code>;如果其值为 2，表明该图像的扫描类型未定义；如果是其他值，解码器可以将其值设为 2。</li>
-</ul>
-
-<p>关于扫描类型的描述，在<code>SPS</code>中的<code>profile_tier_level</code>中也有描述，是通过<code>general_progressive_souce_flag</code>和<code>general_interlaced_source_flag</code>两个语法元素决定的：<br />
-1. 如果<code>general_progressive_souce_flag</code>值为0，并且<code>general_interlaced_source_flag</code>值为1，<code>source_scan_type</code>的值如果存在就该为0，如果不存在，解码器也可以将其设置为0。<br />
-2. 如果<code>general_progressive_souce_flag</code>值为1，并且<code>general_interlaced_source_flag</code>值为0，<code>source_scan_type</code>的值如果存在就该为1，如果不存在，解码器也可以将其设置为1。<br />
-3. 如果<code>general_progressive_souce_flag</code>值为0，并且<code>general_interlaced_source_flag</code>值为0，<code>source_scan_type</code>的值如果存在就该为2，如果不存在，解码器也可以将其设置为2。</p>
-
-<p>针对<code>interlaced</code>码流，解码器必须指定该图像是<code>Top</code>或<code>Bottom</code>，并且说明该码流是<code>Top First</code>或<code>Bottom</code>。具体实现看下面<code>HM</code>中的实现。</p>
-
-<h2 id="hmpicturetiming">HM中的Picture_Timing</h2>
-
-<p>HM 源码中对<code>pic_timing</code>这一 SEI 信息做了比较详细的描述，首先是在 Parse SEI 时获得<code>pic_struct</code>等的信息，之后会根据他的值，对<code>TFF</code>和<code>Field</code>进行赋值，当然HM中对于该值得覆盖也不是很全，只是覆盖到 1 和 2。</p>
-
-<p><figure class='code'><figcaption><span>pic_timing </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">Void</span> <span class="n">SEIReader</span><span class="o">::</span><span class="n">xParseSEIPictureTiming</span><span class="p">(</span><span class="n">SEIPictureTiming</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">sei</span><span class="p">,</span> <span class="n">UInt</span> <span class="n">payloadSize</span><span class="p">,</span> <span class="n">TComSPS</span> <span class="o">*</span><span class="n">sps</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">ostream</span> <span class="o">*</span><span class="n">pDecodedMessageOutputStream</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="err">…</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span> <span class="n">vui</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">getFrameFieldInfoPresentFlag</span><span class="p">()</span> <span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">sei_read_code</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="err">“</span><span class="n">pic_struct</span><span class="err">”</span> <span class="p">);</span>             <span class="n">sei</span><span class="p">.</span><span class="n">m_picStruct</span>            <span class="o">=</span> <span class="n">code</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">sei_read_code</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="err">“</span><span class="n">source_scan_type</span><span class="err">”</span> <span class="p">);</span>       <span class="n">sei</span><span class="p">.</span><span class="n">m_sourceScanType</span>       <span class="o">=</span> <span class="n">code</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span>    <span class="n">code</span><span class="p">,</span> <span class="err">“</span><span class="n">duplicate_flag</span><span class="err">”</span> <span class="p">);</span>         <span class="n">sei</span><span class="p">.</span><span class="n">m_duplicateFlag</span>        <span class="o">=</span> <span class="p">(</span><span class="n">code</span> <span class="o">==</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="err">…</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">Bool</span> <span class="n">TDecTop</span><span class="o">::</span><span class="n">xDecodeSlice</span><span class="p">(</span><span class="n">InputNALUnit</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">nal</span><span class="p">,</span> <span class="n">Int</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">iSkipFrame</span><span class="p">,</span> <span class="n">Int</span> <span class="n">iPOCLastDisplay</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="err">…</span>
-</span><span class='line'>    <span class="n">Bool</span> <span class="n">isField</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Bool</span> <span class="n">isTff</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">m_SEIs</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="c1">// Check if any new Picture Timing SEI has arrived</span>
-</span><span class='line'>  <span class="n">SEIMessages</span> <span class="n">pictureTimingSEIs</span> <span class="o">=</span> <span class="n">extractSeisByType</span> <span class="p">(</span><span class="n">m_SEIs</span><span class="p">,</span> <span class="n">SEI</span><span class="o">::</span><span class="n">PICTURE_TIMING</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">pictureTimingSEIs</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    <span class="n">SEIPictureTiming</span><span class="o">*</span> <span class="n">pictureTiming</span> <span class="o">=</span> <span class="p">(</span><span class="n">SEIPictureTiming</span><span class="o">*</span><span class="p">)</span> <span class="o">*</span><span class="p">(</span><span class="n">pictureTimingSEIs</span><span class="p">.</span><span class="n">begin</span><span class="p">());</span>
-</span><span class='line'>    <span class="n">isField</span> <span class="o">=</span> <span class="p">(</span><span class="n">pictureTiming</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">m_picStruct</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">pictureTiming</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">m_picStruct</span> <span class="o">==</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">isTff</span> <span class="o">=</span>  <span class="p">(</span><span class="n">pictureTiming</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">m_picStruct</span> <span class="o">==</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">//Set Field/Frame coding mode</span>
-</span><span class='line'><span class="n">m_pcPic</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">setField</span><span class="p">(</span><span class="n">isField</span><span class="p">);</span>
-</span><span class='line'><span class="n">m_pcPic</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">setTopField</span><span class="p">(</span><span class="n">isTff</span><span class="p">);</span>
-</span><span class='line'><span class="p">...</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
 ]]></content>
