@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-12-19T23:25:04-08:00</updated>
+  <updated>2017-12-20T01:18:28-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,13 +18,16 @@
     <link href="http://lazybing.github.io/blog/2017/11/13/x264-macroblock-analyse/"/>
     <updated>2017-11-13T07:06:23-08:00</updated>
     <id>http://lazybing.github.io/blog/2017/11/13/x264-macroblock-analyse</id>
-    <content type="html"><![CDATA[
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">帧内预测</a></li>
+</ul>
+
 <p>本文主要记录 X264 中对于<code>x264_macroblock_analyse</code>函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 <br />
 <!--more--></p>
 
 <p>首先看一下<code>x264_macroblock_analyse</code>函数实现过程的大体过程：</p>
 
-<figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
@@ -61,44 +64,43 @@
 <span class="line-number">35</span>
 <span class="line-number">36</span>
 <span class="line-number">37</span>
-</pre></td><td class="code"><pre><code class="C"><span class="line"><span class="kt">void</span> <span class="nf">x264_macroblock_analyse</span><span class="p">(</span><span class="kt">x264_t</span> <span class="o">*</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_qp</span> <span class="o">=</span> <span class="n">x264_ratecontrol_mb_qp</span><span class="p">(</span><span class="n">h</span><span class="p">);</span> <span class="c1">//get QP of the MB</span>
-</span><span class="line">    <span class="p">...</span>
-</span><span class="line">    <span class="n">x264_mb_analyse_init</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_qp</span><span class="p">);</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void x264_macroblock_analyse(x264_t *)
+</span><span class="line">{
+</span><span class="line">    h-&gt;mb.i_qp = x264_ratecontrol_mb_qp(h); //get QP of the MB
+</span><span class="line">    ...
+</span><span class="line">    x264_mb_analyse_init(h, &amp;analysis, h-&gt;mb.i_qp);
 </span><span class="line">
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">sh</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">SLICE_TYPE_I</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">x264_mb_analyse_intra</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">,</span> <span class="n">CONST_MAX</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">sh</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">SLICE_TYPE_P</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">x264_macroblock_probe_pskip</span><span class="p">(</span><span class="n">h</span><span class="p">);</span>
+</span><span class="line">    if(h-&gt;sh.i_type == SLICE_TYPE_I)
+</span><span class="line">    {
+</span><span class="line">        x264_mb_analyse_intra(h, &amp;analysis, CONST_MAX);
+</span><span class="line">    }
+</span><span class="line">    else if(h-&gt;sh.i_type == SLICE_TYPE_P)
+</span><span class="line">    {
+</span><span class="line">        x264_macroblock_probe_pskip(h);
 </span><span class="line">
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_p16x16</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">);</span>
+</span><span class="line">        x264_mb_analyse_inter_p16x16(h, &amp;analysis);
 </span><span class="line">
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_p8x8</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">);</span>
+</span><span class="line">        x264_mb_analyse_inter_p8x8(h, &amp;analysis);
 </span><span class="line">
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_p4x4</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class="line">        x264_mb_analyse_inter_p4x4(h, &amp;analysis, i);
+</span><span class="line">        
+</span><span class="line">        x264_mb_analyse_inter_p8x4(h, &amp;analysis, i);
 </span><span class="line">
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_p8x4</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class="line">        x264_mb_analyse_inter_p4x8(h, &amp;analysis, i);
 </span><span class="line">
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_p4x8</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class="line">        x264_mb_analyse_inter_p16x8(h, &amp;analysis, i_cost);
 </span><span class="line">
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_p16x8</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">,</span> <span class="n">i_cost</span><span class="p">);</span>
+</span><span class="line">        x264_mb_analyse_inter_p8x16(h, &amp;analysis, i_cost);
 </span><span class="line">
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_p8x16</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">,</span> <span class="n">i_cost</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">        <span class="n">x264_me_refine_qpel</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">.</span><span class="n">xxxx</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">sh</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">SLICE_TYPE_B</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_b16x16</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span><span class="p">);</span>
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_b8x8</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span> <span class="p">);</span>
-</span><span class="line">        <span class="n">x264_mb_analyse_inter_b16x8</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">analysis</span> <span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+</span><span class="line">        x264_me_refine_qpel(h, &amp;analysis.xxxx);
+</span><span class="line">    }
+</span><span class="line">    else if(h-&gt;sh.i_type == SLICE_TYPE_B)
+</span><span class="line">    {
+</span><span class="line">        x264_mb_analyse_inter_b16x16(h, &amp;analysis);
+</span><span class="line">        x264_mb_analyse_inter_b8x8( h, &amp;analysis );
+</span><span class="line">        x264_mb_analyse_inter_b16x8( h, &amp;analysis );
+</span><span class="line">    }
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
 
 <p>上面只是给出了该函数中调用的函数，并没有给出实际编码中的逻辑判断。它的实现如下：</p>
 
@@ -112,14 +114,29 @@
 b.调用<code>x264_mb_analyse_inter_p16x16()</code>分析P16x16帧间预测的代价。<br />
 c.调用<code>x264_mb_analyse_inter_p8x8</code>分析P8x8帧间预测的代价。<br />
 d.如果 P8x8 代价值小于 P16x16，则依次对 4 个 8x8 的子宏块分割进行判断： <br />
-&gt; * 调用<code>x264_mb_analyse_inter_p4x4()</code>分析 P4x4 帧间预测的代价。<br />
-&gt; * 如果P4x4代价值小于P8x8，则调用<code>x264_mb_analyse_inter_p8x4()</code>和<code>x264_mb_analyse_inter_p4x8()</code>分析P8x4和P4x8帧间预测的代价。<br />
+ * 调用<code>x264_mb_analyse_inter_p4x4()</code>分析 P4x4 帧间预测的代价。<br />
+ * 如果P4x4代价值小于P8x8，则调用<code>x264_mb_analyse_inter_p8x4()</code>和<code>x264_mb_analyse_inter_p4x8()</code>分析P8x4和P4x8帧间预测的代价。<br />
 e.如果P8x8代价值小于P16x16,调用<code>x264_mb_analyse_inter_p16x8()</code>和<code>x264_mb_analyse_inter_p8x16()</code>分析P16x8和P8x16帧间预测的代价。<br />
 f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块作为 Intra 宏块编码的代价是否小于作为 P 宏块编码的代价。</p>
 </blockquote>
 
 <ol>
   <li>如果当前是B Slice，则进行和 P Slice 类似的处理。</li>
+</ol>
+
+<h2 id="section">帧内预测</h2>
+
+<p>帧内预测模式种，预测块 P 是基于已编码重建块和当前块形成的，对亮度像素来说，P 块用于 4x4 子块或者 16x16 宏块的相关操作。其中 4x4 宏块，有 9 种可选预测模式，适用于
+带有大量细节的图像编码；16x16 宏块适用于比较平坦的图像，该宏块有 4 种预测模式，预测整个 16x16 亮度块。色度块也有 4 种预测模式，与 16x16 亮度块预测模式类似。编码器
+通常会选择使 P 块和编码块之间差异最小的预测模式。</p>
+
+<p>除此之外，还有一种帧内预测模式称为 I_PCM 编码模式。该模式下，编码器直接传输图像像素值，而不经过预测和变换。在一些特殊的情况下，特别是
+图像内容不规则或者量化参数非常低时该模式比常规操作(帧内预测-变换-量化-熵编码)效率更高。I_PCM 模式用于以下目的：</p>
+
+<ol>
+  <li>允许编码器精确的表示像素值</li>
+  <li>提供表示不规则图像内容的准确值，而不引起重大的数据量增加</li>
+  <li>严格限制宏块解码比特数，但不损害编码效率</li>
 </ol>
 
 ]]></content>
