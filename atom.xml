@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-12-20T01:18:28-08:00</updated>
+  <updated>2017-12-21T19:22:18-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -19,11 +19,18 @@
     <updated>2017-11-13T07:06:23-08:00</updated>
     <id>http://lazybing.github.io/blog/2017/11/13/x264-macroblock-analyse</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">帧内预测</a></li>
+  <li><a href="#section" id="markdown-toc-section">宏块分析概述</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">帧内预测</a>    <ul>
+      <li><a href="#intra16x16-" id="markdown-toc-intra16x16-">Intra16x16 预测模式分析</a></li>
+    </ul>
+  </li>
+  <li><a href="#intra4x4-" id="markdown-toc-intra4x4-">Intra4x4 预测模式分析</a></li>
 </ul>
 
 <p>本文主要记录 X264 中对于<code>x264_macroblock_analyse</code>函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 <br />
 <!--more--></p>
+
+<h2 id="section">宏块分析概述</h2>
 
 <p>首先看一下<code>x264_macroblock_analyse</code>函数实现过程的大体过程：</p>
 
@@ -124,7 +131,7 @@ f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块
   <li>如果当前是B Slice，则进行和 P Slice 类似的处理。</li>
 </ol>
 
-<h2 id="section">帧内预测</h2>
+<h2 id="section-1">帧内预测</h2>
 
 <p>帧内预测模式种，预测块 P 是基于已编码重建块和当前块形成的，对亮度像素来说，P 块用于 4x4 子块或者 16x16 宏块的相关操作。其中 4x4 宏块，有 9 种可选预测模式，适用于
 带有大量细节的图像编码；16x16 宏块适用于比较平坦的图像，该宏块有 4 种预测模式，预测整个 16x16 亮度块。色度块也有 4 种预测模式，与 16x16 亮度块预测模式类似。编码器
@@ -138,6 +145,114 @@ f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块
   <li>提供表示不规则图像内容的准确值，而不引起重大的数据量增加</li>
   <li>严格限制宏块解码比特数，但不损害编码效率</li>
 </ol>
+
+<p>关于帧内预测的原理介绍部分，参考<a href="http://lazybing.github.io/blog/2017/06/30/x264-intra-prediction/">X264 源码解析之帧内预测</a>。</p>
+
+<p><code>x264_mb_analyse_intra</code>中关于帧内预测模式的选择判断，整体思路是，遍历所有可能的预测模式，包括 4 种 16x16 的预测模式、9 种 4x4 的预测模式，具体流程如下：</p>
+
+<h3 id="intra16x16-">Intra16x16 预测模式分析</h3>
+<p>对于非<code>AVC-Intra Compat</code>，首先根据当前宏块左边、上边宏块的可参考情况，判断该宏块可能存在的预测模式。
+对于每个宏块，根据重建宏块和预测模式，调用<code>predict_16x16[]</code>做帧内预测;调用<code>x264_pixel_function_t</code>中的<code>mbcmp[]</code>计算编码代价。
+选择最小的编码代价，记录编码代价的值，并记录编码模式。核心代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">for</span><span class="p">(;</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">predict_mode</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_mode</span> <span class="o">=</span> <span class="o">*</span><span class="n">predict_mode</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">b_lossless</span><span class="p">)</span>
+</span><span class="line">        <span class="n">x264_predict_lossless_16x16</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i_mode</span><span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">predict_16x16</span><span class="p">[</span><span class="n">i_mode</span><span class="p">](</span><span class="n">p_dst</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">i_satd</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">pixf</span><span class="p">.</span><span class="n">mbcmp</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">](</span><span class="n">p_dst</span><span class="p">,</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">psr</span><span class="p">,</span> <span class="n">FENC_STRIDE</span><span class="p">)</span> <span class="o">+</span>
+</span><span class="line">        <span class="n">lambda</span> <span class="o">*</span> <span class="n">bs_size_ue</span><span class="p">(</span><span class="n">x264_mb_pred_mode16x16_fix</span><span class="p">[</span><span class="n">i_mode</span><span class="p">]);</span>
+</span><span class="line">    <span class="n">COPY2_IF_LT</span><span class="p">(</span><span class="n">a</span><span class="o">-&gt;</span><span class="n">i_satd_i16x16</span><span class="p">,</span> <span class="n">i_satd</span><span class="p">,</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_predict16x16</span><span class="p">,</span> <span class="n">i_mode</span><span class="p">);</span>
+</span><span class="line">    <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_satd_i16x16_dir</span><span class="p">[</span><span class="n">i_mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="intra4x4-">Intra4x4 预测模式分析</h2>
+
+<p>循环处理 16 个 4x4 的块：首先调用<code>x264_mb_predict_intra4x4_mode()</code>函数根据周围宏块情况判断该宏块可用的预测模式。之后循环计算 9 种 Intra4x4 的帧内预测模式，调用<code>predict_4x4[]</code>函数根据重建帧宏块进行帧内预测，调用<code>x264_pixel_funtion_t</code>中的<code>mbcmp[]</code>计算编码代码。
+获取最小代缴的 Intra4x4 模式。将 16 个 4x4 宏块的最小代价相加，得到总代价。核心代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">const</span> <span class="kt">int8_t</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">=</span> <span class="n">predict_4x4_mode_available</span><span class="p">(</span><span class="n">a</span><span class="o">-&gt;</span><span class="n">b_avoid_topright</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_neighbour4</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">idx</span><span class="p">);</span>
+</span><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">for</span><span class="p">(</span> <span class="p">;</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">predict_mode</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_mode</span> <span class="o">=</span> <span class="o">*</span><span class="n">predict_mode</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">b_lossless</span> <span class="p">)</span>
+</span><span class="line">        <span class="n">x264_predict_lossless_4x4</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">p_dst_by</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">i_mode</span> <span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">predict_4x4</span><span class="p">[</span><span class="n">i_mode</span><span class="p">](</span> <span class="n">p_dst_by</span> <span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">i_satd</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">pixf</span><span class="p">.</span><span class="n">mbcmp</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">](</span> <span class="n">p_dst_by</span><span class="p">,</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">p_src_by</span><span class="p">,</span> <span class="n">FENC_STRIDE</span> <span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">i_pred_mode</span> <span class="o">==</span> <span class="n">x264_mb_pred_mode4x4_fix</span><span class="p">(</span><span class="n">i_mode</span><span class="p">)</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">i_satd</span> <span class="o">-=</span> <span class="n">lambda</span> <span class="o">*</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">i_satd</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class="line">        <span class="p">{</span>
+</span><span class="line">            <span class="n">i_best</span> <span class="o">=</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line">            <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_predict4x4</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_mode</span><span class="p">;</span>
+</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">COPY2_IF_LT</span><span class="p">(</span> <span class="n">i_best</span><span class="p">,</span> <span class="n">i_satd</span><span class="p">,</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_predict4x4</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">i_mode</span> <span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
