@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content=" 宏块分析概述 帧内预测 Intra16x16 预测模式分析 Intra4x4 预测模式分析 本文主要记录 X264 中对于x264_macroblock_analyse函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 ">
+  <meta name="description" content="宏块分析概述 帧内预测 Intra16x16 预测模式分析 Intra4x4 预测模式分析 帧间预测 运动补偿块 运动矢量 MV 预测 本文主要记录 X264 中对于x264_macroblock_analyse函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -105,9 +105,15 @@
   <li><a href="#section" id="markdown-toc-section">宏块分析概述</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">帧内预测</a>    <ul>
       <li><a href="#intra16x16-" id="markdown-toc-intra16x16-">Intra16x16 预测模式分析</a></li>
+      <li><a href="#intra4x4-" id="markdown-toc-intra4x4-">Intra4x4 预测模式分析</a></li>
     </ul>
   </li>
-  <li><a href="#intra4x4-" id="markdown-toc-intra4x4-">Intra4x4 预测模式分析</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">帧间预测</a>    <ul>
+      <li><a href="#section-3" id="markdown-toc-section-3">运动补偿块</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">运动矢量</a></li>
+      <li><a href="#mv-" id="markdown-toc-mv-">MV 预测</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>本文主要记录 X264 中对于<code>x264_macroblock_analyse</code>函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 <br />

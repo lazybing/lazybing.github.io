@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="宏块分析概述 帧内预测 Intra16x16 预测模式分析 Intra4x4 预测模式分析 本文主要记录 X264 中对于x264_macroblock_analyse函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 &hellip;">
+  <meta name="description" content="宏块分析概述 帧内预测 Intra16x16 预测模式分析 Intra4x4 预测模式分析 帧间预测 运动补偿块 运动矢量 MV 预测 本文主要记录 X264 中对于x264_macroblock_analyse函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -102,9 +102,15 @@
   <li><a href="#section" id="markdown-toc-section">宏块分析概述</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">帧内预测</a>    <ul>
       <li><a href="#intra16x16-" id="markdown-toc-intra16x16-">Intra16x16 预测模式分析</a></li>
+      <li><a href="#intra4x4-" id="markdown-toc-intra4x4-">Intra4x4 预测模式分析</a></li>
     </ul>
   </li>
-  <li><a href="#intra4x4-" id="markdown-toc-intra4x4-">Intra4x4 预测模式分析</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">帧间预测</a>    <ul>
+      <li><a href="#section-3" id="markdown-toc-section-3">运动补偿块</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">运动矢量</a></li>
+      <li><a href="#mv-" id="markdown-toc-mv-">MV 预测</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>本文主要记录 X264 中对于<code>x264_macroblock_analyse</code>函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 <br />
@@ -271,7 +277,7 @@ f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块
 </span><span class="line"><span class="p">...</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<h2 id="intra4x4-">Intra4x4 预测模式分析</h2>
+<h3 id="intra4x4-">Intra4x4 预测模式分析</h3>
 
 <p>循环处理 16 个 4x4 的块：首先调用<code>x264_mb_predict_intra4x4_mode()</code>函数根据周围宏块情况判断该宏块可用的预测模式。之后循环计算 9 种 Intra4x4 的帧内预测模式，调用<code>predict_4x4[]</code>函数根据重建帧宏块进行帧内预测，调用<code>x264_pixel_funtion_t</code>中的<code>mbcmp[]</code>计算编码代码。
 获取最小代缴的 Intra4x4 模式。将 16 个 4x4 宏块的最小代价相加，得到总代价。核心代码如下：</p>
@@ -333,6 +339,48 @@ f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块
 </span><span class="line"><span class="p">}</span>
 </span><span class="line"><span class="p">...</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section-2">帧间预测</h2>
+
+<p>帧间预测时指利用视频时间域相关性，使用临近已编码图像像素预测当前图像的像素，以达到有效去除视频时域冗余的目的。
+由于视频序列通常包括较强的时域相关性，因此预测残差值接近于0，将残差信号作为后续模块的输入进行变换、量化、扫描、熵编码，可实现对视频信号的高效压缩。</p>
+
+<p>接下来主要介绍基于<code>Baseline Profile</code>支持的 P 帧预测模式工具以及<code>Main Profile</code>和<code>Extended Profile</code>支持的 B 帧和加权预测等帧间预测工具。</p>
+
+<h3 id="section-3">运动补偿块</h3>
+
+<p>每个宏块(16x16 像素)可分割为 4 种方式：一个 16x16,两个 16x8, 两个 8x16,四个 8x8。其运动补偿也有相应的四种。8x8 模式的每个子宏块还
+可以继续分割，分割方式为：一个 8x8，两个 4x8，两个 8x4，四个 4x4。</p>
+
+<p>每个分割或子宏块都有一个独立的运动补偿。每个 MV 必须被编码、传输，分割的选择也需要编码到压缩码流中。对于大的尺寸而言，MV 选择和分割
+类型只需少量的比特，但运动补偿残差在多细节区域能量将非常高。小尺寸分割运动补偿残差能量低，但需要较多的比特表示 MV 和分割选择。分割
+尺寸的选择影响了压缩性能。整体而言，大的分割尺寸适合平坦的区域，而小尺寸适合多细节区域。</p>
+
+<p>宏块的色度成分(Cr 和 Cb)则为相应亮度的一半(水平和垂直各一半)。色度块采用和亮度块同样的分割模式，只是尺寸减半(水平和垂直方向都减半)。
+例如，8x16 的亮度块相应色度块尺寸为 4x8，8x4 亮度块相应色度块尺寸为 4x2 等等。色度块的 MV 也是通过相应亮度 MV 水平和垂直分量减半而得。</p>
+
+<h3 id="section-4">运动矢量</h3>
+
+<p>帧间编码宏块的每个分割或子宏块都是从参考图像某一相同尺寸区域预测而得。两者之间的差异(MV)对亮度成分采用 1/4 像素精度，色度 1/8 像素精度。
+亚像素位置的亮度和色度像素并不存在于参考图像中，需利用临近已编码点进行内插而得。如果 MV 的垂直和水平分量为正数，则参考块相应像素实际存在，
+如果其中一个或两个为分数，则预测像素要通过参考帧中相应像素内插获得。</p>
+
+<h3 id="mv-">MV 预测</h3>
+
+<p>每个分割 MV 的编码需要相当数目的比特，特别是使用小分割尺寸时。为了减少传输比特数，可利用邻近分割的 MV 较强的相关性，MV 可由邻近已编码分割
+的 MV 预测而得。预测矢量 MVp 基于已计算 MV 和 MVD（预测与当前的差异）并被编码和传送。MVp 则取决于运动补偿尺寸和邻近 MV 的有无。</p>
+
+<p>示例如下：</p>
+
+<p><img src="/images/macroblock_analyse/mv_prediction_macroblock.png" /></p>
+
+<p>E 为当前宏块或宏块分割子宏块。A、B、C 分别为 E 的左、上、右上方的三个相对应块。如果 E 的左边不止一个分割，取其中最上的一个为 A；上方
+不止一个分割时，取最左边一个为 B。</p>
+
+<p>1)  传输分割不包括 16x8 和 8x16 时，MVP 为 A、B、C 分割 MV 的中值；<br />
+2） 16x8 分割，上面部分 MVp 由 B 预测，下面部分 MVp 由 A 预测；<br />
+3） 8x16 分割，左面部分 MVp 由 A 预测，右面部分 MVp 由 B 预测；
+4） skipped MB 类型同 1 。</p>
 
 </div>
 
