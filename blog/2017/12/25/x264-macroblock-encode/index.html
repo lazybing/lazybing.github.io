@@ -113,6 +113,23 @@
 
 <p>该函数主要在<code>x264_slice_write()</code>函数调用，它主要完成了编码器中的变换、量化部分，该函数主要是封装了<code>x264_macroblock_encode_internal()</code>函数，它包括如下几个步骤：</p>
 
+<figure class="code"><figcaption><span>x264_macroblock_encode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_macroblock_encode</span><span class="p">(</span><span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">CHROMA444</span><span class="p">)</span>
+</span><span class="line">        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 <ol>
   <li>如果宏块类型为 PCM 类型，直接存储重建帧数据。</li>
   <li>如果宏块类型为 Skip 类型，调用<code>x264_macroblock_encode_skip()</code>编码 Skip 类型宏块，包括<code>P_SKIP</code>和<code>B_SKIP</code>类型。</li>
