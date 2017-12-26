@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-12-25T20:30:25-08:00</updated>
+  <updated>2017-12-25T21:41:01-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -19,7 +19,11 @@
     <updated>2017-12-25T19:52:38-08:00</updated>
     <id>http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#x264macroblockencode-" id="markdown-toc-x264macroblockencode-">x264_macroblock_encode 概述</a></li>
+  <li><a href="#x264macroblockencode-" id="markdown-toc-x264macroblockencode-">x264_macroblock_encode 概述</a>    <ul>
+      <li><a href="#ipcm-" id="markdown-toc-ipcm-">I_PCM 编码模式</a></li>
+      <li><a href="#pskip--bskip-" id="markdown-toc-pskip--bskip-">P_Skip 模式和 B_Skip 模式编码</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>本文主要记录 X264 中对于<code>x264_macroblock_encode</code>函数的分析，该函数主要变换和量化，对应 X264 中的宏块编码模块。<br />
@@ -37,6 +41,64 @@
   <li>帧间宏块编码，该部分并没有单独的函数完成，而是写在了<code>x264_macroblock_encode_internal</code>函数内部。</li>
   <li>调用<code>x264_mb_encode_chroma()</code>函数编码色度卡。</li>
 </ol>
+
+<h3 id="ipcm-">I_PCM 编码模式</h3>
+
+<p>I_PCM 是一种帧内编码模式，在该模式下，编码器直接传输图像的像素值，而不经过预测和变换。在一些特殊的情况下，特别是图像
+内容不规则或者量化参数非常低时，该模式比常规的操作（帧内预测-变换-量化-编码）效率更高。</p>
+
+<p>I_PCM 模式用于以下目的：</p>
+
+<ol>
+  <li>允许编码器精确地表示像素值。</li>
+  <li>提供表示不规则图像内容的准确性，而不引起重大的数据量增加。</li>
+  <li>严格限制宏块解码比特数，但不降低编码效率。</li>
+</ol>
+
+<p>对 I_PCM 类型的编码，实现代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">I_PCM</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="c1">//if PCM is chosen, we need to store reconstructed frame data</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">p</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="n">plane_count</span><span class="p">;</span> <span class="n">p</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">chroma</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">&gt;&gt;</span> <span class="n">CHROMA_V_SHIFT</span><span class="p">;</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="pskip--bskip-">P_Skip 模式和 B_Skip 模式编码</h3>
+
+<ul>
+  <li>P_Skip 类型宏块：即 COPY 宏块，无像素残差，无运动矢量残差(MVD)。直接利用预测 MV 得到的像素预测值。像素重构值= 像素预测值。</li>
+  <li>B_Skip 类型宏块：无像素残差，无运动矢量残差(MVD)。解码时，通过 Direct 预测模式(时间或空间)计算出前、后向 MV 后，直接利用前、后向 MV 得到像素预测值。像素重构值 = 像素预测值。</li>
+</ul>
 
 ]]></content>
   </entry>
