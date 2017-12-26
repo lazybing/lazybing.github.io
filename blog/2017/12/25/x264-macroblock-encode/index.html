@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>UBoot 源码分析 - 懒人李冰</title>
+  <title>X264 源码解析之x264_macroblock_encode函数 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。 ">
+  <meta name="description" content="x264_macroblock_encode 概述 本文主要记录 X264 中对于x264_macroblock_encode函数的分析，该函数主要变换和量化，对应 X264 中的宏块编码模块。 x264_macroblock_encode 概述 该函数主要在x264_slice_write() &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">UBoot 源码分析</h1>
+      <h1 class="entry-title">X264 源码解析之x264_macroblock_encode函数</h1>
     
     
       <p class="meta">
@@ -91,15 +91,32 @@
 
 
 
-<time class='entry-date' datetime='2015-07-01T07:48:51-07:00'><span class='date'>2015 年 07 月 01 日</span> <span class='time'>7:48 am</span></time>
+<time class='entry-date' datetime='2017-12-25T19:52:38-08:00'><span class='date'>2017 年 12 月 25 日</span> <span class='time'>7:52 pm</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#x264macroblockencode-" id="markdown-toc-x264macroblockencode-">x264_macroblock_encode 概述</a></li>
+</ul>
+
+<p>本文主要记录 X264 中对于<code>x264_macroblock_encode</code>函数的分析，该函数主要变换和量化，对应 X264 中的宏块编码模块。<br />
 <!--more--></p>
+
+<h2 id="x264macroblockencode-">x264_macroblock_encode 概述</h2>
+
+<p>该函数主要在<code>x264_slice_write()</code>函数调用，它主要完成了编码器中的变换、量化部分，该函数主要是封装了<code>x264_macroblock_encode_internal()</code>函数，它包括如下几个步骤：</p>
+
+<ol>
+  <li>如果宏块类型为 PCM 类型，直接存储重建帧数据。</li>
+  <li>如果宏块类型为 Skip 类型，调用<code>x264_macroblock_encode_skip()</code>编码 Skip 类型宏块，包括<code>P_SKIP</code>和<code>B_SKIP</code>类型。</li>
+  <li>如果宏块类型为<code>I_16x16</code>，调用<code>x264_mb_encode_i16x16()</code>编码 Intra 16x16 类型的宏块，该函数除了进行 DCT 变换之外，还对 16 个小块的 DC 系数进行 Hadamard 变换。</li>
+  <li>如果宏块类型为<code>I_4x4</code>，调用<code>x264_mb_encode_i4x4()</code>编码 Intra 4x4 类型的宏块。</li>
+  <li>帧间宏块编码，该部分并没有单独的函数完成，而是写在了<code>x264_macroblock_encode_internal</code>函数内部。</li>
+  <li>调用<code>x264_mb_encode_chroma()</code>函数编码色度卡。</li>
+</ol>
 
 </div>
 
@@ -116,21 +133,15 @@
 
 
 
-<time class='entry-date' datetime='2015-07-01T07:48:51-07:00'><span class='date'>2015 年 07 月 01 日</span> <span class='time'>7:48 am</span></time>
+<time class='entry-date' datetime='2017-12-25T19:52:38-08:00'><span class='date'>2017 年 12 月 25 日</span> <span class='time'>7:52 pm</span></time>
       
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
-  
-</span>
 
 
     </p>
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/" data-via="" data-counturl="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode/" >Tweet</a>
   
   
   
@@ -139,10 +150,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2015/05/01/create-github-blog-using-octopress/" title="Previous Post: 使用Octopress 搭建个人博客">&laquo; 使用Octopress 搭建个人博客</a>
+        <a class="basic-alignment left" href="/blog/2017/11/13/x264-macroblock-analyse/" title="Previous Post: X264 源码解析之x264_macroblock_analyse函数">&laquo; X264 源码解析之x264_macroblock_analyse函数</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2015/09/04/the-hierarchical-of-coding-structure/" title="Next Post: HM源码分析（一）：HEVC编码结构">HM源码分析（一）：HEVC编码结构 &raquo;</a>
       
     </p>
   </footer>
