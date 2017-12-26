@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-12-24T23:43:19-08:00</updated>
+  <updated>2017-12-25T19:00:05-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -29,6 +29,7 @@
       <li><a href="#section-3" id="markdown-toc-section-3">运动补偿块</a></li>
       <li><a href="#section-4" id="markdown-toc-section-4">运动矢量</a></li>
       <li><a href="#mv-" id="markdown-toc-mv-">MV 预测</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">帧间预测函数分析</a></li>
     </ul>
   </li>
 </ul>
@@ -257,8 +258,22 @@ f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块
 
 <p>1)  传输分割不包括 16x8 和 8x16 时，MVP 为 A、B、C 分割 MV 的中值；<br />
 2） 16x8 分割，上面部分 MVp 由 B 预测，下面部分 MVp 由 A 预测；<br />
-3） 8x16 分割，左面部分 MVp 由 A 预测，右面部分 MVp 由 B 预测；
+3） 8x16 分割，左面部分 MVp 由 A 预测，右面部分 MVp 由 B 预测；<br />
 4） skipped MB 类型同 1 。</p>
+
+<h3 id="section-5">帧间预测函数分析</h3>
+
+<p>帧间预测的帧类型大多是 P 帧或 B 帧。对于 P 帧，它的宏块分析流程为：</p>
+
+<ol>
+  <li>调用<code>x264_macroblock_probe_pskip()</code>分析是否为 Skip 宏块，如果是则不进行后面的分析。</li>
+  <li>调用<code>x264_mb_analyse_inter_p16x16()</code>分析 P16x16 帧间预测的代价。</li>
+  <li>调用<code>x264_mb_analyse_inter_p8x8()</code>分析 P8x8 帧间预测的代价。</li>
+  <li>如果 P8x8 代价小于 P16x16, 则依次对 4 个 8x8 的子宏块分割进行判断：<br />
+ i. 调用<code>x264_mb_analyse_inter_p4x4()</code>分析 P4x4 的帧间预测代价。<br />
+ ii. 如果 P4x4 代价值小于 P8x8，则调用<code>x264_mb_analyse_inter_p8x4()</code>和<code>x264_mb_analyse_inter_p4x8()</code>分析 P8x4 和 P4x8 帧间预测的代价。</li>
+  <li>如果 P8x8 代价值小于 P16x8，调用<code>x264_mb_analyse_inter_p16x8()</code>和<code>x264_mb_analyse_inter_p8x16()</code>分析 P16x8 和 P8x16 帧间预测的代价。</li>
+</ol>
 
 ]]></content>
   </entry>
