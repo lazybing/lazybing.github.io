@@ -5,12 +5,38 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>懒人李冰</title>
+  <title>汇编语言实现hello World - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="预测编码的原理 帧内预测的模式 亮度模式的编码 色度模式的编码 帧内预测的过程 相邻参考像素的获取 参考像素的滤波 预测像素的计算 预测编码(Prediction Coding)是指利用已编码的一个或几个样本值，根据某种模型或方法，对
-当前的样本值进行预测， &hellip;">
+  <meta name="description" content="接下来的工作可能要用到汇编语言。 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+.data # section declaration
+msg: .ascii "Hello, world!\n" # &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +45,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/posts/8/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/01/11/assemble-hello-world/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -78,15 +104,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2015/09/07/intra-prcture-prediction/">HM源码分析之帧内编码（一）：帧内编码的原理</a></h1>
+      <h1 class="entry-title">汇编语言实现hello World</h1>
     
     
       <p class="meta">
@@ -95,180 +118,117 @@
 
 
 
-<time class='entry-date' datetime='2015-09-07T20:42:26-07:00'><span class='date'>2015 年 09 月 07 日</span> <span class='time'>8:42 pm</span></time>
+<time class='entry-date' datetime='2018-01-11T21:29:27-08:00'><span class='date'>2018 年 01 月 11 日</span> <span class='time'>9:29 pm</span></time>
         
       </p>
     
   </header>
 
 
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">预测编码的原理</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">帧内预测的模式</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">亮度模式的编码</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">色度模式的编码</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-4" id="markdown-toc-section-4">帧内预测的过程</a>    <ul>
-      <li><a href="#section-5" id="markdown-toc-section-5">相邻参考像素的获取</a></li>
-      <li><a href="#section-6" id="markdown-toc-section-6">参考像素的滤波</a></li>
-      <li><a href="#section-7" id="markdown-toc-section-7">预测像素的计算</a></li>
-    </ul>
-  </li>
-</ul>
+<div class="entry-content">
+<p>接下来的工作可能要用到汇编语言。</p>
 
-<p>预测编码(Prediction Coding)是指利用已编码的一个或几个样本值，根据某种模型或方法，对
-当前的样本值进行预测，并对样本真实值和预测值之间的差值进行编码。</p>
+<!--more-->
 
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">.data                   # section declaration
+</span><span class="line">msg:
+</span><span class="line">    .ascii  "Hello, world!\n"   # our dear string
+</span><span class="line">    len = . - msg               # length of our dear string
+</span><span class="line">
+</span><span class="line">.text                           # section declaration
+</span><span class="line">
+</span><span class="line">                            # we must export the entry point to the ELF linker or
+</span><span class="line">    .global _start          # loader. They conventionally recognize _start as their 
+</span><span class="line">                            # entry point. Use ld -e foo to override the default.
+</span><span class="line">
+</span><span class="line">_start:
+</span><span class="line">
+</span><span class="line"># write our string to stdout
+</span><span class="line">    
+</span><span class="line">    movl $len, %edx        # third argument:message length
+</span><span class="line">    movl $msg, %ecx        # second argument:pointer to message to write
+</span><span class="line">    movl $1, %ebx          # first argument:file handle(stdout) 
+</span><span class="line">    movl $4, %eax          # system call number (sys_write)
+</span><span class="line">    int  $0x80             # call kernel
+</span><span class="line">
+</span><span class="line"># and exit
+</span><span class="line">
+</span><span class="line">    movl $0, %ebx           # first argument:exit code
+</span><span class="line">    movl $1, %eax           # system call number (sys_exit)
+</span><span class="line">    int  $0x80              # call kernel</span></code></pre></td></tr></table></div></figure>
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/09/07/intra-prcture-prediction/">阅读全文;</a>
-    </footer>
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/09/04/the-hierarchical-of-coding-structure/">HM源码分析（一）：HEVC编码结构</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-09-04T09:57:17-07:00'><span class='date'>2015 年 09 月 04 日</span> <span class='time'>9:57 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">编码分层处理架构</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">码流的语法架构</a>    <ul>
-      <li><a href="#vps-syntax-" id="markdown-toc-vps-syntax-">VPS syntax 分析</a></li>
-      <li><a href="#sps-syntax-" id="markdown-toc-sps-syntax-">SPS syntax 分析</a></li>
-      <li><a href="#pps-syntax-" id="markdown-toc-pps-syntax-">PPS syntax 分析</a></li>
-      <li><a href="#sei-syntax-" id="markdown-toc-sei-syntax-">SEI syntax 分析</a></li>
-      <li><a href="#profile-tier-and-level-syntax-" id="markdown-toc-profile-tier-and-level-syntax-">Profile Tier And Level syntax 分析</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/09/04/the-hierarchical-of-coding-structure/">阅读全文;</a>
-    </footer>
   
 
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
 
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/07/01/how-to-boot-up-system/">UBoot 源码分析</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
 
-<time class='entry-date' datetime='2015-07-01T07:48:51-07:00'><span class='date'>2015 年 07 月 01 日</span> <span class='time'>7:48 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/07/01/how-to-boot-up-system/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
+<time class='entry-date' datetime='2018-01-11T21:29:27-08:00'><span class='date'>2018 年 01 月 11 日</span> <span class='time'>9:29 pm</span></time>
       
-  <header>
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hui-bian-xue-xi/'>汇编学习</a>
+  
+</span>
+
+
+    </p>
     
-      <h1 class="entry-title"><a href="/blog/2015/05/01/create-github-blog-using-octopress/">使用Octopress 搭建个人博客</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-05-01T19:47:37-07:00'><span class='date'>2015 年 05 月 01 日</span> <span class='time'>7:47 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#octorpess" id="markdown-toc-octorpess">安装octorpess</a></li>
-  <li><a href="#octopress" id="markdown-toc-octopress">部署octopress</a></li>
-  <li><a href="#section" id="markdown-toc-section">发布新帖</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">基本配置</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">主题修改</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">添加图片</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">添加视频</a></li>
-  <li><a href="#section-5" id="markdown-toc-section-5">添加文章目录</a></li>
-  <li><a href="#section-6" id="markdown-toc-section-6">添加表格</a></li>
-  <li><a href="#mac" id="markdown-toc-mac">多台Mac上同时使用</a>    <ul>
-      <li><a href="#mac-ssh-key--github-" id="markdown-toc-mac-ssh-key--github-">在新的Mac上创建 ssh key 并添加到 github 中。</a></li>
-      <li><a href="#section-7" id="markdown-toc-section-7">配置环境。</a></li>
-      <li><a href="#section-8" id="markdown-toc-section-8">使用技巧</a></li>
-    </ul>
-  </li>
-  <li><a href="#octopresslatex" id="markdown-toc-octopresslatex">octopress中添加Latex支持</a></li>
-</ul>
-
-<p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/01/11/assemble-hello-world/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/01/11/assemble-hello-world/" >Tweet</a>
+  
+  
+  
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/05/01/create-github-blog-using-octopress/">阅读全文;</a>
-    </footer>
-  
 
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2017/12/25/x264-macroblock-encode/" title="Previous Post: X264 源码解析之x264_macroblock_encode函数">&laquo; X264 源码解析之x264_macroblock_encode函数</a>
+      
+      
+    </p>
+  </footer>
+</article>
 
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-    <a class="next" href="/posts/7">Newer &rarr;</a>
-    
-  </div>
 </div>
+
 <aside class="sidebar">
   
     <section>
@@ -342,6 +302,7 @@
 
   
 </aside>
+
 
     </div>
   </div>

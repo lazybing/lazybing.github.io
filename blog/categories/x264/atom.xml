@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-01-13T07:40:14-08:00</updated>
+  <updated>2018-01-13T07:44:25-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -33,15 +33,22 @@
 
 <p>该函数主要在<code>x264_slice_write()</code>函数调用，它主要完成了编码器中的变换、量化部分，该函数主要是封装了<code>x264_macroblock_encode_internal()</code>函数，它包括如下几个步骤：</p>
 
-<p>{% codeblock lang:c x264_macroblock_encode %}
-void x264_macroblock_encode(x264_t *h)
-{
-    if(CHROMA444)
-        x264_macroblock_encode_internal(h, 3, 0);
-    else
-        x264_macroblock_encode_internal(h, 1, 1);
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>x264_macroblock_encode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">x264_macroblock_encode</span><span class="p">(</span><span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">CHROMA444</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <ol>
   <li>如果宏块类型为 PCM 类型，直接存储重建帧数据。</li>
@@ -67,25 +74,41 @@ void x264_macroblock_encode(x264_t *h)
 
 <p>对 I_PCM 类型的编码，实现代码如下：</p>
 
-<p>{% codeblock lang:c %}
-…
-if(h-&gt;mb.i_type == I_PCM)
-{
-    //if PCM is chosen, we need to store reconstructed frame data
-    for(int p = 0; p &lt; plane_count; p++)
-    {
-        h-&gt;mc.copy<a href="h-&gt;mb.pic.p_fdec[p], FDEC_STRIDE, h-&gt;mb.pic.p_fenc[p], FENC_STRIDE, 16">PIXEL_16x16</a>;
-    }
-    if(chroma)
-    {
-        int height = 16 » CHROMA_V_SHIFT;
-        h-&gt;mc.copy<a href="h-&gt;mb.pic.p_fdec[1], FDEC_STRIDE, h-&gt;mb.pic.p_fenc[1], FENC_STRIDE, height">PIXEL_8x8</a>;
-        h-&gt;mc.copy<a href="h-&gt;mb.pic.p_fdec[2], FDEC_STRIDE, h-&gt;mb.pic.p_fenc[2], FENC_STRIDE, height">PIXEL_8x8</a>;
-    }
-    return;
-}
-…
-{% endcodeblock %}</p>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">…</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">I_PCM</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">//if PCM is chosen, we need to store reconstructed frame data</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">p</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">p</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">plane_count</span><span class="p">;</span> <span class="n">p</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;h-&amp;gt;mb.pic.p_fdec[p], FDEC_STRIDE, h-&amp;gt;mb.pic.p_fenc[p], FENC_STRIDE, 16&quot;</span><span class="o">&gt;</span><span class="n">PIXEL_16x16</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">chroma</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="mi">16</span><span class="err"> »</span> <span class="n">CHROMA_V_SHIFT</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;h-&amp;gt;mb.pic.p_fdec[1], FDEC_STRIDE, h-&amp;gt;mb.pic.p_fenc[1], FENC_STRIDE, height&quot;</span><span class="o">&gt;</span><span class="n">PIXEL_8x8</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;h-&amp;gt;mb.pic.p_fdec[2], FDEC_STRIDE, h-&amp;gt;mb.pic.p_fenc[2], FENC_STRIDE, height&quot;</span><span class="o">&gt;</span><span class="n">PIXEL_8x8</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="err">…</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <h3 id="pskip--bskip-">P_Skip 模式和 B_Skip 模式编码</h3>
 
@@ -210,22 +233,37 @@ f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块
 对于每个宏块，根据重建宏块和预测模式，调用<code>predict_16x16[]</code>做帧内预测;调用<code>x264_pixel_function_t</code>中的<code>mbcmp[]</code>计算编码代价。
 选择最小的编码代价，记录编码代价的值，并记录编码模式。核心代码如下：</p>
 
-<p>{% codeblock lang:c %}
-…
-for(; *predict_mode &gt;= 0; predict_mode++)
-{
-    int i_satd;
-    int i_mode = *predict_mode;</p>
-
-<pre><code>if(h-&gt;mb.b_lossless)
-    x264_predict_lossless_16x16(h, 0, i_mode);
-else
-    h-&gt;predict_16x16[i_mode](p_dst);
-
-i_satd = h-&gt;pixf.mbcmp[PIXEL_16x16](p_dst, FDEC_STRIDE, psr, FENC_STRIDE) +
-    lambda * bs_size_ue(x264_mb_pred_mode16x16_fix[i_mode]);
-COPY2_IF_LT(a-&gt;i_satd_i16x16, i_satd, a-&gt;i_predict16x16, i_mode);
-a-&gt;i_satd_i16x16_dir[i_mode] = i_satd; } ... {% endcodeblock %}
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">…</span>
+</span><span class='line'><span class="k">for</span><span class="p">(;</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">predict_mode</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_mode</span> <span class="o">=</span> <span class="o">*</span><span class="n">predict_mode</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mb</span><span class="p">.</span><span class="n">b_lossless</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">x264_predict_lossless_16x16</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i_mode</span><span class="p">);</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'>    <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">predict_16x16</span><span class="p">[</span><span class="n">i_mode</span><span class="p">](</span><span class="n">p_dst</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">i_satd</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pixf</span><span class="p">.</span><span class="n">mbcmp</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">](</span><span class="n">p_dst</span><span class="p">,</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">psr</span><span class="p">,</span> <span class="n">FENC_STRIDE</span><span class="p">)</span> <span class="o">+</span>
+</span><span class='line'>    <span class="n">lambda</span> <span class="o">*</span> <span class="n">bs_size_ue</span><span class="p">(</span><span class="n">x264_mb_pred_mode16x16_fix</span><span class="p">[</span><span class="n">i_mode</span><span class="p">]);</span>
+</span><span class='line'><span class="n">COPY2_IF_LT</span><span class="p">(</span><span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_satd_i16x16</span><span class="p">,</span> <span class="n">i_satd</span><span class="p">,</span> <span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_predict16x16</span><span class="p">,</span> <span class="n">i_mode</span><span class="p">);</span>
+</span><span class='line'><span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_satd_i16x16_dir</span><span class="p">[</span><span class="n">i_mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_satd</span><span class="p">;</span> <span class="p">}</span> <span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
 <h3 id="intra4x4-">Intra4x4 预测模式分析</h3>
@@ -233,33 +271,59 @@ a-&gt;i_satd_i16x16_dir[i_mode] = i_satd; } ... {% endcodeblock %}
 <p>循环处理 16 个 4x4 的块：首先调用<code>x264_mb_predict_intra4x4_mode()</code>函数根据周围宏块情况判断该宏块可用的预测模式。之后循环计算 9 种 Intra4x4 的帧内预测模式，调用<code>predict_4x4[]</code>函数根据重建帧宏块进行帧内预测，调用<code>x264_pixel_funtion_t</code>中的<code>mbcmp[]</code>计算编码代码。
 获取最小代缴的 Intra4x4 模式。将 16 个 4x4 宏块的最小代价相加，得到总代价。核心代码如下：</p>
 
-<p>{% codeblock lang:c %}
-…
-const int8_t *predict_mode = predict_4x4_mode_available(a-&gt;b_avoid_topright, h-&gt;mb.i_neighbour4[idx], idx);
-…
-for( ; *predict_mode &gt;= 0; predict_mode++ )
-{
-    int i_satd;
-    int i_mode = *predict_mode;</p>
-
-<pre><code>if( h-&gt;mb.b_lossless )
-    x264_predict_lossless_4x4( h, p_dst_by, 0, idx, i_mode );
-else
-    h-&gt;predict_4x4[i_mode]( p_dst_by );
-
-i_satd = h-&gt;pixf.mbcmp[PIXEL_4x4]( p_dst_by, FDEC_STRIDE, p_src_by, FENC_STRIDE );
-if( i_pred_mode == x264_mb_pred_mode4x4_fix(i_mode) )
-{
-    i_satd -= lambda * 3;
-    if( i_satd &lt;= 0 )
-    {
-        i_best = i_satd;
-        a-&gt;i_predict4x4[idx] = i_mode;
-        break;
-    }
-}
-
-COPY2_IF_LT( i_best, i_satd, a-&gt;i_predict4x4[idx], i_mode ); } ... {% endcodeblock %}
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">…</span>
+</span><span class='line'><span class="k">const</span> <span class="kt">int8_t</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">=</span> <span class="n">predict_4x4_mode_available</span><span class="p">(</span><span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">b_avoid_topright</span><span class="p">,</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_neighbour4</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">idx</span><span class="p">);</span>
+</span><span class='line'><span class="err">…</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span> <span class="p">;</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">predict_mode</span><span class="o">++</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i_mode</span> <span class="o">=</span> <span class="o">*</span><span class="n">predict_mode</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mb</span><span class="p">.</span><span class="n">b_lossless</span> <span class="p">)</span>
+</span><span class='line'>    <span class="n">x264_predict_lossless_4x4</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">p_dst_by</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">i_mode</span> <span class="p">);</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'>    <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">predict_4x4</span><span class="p">[</span><span class="n">i_mode</span><span class="p">](</span> <span class="n">p_dst_by</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">i_satd</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">pixf</span><span class="p">.</span><span class="n">mbcmp</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">](</span> <span class="n">p_dst_by</span><span class="p">,</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">p_src_by</span><span class="p">,</span> <span class="n">FENC_STRIDE</span> <span class="p">);</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span> <span class="n">i_pred_mode</span> <span class="o">==</span> <span class="n">x264_mb_pred_mode4x4_fix</span><span class="p">(</span><span class="n">i_mode</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">i_satd</span> <span class="o">-=</span> <span class="n">lambda</span> <span class="o">*</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span> <span class="n">i_satd</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">i_best</span> <span class="o">=</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_predict4x4</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_mode</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">COPY2_IF_LT</span><span class="p">(</span> <span class="n">i_best</span><span class="p">,</span> <span class="n">i_satd</span><span class="p">,</span> <span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_predict4x4</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">i_mode</span> <span class="p">);</span> <span class="p">}</span> <span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
 <h2 id="section-2">帧间预测</h2>
@@ -294,7 +358,7 @@ COPY2_IF_LT( i_best, i_satd, a-&gt;i_predict4x4[idx], i_mode ); } ... {% endcode
 
 <p>示例如下：</p>
 
-<p>{% img /images/macroblock_analyse/mv_prediction_macroblock.png %}</p>
+<p><img src="/images/macroblock_analyse/mv_prediction_macroblock.png"></p>
 
 <p>E 为当前宏块或宏块分割子宏块。A、B、C 分别为 E 的左、上、右上方的三个相对应块。如果 E 的左边不止一个分割，取其中最上的一个为 A；上方
 不止一个分割时，取最左边一个为 B。</p>
@@ -342,24 +406,42 @@ COPY2_IF_LT( i_best, i_satd, a-&gt;i_predict4x4[idx], i_mode ); } ... {% endcode
 
 <p>首先看一下，H264 的 SPEC 中关于 Bitstream 中的规定。</p>
 
-<p>{% codeblock lang:c AnndexB %}
-byte_stream_nal_unit(NumBytesInNALunit)
-{
-    while(next_bits(24) != 0x000001 &amp;&amp;
-          next_bits(32) != 0x00000001)
-        leading_zero_8bits //equal to 0x00 f(8)</p>
-
-<pre><code>if(next_bits(24) != 0x000001)
-    zero_byte  //equal to 0x00 f(8)
-
-start_code_prefix_one_3bytes //equal to 0x000001 f(24)
-
-nal_unit(NumBytesInNALunit)
-
-while(more_data_in_byte_stream() &amp;&amp;
-      next_bits(24) != 0x000001 &amp;&amp;
-      next_bits(32) != 0x00000001)
-    trailing_zero_8bits //equal to 0x00 f(8) } {% endcodeblock %}
+<p><figure class='code'><figcaption><span>AnndexB </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">byte_stream_nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">while</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">leading_zero_8bits</span> <span class="c1">//equal to 0x00 f(8)&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">zero_byte</span>  <span class="c1">//equal to 0x00 f(8)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">start_code_prefix_one_3bytes</span> <span class="c1">//equal to 0x000001 f(24)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">nal_unit</span><span class="p">(</span><span class="n">NumBytesInNALunit</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span><span class="p">(</span><span class="n">more_data_in_byte_stream</span><span class="p">()</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">next_bits</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x000001</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">next_bits</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x00000001</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">trailing_zero_8bits</span> <span class="c1">//equal to 0x00 f(8) } </span>
+</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
 <p>SPEC 中定义的解码的部分，因为我们根据上面的描述，可以理出 H264 的大致解析过程：</p>
@@ -398,278 +480,522 @@ int GetAnnexbNALU(NALU_t *nalu);
 
 <p><code>GetAnnexbNALU</code>的定义如下：</p>
 
-<p>{% codeblock lang:c GetAnnexbNALU %}
-int GetAnnexbNALU(NALU_t *nalu)
-{
-  int info2, info3, pos = 0;
-  int StartCodeFound, rewind;
-  char *Buf;
-  int LeadingZero8BitsCount=0, TrailingZero8Bits=0;</p>
-
-<p>if ((Buf = (char*)calloc (nalu-&gt;max_size , sizeof(char))) == NULL) no_mem_exit(“GetAnnexbNALU: Buf”);</p>
-
-<p>//如果start_code前还有数据，丢弃start_code前leading_zero_8bits
-  while(!feof(bits) &amp;&amp; (Buf[pos++]=fgetc(bits))==0);</p>
-
-<p>if(feof(bits))
-  {
-    if(pos==0)
-    return 0;
-    else
-    {
-      printf( “GetAnnexbNALU can’t read start code\n”);
-      free(Buf);
-      return -1;
-    }
-  }</p>
-
-<p>if(Buf[pos-1]!=1)
-  {
-    printf (“GetAnnexbNALU: no Start Code at the begin of the NALU, return -1\n”);
-    free(Buf);
-    return -1;
-  }</p>
-
-<p>if(pos&lt;3)
-  {
-    printf (“GetAnnexbNALU: no Start Code at the begin of the NALU, return -1\n”);
-    free(Buf);
-    return -1;
-  }
-  else if(pos==3)
-  {
-    nalu-&gt;startcodeprefix_len = 3;
-    LeadingZero8BitsCount = 0;
-  }
-  else
-  {
-    LeadingZero8BitsCount = pos-4;
-    nalu-&gt;startcodeprefix_len = 4;
-  }</p>
-
-<p>//the 1st byte stream NAL unit can has leading_zero_8bits, but subsequent ones are not
-  //allowed to contain it since these zeros(if any) are considered trailing_zero_8bits
-  //of the previous byte stream NAL unit.
-  //字节流数据的第一个 NAL 单元才会有leading_zero_8bits;后面的 NALU 不会包含 leading_zero_8bits,
-  //因为这些 leading_zero_8bits 会被看做前一个 NAL 单元后面的 trailing_zero_8bits
-  if(!IsFirstByteStreamNALU &amp;&amp; LeadingZero8BitsCount&gt;0)
-  {
-    printf (“GetAnnexbNALU: The leading_zero_8bits syntax can only be present in the first byte stream NAL unit, return -1\n”);
-    free(Buf);
-    return -1;
-  }
-  IsFirstByteStreamNALU=0;</p>
-
-<p>StartCodeFound = 0;
-  info2 = 0;
-  info3 = 0;</p>
-
-<p>while (!StartCodeFound)
-  {
-    if (feof (bits))
-    {
-      //Count the trailing_zero_8bits
-      while(Buf[pos-2-TrailingZero8Bits]==0)
-        TrailingZero8Bits++;
-      nalu-&gt;len = (pos-1)-nalu-&gt;startcodeprefix_len-LeadingZero8BitsCount-TrailingZero8Bits;
-      memcpy (nalu-&gt;buf, &amp;Buf[LeadingZero8BitsCount+nalu-&gt;startcodeprefix_len], nalu-&gt;len);   <br />
-      nalu-&gt;forbidden_bit = (nalu-&gt;buf[0]»7) &amp; 1;
-      nalu-&gt;nal_reference_idc = (nalu-&gt;buf[0]»5) &amp; 3;
-      nalu-&gt;nal_unit_type = (nalu-&gt;buf[0]) &amp; 0x1f;</p>
-
-<p>// printf (“GetAnnexbNALU, eof case: pos %d nalu-&gt;len %d, nalu-&gt;reference_idc %d, nal_unit_type %d \n”, pos, nalu-&gt;len, nalu-&gt;nal_reference_idc, nalu-&gt;nal_unit_type);</p>
-
-<h1 id="if-trace">if TRACE</h1>
-<p>fprintf (p_trace, “\n\nLast NALU in File\n\n”);
-  fprintf (p_trace, “Annex B NALU w/ %s startcode, len %d, forbidden_bit %d, nal_reference_idc %d, nal_unit_type %d\n\n”,
-    nalu-&gt;startcodeprefix_len == 4?”long”:”short”, nalu-&gt;len, nalu-&gt;forbidden_bit, nalu-&gt;nal_reference_idc, nalu-&gt;nal_unit_type);
-  fflush (p_trace);
-#endif
-      free(Buf);
-      return pos-1;
-    }
-    //找 start_code，先找0x00000001,后找0x000001
-    Buf[pos++] = fgetc (bits);
-    info3 = FindStartCode(&amp;Buf[pos-4], 3);
-    if(info3 != 1)
-      info2 = FindStartCode(&amp;Buf[pos-3], 2);
-    StartCodeFound = (info2 == 1 || info3 == 1);
-  }</p>
-
-<p>//Count the trailing_zero_8bits
-  //计算 trailing_zero_8bits,如果start_code为0x000001,trailing_zero_8bits 肯定不存在
-  if(info3==1)	//if the detected start code is 00 00 01, trailing_zero_8bits is sure not to be present
-  {
-    while(Buf[pos-5-TrailingZero8Bits]==0)
-      TrailingZero8Bits++;
-  }
-  // Here, we have found another start code (and read length of startcode bytes more than we should
-  // have.  Hence, go back in the file
-  rewind = 0;
-  if(info3 == 1)
-    rewind = -4;
-  else if (info2 == 1)
-    rewind = -3;
-  else
-    printf(“ Panic: Error in next start code search \n”);</p>
-
-<p>if (0 != fseek (bits, rewind, SEEK_CUR))
-  {
-    snprintf (errortext, ET_SIZE, “GetAnnexbNALU: Cannot fseek %d in the bit stream file”, rewind);
-    free(Buf);
-    error(errortext, 600);
-  }</p>
-
-<p>// Here the leading zeros(if any), Start code, the complete NALU, trailing zeros(if any)
-  // and the next start code is in the Buf.
-  // The size of Buf is pos, pos+rewind are the number of bytes excluding the next
-  // start code, and (pos+rewind)-startcodeprefix_len-LeadingZero8BitsCount-TrailingZero8Bits
-  // is the size of the NALU.</p>
-
-<p>nalu-&gt;len = (pos+rewind)-nalu-&gt;startcodeprefix_len-LeadingZero8BitsCount-TrailingZero8Bits;
-  memcpy (nalu-&gt;buf, &amp;Buf[LeadingZero8BitsCount+nalu-&gt;startcodeprefix_len], nalu-&gt;len);
-  nalu-&gt;forbidden_bit = (nalu-&gt;buf[0]»7) &amp; 1;
-  nalu-&gt;nal_reference_idc = (nalu-&gt;buf[0]»5) &amp; 3;
-  nalu-&gt;nal_unit_type = (nalu-&gt;buf[0]) &amp; 0x1f;</p>
-
-<p>//printf (“GetAnnexbNALU, regular case: pos %d nalu-&gt;len %d, nalu-&gt;reference_idc %d, nal_unit_type %d \n”, pos, nalu-&gt;len, nalu-&gt;nal_reference_idc, nalu-&gt;nal_unit_type);
-#if TRACE
-  fprintf (p_trace, “\n\nAnnex B NALU w/ %s startcode, len %d, forbidden_bit %d, nal_reference_idc %d, nal_unit_type %d\n\n”,
-    nalu-&gt;startcodeprefix_len == 4?”long”:”short”, nalu-&gt;len, nalu-&gt;forbidden_bit, nalu-&gt;nal_reference_idc, nalu-&gt;nal_unit_type);
-  fflush (p_trace);
-#endif</p>
-
-<p>free(Buf);</p>
-
-<p>return (pos+rewind);
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>GetAnnexbNALU </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">GetAnnexbNALU</span><span class="p">(</span><span class="n">NALU_t</span> <span class="o">*</span><span class="n">nalu</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">info2</span><span class="p">,</span> <span class="n">info3</span><span class="p">,</span> <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">StartCodeFound</span><span class="p">,</span> <span class="n">rewind</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">char</span> <span class="o">*</span><span class="n">Buf</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">LeadingZero8BitsCount</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">TrailingZero8Bits</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span> <span class="p">((</span><span class="n">Buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">calloc</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">max_size</span> <span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">)))</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="n">no_mem_exit</span><span class="p">(</span><span class="err">“</span><span class="nl">GetAnnexbNALU</span><span class="p">:</span> <span class="n">Buf</span><span class="err">”</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//如果start_code前还有数据，丢弃start_code前leading_zero_8bits</span>
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">bits</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">++</span><span class="p">]</span><span class="o">=</span><span class="n">fgetc</span><span class="p">(</span><span class="n">bits</span><span class="p">))</span><span class="o">==</span><span class="mi">0</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">feof</span><span class="p">(</span><span class="n">bits</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">pos</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="n">printf</span><span class="p">(</span> <span class="err">“</span><span class="n">GetAnnexbNALU</span> <span class="n">can</span><span class="err">’</span><span class="n">t</span> <span class="n">read</span> <span class="n">start</span> <span class="n">code</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">!=</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span> <span class="p">(</span><span class="err">“</span><span class="nl">GetAnnexbNALU</span><span class="p">:</span> <span class="n">no</span> <span class="n">Start</span> <span class="n">Code</span> <span class="n">at</span> <span class="n">the</span> <span class="n">begin</span> <span class="n">of</span> <span class="n">the</span> <span class="n">NALU</span><span class="p">,</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">pos</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">3</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span> <span class="p">(</span><span class="err">“</span><span class="nl">GetAnnexbNALU</span><span class="p">:</span> <span class="n">no</span> <span class="n">Start</span> <span class="n">Code</span> <span class="n">at</span> <span class="n">the</span> <span class="n">begin</span> <span class="n">of</span> <span class="n">the</span> <span class="n">NALU</span><span class="p">,</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">pos</span><span class="o">==</span><span class="mi">3</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">LeadingZero8BitsCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">LeadingZero8BitsCount</span> <span class="o">=</span> <span class="n">pos</span><span class="o">-</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//the 1st byte stream NAL unit can has leading_zero_8bits, but subsequent ones are not</span>
+</span><span class='line'>  <span class="c1">//allowed to contain it since these zeros(if any) are considered trailing_zero_8bits</span>
+</span><span class='line'>  <span class="c1">//of the previous byte stream NAL unit.</span>
+</span><span class='line'>  <span class="c1">//字节流数据的第一个 NAL 单元才会有leading_zero_8bits;后面的 NALU 不会包含 leading_zero_8bits,</span>
+</span><span class='line'>  <span class="c1">//因为这些 leading_zero_8bits 会被看做前一个 NAL 单元后面的 trailing_zero_8bits</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">IsFirstByteStreamNALU</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">LeadingZero8BitsCount</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span> <span class="p">(</span><span class="err">“</span><span class="nl">GetAnnexbNALU</span><span class="p">:</span> <span class="n">The</span> <span class="n">leading_zero_8bits</span> <span class="n">syntax</span> <span class="n">can</span> <span class="n">only</span> <span class="n">be</span> <span class="n">present</span> <span class="n">in</span> <span class="n">the</span> <span class="n">first</span> <span class="n">byte</span> <span class="n">stream</span> <span class="n">NAL</span> <span class="n">unit</span><span class="p">,</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">IsFirstByteStreamNALU</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">StartCodeFound</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">info2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">info3</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">StartCodeFound</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">feof</span> <span class="p">(</span><span class="n">bits</span><span class="p">))</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="c1">//Count the trailing_zero_8bits</span>
+</span><span class='line'>      <span class="k">while</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">TrailingZero8Bits</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span><span class="o">-</span><span class="n">LeadingZero8BitsCount</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">memcpy</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">Buf</span><span class="p">[</span><span class="n">LeadingZero8BitsCount</span><span class="o">+</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span><span class="p">],</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">);</span>   <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
+</span><span class='line'>      <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">forbidden_bit</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">»</span><span class="mi">7</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_reference_idc</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">»</span><span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_unit_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mh">0x1f</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// printf (“GetAnnexbNALU, eof case: pos %d nalu-&amp;gt;len %d, nalu-&amp;gt;reference_idc %d, nal_unit_type %d \n”, pos, nalu-&amp;gt;len, nalu-&amp;gt;nal_reference_idc, nalu-&amp;gt;nal_unit_type);&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;if-trace&quot;</span><span class="o">&gt;</span><span class="k">if</span> <span class="n">TRACE</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">fprintf</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">,</span> <span class="err">“\</span><span class="n">n</span><span class="err">\</span><span class="n">nLast</span> <span class="n">NALU</span> <span class="n">in</span> <span class="n">File</span><span class="err">\</span><span class="n">n</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">fprintf</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">,</span> <span class="err">“</span><span class="n">Annex</span> <span class="n">B</span> <span class="n">NALU</span> <span class="n">w</span><span class="o">/</span> <span class="o">%</span><span class="n">s</span> <span class="n">startcode</span><span class="p">,</span> <span class="n">len</span> <span class="o">%</span><span class="n">d</span><span class="p">,</span> <span class="n">forbidden_bit</span> <span class="o">%</span><span class="n">d</span><span class="p">,</span> <span class="n">nal_reference_idc</span> <span class="o">%</span><span class="n">d</span><span class="p">,</span> <span class="n">nal_unit_type</span> <span class="o">%</span><span class="n">d</span><span class="err">\</span><span class="n">n</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span> <span class="o">==</span> <span class="mi">4</span><span class="o">?</span><span class="err">”</span><span class="kt">long</span><span class="err">”</span><span class="o">:</span><span class="err">”</span><span class="kt">short</span><span class="err">”</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">forbidden_bit</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_reference_idc</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_unit_type</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">fflush</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">);</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'>      <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="c1">//找 start_code，先找0x00000001,后找0x000001</span>
+</span><span class='line'>    <span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">++</span><span class="p">]</span> <span class="o">=</span> <span class="n">fgetc</span> <span class="p">(</span><span class="n">bits</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">info3</span> <span class="o">=</span> <span class="n">FindStartCode</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">4</span><span class="p">],</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">info3</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">info2</span> <span class="o">=</span> <span class="n">FindStartCode</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">3</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">StartCodeFound</span> <span class="o">=</span> <span class="p">(</span><span class="n">info2</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">||</span> <span class="n">info3</span> <span class="o">==</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Count the trailing_zero_8bits</span>
+</span><span class='line'>  <span class="c1">//计算 trailing_zero_8bits,如果start_code为0x000001,trailing_zero_8bits 肯定不存在</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">info3</span><span class="o">==</span><span class="mi">1</span><span class="p">)</span>	<span class="c1">//if the detected start code is 00 00 01, trailing_zero_8bits is sure not to be present</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">while</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">5</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">TrailingZero8Bits</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// Here, we have found another start code (and read length of startcode bytes more than we should</span>
+</span><span class='line'>  <span class="c1">// have.  Hence, go back in the file</span>
+</span><span class='line'>  <span class="n">rewind</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="n">info3</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">rewind</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">info2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">rewind</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span> <span class="nl">Panic</span><span class="p">:</span> <span class="n">Error</span> <span class="n">in</span> <span class="n">next</span> <span class="n">start</span> <span class="n">code</span> <span class="n">search</span> <span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">!=</span> <span class="n">fseek</span> <span class="p">(</span><span class="n">bits</span><span class="p">,</span> <span class="n">rewind</span><span class="p">,</span> <span class="n">SEEK_CUR</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="n">snprintf</span> <span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="n">ET_SIZE</span><span class="p">,</span> <span class="err">“</span><span class="nl">GetAnnexbNALU</span><span class="p">:</span> <span class="n">Cannot</span> <span class="n">fseek</span> <span class="o">%</span><span class="n">d</span> <span class="n">in</span> <span class="n">the</span> <span class="n">bit</span> <span class="n">stream</span> <span class="n">file</span><span class="err">”</span><span class="p">,</span> <span class="n">rewind</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">error</span><span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="mi">600</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Here the leading zeros(if any), Start code, the complete NALU, trailing zeros(if any)</span>
+</span><span class='line'>  <span class="c1">// and the next start code is in the Buf.</span>
+</span><span class='line'>  <span class="c1">// The size of Buf is pos, pos+rewind are the number of bytes excluding the next</span>
+</span><span class='line'>  <span class="c1">// start code, and (pos+rewind)-startcodeprefix_len-LeadingZero8BitsCount-TrailingZero8Bits</span>
+</span><span class='line'>  <span class="c1">// is the size of the NALU.&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="o">+</span><span class="n">rewind</span><span class="p">)</span><span class="o">-</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span><span class="o">-</span><span class="n">LeadingZero8BitsCount</span><span class="o">-</span><span class="n">TrailingZero8Bits</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">memcpy</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">Buf</span><span class="p">[</span><span class="n">LeadingZero8BitsCount</span><span class="o">+</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span><span class="p">],</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">forbidden_bit</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">»</span><span class="mi">7</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_reference_idc</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">»</span><span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_unit_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mh">0x1f</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//printf (“GetAnnexbNALU, regular case: pos %d nalu-&amp;gt;len %d, nalu-&amp;gt;reference_idc %d, nal_unit_type %d \n”, pos, nalu-&amp;gt;len, nalu-&amp;gt;nal_reference_idc, nalu-&amp;gt;nal_unit_type);</span>
+</span><span class='line'><span class="cp">#if TRACE</span>
+</span><span class='line'>  <span class="n">fprintf</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">,</span> <span class="err">“\</span><span class="n">n</span><span class="err">\</span><span class="n">nAnnex</span> <span class="n">B</span> <span class="n">NALU</span> <span class="n">w</span><span class="o">/</span> <span class="o">%</span><span class="n">s</span> <span class="n">startcode</span><span class="p">,</span> <span class="n">len</span> <span class="o">%</span><span class="n">d</span><span class="p">,</span> <span class="n">forbidden_bit</span> <span class="o">%</span><span class="n">d</span><span class="p">,</span> <span class="n">nal_reference_idc</span> <span class="o">%</span><span class="n">d</span><span class="p">,</span> <span class="n">nal_unit_type</span> <span class="o">%</span><span class="n">d</span><span class="err">\</span><span class="n">n</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">startcodeprefix_len</span> <span class="o">==</span> <span class="mi">4</span><span class="o">?</span><span class="err">”</span><span class="kt">long</span><span class="err">”</span><span class="o">:</span><span class="err">”</span><span class="kt">short</span><span class="err">”</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">forbidden_bit</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_reference_idc</span><span class="p">,</span> <span class="n">nalu</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_unit_type</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">fflush</span> <span class="p">(</span><span class="n">p_trace</span><span class="p">);</span>
+</span><span class='line'><span class="cp">#endif&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">free</span><span class="p">(</span><span class="n">Buf</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">return</span> <span class="p">(</span><span class="n">pos</span><span class="o">+</span><span class="n">rewind</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>找<code>start_code</code>的定义如下,该函数的参数<code>zeros_in_startcode</code>可能为 3 或 4,寻找<code>0x000001</code>或<code>0x00000001</code>。</p>
 
-<p>{% codeblock lang:c FindStartCode %}
-/<em>!
- <strong>**</strong></em><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>***
- * \brief
- *    returns if new start code is found at byte aligned position buf.
- *    new-startcode is of form N 0x00 bytes, followed by a 0x01 byte.
- *
- *  \return
- *     1 if start-code is found or                      \n
- *     0, indicating that there is no start code
- *
- *  \param Buf
- *     pointer to byte-stream
- *  \param zeros_in_startcode
- *     indicates number of 0x00 bytes in start-code.
- **</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong>**
- */
-static int FindStartCode (unsigned char *Buf, int zeros_in_startcode)
-{
-  int info;
-  int i;</p>
-
-<p>info = 1;
-  for (i = 0; i &lt; zeros_in_startcode; i++)
-    if(Buf[i] != 0)
-      info = 0;</p>
-
-<p>if(Buf[i] != 1)
-    info = 0;
-  return info;
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>FindStartCode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;!</span>
+</span><span class='line'> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;/</span><span class="n">em</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;***</span>
+</span><span class='line'> <span class="o">*</span> <span class="err">\</span><span class="n">brief</span>
+</span><span class='line'> <span class="o">*</span>    <span class="n">returns</span> <span class="k">if</span> <span class="n">new</span> <span class="n">start</span> <span class="n">code</span> <span class="n">is</span> <span class="n">found</span> <span class="n">at</span> <span class="n">byte</span> <span class="n">aligned</span> <span class="n">position</span> <span class="n">buf</span><span class="p">.</span>
+</span><span class='line'> <span class="o">*</span>    <span class="n">new</span><span class="o">-</span><span class="n">startcode</span> <span class="n">is</span> <span class="n">of</span> <span class="n">form</span> <span class="n">N</span> <span class="mh">0x00</span> <span class="n">bytes</span><span class="p">,</span> <span class="n">followed</span> <span class="n">by</span> <span class="n">a</span> <span class="mh">0x01</span> <span class="n">byte</span><span class="p">.</span>
+</span><span class='line'> <span class="o">*</span>
+</span><span class='line'> <span class="o">*</span>  <span class="err">\</span><span class="k">return</span>
+</span><span class='line'> <span class="o">*</span>     <span class="mi">1</span> <span class="k">if</span> <span class="n">start</span><span class="o">-</span><span class="n">code</span> <span class="n">is</span> <span class="n">found</span> <span class="n">or</span>                      <span class="err">\</span><span class="n">n</span>
+</span><span class='line'> <span class="o">*</span>     <span class="mi">0</span><span class="p">,</span> <span class="n">indicating</span> <span class="n">that</span> <span class="n">there</span> <span class="n">is</span> <span class="n">no</span> <span class="n">start</span> <span class="n">code</span>
+</span><span class='line'> <span class="o">*</span>
+</span><span class='line'> <span class="o">*</span>  <span class="err">\</span><span class="n">param</span> <span class="n">Buf</span>
+</span><span class='line'> <span class="o">*</span>     <span class="n">pointer</span> <span class="n">to</span> <span class="n">byte</span><span class="o">-</span><span class="n">stream</span>
+</span><span class='line'> <span class="o">*</span>  <span class="err">\</span><span class="n">param</span> <span class="n">zeros_in_startcode</span>
+</span><span class='line'> <span class="o">*</span>     <span class="n">indicates</span> <span class="n">number</span> <span class="n">of</span> <span class="mh">0x00</span> <span class="n">bytes</span> <span class="n">in</span> <span class="n">start</span><span class="o">-</span><span class="n">code</span><span class="p">.</span>
+</span><span class='line'> <span class="o">**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;**</span>
+</span><span class='line'> <span class="err">*/</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="n">FindStartCode</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">Buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">zeros_in_startcode</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">info</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">info</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">zeros_in_startcode</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">info</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">Buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">info</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">info</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <h2 id="x264--bitstream-">X264 中 Bitstream 的源码分析</h2>
 
 <p><code>X264</code>中关于<code>AnnexB</code>部分的描述主要是在<code>common/bitstream.c</code>中的<code>void x264_bitstream_init(int cpu, x264_bitstream_function_t *pf)</code>完成。
 其中的<code>x264_bitstream_function_t</code>结构体定义如下：</p>
 
-<p>{% codeblock lang:c x264_bitstream_function_t %}
-typedef struct
-{
-    uint8_t <em>(</em>nal_escape) ( uint8_t <em>dst, uint8_t *src, uint8_t *end );
-    void (</em>cabac_block_residual_internal)( dctcoef <em>l, int b_interlaced,
-                                           intptr_t ctx_block_cat, x264_cabac_t *cb );
-    void (</em>cabac_block_residual_rd_internal)( dctcoef <em>l, int b_interlaced,
-                                              intptr_t ctx_block_cat, x264_cabac_t *cb );
-    void (</em>cabac_block_residual_8x8_rd_internal)( dctcoef *l, int b_interlaced,
-                                                  intptr_t ctx_block_cat, x264_cabac_t *cb );
-} x264_bitstream_function_t;
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>x264_bitstream_function_t </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">nal_escape</span><span class="p">)</span> <span class="p">(</span> <span class="kt">uint8_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">dst</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="p">);</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">cabac_block_residual_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class='line'>                                           <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">cabac_block_residual_rd_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class='line'>                                              <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">cabac_block_residual_8x8_rd_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class='line'>                                                  <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class='line'><span class="p">}</span> <span class="kt">x264_bitstream_function_t</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>其中<code>x264_bitstream_init</code>的定义如下：</p>
 
-<p>{% codeblock lang:c X264_bitstream_init %}
-void X264_bitstream_init(int cpu, x264_bitstream_function_t <em>pf)
-{
-    memset(pf, 0, sizeof(</em>pf));
-    pf-&gt;nal_escape = x264_nal_escape_c;
-    pf-&gt;cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2;
-    pf-&gt;cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_sse2;
-    pf-&gt;cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_sse2;
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>X264_bitstream_init </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">X264_bitstream_init</span><span class="p">(</span><span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_bitstream_function_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pf</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">memset</span><span class="p">(</span><span class="n">pf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">pf</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">pf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">nal_escape</span> <span class="o">=</span> <span class="n">x264_nal_escape_c</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">pf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cabac_block_residual_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_internal_sse2</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">pf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cabac_block_residual_rd_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_rd_internal_sse2</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">pf</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cabac_block_residual_8x8_rd_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_8x8_rd_internal_sse2</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>其中的<code>x264_nal_escape_c</code>定义如下：</p>
 
-<p>{% codeblock lang:c x264_nal_escape_c %}
-static uint8_t *x264_nal_escape_c( uint8_t *dst, uint8_t *src, uint8_t *end )
-{
-    if( src &lt; end ) *dst++ = *src++;
-    if( src &lt; end ) *dst++ = *src++;
-    while( src &lt; end )
-    {
-        if( src[0] &lt;= 0x03 &amp;&amp; !dst[-2] &amp;&amp; !dst[-1] )
-            *dst++ = 0x03;
-        *dst++ = *src++;
-    }
-    return dst;
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>x264_nal_escape_c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="nf">x264_nal_escape_c</span><span class="p">(</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span> <span class="n">src</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">end</span> <span class="p">)</span> <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span> <span class="n">src</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">end</span> <span class="p">)</span> <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="n">src</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">end</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span> <span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mh">0x03</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="o">!</span><span class="n">dst</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="o">!</span><span class="n">dst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'>            <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x03</span><span class="p">;</span>
+</span><span class='line'>        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">dst</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>最后，给出 X264 中关于每个 NALU 的编码的实现：</p>
 
-<p>{% codeblock lang:c x264_nal_encode %}
-/<strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**
- * x264_nal_encode:
- **</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong><strong>**</strong>/
-void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal )
-{
-    uint8_t *src = nal-&gt;p_payload;
-    uint8_t *end = nal-&gt;p_payload + nal-&gt;i_payload;
-    uint8_t *orig_dst = dst;</p>
-
-<pre><code>if( h-&gt;param.b_annexb )
-{
-    if( nal-&gt;b_long_startcode )
-        *dst++ = 0x00;
-    *dst++ = 0x00;
-    *dst++ = 0x00;
-    *dst++ = 0x01;
-}
-else /* save room for size later */
-    dst += 4;
-
-/* nal header */
-*dst++ = ( 0x00 &lt;&lt; 7 ) | ( nal-&gt;i_ref_idc &lt;&lt; 5 ) | nal-&gt;i_type;
-
-dst = h-&gt;bsf.nal_escape( dst, src, end );
-int size = (dst - orig_dst) - 4;
-
-/* Write the size header for mp4/etc */
-if( !h-&gt;param.b_annexb )
-{
-    /* Size doesn't include the size of the header we're writing now. */
-    orig_dst[0] = size&gt;&gt;24;
-    orig_dst[1] = size&gt;&gt;16;
-    orig_dst[2] = size&gt;&gt; 8;
-    orig_dst[3] = size&gt;&gt; 0;
-}
-
-nal-&gt;i_payload = size+4;
-nal-&gt;p_payload = orig_dst;
-x264_emms(); } {% endcodeblock %}
+<p><figure class='code'><figcaption><span>x264_nal_encode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">/&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**</span>
+</span><span class='line'> <span class="o">*</span> <span class="nl">x264_nal_encode</span><span class="p">:</span>
+</span><span class='line'> <span class="o">**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;&lt;</span><span class="n">strong</span><span class="o">&gt;**&lt;/</span><span class="n">strong</span><span class="o">&gt;/</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">x264_nal_encode</span><span class="p">(</span> <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">x264_nal_t</span> <span class="o">*</span><span class="n">nal</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span> <span class="o">=</span> <span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">p_payload</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="o">=</span> <span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">p_payload</span> <span class="o">+</span> <span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_payload</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">orig_dst</span> <span class="o">=</span> <span class="n">dst</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span> <span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">b_long_startcode</span> <span class="p">)</span>
+</span><span class='line'>        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x01</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">else</span> <span class="cm">/* save room for size later */</span>
+</span><span class='line'>    <span class="n">dst</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* nal header */</span>
+</span><span class='line'><span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="p">(</span> <span class="mh">0x00</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">7</span> <span class="p">)</span> <span class="o">|</span> <span class="p">(</span> <span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_ref_idc</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">5</span> <span class="p">)</span> <span class="o">|</span> <span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_type</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">dst</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">bsf</span><span class="p">.</span><span class="n">nal_escape</span><span class="p">(</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">end</span> <span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">dst</span> <span class="o">-</span> <span class="n">orig_dst</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/* Write the size header for mp4/etc */</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="cm">/* Size doesn&#39;t include the size of the header we&#39;re writing now. */</span>
+</span><span class='line'>    <span class="n">orig_dst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="mi">24</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">orig_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="mi">16</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">orig_dst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">8</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">orig_dst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_payload</span> <span class="o">=</span> <span class="n">size</span><span class="o">+</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'><span class="n">nal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">p_payload</span> <span class="o">=</span> <span class="n">orig_dst</span><span class="p">;</span>
+</span><span class='line'><span class="n">x264_emms</span><span class="p">();</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
 ]]></content>
@@ -692,42 +1018,65 @@ x264_emms(); } {% endcodeblock %}
 
 <p>首先将<code>frame</code>帧插入到<code>list</code>队列中，实现代码如下：</p>
 
-<p>{% codeblock lang:c x264_frame_push %}
-void x264_frame_push(x264_frame_t **list, x264_frame_t *frame)
-{
-    int i = 0;
-    while(list[i]) i++;
-    list[i] = frame;
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>x264_frame_push </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">x264_frame_push</span><span class="p">(</span><span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span><span class="p">,</span> <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">while</span><span class="p">(</span><span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>从<code>list</code>队列中获取<code>frame</code>帧，实现代码如下：</p>
 
-<p>{% codeblock lang:c x264_frame_pop %}
-x264_frame_t *x264_frame_pop( x264_frame_t **list )
-{
-    x264_frame_t *frame;
-    int i = 0;
-    assert( list[0] );
-    while( list[i+1] ) i++;
-    frame = list[i];
-    list[i] = NULL;
-    return frame;
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>x264_frame_pop </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">x264_frame_t</span> <span class="o">*</span><span class="nf">x264_frame_pop</span><span class="p">(</span> <span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">assert</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">frame</span> <span class="o">=</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">frame</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>当编码帧类型为<code>IDR</code>帧时，需要重置整个参考帧队列，<code>X264</code>中重置参考队列是通过<code>x264_reference_reset</code>函数完成，实现过程即为将<code>reference</code>队列
 所有的参考帧设置为<code>unused</code>队列中的<code>unused</code>帧；实现代码如下：</p>
 
-<p>{% codeblock lang:c x264_reference_reset %}
-static inline void x264_reference_reset( x264_t *h )
-{
-    while( h-&gt;frames.reference[0] )
-        x264_frame_push_unused( h, x264_frame_pop( h-&gt;frames.reference ) );
-    h-&gt;fdec-&gt;i_poc =
-    h-&gt;fenc-&gt;i_poc = 0;
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>x264_reference_reset </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">x264_reference_reset</span><span class="p">(</span> <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+</span><span class='line'>        <span class="n">x264_frame_push_unused</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">x264_frame_pop</span><span class="p">(</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span> <span class="p">)</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">fdec</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_poc</span> <span class="o">=</span>
+</span><span class='line'>    <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">fenc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_poc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
   </entry>
