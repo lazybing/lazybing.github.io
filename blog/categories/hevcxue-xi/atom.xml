@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevcxue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-12-26T05:51:13-08:00</updated>
+  <updated>2018-01-13T07:40:14-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -38,7 +38,7 @@
 如果 RPS 存在在 SPS 中，</p>
 </blockquote>
 
-<p><img src="/images/rps/hevc_rps.png"></p>
+<p>{% img /images/rps/hevc_rps.png %}</p>
 
 <ul>
   <li>inter_ref_pic_set_prediction_flag 值为1</li>
@@ -253,30 +253,19 @@
 
 <p>HM 源码中只是对<code>Recovery_Point</code>这一 SEI 信息做了 parse，但并没有使用解析出来的信息，可以认为 HM 中是不支持 <code>recovery_point</code>的。 其中解析的源码如下：</p>
 
-<p><figure class='code'><figcaption><span>recovery_point </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">Void</span> <span class="n">SEIReader</span><span class="o">::</span><span class="n">xParseSEIRecoveryPoint</span><span class="p">(</span><span class="n">SEIRecoveryPoint</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">sei</span><span class="p">,</span> <span class="n">UInt</span> <span class="n">payloadSize</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">ostream</span> <span class="o">*</span><span class="n">pDecodedMessageOutputStream</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="n">Int</span>  <span class="n">iCode</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">UInt</span> <span class="n">uiCode</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">output_sei_message_header</span><span class="p">(</span><span class="n">sei</span><span class="p">,</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">payloadSize</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">sei_read_svlc</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">iCode</span><span class="p">,</span>  <span class="err">“</span><span class="n">recovery_poc_cnt</span><span class="err">”</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_recoveryPocCnt</span>     <span class="o">=</span> <span class="n">iCode</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="err">“</span><span class="n">exact_matching_flag</span><span class="err">”</span> <span class="p">);</span>   <span class="n">sei</span><span class="p">.</span><span class="n">m_exactMatchingFlag</span>  <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="err">“</span><span class="n">broken_link_flag</span><span class="err">”</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_brokenLinkFlag</span>     <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
-</span><span class='line'>  <span class="n">xParseByteAlign</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c recovery_point %}
+Void SEIReader::xParseSEIRecoveryPoint(SEIRecoveryPoint&amp; sei, UInt payloadSize, std::ostream *pDecodedMessageOutputStream)
+{
+  Int  iCode;
+  UInt uiCode;
+  output_sei_message_header(sei, pDecodedMessageOutputStream, payloadSize);</p>
+
+<p>sei_read_svlc( pDecodedMessageOutputStream, iCode,  “recovery_poc_cnt” );      sei.m_recoveryPocCnt     = iCode;
+  sei_read_flag( pDecodedMessageOutputStream, uiCode, “exact_matching_flag” );   sei.m_exactMatchingFlag  = uiCode;
+  sei_read_flag( pDecodedMessageOutputStream, uiCode, “broken_link_flag” );      sei.m_brokenLinkFlag     = uiCode;
+  xParseByteAlign();
+}
+{% endcodeblock %}</p>
 
 ]]></content>
   </entry>
@@ -416,17 +405,17 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 
 <p>PAR 示例如下：</p>
 
-<p><img src="/images/PAR_DAR_SAR/220px-PAR-1to1.svg.png" title="‘1to1_PAR’" ></p>
+<p>{% img /images/PAR_DAR_SAR/220px-PAR-1to1.svg.png ‘1to1_PAR’ %}</p>
 
-<p><img src="/images/PAR_DAR_SAR/220px-PAR-2to1.svg.png" title="‘2to1_PAR’" ></p>
+<p>{% img /images/PAR_DAR_SAR/220px-PAR-2to1.svg.png ‘2to1_PAR’ %}</p>
 
 <h2 id="dardisplay-aspect-ratio">DAR(Display Aspect Ratio)</h2>
 
 <p>DAR 示例如下：</p>
 
-<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="‘16to9_DAR’" ></p>
+<p>{% img /images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg ‘16to9_DAR’ %}</p>
 
-<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="‘4to3_DAR’" ></p>
+<p>{% img /images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg ‘4to3_DAR’ %}</p>
 
 <h2 id="section">参考资料</h2>
 <ol>

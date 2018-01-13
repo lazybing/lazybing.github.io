@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-12-26T05:51:13-08:00</updated>
+  <updated>2018-01-13T07:40:14-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -47,76 +47,48 @@
 
 <p>实现思路：获取文件字符串的最后一个字符，依次向前寻找<code>.</code>，<code>.</code>后面即为后缀名。</p>
 
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">get_filename_extension</span><span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">ext</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span> <span class="n">filename</span> <span class="p">);</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="o">*</span><span class="n">ext</span> <span class="o">!=</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ext</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'>        <span class="n">ext</span><span class="err">–</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">ext</span> <span class="o">+=</span> <span class="o">*</span><span class="n">ext</span> <span class="o">==</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">ext</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c get_filename_extension %}
+static inline char *get_filename_extension( char *filename )
+{
+    char *ext = filename + strlen( filename );
+    while( *ext != ‘.’ &amp;&amp; ext &gt; filename )
+        ext–;
+    ext += *ext == ‘.’;
+    return ext;
+}
+{% endcodeblock %}</p>
 
 <h3 id="c--1">C++ 语言实现</h3>
 
 <p>实现思路：首先将文件或路径名转换为一个<code>string</code>类，使用它的成员函数<code>rfind</code>找到最后一个<code>.</code>的位置，最后使用<code>substr</code>成员函数返回<code>.</code>后的所有内容，即得后缀名。</p>
 
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="k">using</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">;</span>
-</span><span class='line'><span class="n">string</span> <span class="n">getFileExt</span><span class="p">(</span><span class="k">const</span> <span class="n">string</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">s</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">string</span><span class="o">::</span><span class="n">npos</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="err">“”</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c++ get_filename_extension %}
+using std::string;
+string getFileExt(const string&amp; s)
+{
+    size_t i = s.rfind(‘.’, s.length());
+    if(i != string::npos)
+    {
+        return(s.substr(i+1, s.length() - i));
+    }
+    return (“”);
+}
+{% endcodeblock %}</p>
 
 <h3 id="shell-">Shell 脚本实现</h3>
 
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/sh</span>
-</span><span class='line'><span class="nv">fullfilename</span><span class="o">=</span><span class="nv">$1</span>
-</span><span class='line'><span class="nv">filename</span><span class="o">=</span><span class="k">$(</span>basename “<span class="nv">$fullfilename</span>”<span class="k">)</span>
-</span><span class='line'><span class="nv">fname</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">%.&lt;em&gt;</span><span class="k">}</span>”
-</span><span class='line'><span class="nv">ext</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">##&lt;/em&gt;.</span><span class="k">}</span>”&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;echo “Input File:<span class="nv">$fullfilename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Path:<span class="nv">$filename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Extension:<span class="nv">$fname</span>”
-</span><span class='line'><span class="nb">echo</span> “File Extension without Name:<span class="nv">$ext</span>”
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:sh get_filename_extension %}
+#!/bin/sh
+fullfilename=$1
+filename=$(basename “$fullfilename”)
+fname=”${filename%.<em>}”
+ext=”${filename##</em>.}”</p>
+
+<p>echo “Input File:$fullfilename”
+echo “Filename without Path:$filename”
+echo “Filename without Extension:$fname”
+echo “File Extension without Name:$ext”
+{% endcodeblock %}</p>
 
 <h2 id="section-1">调试信息分级打印</h2>
 
@@ -125,100 +97,52 @@
 
 <p>实现思路：将需要打印的信息级别与默认打印信息级别进行比较，级别高时，将信息打印出来；级别低时，不打印信息。</p>
 
-<p><figure class='code'><figcaption><span>log_level </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-logdefault-2&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LOG_DEFAULT</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">LOG_NONE</span>    <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="cp">#define LOG_ERROR   0</span>
-</span><span class='line'><span class="cp">#define LOG_WARNING 1</span>
-</span><span class='line'><span class="cp">#define LOG_INFO    2</span>
-</span><span class='line'><span class="cp">#define LOG_DEBUG   3&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">Printf</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="kt">va_list</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="kt">char</span> <span class="o">*</span><span class="n">psz_prefix</span><span class="p">;</span>
-</span><span class='line'>   <span class="k">switch</span><span class="p">(</span><span class="n">i_level</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_ERROR</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">error</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_WARNING</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">warning</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_INFO</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">info</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_DEBUG</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">debug</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">brengak</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">default</span><span class="o">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">unknown</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>   <span class="n">vfprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i_level</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">LOG_DEFAULT</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">va_list</span> <span class="n">arg</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">va_start</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">Printf</span><span class="p">(</span><span class="n">i_level</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">va_end</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c log_level %}</p>
+
+<h1 id="define-logdefault-2">define LOG_DEFAULT 2</h1>
+<p>#define LOG_NONE    (-1)
+#define LOG_ERROR   0
+#define LOG_WARNING 1
+#define LOG_INFO    2
+#define LOG_DEBUG   3</p>
+
+<p>void Printf(int i_level, const char *psz_fmt, va_list arg)
+{
+   char *psz_prefix;
+   switch(i_level) 
+   {
+        case LOG_ERROR:
+            psz_prefix = “error”;
+            break;
+        case LOG_WARNING:
+            psz_prefix = “warning”;
+            break;
+        case LOG_INFO:
+            psz_prefix = “info”;
+            break;
+        case LOG_DEBUG:
+            psz_prefix = “debug”;
+            brengak;
+        default:
+            psz_prefix = “unknown”;
+            break;
+   }
+   vfprintf(stderr, psz_fmt, arg);
+}</p>
+
+<p>void LOG_PRINT(int i_level, const char *psz_fmt, …); 
+void LOG_PRINT(int i_level, const char *psz_fmt, …)
+{
+    if(i_level &lt;= LOG_DEFAULT)
+    {
+        va_list arg;
+        va_start(arg, psz_fmt);
+        Printf(i_level, psz_fmt, arg);
+        va_end(arg);
+    }
+}</p>
+
+<p>{% endcodeblock %}</p>
 
 <h2 id="section-2">分析特定格式的文件</h2>
 
@@ -238,52 +162,30 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 
 <p>分析<code>filelist.txt</code>示例代码：</p>
 
-<p><figure class='code'><figcaption><span>parse_filelist </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">char</span> <span class="n">Codec_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Compare_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Release_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Bitstream_Path</span><span class="p">[</span><span class="mi">200</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">filelist</span><span class="p">.</span><span class="n">txt</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">open</span> <span class="n">file</span> <span class="n">fail</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">pFile</span><span class="p">))</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fscanf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="err">“</span><span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">,</span> <span class="n">Compare_Type</span><span class="p">,</span> <span class="n">Release_Type</span><span class="p">,</span> <span class="n">Bitstream_Path</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">HEVC</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">H264</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">H264</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c parse_filelist %}
+char Codec_Type[10];
+char Compare_Type[10];
+char Release_Type[10];
+char Bitstream_Path[200];</p>
+
+<p>FILE *pFile = fopen(“./filelist.txt”, “rb”);
+if(pFile == NULL)
+{
+    fprintf(stderr, “open file fail %s”, strerror(errno));
+}</p>
+
+<p>while(!feof(pFile))
+{
+    fscanf(pFile, “%s %s %s %s”, Codec_Type, Compare_Type, Release_Type, Bitstream_Path);
+}</p>
+
+<p>if(!strcmp(“HEVC”, Codec_Type)) printf(“Codec Type is HEVC\n”);
+if(!strcmp(“H264”, Codec_Type)) printf(“Codec Type is H264\n”);
+…</p>
+
+<p>if(!strcasecmp(“hevc”, Codec_Type)) printf(“Codec Type is HEVC\n”);
+…
+{% endcodeblock %}</p>
 
 <p>注意上面表示出来了通过<code>strcmp</code>来判断<code>Codec_Type</code>的类型，后面的<code>Compare_Type</code>可以用同样的方法来给出。</p>
 
@@ -308,22 +210,15 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 
 <p>关于<code>fopen</code>的使用，通常会判断返回值是否<code>NULL</code>来判断是否打开成功，其实除此之外，还可以继续监测出错的类型<code>errno</code>，并用<code>strerror()</code>函数直接显示出错的具体原因。技巧如下：</p>
 
-<p><figure class='code'><figcaption><span>fopen_tips </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;error.h&gt;&lt;/error.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="n">file_full_path</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Open</span> <span class="n">File</span> <span class="nl">Fail</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c fopen_tips %}
+#include <error.h></error.h></p>
+
+<p>FILE *pFile = fopen(“file_full_path”, “rb”);
+if(pFile == NULL)
+{
+    fprintf(stderr, “Open File Fail:%s\n”, strerror(errno));
+}
+{% endcodeblock %}</p>
 
 ]]></content>
   </entry>
@@ -369,74 +264,39 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 
 <p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：</p>
 
-<p><figure class='code'><figcaption><span>splityuvfile </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>                                                                                                                              <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
-</span><span class='line'>     <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
-</span><span class='line'><span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>{% codeblock lang:c  splityuvfile %}</p>
+
+<p>int split_yuv(char *str, uint height, uint width)                                                                                                                              <br />
+{</p>
+
+<pre><code>FILE *fp;  
+FILE *fpy;
+FILE *fpu;
+FILE *fpv;
+ 
+unsigned char  *buf = (unsigned char *)malloc(height * width * 3 / 2);
+ 
+fp = fopen(str, "r");
+fpy = fopen("y.bin", "wa");
+fpu = fopen("u.bin", "wa");
+fpv = fopen("v.bin", "wa");
+if(!fpv || !fpu || !fpy || !fp){
+     fprintf(stderr, "line %d open file error.\n", __LINE__);
+    return FALSE;
+}
+ 
+fread(buf, 1, height * width * 3 / 2, fp);
+fwrite(buf, 1, height * width , fpy);
+fwrite(buf + height * width, 1, height * width &gt;&gt; 2, fpu);
+fwrite(buf + (uint)(height * width * 5 / 4), 1, height * width &gt;&gt; 2, fpv);
+ 
+fclose(fpv);
+fclose(fpu);
+fclose(fpy);
+fclose(fp);
+free(buf);
+   
+return TRUE; } {% endcodeblock %}
 </code></pre>
 
 <p>上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
@@ -557,20 +417,14 @@ categories: 总结积累
 
 <p><code>_config.yml</code>用于基本配置，包括域名、网站标题、作者等等信息。</p>
 
-<p><figure class='code'><figcaption><span>_config.yml </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">http://yhoursite.com</span>
-</span><span class='line'><span class="l-Scalar-Plain">title</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">My Octopress Blog</span>
-</span><span class='line'><span class="l-Scalar-Plain">subtitle</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">A blogging framework for hackeers.</span>
-</span><span class='line'><span class="l-Scalar-Plain">author</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Your Name</span>
-</span><span class='line'><span class="l-Scalar-Plain">simple_search</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">https://www.google.com/search</span>
-</span><span class='line'><span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock _config.yml %}
+url: http://yhoursite.com
+title: My Octopress Blog
+subtitle: A blogging framework for hackeers.
+author: Your Name
+simple_search: https://www.google.com/search
+description: 
+{% endcodeblock %}</p>
 
 <p>汉化”Categories”, 在<code>_config.yml</code>文件中，添加下面一行代码：
 <code>
@@ -606,10 +460,11 @@ excerpt_link:"Read on"
   </li>
 </ol>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;img src="/images/meinvp.png"></span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock %}
+{% img /images/meinvp.png %}
+{% endcodeblock %}</p>
 
-<p><img src="/images/meinvping.png"></p>
+<p>{% img /images/meinvping.png %}</p>
 
 <p>更多技巧，请参见 Octopress 官网提供的<a href="http://octopress.org/docs/plugins/image-tag/">技术支持</a>。</p>
 
@@ -618,60 +473,35 @@ excerpt_link:"Read on"
 <p>在写 blog 的过程中，经常需要在博客里添加视频。在此记录添加 YouKu 视频的方法。
 首先添加 ruby 插件，添加文件<code>octopress/plugins/youku.rb</code>，代码如下：</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>class Youku &lt; Liquid::Tag&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>def initialize(tagName, markup, tokens)
-</span><span class='line'>  super&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>@params = markup.split(“ “)
-</span><span class='line'>  if @params.count &gt;= 1
-</span><span class='line'>    @id = @params[0]
-</span><span class='line'>    if @params.count &gt;= 3
-</span><span class='line'>      @width = @params[1]
-</span><span class='line'>      @height = @params[2]
-</span><span class='line'>    else
-</span><span class='line'>      @width = 560
-</span><span class='line'>      @height = 420
-</span><span class='line'>    end
-</span><span class='line'>  else
-</span><span class='line'>    raise “No Youku ID provided in the "youku" tag”  &lt;br />
-</span><span class='line'>  end
-</span><span class='line'>end&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>def render(context)
-</span><span class='line'># “&lt;iframe height=498 width=510 src=”http://player.youku.com/embed/XNTEzNzcwNDI0” frameborder=0 allowfullscreen&gt;&lt;/iframe&gt;”
-</span><span class='line'>“&lt;iframe style="margin:0 auto; display: block" height="#{@height}" width="#{@width}" src="http://player.youku.com/embed/#{@id}?color=white&amp;theme=light"&gt;&lt;/iframe&gt;”
-</span><span class='line'>end&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>Liquid::Template.register_tag “youku”, self
-</span><span class='line'>end</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock %}
+class Youku &lt; Liquid::Tag</p>
+
+<p>def initialize(tagName, markup, tokens)
+  super</p>
+
+<p>@params = markup.split(“ “)
+  if @params.count &gt;= 1
+    @id = @params[0]
+    if @params.count &gt;= 3
+      @width = @params[1]
+      @height = @params[2]
+    else
+      @width = 560
+      @height = 420
+    end
+  else
+    raise “No Youku ID provided in the "youku" tag”  <br />
+  end
+end</p>
+
+<p>def render(context)
+# “&lt;iframe height=498 width=510 src=”http://player.youku.com/embed/XNTEzNzcwNDI0” frameborder=0 allowfullscreen&gt;&lt;/iframe&gt;”
+“&lt;iframe style="margin:0 auto; display: block" height="#{@height}" width="#{@width}" src="http://player.youku.com/embed/#{@id}?color=white&amp;theme=light"&gt;&lt;/iframe&gt;”
+end</p>
+
+<p>Liquid::Template.register_tag “youku”, self
+end
+{% endcodeblock %}</p>
 
 <p>添加完上述文件后，就可添加 youku 视频文件了，方法是在需要添加视频的位置添加如下 Tag：</p>
 
@@ -681,7 +511,7 @@ excerpt_link:"Read on"
 
 <p>示例如下:</p>
 
-<p><iframe style="margin:0 auto; display: block" height="586" width="720" src="http://player.youku.com/embed/XNDQ4ODQxNTI0?color=white&theme=light"></iframe></p>
+<p>{% youku XNDQ4ODQxNTI0 720 586 %}</p>
 
 <h2 id="section-5">添加文章目录</h2>
 
@@ -843,70 +673,39 @@ $ git pull origin master  # update the local master branch
 <ol>
   <li>首先要安装 kramdown,安装命令：gem install kramdown</li>
   <li>在<code>source/_includes/custom/footer.html</code>添加如下代码：<br />
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;!-- MathJax -->&lt;br />
-</span><span class='line'>&lt;script type="text/x-mathjax-config">  
-</span><span class='line'> MathJax.Hub.Config({  
-</span><span class='line'>                    tex2jax: {  
-</span><span class='line'>                    inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
-</span><span class='line'>                    processEscapes: true  
-</span><span class='line'>                    }  
-</span><span class='line'>                    });  
-</span><span class='line'> &lt;/script>&lt;/li>
-</span><span class='line'>&lt;/ol>
-</span><span class='line'>
-</span><span class='line'>&lt;script type="text/x-mathjax-config">  
-</span><span class='line'>    MathJax.Hub.Config({  
-</span><span class='line'>                       tex2jax: {  
-</span><span class='line'>                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
-</span><span class='line'>                       }  
-</span><span class='line'>                       });  
-</span><span class='line'>    &lt;/script>
-</span><span class='line'>
-</span><span class='line'>&lt;script type="text/x-mathjax-config">  
-</span><span class='line'>    MathJax.Hub.Queue(function() {  
-</span><span class='line'>                      var all = MathJax.Hub.getAllJax(), i;  
-</span><span class='line'>                      for(i=0; i &lt; all.length; i += 1) {  
-</span><span class='line'>                      all[i].SourceElement().parentNode.className += ' has-jax';  
-</span><span class='line'>                      }  
-</span><span class='line'>                      });  
-</span><span class='line'>    &lt;/script>
-</span><span class='line'>
-</span><span class='line'>&lt;script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
-</span><span class='line'>    &lt;/script>
-</span><span class='line'>
-</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
+{% codeblock %}
+<!-- MathJax --><br />
+<script type="text/x-mathjax-config">  
+ MathJax.Hub.Config({  
+                    tex2jax: {  
+                    inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                    processEscapes: true  
+                    }  
+                    });  
+ </script></li>
+</ol>
+
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>
+
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>
+
+<p>{% endcodeblock %}</p>
 
 <p>这样就引入了 MathJax 的 js 包。<br />
 3. 在<code>_config.yml</code>文件中，用<code>markdown: kramdown</code>替换<code>markdown: rdiscount</code>。</p>
