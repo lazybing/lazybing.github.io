@@ -189,7 +189,18 @@ E 为当前宏块或宏块分割子宏块。A、B、C 分别为 E 的左、上�
 
 1)  传输分割不包括 16x8 和 8x16 时，MVP 为 A、B、C 分割 MV 的中值；  
 2） 16x8 分割，上面部分 MVp 由 B 预测，下面部分 MVp 由 A 预测；  
-3） 8x16 分割，左面部分 MVp 由 A 预测，右面部分 MVp 由 B 预测；
+3） 8x16 分割，左面部分 MVp 由 A 预测，右面部分 MVp 由 B 预测；  
 4） skipped MB 类型同 1 。  
 
+### 帧间预测函数分析  
+
+帧间预测的帧类型大多是 P 帧或 B 帧。对于 P 帧，它的宏块分析流程为：  
+
+1. 调用`x264_macroblock_probe_pskip()`分析是否为 Skip 宏块，如果是则不进行后面的分析。  
+2. 调用`x264_mb_analyse_inter_p16x16()`分析 P16x16 帧间预测的代价。  
+3. 调用`x264_mb_analyse_inter_p8x8()`分析 P8x8 帧间预测的代价。  
+4. 如果 P8x8 代价小于 P16x16, 则依次对 4 个 8x8 的子宏块分割进行判断：  
+    i. 调用`x264_mb_analyse_inter_p4x4()`分析 P4x4 的帧间预测代价。  
+    ii. 如果 P4x4 代价值小于 P8x8，则调用`x264_mb_analyse_inter_p8x4()`和`x264_mb_analyse_inter_p4x8()`分析 P8x4 和 P4x8 帧间预测的代价。  
+5. 如果 P8x8 代价值小于 P16x8，调用`x264_mb_analyse_inter_p16x8()`和`x264_mb_analyse_inter_p8x16()`分析 P16x8 和 P8x16 帧间预测的代价。  
 

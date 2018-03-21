@@ -129,6 +129,10 @@ layout 用于分割窗口，可以一边查看代码，一边测试。主要有�
 * Ctrl+x,再按2：双窗口模式，显示两个窗口
 * Ctrl+x,再按a：回到传统模式，即退出 layout, 回到执行 layout 之前的调试窗口
 
+### 问题汇总
+
+1. 在工作中经常遇到把编译处的`.o`或`.bin`可执行文件，拿到别的路径下运行、Debug，经常遇到`GDB`找不到`debug src info`的情况，此时可以通过`directory`命令指定寻找的路径。
+
 ### 参考文献
 
 1. [GNU Debugger Tutorial](http://www.tutorialspoint.com/gnu_debugger/index.htm)  
