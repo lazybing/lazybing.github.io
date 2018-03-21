@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-03-21T07:00:16-07:00</updated>
+  <updated>2018-03-21T08:27:51-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,248 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ELF格式分析手册]]></title>
+    <link href="http://lazybing.github.io/blog/2018/03/21/elf-format-tutorial/"/>
+    <updated>2018-03-21T07:30:48-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/03/21/elf-format-tutorial</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#elf-data-type" id="markdown-toc-elf-data-type">ELF Data Type</a></li>
+  <li><a href="#the-elf-header" id="markdown-toc-the-elf-header">The ELF Header</a></li>
+  <li><a href="#define-elfmag0----0x7f---eidenteimag0" id="markdown-toc-define-elfmag0----0x7f---eidenteimag0">define ELFMAG0    0x7F   //e_ident[EI_MAG0]</a></li>
+  <li><a href="#define-elfdata2lsb-1---little-endian" id="markdown-toc-define-elfdata2lsb-1---little-endian">define ELFDATA2LSB (1)   //Little Endian</a></li>
+  <li><a href="#checking-the-elf-header" id="markdown-toc-checking-the-elf-header">Checking the ELF Header</a></li>
+  <li><a href="#loading-the-elf-file" id="markdown-toc-loading-the-elf-file">Loading the ELF File</a></li>
+</ul>
+
+<h1 id="elf-data-type">ELF Data Type</h1>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdint.h&gt;</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">uint16_t</span> <span class="n">Elf32_Half</span><span class="p">;</span>    <span class="c1">//Unsigned half int</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Off</span><span class="p">;</span>     <span class="c1">//Unsigned offset</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Addr</span><span class="p">;</span>    <span class="c1">//Unsigned address</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Word</span><span class="p">;</span>    <span class="c1">//Unsigned int</span>
+</span><span class='line'><span class="k">typedef</span> <span class="kt">int32_t</span>  <span class="n">Elf32_Sword</span><span class="p">;</span>   <span class="c1">//Signed int</span>
+</span></code></pre></td></tr></table></div></figure></stdint.h></p>
+
+<h1 id="the-elf-header">The ELF Header</h1>
+
+<p>每个 ELF 格式文件都有位于文件开始的头部<code>Header</code>。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define ELF_NIDENT 16</span>
+</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span><span class="p">{</span>
+</span><span class='line'>    <span class="kt">uint8_t</span>     <span class="n">e_ident</span><span class="p">[</span><span class="n">ELF_NIDENT</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_type</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_machine</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Word</span>  <span class="n">e_version</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Addr</span>  <span class="n">e_entry</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Off</span>   <span class="n">e_phoff</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Off</span>   <span class="n">e_shoff</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_phoff</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shoff</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_phentsize</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_phnum</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shentsize</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shnum</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shstrndx</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="n">ELF32_Ehdr</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">enum</span> <span class="n">Elf_Ident</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">EI_MAG0</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//0x7F</span>
+</span><span class='line'>    <span class="n">EI_MAG1</span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//‘E’</span>
+</span><span class='line'>    <span class="n">EI_MAG2</span>    <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="c1">//‘L’</span>
+</span><span class='line'>    <span class="n">EI_MAG3</span>    <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="c1">//‘F’</span>
+</span><span class='line'>    <span class="n">EI_CLASS</span>   <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="c1">//Architecture(32/64)</span>
+</span><span class='line'>    <span class="n">EI_DATA</span>    <span class="o">=</span> <span class="mi">5</span><span class="p">,</span><span class="c1">//Byte Order</span>
+</span><span class='line'>    <span class="n">EI_VERSION</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="c1">//ELF Version</span>
+</span><span class='line'>    <span class="n">EI_OSABI</span>   <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="c1">//OS Specific</span>
+</span><span class='line'>    <span class="n">EI_ABIVERSION</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="c1">//OS Specific</span>
+</span><span class='line'>    <span class="n">EI_PAD</span>        <span class="o">=</span> <span class="mi">9</span>  <span class="c1">//Padding</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-elfmag0----0x7f---eidenteimag0&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">ELFMAG0</span>    <span class="mh">0x7F</span>   <span class="c1">//e_ident[EI_MAG0]&lt;/h1&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">ELFMAG1</span>    <span class="err">‘</span><span class="n">E</span><span class="err">’</span>    <span class="c1">//e_ident[EI_MAG1]</span>
+</span><span class='line'><span class="cp">#define ELFMAG2    ‘L’    </span><span class="c1">//e_ident[EI_MAG2]</span>
+</span><span class='line'><span class="cp">#define ELFMAG3    ‘F’    </span><span class="c1">//e_ident[EI_MAG3]&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-elfdata2lsb-1---little-endian&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">ELFDATA2LSB</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>   <span class="c1">//Little Endian&lt;/h1&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">ELFCLASS32</span>  <span class="p">(</span><span class="mi">1</span><span class="p">)</span>   <span class="c1">//32-bit Architecture</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">enum</span> <span class="n">Elf_Type</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">ET_NONE</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//Unknown Type</span>
+</span><span class='line'>    <span class="n">ET_REL</span>     <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//Relocatable File</span>
+</span><span class='line'>    <span class="n">ET_EXEC</span>    <span class="o">=</span> <span class="mi">2</span>  <span class="c1">//Executable File</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="cp">#define EM_386     (3) </span><span class="c1">//x86 Machine Type</span>
+</span><span class='line'><span class="cp">#define EV_CURRENT (1) </span><span class="c1">//ELF Current Version</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h1 id="checking-the-elf-header">Checking the ELF Header</h1>
+
+<p>在对<code>ELF</code>文件进行加载、链接、重定向或其他操作之前，首先要确保机器是否支持上述的操作。
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">bool</span> <span class="nf">elf_check_file</span><span class="p">(</span><span class="n">Elf32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">hdr</span><span class="p">)</span> <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG0</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG0</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG1</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG1</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG2</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG2</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG3</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG3</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG2</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">bool</span> <span class="nf">elf_check_supported</span><span class="p">(</span><span class="n">ELF32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">elf_check_file</span><span class="p">(</span><span class="n">hdr</span><span class="p">)){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Invalid</span> <span class="n">ELF</span> <span class="n">File</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_CLASS</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFCLASS32</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">Class</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_DATA</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFDATA2LSB</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">byte</span> <span class="n">order</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_machine</span> <span class="o">!=</span> <span class="n">EM_386</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">target</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_VERSION</span><span class="p">]</span> <span class="o">!=</span> <span class="n">EV_CURRENT</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">version</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_REL</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_EXEC</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">type</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h1 id="loading-the-elf-file">Loading the ELF File</h1>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[编程小技巧]]></title>
@@ -452,466 +694,6 @@ interlace 的摆放格式如图：</p>
     <id>http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system</id>
     <content type="html"><![CDATA[<p>公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。
 <!--more--></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[使用Octopress 搭建个人博客]]></title>
-    <link href="http://lazybing.github.io/blog/2015/05/01/create-github-blog-using-octopress/"/>
-    <updated>2015-05-01T19:47:37-07:00</updated>
-    <id>http://lazybing.github.io/blog/2015/05/01/create-github-blog-using-octopress</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#octorpess" id="markdown-toc-octorpess">安装octorpess</a></li>
-  <li><a href="#octopress" id="markdown-toc-octopress">部署octopress</a></li>
-  <li><a href="#section" id="markdown-toc-section">发布新帖</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">基本配置</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">主题修改</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">添加图片</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">添加视频</a></li>
-  <li><a href="#section-5" id="markdown-toc-section-5">添加文章目录</a></li>
-  <li><a href="#section-6" id="markdown-toc-section-6">添加表格</a></li>
-  <li><a href="#mac" id="markdown-toc-mac">多台Mac上同时使用</a>    <ul>
-      <li><a href="#mac-ssh-key--github-" id="markdown-toc-mac-ssh-key--github-">在新的Mac上创建 ssh key 并添加到 github 中。</a></li>
-      <li><a href="#section-7" id="markdown-toc-section-7">配置环境。</a></li>
-      <li><a href="#section-8" id="markdown-toc-section-8">使用技巧</a></li>
-    </ul>
-  </li>
-  <li><a href="#octopresslatex" id="markdown-toc-octopresslatex">octopress中添加Latex支持</a></li>
-</ul>
-
-<p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
-<!--more--></p>
-
-<h2 id="octorpess">安装octorpess</h2>
-
-<p>首先，安装<code>git</code><code>ruby</code>,注册 github 账号。</p>
-
-<p>然后，在终端(Terminal)下执行如下命令：<br />
-<code>
-git clone git://github.com/imathis/octopress.git octopress
-cd octopress
-gem install bundler
-bundle install
-rake install // 安装默认主题
-</code>
-本地安装完毕后，通过<code>rake preview</code>预览安装效果。执行完<code>rake preview</code>后，在浏览器
-中输入<code>http://localhost:4000</code>即可查看搭建效果。</p>
-
-<h2 id="octopress">部署octopress</h2>
-
-<p>登录注册的 github 账号，选择<code>New Repository</code>,进入新建库页面后，
-在<code>Repository name</code>一栏填<code>[your_username].github.io</code>,[your_username]
-是 github 上的用户名，此处的格式一定要正确，否则部署会失败。
-之后点击<code>Create repository</code>按钮提交。</p>
-
-<p>如果创建仓库成功，会有一个 SSH 地址，形如<code>git@github.com:[your_name]/[your_name].github.io.git</code>,后面会用到该地址。</p>
-
-<p>终端下执行如下命令:<br />
-<code>
-cd octopress
-rake setup_github_pages
-</code>
-执行完上面两条命令后，需要把刚刚生成的 SSH 地址粘贴到此处。
-继续执行：</p>
-
-<p><code>
-rake generate
-rake deploy
-</code>
-其中<code>rake generate</code>用来生成页面，<code>rake deploy</code>用来部署页面。上述完成后，
-即可使用<code>http://[your_username].github.io</code>来访问页面。</p>
-
-<p>最后要记得把源文件全部发布到<code>source</code>分支下面。通过下面命令完成:<br />
-<code>
-git add .
-git commit -m "commit message"
-git push origin source
-</code></p>
-
-<h2 id="section">发布新帖</h2>
-
-<p>发布新帖的两种方法:<br />
-方法一是在命令行下执行如下命令：<br />
-<code>
-cd octopress
-rake new_post["Post Title"]
-</code>
-其中的<code>Post Title</code>就是你想要的文章标题，然后会有一个名为<code>yyyy-mm-dd-Post_Title.markdown</code>的文件在<code>octopress/source_posts</code>目录下生成，其中<code>yyy-mm-dd</code>是当时的日期。之后打开文件，即可编辑博客。</p>
-
-<p>方法二是直接在<code>octopress/source_posts</code>文件下，生成一个格式相同的文件即可。</p>
-
-<p>生成的文件格式头如下<br />
-```
-—
-layout: post
-title: “使用Octopress 搭建个人博客”
-date: 2015-05-01 19:47:37 -0700
-comments: true
-categories: 总结积累
-—</p>
-
-<p>```</p>
-
-<h2 id="section-1">基本配置</h2>
-
-<p><code>_config.yml</code>用于基本配置，包括域名、网站标题、作者等等信息。</p>
-
-<p><figure class='code'><figcaption><span>_config.yml </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">http://yhoursite.com</span>
-</span><span class='line'><span class="l-Scalar-Plain">title</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">My Octopress Blog</span>
-</span><span class='line'><span class="l-Scalar-Plain">subtitle</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">A blogging framework for hackeers.</span>
-</span><span class='line'><span class="l-Scalar-Plain">author</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Your Name</span>
-</span><span class='line'><span class="l-Scalar-Plain">simple_search</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">https://www.google.com/search</span>
-</span><span class='line'><span class="l-Scalar-Plain">description</span><span class="p-Indicator">:</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>汉化”Categories”, 在<code>_config.yml</code>文件中，添加下面一行代码：
-<code>
-category_tile_prefix: “分类：”
-</code></p>
-
-<p>汉化“Read On-&gt;”按钮:当文章只是显示摘要，点击”Read on-&gt;”
-后才可查看全文时，可以通过在文章中插入如下内容：
-<code>
-&lt;!--more--&gt;
-</code></p>
-
-<p>在文章中找到如下一行，把其中的”Read on”改为”继续阅读”。
-<code>
-excerpt_link:"Read on"
-</code></p>
-
-<h2 id="section-2">主题修改</h2>
-
-<p>网站底部：一般来讲网站底部会有一些网站的描述信息，比如版权声明、网站
-主题，网站使用的系统等等，要修改这部分内容，直接打开<code>source/_includes/custom/foot.html</code>修改相应部分即可。</p>
-
-<h2 id="section-3">添加图片</h2>
-
-<p>在写 blog 的过程中，经常需要用到插入图片。示例如下：</p>
-
-<ol>
-  <li>
-    <p>把图片 <code>meinv.png</code> copy 到 <code>source/images</code>下。</p>
-  </li>
-  <li>
-    <p>在需要的位置添加代码.</p>
-  </li>
-</ol>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;img src="/images/meinvp.png"></span></code></pre></td></tr></table></div></figure></p>
-
-<p><img src="/images/meinvping.png"></p>
-
-<p>更多技巧，请参见 Octopress 官网提供的<a href="http://octopress.org/docs/plugins/image-tag/">技术支持</a>。</p>
-
-<h2 id="section-4">添加视频</h2>
-
-<p>在写 blog 的过程中，经常需要在博客里添加视频。在此记录添加 YouKu 视频的方法。
-首先添加 ruby 插件，添加文件<code>octopress/plugins/youku.rb</code>，代码如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>class Youku &lt; Liquid::Tag&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>def initialize(tagName, markup, tokens)
-</span><span class='line'>  super&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>@params = markup.split(“ “)
-</span><span class='line'>  if @params.count &gt;= 1
-</span><span class='line'>    @id = @params[0]
-</span><span class='line'>    if @params.count &gt;= 3
-</span><span class='line'>      @width = @params[1]
-</span><span class='line'>      @height = @params[2]
-</span><span class='line'>    else
-</span><span class='line'>      @width = 560
-</span><span class='line'>      @height = 420
-</span><span class='line'>    end
-</span><span class='line'>  else
-</span><span class='line'>    raise “No Youku ID provided in the "youku" tag”  &lt;br />
-</span><span class='line'>  end
-</span><span class='line'>end&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>def render(context)
-</span><span class='line'># “&lt;iframe height=498 width=510 src=”http://player.youku.com/embed/XNTEzNzcwNDI0” frameborder=0 allowfullscreen&gt;&lt;/iframe&gt;”
-</span><span class='line'>“&lt;iframe style="margin:0 auto; display: block" height="#{@height}" width="#{@width}" src="http://player.youku.com/embed/#{@id}?color=white&amp;theme=light"&gt;&lt;/iframe&gt;”
-</span><span class='line'>end&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>Liquid::Template.register_tag “youku”, self
-</span><span class='line'>end</span></code></pre></td></tr></table></div></figure></p>
-
-<p>添加完上述文件后，就可添加 youku 视频文件了，方法是在需要添加视频的位置添加如下 Tag：</p>
-
-<p><code>youku id width height</code></p>
-
-<p>其中的youku 是关键字;id 是打开的youku视频的id，可以从网址里找到；width/height 是视频的宽高。</p>
-
-<p>示例如下:</p>
-
-<p><iframe style="margin:0 auto; display: block" height="586" width="720" src="http://player.youku.com/embed/XNDQ4ODQxNTI0?color=white&theme=light"></iframe></p>
-
-<h2 id="section-5">添加文章目录</h2>
-
-<p>文章一旦长了之后，想要找某个点就需要目录来索引。添加文章目录方法：</p>
-
-<p>首先，使用 kramdown 作为 Octopress 作为 Markdown 解析器。</p>
-
-<p>①  在<code>Gemfile</code>中添加如下代码.
-<code>
-gem 'kramdown'
-</code></p>
-
-<p>②  端执行如下命令。</p>
-
-<p><code>
-bundle install
-</code></p>
-
-<p>③  修改<code>_config.yml</code>文件中相关内容如下。</p>
-
-<p><code>
-markdown: kramdown
-kramdown:
-    user_coderay: true
-    coderay:
-        coderay_line_numbers: table
-        coderay_css: class
-</code></p>
-
-<p>其次，在想要插入目录的地方，插入如下代码即可。</p>
-
-<p>```
-* list element with functor item</p>
-<p>```</p>
-
-<p>再次,在目录前自动添加<code>本页目录</code>,修改<code>sass/custom/_style.scss</code>,代码如下.</p>
-
-<p><code>
-#markdown-toc:before{
-    content: "本页目录";
-    font-weitht: bold;
-}
-</code>
-最后，为防止显示摘要时出现目录，在<code>sass/custom/_style.scss</code>添加代码。</p>
-
-<p><code>
-.blog-index #markdown-toc{
-    display: none;
-}
-</code></p>
-
-<p>参考博文：<a href="http://shengmingzhiqing.com/blog/octopress-lean-modification-5.html/#section-1">Octopress 精益修改</a> 和 <a href="http://blog.riemann.cc/2013/04/10/table-of-contents-in-octopress/">Table Of Contents in Octopress</a></p>
-
-<h2 id="section-6">添加表格</h2>
-
-<p>语法说明：</p>
-
-<ul>
-  <li><code>|</code><code>-</code><code>:</code>之间的多余空格会被忽略，不影响布局。</li>
-  <li>默认标题栏居中对齐，内容居左对齐。</li>
-  <li><code>-:</code>表示内容和标题栏居右对齐，<code>:-</code>表示内容和标题栏居左对齐，<code>:-:</code>表示内容和标题栏居中对齐。</li>
-  <li>内容和<code>|</code>之间的多余空格会被忽略，每行第一个<code>|</code>和最后一个<code>|</code>可以省略，<code>-</code>的数量至少一个。</li>
-</ul>
-
-<p><code>
-| 左对齐标题 | 右对齐标题 | 居中对齐标题 |
-| :--------  | ---------: | :----------: |
-| 短文本 | 中等文本 | 稍微长一点的文本 |
-| 稍微长一点的文本 | 短文本 | 中等文本 |
-</code></p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: left">左对齐标题</th>
-      <th style="text-align: right">右对齐标题</th>
-      <th style="text-align: center">居中对齐标题</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: left">短文本</td>
-      <td style="text-align: right">中等文本</td>
-      <td style="text-align: center">稍微长一点的文本</td>
-    </tr>
-    <tr>
-      <td style="text-align: left">稍微长一点的文本</td>
-      <td style="text-align: right">短文本</td>
-      <td style="text-align: center">中等文本</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="mac">多台Mac上同时使用</h2>
-
-<h3 id="mac-ssh-key--github-">在新的Mac上创建 ssh key 并添加到 github 中。</h3>
-
-<p>创建<code>ssh-key</code>。
-<code>
-$ ssh-keygen -t rsa -b 4096 -C "libinglimit@gmail.com"
-</code>
-把生成的<code>key</code>添加到<code>ssh-agent</code>中。
-<code>
-$ ssh-add ~/.ssh/id_rsa
-</code>
-把添加的<code>key</code>放到<code>github</code>中。</p>
-
-<p>本地重建Octopress仓库。clone<code>source</code>分支/<code>master</code>分支：
-<code>
-$ git clone -b source git@github.com:lazybing/lazybing.github.io octopress
-$ cd octopress
-$ git clone git@github.com:lazybing/lazybing.github.io _deploy
-</code>
-参见 github 官方<a href="https://help.github.com/articles/checking-for-existing-ssh-keys/#platform-mac">帮助文档</a>。</p>
-
-<h3 id="section-7">配置环境。</h3>
-
-<p>执行以下命令配置环境：
-<code>
-$ gem install bundler
-$ rbenv rehash    # If you use rbenv, rehash to be able to run the bundle command
-$ bundle install
-$ rake setup_github_pages 
-</code></p>
-
-<h3 id="section-8">使用技巧</h3>
-
-<p>及时提交本地修改
-<code>
-$ rake generate
-$ rake deploy
-</code>
-第一条命令会使用本地的修改生成最新的<code>blog</code>网站，并且生成的<code>blog</code>会存放到<code>Octopress</code>根目录下的<code>public/</code>目录下；</p>
-
-<p>第二条命令主要做了两件事：</p>
-
-<p>*用<code>generate</code>命令生成在<code>public/</code>目录下的内容覆盖<code>_deploy/</code>目录下内容；</p>
-
-<p>*将<code>_deploy/</code>目录下的修改<code>add</code> 、 <code>commit</code>到<code>git</code>，并<code>push</code>到<code>git</code>的<code>master</code>分支。</p>
-
-<p>除此之外，还需要把<code>source</code>分支中做到的修改提交到<code>git</code>仓库中，执行以下命令：
-<code>
-$ git add .
-$ git commit -am "Some comment here." 
-$ git push origin source  # update the remote source branch 
-</code>
-修改前先更新到最新的版本。
-<code>
-$ cd octopress
-$ git pull origin source  # update the local source branch
-$ cd ./_deploy
-$ git pull origin master  # update the local master branch
-</code></p>
-
-<p>参考博文:<a href="http://foggry.com/blog/2014/04/02/ru-he-pei-zhi-rang-ni-de-octopressbo-ke-zai-duo-tai-macshang-tong-shi-shi-yong/">让Octopress博客在多台Mac上同时使用</a></p>
-
-<h2 id="octopresslatex">octopress中添加Latex支持</h2>
-
-<ol>
-  <li>首先要安装 kramdown,安装命令：gem install kramdown</li>
-  <li>在<code>source/_includes/custom/footer.html</code>添加如下代码：<br />
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;!-- MathJax -->&lt;br />
-</span><span class='line'>&lt;script type="text/x-mathjax-config">  
-</span><span class='line'> MathJax.Hub.Config({  
-</span><span class='line'>                    tex2jax: {  
-</span><span class='line'>                    inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
-</span><span class='line'>                    processEscapes: true  
-</span><span class='line'>                    }  
-</span><span class='line'>                    });  
-</span><span class='line'> &lt;/script>&lt;/li>
-</span><span class='line'>&lt;/ol>
-</span><span class='line'>
-</span><span class='line'>&lt;script type="text/x-mathjax-config">  
-</span><span class='line'>    MathJax.Hub.Config({  
-</span><span class='line'>                       tex2jax: {  
-</span><span class='line'>                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
-</span><span class='line'>                       }  
-</span><span class='line'>                       });  
-</span><span class='line'>    &lt;/script>
-</span><span class='line'>
-</span><span class='line'>&lt;script type="text/x-mathjax-config">  
-</span><span class='line'>    MathJax.Hub.Queue(function() {  
-</span><span class='line'>                      var all = MathJax.Hub.getAllJax(), i;  
-</span><span class='line'>                      for(i=0; i &lt; all.length; i += 1) {  
-</span><span class='line'>                      all[i].SourceElement().parentNode.className += ' has-jax';  
-</span><span class='line'>                      }  
-</span><span class='line'>                      });  
-</span><span class='line'>    &lt;/script>
-</span><span class='line'>
-</span><span class='line'>&lt;script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
-</span><span class='line'>    &lt;/script>
-</span><span class='line'>
-</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
-
-<p>这样就引入了 MathJax 的 js 包。<br />
-3. 在<code>_config.yml</code>文件中，用<code>markdown: kramdown</code>替换<code>markdown: rdiscount</code>。</p>
-
-<p>完成上述步骤后，即可使用 Latex 公式了。<a href="http://blog.csdn.net/hankai1024/article/details/18048999">参考文献</a></p>
 
 ]]></content>
   </entry>
