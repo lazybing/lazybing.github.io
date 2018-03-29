@@ -94,19 +94,20 @@ simple_search: https://www.google.com/search
 description: 
 {% endcodeblock %}
 
-汉化"Categories", 在`_config.yml`文件中，添加下面一行代码：
+汉化`Categories`, 在`_config.yml`文件中，添加下面一行代码：
+
 ```
 category_tile_prefix: “分类：”
 ```
 
 
-汉化“Read On->”按钮:当文章只是显示摘要，点击"Read on->"
+汉化`Read On->`按钮:当文章只是显示摘要，点击`Read on->`
 后才可查看全文时，可以通过在文章中插入如下内容：
 ```
 <!--more-->
 ```
 
-在文章中找到如下一行，把其中的"Read on"改为"继续阅读"。
+在文章中找到如下一行，把其中的`Read on`改为`继续阅读`。
 ```
 excerpt_link:"Read on"
 ```
