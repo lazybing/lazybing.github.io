@@ -1160,7 +1160,9 @@
 
 <p>从 SPEC 中可以看出，只要<code>16x16</code>宏块正上方的 16 个元素可用，就可以使用使用<code>Intra_16x16_Vertical</code>预测模式，至于该宏块的左边像素是否可用，并不影响。示例如下：</p>
 
-<p>x264 中关于模式 Vertical 的代码如下：</p>
+<p><img src="/images/x264_intra_predict/intra_16x16_predictical.png" /></p>
+
+<p>x264 中关于模式 Vertical 的C 代码如下：</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -1204,6 +1206,29 @@
 </pre></td><td class="code"><pre><code class=""><span class="line">#define MPIXEL_X4(src) M32(src)  
 </span><span class="line">#deinfe M32(src) (((x264_union32_t *)(src))-&gt;i)  
 </span><span class="line">typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;</span></code></pre></td></tr></table></div></figure>
+
+<p>分析上面的代码结合上面的图，可以看出，每执行一次 for 循环，都对<code>16x16</code>的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素需要4次赋值完成，值得大小就是宏块的上一行像素值得大小。
+执行完整个 for 循环后，1616 宏块像素赋值结束。</p>
+
+<p>针对<code>AARCH64</code>平台，X264 做了汇编优化，其代码如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">function x264_predict_16x16_v_neon, export=1
+</span><span class="line">    sub     x0, x0, #FDEC_STRIDE
+</span><span class="line">    mov     x7, #FDEC_STRIDE
+</span><span class="line">    ldl     {v0.16b}, [x0], x7
+</span><span class="line">.rept 16
+</span><span class="line">    stl     {v0.16b}, [x0], x7
+</span><span class="line">.endr
+</span><span class="line">    ret
+</span><span class="line">endfunc</span></code></pre></td></tr></table></div></figure>
 
 <h3 id="intra16x16horizontal-">Intra_16x16_Horizontal 预测模式</h3>
 
