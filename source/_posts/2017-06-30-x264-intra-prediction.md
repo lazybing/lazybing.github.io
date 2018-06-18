@@ -884,28 +884,19 @@ endfunc
 在 SPEC 中，关于该预测模式的定义如下：  
 
 {% blockquote %}
-This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for
-Intra_16x16 prediction", as follows:  
+This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for Intra_16x16 prediction", as follows:  
 
-If all neighbouring samples p[x,-1] ], with x = 0..15, and p[ −1, y ], with y = 0..15, are marked as "available for
-Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by:  
-$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+\sum_{y'=0}^{15}p[-1,y']+16)>>5, with x,y=0..15$  
+If all neighbouring samples p[x,-1] ], with x = 0..15, and p[ −1, y ], with y = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+\sum_{y'=0}^{15}p[-1,y']+16)>>5, with x,y=0..15$  
 
-Otherwise, if any of the neighbouring samples p[ x, .1 ], with x = 0..15, are marked as "not available for Intra_16x16
-prediction" and all of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "available for Intra_16x16
-prediction", the prediction for all luma samples in the macroblock is given by:  
-$pred_L[x,y]=(\sum_{y'=0}^{15}p[-1,y']+8)>>4, with x,y=0..15$   
+Otherwise, if any of the neighbouring samples p[ x, .1 ], with x = 0..15, are marked as "not available for Intra_16x16 prediction" and all of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{y'=0}^{15}p[-1,y']+8)>>4, with x,y=0..15$   
 
-Otherwise, if any of the neighbouring samples p[ −1, y ], with y = 0..15, are marked as "not available for Intra_16x16
-prediction" and all of the neighbouring samples p[ x, −1 ], with x = 0..15, are marked as "available for Intra_16x16
-prediction", the prediction for all luma samples in the macroblock is given by:  
-$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+8)>>4, with x,y=0..15$   
+Otherwise, if any of the neighbouring samples p[ −1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction" and all of the neighbouring samples p[ x, −1 ], with x = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+8)>>4, with x,y=0..15$   
 
-Otherwise (some of the neighbouring samples p[ x, .1 ], with x = 0..15, and some of the neighbouring samples
-p[ .1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction"), the prediction for all luma samples
-in the macroblock is given by:  
-$pred_L[x,y]=(1<<(BitDepth_Y - 1)), with x,y=0..15$
+Otherwise (some of the neighbouring samples p[ x, .1 ], with x = 0..15, and some of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction"), the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(1<<(BitDepth_Y - 1)), with x,y=0..15$
 {% endblockquote %}
+
+通过 SPEC 描述可以看出来，DC 模式分为4种情况，一种是宏块的上方和左方宏块像素均可用时，此时宏块内的像素值为参考像素值得平均值；第二种是当左方像素不可用、上方像素可用时，宏块内的像素值为上方可用像素的平均值；
+第三种是当上方像素不可用、左方像素可用时，宏块内的像素值为左方可用像素的平均值。最后一种，当上方和左方像素均不可用时，宏块内像素值与BitDepth有关。此处仅仅举例上方和左方像素均可用的例子。
 
 x264 中关于模式 DC 的代码如下：  
 
