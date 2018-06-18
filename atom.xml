@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-06-18T05:23:33-07:00</updated>
+  <updated>2018-06-18T08:31:49-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -4318,7 +4318,7 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 </span><span class="line">typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;</span></code></pre></td></tr></table></div></figure>
 
 <p>分析上面的代码结合上面的图，可以看出，每执行一次 for 循环，都对<code>16x16</code>的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素需要4次赋值完成，值得大小就是宏块的上一行像素值得大小。
-执行完整个 for 循环后，1616 宏块像素赋值结束。</p>
+执行完整个 for 循环后，16x16 宏块像素赋值结束。</p>
 
 <p>针对<code>AARCH64</code>平台，X264 做了汇编优化，其代码如下：</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -4347,6 +4347,10 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 <p>在 SPEC 中，关于该预测模式的定义如下：</p>
 
 <blockquote><p>This Intra_16x16 prediction mode shall be used only when the samples p[−1, y] with y = 0..15 are marked as "available<br />for Intra_16x16 prediction".<br />The values of the prediction samples predL[ x, y ], with x, y = 0..15, are derived by<br />predL[ x, y ] = p[ −1, y ], with x, y = 0..15</p></blockquote>
+
+<p>从 SPEC 中可以看出，只要<code>16x16</code>宏块左方的 16 个元素可用，就可以使用使用<code>Intra_16x16_Vertical</code>预测模式，至于该宏块的上边像素是否可用，并不影响。示例如下：</p>
+
+<p><img src="http://lazybing.github.io/images/x264_intra_predict/intra_16x16_horizontal.png" /></p>
 
 <p>x264 中关于模式 Horizontal 的代码如下：</p>
 
@@ -4380,6 +4384,34 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">#   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)</span></code></pre></td></tr></table></div></figure>
+<p>该宏的作用是将1字节的数据，扩展为4字节的数据，其中的每个字节大小与起始的第一个字节相等。
+分析上面的代码结合上面的图，可以看出，每执行一次for循环，都对<code>16x16</code>的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素
+需要4次赋值完成，值得大小就是宏块的左边像素值得大小。执行完整个for循环后，16x16宏块像素值结束。</p>
+
+<p>针对<code>AARCH64</code>平台，X264 做了汇编优化，其代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">function x264_predict_16x16_h_neon, export=1
+</span><span class="line">    sub x1, x0, #1
+</span><span class="line">    mov x7, #FDEC_STRIDE
+</span><span class="line">.rept 8
+</span><span class="line">    ldlr {v0.16b}, [x1], x7
+</span><span class="line">    ldlr {v0.16b}, [x1], x7
+</span><span class="line">    stl  {v0.16b}, [x0], x7
+</span><span class="line">    stl  {v0.16b}, [x0], x7
+</span><span class="line">.endr
+</span><span class="line">    ret
+</span><span class="line">endfunc</span></code></pre></td></tr></table></div></figure>
 
 <h3 id="intra16x16dc-">Intra_16x16_DC 预测模式</h3>
 
