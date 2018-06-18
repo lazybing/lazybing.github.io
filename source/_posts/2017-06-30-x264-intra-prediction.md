@@ -772,7 +772,7 @@ This Intra_16x16 prediction mode shall be used only when the samples p[x, -1] wi
 
 从 SPEC 中可以看出，只要`16x16`宏块正上方的 16 个元素可用，就可以使用使用`Intra_16x16_Vertical`预测模式，至于该宏块的左边像素是否可用，并不影响。示例如下：
 
-{% img /images/x264_intra_predict/intra_16x16_predictical.png %}
+{% img /images/x264_intra_predict/intra_16x16_vertical.png %}
 
 x264 中关于模式 Vertical 的C 代码如下：  
 
@@ -804,7 +804,7 @@ typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union
 ```
 
 分析上面的代码结合上面的图，可以看出，每执行一次 for 循环，都对`16x16`的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素需要4次赋值完成，值得大小就是宏块的上一行像素值得大小。
-执行完整个 for 循环后，1616 宏块像素赋值结束。  
+执行完整个 for 循环后，16x16 宏块像素赋值结束。  
 
 针对`AARCH64`平台，X264 做了汇编优化，其代码如下：
 {% codeblock %}
@@ -819,6 +819,9 @@ function x264_predict_16x16_v_neon, export=1
 endfunc
 {% endcodeblock %}
 
+上面的汇编代码可以看出，同样是循环执行16次，因为是64位，所以每次赋值即可实现16字节的运算，相对于上面的C语言版，赋值语句是其1/4，实现了效率上的优化。
+
+
 ### Intra_16x16_Horizontal 预测模式   
 
 在 SPEC 中，关于该预测模式的定义如下：  
@@ -830,6 +833,9 @@ The values of the prediction samples predL[ x, y ], with x, y = 0..15, are deriv
 predL[ x, y ] = p[ −1, y ], with x, y = 0..15
 {% endblockquote %}
 
+从 SPEC 中可以看出，只要`16x16`宏块左方的 16 个元素可用，就可以使用使用`Intra_16x16_Vertical`预测模式，至于该宏块的上边像素是否可用，并不影响。示例如下：
+
+{% img /images/x264_intra_predict/intra_16x16_horizontal.png %}
 
 x264 中关于模式 Horizontal 的代码如下：  
 
@@ -853,6 +859,25 @@ void x264_predict_16x16_h_c( pixel *src )
 ```
 #   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)
 ```
+该宏的作用是将1字节的数据，扩展为4字节的数据，其中的每个字节大小与起始的第一个字节相等。
+分析上面的代码结合上面的图，可以看出，每执行一次for循环，都对`16x16`的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素
+需要4次赋值完成，值得大小就是宏块的左边像素值得大小。执行完整个for循环后，16x16宏块像素值结束。
+
+针对`AARCH64`平台，X264 做了汇编优化，其代码如下：
+
+{% codeblock %}
+function x264_predict_16x16_h_neon, export=1
+    sub x1, x0, #1
+    mov x7, #FDEC_STRIDE
+.rept 8
+    ldlr {v0.16b}, [x1], x7
+    ldlr {v0.16b}, [x1], x7
+    stl  {v0.16b}, [x0], x7
+    stl  {v0.16b}, [x0], x7
+.endr
+    ret
+endfunc
+{% endcodeblock %}
 
 ### Intra_16x16_DC 预测模式  
 
