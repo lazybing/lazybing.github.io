@@ -770,6 +770,10 @@ x264 中对 16x16 的预测模式如下：
 This Intra_16x16 prediction mode shall be used only when the samples p[x, -1] with x=0...15 are marked as "available for Intra_16x16 prediction".The values of the prediction samples pred[x, y] with x,y=0...15, are derived by pred[x,y]=p[x,-1],with x,y=0...15  
 {% endblockquote %}
 
+从 SPEC 中可以看出，只要`16x16`宏块正上方的 16 个元素可用，就可以使用使用`Intra_16x16_Vertical`预测模式，至于该宏块的左边像素是否可用，并不影响。示例如下：
+
+
+
 x264 中关于模式 Vertical 的代码如下：  
 
 {% codeblock lang:c %}
