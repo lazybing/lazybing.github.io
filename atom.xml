@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-06-20T08:58:27-07:00</updated>
+  <updated>2018-06-20T09:03:57-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -2257,7 +2257,8 @@ c. 字节流的结束，由未规定的方式判决。</li>
       <li><a href="#section-1" id="markdown-toc-section-1">亮度运动补偿</a></li>
     </ul>
   </li>
-  <li><a href="#section-2" id="markdown-toc-section-2">参考资料</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">运动估计</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">参考资料</a></li>
 </ul>
 
 <p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
@@ -2330,7 +2331,8 @@ c. 字节流的结束，由未规定的方式判决。</li>
 </span><span class="line">            <span class="n">mc_copy</span><span class="p">(</span><span class="n">src1</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
-<p>### 运动估计</p>
+
+<h3 id="section-2">运动估计</h3>
 
 <p><a href="https://en.wikipedia.org/wiki/Motion_estimation">运动估计</a>(Motion estimation)就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
 
@@ -2342,7 +2344,7 @@ c. 字节流的结束，由未规定的方式判决。</li>
 
 <p>运动估计算法是视频压缩编码的核心算法之一。高质量的运动估计算法是高效视频编码的前提和基础。其中块匹配法（BMA, Block Match Algorithm）由于算法简单和易于硬件实现，被广泛应用于各视频编码标准中。块匹配法的基本思想是先将图像划分为许多子块，然后对当前帧中的每一块根据一定的匹配准则在相邻帧中找出当前块的匹配块，由此得到两者的相对位移，即当前块的运动矢量。在H.264标准的搜索算法中，图像序列的当前帧被划分成互不重叠16×16大小的子块，而每个子块又可划分成更小的子块，当前子块按一定的块匹配准则在参考帧中对应位置的一定搜索范围内寻找最佳匹配块，由此得到运动矢量和匹配误差。运动估计的估计精度和运算复杂度取决于搜索策略和块匹配准则。</p>
 
-<h3 id="section-2">参考资料</h3>
+<h3 id="section-3">参考资料</h3>
 
 <ol>
   <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
