@@ -9,7 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文主要记录 X264 中对于 DCT 变换的初始化过程。 DCT 变化理论比较抽象，先从 X264 中代码入手，然后经过 DCT 变换后，比较变换前和变换后的数据，能够更好的理解 DCT 变换。 X264 中对 DCT 各类函数的定义都在common/dct.c里面。其中 sub4x4_dct &hellip;">
+  <meta name="description" content="本文主要记录 X264 中对于 DCT 变换的初始化过程。宏块的编码过程就是一个DCT变换+量化的过程。 DCT 变换的核心理念就是把图像的低频信息（对应大面积平坦区域）变换到系数矩阵的左上角，而把高频信息变换到系数矩阵的
+右下角，之后在压缩时就可以去除掉人眼不敏感的高频信息（ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,9 +100,40 @@
 
 
 <div class="entry-content">
-<p>本文主要记录 X264 中对于 DCT 变换的初始化过程。</p>
+<p>本文主要记录 X264 中对于 DCT 变换的初始化过程。宏块的编码过程就是一个<code>DCT变换+量化</code>的过程。</p>
 
 <!--more-->
+
+<p>DCT 变换的核心理念就是把图像的低频信息（对应大面积平坦区域）变换到系数矩阵的左上角，而把高频信息变换到系数矩阵的
+右下角，之后在压缩时就可以去除掉人眼不敏感的高频信息（位于矩阵右下角的系数），从而达到压缩数据的目的。</p>
+
+<p>关于 DCT 的计算，都是通过<code>x264_dct_init</code>函数内定义的DCT和IDCT函数完成的，定义如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_dct_init</span><span class="p">(</span><span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_dct_function_t</span> <span class="o">*</span><span class="n">dctf</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">sub4x4_dct</span>  <span class="o">=</span> <span class="n">sub4x4_dct</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">add4x4_idct</span> <span class="o">=</span> <span class="n">add4x4_idct</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">sub8x8_dct</span>     <span class="o">=</span> <span class="n">sub8x8_dct</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">sub8x8_dct_dc</span>  <span class="o">=</span> <span class="n">sub8x8_dct_dc</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">add8x8_dct</span>     <span class="o">=</span> <span class="n">add8x8_dct</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">add8x8_dct_dc</span>  <span class="o">=</span> <span class="n">add8x8_dct_dc</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 <p>DCT 变化理论比较抽象，先从 X264 中代码入手，然后经过 DCT 变换后，比较变换前和变换后的数据，能够更好的理解 DCT 变换。</p>
 
@@ -199,6 +231,10 @@
 </span><span class="line">    <span class="p">}</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<p>上面的代码实现的是下面矩阵乘法：</p>
+
+<p><img src="/images/x264_dct/4x4_dct.png" /></p>
 
 <p>其中的<code>pixel_sub_wxh</code>是获取 pix1 和 pix2 两块数据的残差。这里对 pix1 和 pix2 随意举两个相似的4x4的矩阵作为例子，
 之所以要<code>随意</code>是为了突出其普遍性，适用于大多数的 DCT 变换；而<code>相似</code>是因为 pix1 为编码块，pix2 为预测块，它们理论上就应该是相似的。为此举例如下：</p>
