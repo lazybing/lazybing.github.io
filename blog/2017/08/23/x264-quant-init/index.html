@@ -9,14 +9,14 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文主要记录 X264 中使用到的量化。该函数主要对x264_quant_functions_t结构体中的函数指针进行赋值， 首先看其中的一个例子quant_8x8函数，它的定义位于common/quant.c中，定义如下： 1
+  <meta name="description" content="本文主要记录 X264 中使用到的量化。该函数主要对x264_quant_function_t结构体中的函数指针进行赋值， 量化模块的初始化函数为x264_quant_init()。该函数对x264_quant_function_t结构体中的函数指针进行了赋值。 1
 2
 3
 4
 5
 6
 7
-static int quant_8x8 &hellip;">
+8 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -106,9 +106,39 @@ static int quant_8x8 &hellip;">
 
 
 <div class="entry-content">
-<p>本文主要记录 X264 中使用到的量化。该函数主要对<code>x264_quant_functions_t</code>结构体中的函数指针进行赋值，</p>
+<p>本文主要记录 X264 中使用到的量化。该函数主要对<code>x264_quant_function_t</code>结构体中的函数指针进行赋值，</p>
 
 <!--more-->
+
+<p>量化模块的初始化函数为<code>x264_quant_init()</code>。该函数对<code>x264_quant_function_t</code>结构体中的函数指针进行了赋值。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_quant_init</span><span class="p">(</span><span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_quant_function_t</span> <span class="o">*</span><span class="n">pf</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_8x8</span> <span class="o">=</span> <span class="n">quant_8x8</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_4x4</span> <span class="o">=</span> <span class="n">quant_4x4</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_4x4x4</span> <span class="o">=</span> <span class="n">quant_4x4x4</span><span class="p">;</span>
+</span><span class="line">    <span class="c1">//intra16x16中，16个系数Hadamard变换后对的量化</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_4x4_dc</span> <span class="o">=</span> <span class="n">quant_4x4_dc</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_2x2_dc</span> <span class="o">=</span> <span class="n">quant_2x2_dc</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="c1">//反量化</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">dequant_4x4</span> <span class="o">=</span> <span class="n">dequant_4x4</span><span class="p">;</span>
+</span><span class="line">    <span class="p">....</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 <p>首先看其中的一个例子<code>quant_8x8</code>函数，它的定义位于<code>common/quant.c</code>中，定义如下：</p>
 
