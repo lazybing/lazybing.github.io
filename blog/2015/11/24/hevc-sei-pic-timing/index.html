@@ -1,0 +1,598 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>HEVC SPEC 学习之SEI——Pic_Timing - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="Pic Timing SEI 消息语法 Pic Timing SEI 消息语义 HM中的Picture_Timing 本文主要记录 HEVC 中的 Picture timing 这一类 SEI PayloadType 的介绍。 Pic Timing SEI 消息语法 pic_timing( &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2015/11/24/hevc-sei-pic-timing/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">HEVC SPEC 学习之SEI——Pic_Timing</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-11-24T18:05:50-08:00'><span class='date'>2015 年 11 月 24 日</span> <span class='time'>6:05 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#pic-timing-sei-" id="markdown-toc-pic-timing-sei-">Pic Timing SEI 消息语法</a></li>
+  <li><a href="#pic-timing-sei--1" id="markdown-toc-pic-timing-sei--1">Pic Timing SEI 消息语义</a></li>
+  <li><a href="#hmpicturetiming" id="markdown-toc-hmpicturetiming">HM中的Picture_Timing</a></li>
+</ul>
+
+<p>本文主要记录 HEVC 中的 Picture timing 这一类 SEI PayloadType 的介绍。</p>
+
+<!--more-->
+
+<h2 id="pic-timing-sei-">Pic Timing SEI 消息语法</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">pic_timing(payloadSize){</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">if(frame_field_info_present_flag){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">pic_struct</td>
+      <td style="text-align: center">u(4)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">source_scan_type</td>
+      <td style="text-align: center">u(2)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">duplicate_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="pic-timing-sei--1">Pic Timing SEI 消息语义</h2>
+
+<ul>
+  <li>pic_struct 指明了图像是按照帧图或场图显示；如果是作为帧图显示，当<code>fixed_pic_rate_within_cvs_flag</code>值为 1 时，可以表明帧图像在显示时会重复两次或三次，帧的刷新间隔为固定的<code>DpbOutputElementalInterval[n]</code>。
+<code>pic_struct</code>的含义如下图所示。对于未列出的<code>pic_struct</code>值，作为保留值用于将来使用，一般不会出现在码流中，如果出现，解码器可以忽略它的值。</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Value</th>
+      <th style="text-align: center">Indicated display of picture</th>
+      <th style="text-align: center">Restrictions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">(progressive)Frame</td>
+      <td style="text-align: center">field_seq_flag 为 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">Top Field</td>
+      <td style="text-align: center">field_seq_flag 为 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">Bottom Field</td>
+      <td style="text-align: center">field_seq_flag 为 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">Top Field, Bottom Field, in that order</td>
+      <td style="text-align: center">field_seq_flag 为 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">Bottom Field, Top Field, in that order</td>
+      <td style="text-align: center">field_seq_flag 为 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">5</td>
+      <td style="text-align: center">Top Field, Bottom Field, Top Field, in that order</td>
+      <td style="text-align: center">field_seq_flag 为 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">6</td>
+      <td style="text-align: center">Bottom Field, Top Field, Bottom Field, in that order</td>
+      <td style="text-align: center">field_seq_flag 为 0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">7</td>
+      <td style="text-align: center">Frame doubling</td>
+      <td style="text-align: center">field_seq_flag 为 0, fixed_pic_rate_within_cvs_flag 为 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">8</td>
+      <td style="text-align: center">Frame tripling</td>
+      <td style="text-align: center">field_seq_flag 为 0, fixed_pic_rate_within_cvs_flag 为 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">9</td>
+      <td style="text-align: center">Top Field paired with previous bottom field in that order</td>
+      <td style="text-align: center">field_seq_flag 为 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">Bottom Field paired with previous top field in that order</td>
+      <td style="text-align: center">field_seq_flag 为 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">11</td>
+      <td style="text-align: center">Top Field paired with next bottom field in that order</td>
+      <td style="text-align: center">field_seq_flag 为 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">12</td>
+      <td style="text-align: center">Bottom Field paired with next top field in that order</td>
+      <td style="text-align: center">field_seq_flag 为 1</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>如果码流中存在<code>pic_struct</code>,它必须严格遵守下面的条件：
+—— 同一个<code>CVS</code>中，所有图像的<code>pic_struct</code>的值等于0、7 或 8。
+—— 同一个<code>CVS</code>中，所有图像的<code>pic_struct</code>的值等于1、2、9、10、11 或 12。
+—— 同一个<code>CVS</code>中，所有图像的<code>pic_struct</code>的值等于3、4、5、或 6。</p>
+
+<ul>
+  <li>source_scan_type 如果其值为 1，表明该图像的扫描类型为<code>progressive</code>；如果其值为 0,表明该图像的扫描类型为<code>interlace</code>;如果其值为 2，表明该图像的扫描类型未定义；如果是其他值，解码器可以将其值设为 2。</li>
+</ul>
+
+<p>关于扫描类型的描述，在<code>SPS</code>中的<code>profile_tier_level</code>中也有描述，是通过<code>general_progressive_souce_flag</code>和<code>general_interlaced_source_flag</code>两个语法元素决定的：<br />
+1. 如果<code>general_progressive_souce_flag</code>值为0，并且<code>general_interlaced_source_flag</code>值为1，<code>source_scan_type</code>的值如果存在就该为0，如果不存在，解码器也可以将其设置为0。<br />
+2. 如果<code>general_progressive_souce_flag</code>值为1，并且<code>general_interlaced_source_flag</code>值为0，<code>source_scan_type</code>的值如果存在就该为1，如果不存在，解码器也可以将其设置为1。<br />
+3. 如果<code>general_progressive_souce_flag</code>值为0，并且<code>general_interlaced_source_flag</code>值为0，<code>source_scan_type</code>的值如果存在就该为2，如果不存在，解码器也可以将其设置为2。</p>
+
+<p>针对<code>interlaced</code>码流，解码器必须指定该图像是<code>Top</code>或<code>Bottom</code>，并且说明该码流是<code>Top First</code>或<code>Bottom</code>。具体实现看下面<code>HM</code>中的实现。</p>
+
+<h2 id="hmpicturetiming">HM中的Picture_Timing</h2>
+
+<p>HM 源码中对<code>pic_timing</code>这一 SEI 信息做了比较详细的描述，首先是在 Parse SEI 时获得<code>pic_struct</code>等的信息，之后会根据他的值，对<code>TFF</code>和<code>Field</code>进行赋值，当然HM中对于该值得覆盖也不是很全，只是覆盖到 1 和 2。</p>
+
+<figure class="code"><figcaption><span>pic_timing </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">Void</span> <span class="n">SEIReader</span><span class="o">::</span><span class="n">xParseSEIPictureTiming</span><span class="p">(</span><span class="n">SEIPictureTiming</span><span class="o">&amp;</span> <span class="n">sei</span><span class="p">,</span> <span class="n">UInt</span> <span class="n">payloadSize</span><span class="p">,</span> <span class="n">TComSPS</span> <span class="o">*</span><span class="n">sps</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">ostream</span> <span class="o">*</span><span class="n">pDecodedMessageOutputStream</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="p">...</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">vui</span><span class="o">-&gt;</span><span class="n">getFrameFieldInfoPresentFlag</span><span class="p">()</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">sei_read_code</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="s">&quot;pic_struct&quot;</span> <span class="p">);</span>             <span class="n">sei</span><span class="p">.</span><span class="n">m_picStruct</span>            <span class="o">=</span> <span class="n">code</span><span class="p">;</span>
+</span><span class="line">        <span class="n">sei_read_code</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="s">&quot;source_scan_type&quot;</span> <span class="p">);</span>       <span class="n">sei</span><span class="p">.</span><span class="n">m_sourceScanType</span>       <span class="o">=</span> <span class="n">code</span><span class="p">;</span>
+</span><span class="line">        <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span>    <span class="n">code</span><span class="p">,</span> <span class="s">&quot;duplicate_flag&quot;</span> <span class="p">);</span>         <span class="n">sei</span><span class="p">.</span><span class="n">m_duplicateFlag</span>        <span class="o">=</span> <span class="p">(</span><span class="n">code</span> <span class="o">==</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">  <span class="p">...</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="n">Bool</span> <span class="n">TDecTop</span><span class="o">::</span><span class="n">xDecodeSlice</span><span class="p">(</span><span class="n">InputNALUnit</span> <span class="o">&amp;</span><span class="n">nal</span><span class="p">,</span> <span class="n">Int</span> <span class="o">&amp;</span><span class="n">iSkipFrame</span><span class="p">,</span> <span class="n">Int</span> <span class="n">iPOCLastDisplay</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line">    <span class="n">Bool</span> <span class="n">isField</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Bool</span> <span class="n">isTff</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">m_SEIs</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">      <span class="c1">// Check if any new Picture Timing SEI has arrived</span>
+</span><span class="line">      <span class="n">SEIMessages</span> <span class="n">pictureTimingSEIs</span> <span class="o">=</span> <span class="n">extractSeisByType</span> <span class="p">(</span><span class="n">m_SEIs</span><span class="p">,</span> <span class="n">SEI</span><span class="o">::</span><span class="n">PICTURE_TIMING</span><span class="p">);</span>
+</span><span class="line">      <span class="k">if</span> <span class="p">(</span><span class="n">pictureTimingSEIs</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">      <span class="p">{</span>
+</span><span class="line">        <span class="n">SEIPictureTiming</span><span class="o">*</span> <span class="n">pictureTiming</span> <span class="o">=</span> <span class="p">(</span><span class="n">SEIPictureTiming</span><span class="o">*</span><span class="p">)</span> <span class="o">*</span><span class="p">(</span><span class="n">pictureTimingSEIs</span><span class="p">.</span><span class="n">begin</span><span class="p">());</span>
+</span><span class="line">        <span class="n">isField</span> <span class="o">=</span> <span class="p">(</span><span class="n">pictureTiming</span><span class="o">-&gt;</span><span class="n">m_picStruct</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">pictureTiming</span><span class="o">-&gt;</span><span class="n">m_picStruct</span> <span class="o">==</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class="line">        <span class="n">isTff</span> <span class="o">=</span>  <span class="p">(</span><span class="n">pictureTiming</span><span class="o">-&gt;</span><span class="n">m_picStruct</span> <span class="o">==</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">      <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="c1">//Set Field/Frame coding mode</span>
+</span><span class="line">    <span class="n">m_pcPic</span><span class="o">-&gt;</span><span class="n">setField</span><span class="p">(</span><span class="n">isField</span><span class="p">);</span>
+</span><span class="line">    <span class="n">m_pcPic</span><span class="o">-&gt;</span><span class="n">setTopField</span><span class="p">(</span><span class="n">isTff</span><span class="p">);</span>
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-11-24T18:05:50-08:00'><span class='date'>2015 年 11 月 24 日</span> <span class='time'>6:05 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hevcxue-xi/'>hevc学习</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2015/11/24/hevc-sei-pic-timing/" data-via="" data-counturl="http://lazybing.github.io/blog/2015/11/24/hevc-sei-pic-timing/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/11/01/hevc-analyse-tool/" title="Previous Post: HEVC 分析工具">&laquo; HEVC 分析工具</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/04/01/how-to-use-gdb/" title="Next Post: 如何使用 GDB">如何使用 GDB &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2018 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

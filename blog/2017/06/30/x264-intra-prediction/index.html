@@ -1158,7 +1158,11 @@
 
 <blockquote><p>This Intra_16x16 prediction mode shall be used only when the samples p[x, -1] with x=0...15 are marked as "available for Intra_16x16 prediction".The values of the prediction samples pred[x, y] with x,y=0...15, are derived by pred[x,y]=p[x,-1],with x,y=0...15</p></blockquote>
 
-<p>x264 中关于模式 Vertical 的代码如下：</p>
+<p>从 SPEC 中可以看出，只要<code>16x16</code>宏块正上方的 16 个元素可用，就可以使用使用<code>Intra_16x16_Vertical</code>预测模式，至于该宏块的左边像素是否可用，并不影响。示例如下：</p>
+
+<p><img src="/images/x264_intra_predict/intra_16x16_vertical.png" /></p>
+
+<p>x264 中关于模式 Vertical 的C 代码如下：</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -1203,11 +1207,40 @@
 </span><span class="line">#deinfe M32(src) (((x264_union32_t *)(src))-&gt;i)  
 </span><span class="line">typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;</span></code></pre></td></tr></table></div></figure>
 
+<p>分析上面的代码结合上面的图，可以看出，每执行一次 for 循环，都对<code>16x16</code>的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素需要4次赋值完成，值得大小就是宏块的上一行像素值得大小。
+执行完整个 for 循环后，16x16 宏块像素赋值结束。</p>
+
+<p>针对<code>AARCH64</code>平台，X264 做了汇编优化，其代码如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">function x264_predict_16x16_v_neon, export=1
+</span><span class="line">    sub     x0, x0, #FDEC_STRIDE
+</span><span class="line">    mov     x7, #FDEC_STRIDE
+</span><span class="line">    ldl     {v0.16b}, [x0], x7
+</span><span class="line">.rept 16
+</span><span class="line">    stl     {v0.16b}, [x0], x7
+</span><span class="line">.endr
+</span><span class="line">    ret
+</span><span class="line">endfunc</span></code></pre></td></tr></table></div></figure>
+
+<p>上面的汇编代码可以看出，同样是循环执行16次，因为是64位，所以每次赋值即可实现16字节的运算，相对于上面的C语言版，赋值语句是其1/4，实现了效率上的优化。</p>
+
 <h3 id="intra16x16horizontal-">Intra_16x16_Horizontal 预测模式</h3>
 
 <p>在 SPEC 中，关于该预测模式的定义如下：</p>
 
 <blockquote><p>This Intra_16x16 prediction mode shall be used only when the samples p[−1, y] with y = 0..15 are marked as "available<br />for Intra_16x16 prediction".<br />The values of the prediction samples predL[ x, y ], with x, y = 0..15, are derived by<br />predL[ x, y ] = p[ −1, y ], with x, y = 0..15</p></blockquote>
+
+<p>从 SPEC 中可以看出，只要<code>16x16</code>宏块左方的 16 个元素可用，就可以使用使用<code>Intra_16x16_Vertical</code>预测模式，至于该宏块的上边像素是否可用，并不影响。示例如下：</p>
+
+<p><img src="/images/x264_intra_predict/intra_16x16_horizontal.png" /></p>
 
 <p>x264 中关于模式 Horizontal 的代码如下：</p>
 
@@ -1241,12 +1274,43 @@
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">#   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)</span></code></pre></td></tr></table></div></figure>
+<p>该宏的作用是将1字节的数据，扩展为4字节的数据，其中的每个字节大小与起始的第一个字节相等。
+分析上面的代码结合上面的图，可以看出，每执行一次for循环，都对<code>16x16</code>的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素
+需要4次赋值完成，值得大小就是宏块的左边像素值得大小。执行完整个for循环后，16x16宏块像素值结束。</p>
+
+<p>针对<code>AARCH64</code>平台，X264 做了汇编优化，其代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">function x264_predict_16x16_h_neon, export=1
+</span><span class="line">    sub x1, x0, #1
+</span><span class="line">    mov x7, #FDEC_STRIDE
+</span><span class="line">.rept 8
+</span><span class="line">    ldlr {v0.16b}, [x1], x7
+</span><span class="line">    ldlr {v0.16b}, [x1], x7
+</span><span class="line">    stl  {v0.16b}, [x0], x7
+</span><span class="line">    stl  {v0.16b}, [x0], x7
+</span><span class="line">.endr
+</span><span class="line">    ret
+</span><span class="line">endfunc</span></code></pre></td></tr></table></div></figure>
 
 <h3 id="intra16x16dc-">Intra_16x16_DC 预测模式</h3>
 
 <p>在 SPEC 中，关于该预测模式的定义如下：</p>
 
-<blockquote><p>This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for<br />Intra_16x16 prediction", as follows:  </p><p>If all neighbouring samples p[x,-1] ], with x = 0..15, and p[ −1, y ], with y = 0..15, are marked as "available for<br />Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by:  <br />$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+\sum_{y'=0}^{15}p[-1,y']+16)&gt;&gt;5, with x,y=0..15$  </p><p>Otherwise, if any of the neighbouring samples p[ x, .1 ], with x = 0..15, are marked as "not available for Intra_16x16<br />prediction" and all of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "available for Intra_16x16<br />prediction", the prediction for all luma samples in the macroblock is given by:  <br />$pred_L[x,y]=(\sum_{y'=0}^{15}p[-1,y']+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise, if any of the neighbouring samples p[ −1, y ], with y = 0..15, are marked as "not available for Intra_16x16<br />prediction" and all of the neighbouring samples p[ x, −1 ], with x = 0..15, are marked as "available for Intra_16x16<br />prediction", the prediction for all luma samples in the macroblock is given by:  <br />$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise (some of the neighbouring samples p[ x, .1 ], with x = 0..15, and some of the neighbouring samples<br />p[ .1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction"), the prediction for all luma samples<br />in the macroblock is given by:  <br />$pred_L[x,y]=(1&lt;&lt;(BitDepth_Y - 1)), with x,y=0..15$</p></blockquote>
+<blockquote><p>This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for Intra_16x16 prediction", as follows:  </p><p>If all neighbouring samples p[x,-1] ], with x = 0..15, and p[ −1, y ], with y = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+\sum_{y'=0}^{15}p[-1,y']+16)&gt;&gt;5, with x,y=0..15$  </p><p>Otherwise, if any of the neighbouring samples p[ x, .1 ], with x = 0..15, are marked as "not available for Intra_16x16 prediction" and all of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{y'=0}^{15}p[-1,y']+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise, if any of the neighbouring samples p[ −1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction" and all of the neighbouring samples p[ x, −1 ], with x = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise (some of the neighbouring samples p[ x, .1 ], with x = 0..15, and some of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction"), the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(1&lt;&lt;(BitDepth_Y - 1)), with x,y=0..15$</p></blockquote>
+
+<p>通过 SPEC 描述可以看出来，DC 模式分为4种情况，一种是宏块的上方和左方宏块像素均可用时，此时宏块内的像素值为参考像素值得平均值；第二种是当左方像素不可用、上方像素可用时，宏块内的像素值为上方可用像素的平均值；
+第三种是当上方像素不可用、左方像素可用时，宏块内的像素值为左方可用像素的平均值。最后一种，当上方和左方像素均不可用时，宏块内像素值与BitDepth有关。此处仅仅举例上方和左方像素均可用的例子。</p>
 
 <p>x264 中关于模式 DC 的代码如下：</p>
 
@@ -1430,10 +1494,12 @@
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (18)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
 <li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
@@ -1446,23 +1512,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之X264_bitstream_init函数</a>
+        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/10/19/reference-frame/">X264 源码解析之参考帧</a>
+        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/10/11/x264-slicetype-decide/">X264 源码解析之判断帧类型</a>
+        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
       </li>
     
   </ul>
@@ -1582,7 +1648,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2017 - 李冰 -
+  Copyright &copy; 2018 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

@@ -1,0 +1,493 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>HEVC SPEC 学习之 Frame Rate - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="SPS Frame Rate VPS Frame Rate Container Frame Rate PTS Frame Rate Frame Rate是显示器上显示图像的频率,单位是 Hz,它作为视频文件的一个重要参数，本文记录HEVC码流中它的计算方法。 HEVC 中关于Frame &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2016/11/25/hevc-fps/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">HEVC SPEC 学习之 Frame Rate</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-11-25T00:13:47-08:00'><span class='date'>2016 年 11 月 25 日</span> <span class='time'>12:13 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#sps-frame-rate" id="markdown-toc-sps-frame-rate">SPS Frame Rate</a></li>
+  <li><a href="#vps-frame-rate" id="markdown-toc-vps-frame-rate">VPS Frame Rate</a></li>
+  <li><a href="#container-frame-rate" id="markdown-toc-container-frame-rate">Container Frame Rate</a></li>
+  <li><a href="#pts-frame-rate" id="markdown-toc-pts-frame-rate">PTS Frame Rate</a></li>
+</ul>
+
+<p><code>Frame Rate</code>是显示器上显示图像的频率,单位是 Hz,它作为视频文件的一个重要参数，本文记录<code>HEVC</code>码流中它的计算方法。</p>
+
+<!--more-->
+
+<p>HEVC 中关于<code>Frame Rate</code>的计算可以包含五中：从<code>SPS</code>中获取、从<code>VPS</code>中获取、从视频文件的<code>Container</code>层获取、根据PTS获取、选择默认值。</p>
+
+<h2 id="sps-frame-rate">SPS Frame Rate</h2>
+
+<ul>
+  <li>vui_parameters_present_flag 值为 1 表示该码流中<code>vui_parameters()</code>语法结构存在。否则，该码流中不存在 VUI 结构。</li>
+  <li>vui_timing_info_present_flag 值为 1 表示该码流中<code>vui_num_units_in_tick</code>、<code>vui_time_scale</code>、<code>vui_poc_proportional_to_timing_flag</code>和<code>vui_hrd_parameters_present_flag</code>存在，否则这些语法元素不存在。</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">if(vui_timing_info_present_flag){</th>
+      <th style="text-align: center"> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">vui_num_units_in_tick</td>
+      <td style="text-align: center">u(u32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vui_time_scale</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vui_poc_proportional_to_timing_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>vui_num_units_in_tick 是运行在<code>time_scale Hz</code>的频率（相应地时钟跳变计数器加一，称作一个时钟跳变）下的时钟的时间单元的数量。<code>vui_num_units_in_tick</code>应该大于 0。
+一个时钟跳变(单位是秒)，它等于<code>vui_num_units_in_tick</code>除以<code>vui_time_scale</code>的四分之一。例如，视频信号的采样率是 25Hz,<code>vui_time_scale</code>值为 27000000,<code>vui_num_units_in_tick</code>值为1080000,因此一个时钟跳变值为 0.04 秒。</li>
+</ul>
+
+<p>当 SPS 参考的 VPS 中有<code>vps_num_units_in_tick</code>存在时，<code>vui_num_units_in_tick</code>如果存在，就应该等于<code>vps_num_units_in_tick</code>,<code>vui_num_units_in_tick</code>如果不存在，被推断为<code>vps_num_units_in_tick</code>。</p>
+
+<ul>
+  <li>vui_time_scale 是一秒内时间单元的数量。例如，一个以 27MHz 的时钟测量时间的时间坐标系的<code>time_scale</code>为 27000000。<code>vui_time_scale</code>的值应该大于 0。</li>
+</ul>
+
+<p>当 SPS 参考的 VPS 中有<code>vps_time_scale</code>存在时，<code>vui_time_scale</code>如果存在，就应该等于<code>vps_time_scale</code>,<code>vui_time_scale</code>如果不存在，被推断为<code>vps_num_units_in_tick</code>。</p>
+
+<p>通过 SPS 计算的 FPS 的值为<code>fps = sps-&gt;vui-&gt;time_scale/sps-&gt;vui_num_units_in_tick</code>。</p>
+
+<h2 id="vps-frame-rate">VPS Frame Rate</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">if(vps_timing_info_present_flag){</th>
+      <th style="text-align: center"> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">vps_num_units_in_tick</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vps_time_scale</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vps_poc_proporitonal_to_timing_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>
+    <p>vps_num_units_in_tick 是运行在<code>vps_time_scale Hz</code>的频率（相应地时钟跳变计数器加一，称作一个时钟跳变）下的时钟的时间单元的数量。<code>vps_num_units_in_tick</code>应该大于 0。
+一个时钟跳变(单位是秒)，它等于<code>vps_num_units_in_tick</code>除以<code>vps_time_scale</code>的四分之一。例如，视频信号的采样率是 25Hz,<code>vps_time_scale</code>值为 27000000,<code>vps_num_units_in_tick</code>值为1080000,因此一个时钟跳变值为 0.04 秒。</p>
+  </li>
+  <li>
+    <p>vps_time_scale 是一秒内时间单元的数量。例如，一个以 27MHz 的时钟测量时间的时间坐标系的<code>vps_time_scale</code>为 27000000。<code>vps_time_scale</code>的值应该大于 0。</p>
+  </li>
+</ul>
+
+<p>通过 VPS 计算的 FPS 的值为<code>fps = vps-&gt;time_scale / vps-&gt;num_units_in_tick</code>。</p>
+
+<h2 id="container-frame-rate">Container Frame Rate</h2>
+
+<p>这种方法得到的<code>Frame Rate</code>，其实并不是通过解码器得到的，而是通过从 DMX 端通过分析<code>Container</code>得到的，此处不做分析。</p>
+
+<h2 id="pts-frame-rate">PTS Frame Rate</h2>
+
+<p>如果上面都没有<code>Frame Rate</code>的信息，就可以通过<code>PTS</code>来计算出<code>Frame Rate</code>。方法就是通过计算 PTS 的间隔，然后得出<code>Frame Rate</code>的值。</p>
+
+<blockquote>
+  <p>注意，对于<code>HEVC</code>中，如果是<code>Interlace</code>码流，<code>Frame Rate</code>需要减半。</p>
+</blockquote>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2016-11-25T00:13:47-08:00'><span class='date'>2016 年 11 月 25 日</span> <span class='time'>12:13 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hevcxue-xi/'>hevc学习</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/11/25/hevc-fps/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/11/25/hevc-fps/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/11/24/hevc-sei-recovery-point/" title="Previous Post: HEVC SPEC 学习之SEI——Recovery_Point">&laquo; HEVC SPEC 学习之SEI——Recovery_Point</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/11/27/hevc-rps/" title="Next Post: HEVC SPEC学习之RPS(待整理)">HEVC SPEC学习之RPS(待整理) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2018 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

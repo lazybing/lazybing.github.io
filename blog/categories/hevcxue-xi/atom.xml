@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:hevc学习 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/hevcxue-xi/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2018-06-24T08:16:39-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC学习之RPS(待整理)]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/27/hevc-rps/"/>
+    <updated>2016-11-27T06:20:37-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/27/hevc-rps</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#hevc-spec-rps" id="markdown-toc-hevc-spec-rps">HEVC SPEC 中RPS</a></li>
+</ul>
+
+<p>HEVC 对于参考帧的管理会有专门的参数集 RPS(Reference Picture Set) 来进行管理。RPS 技术，通过直接在每一帧开始的片头码流中传输 DPB 中各个帧的状态变化。<br />
+<!--more--></p>
+
+<h2 id="hevc-spec-rps">HEVC SPEC 中RPS</h2>
+
+<p>关于 RPS 部分的描述，SPEC 中在 7.4.8 中：<br />
+<code>st_ref_pic_set(stRpsIdx)</code>语法结构可能存在<code>SPS</code>或<code>Slice Header</code>中，根据 RPS 语法结构是否存在 SPS 或 Slice Header 中，应用如下：</p>
+
+<blockquote>
+  <p>如果 RPS 存在 Slice Header 中，<code>st_ref_pic_set(stRpsIdx)</code>语法结构指定了当前图像的 short-term RPS：<br />
+&gt; 当前图片的所有 slice header 中<code>st_ref_pic_set(stRpsIdx)</code>语法结构全部相同。<br />
+&gt; stRpsIdx 的值应该与当前图像参考的 SPS 的 num_short_term_ref_pic_sets 相同。<br />
+&gt; 
+如果 RPS 存在在 SPS 中，</p>
+</blockquote>
+
+<p><img src="/images/rps/hevc_rps.png"></p>
+
+<ul>
+  <li>inter_ref_pic_set_prediction_flag 值为1</li>
+</ul>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC 学习之 Frame Rate]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/25/hevc-fps/"/>
+    <updated>2016-11-25T00:13:47-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/25/hevc-fps</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#sps-frame-rate" id="markdown-toc-sps-frame-rate">SPS Frame Rate</a></li>
+  <li><a href="#vps-frame-rate" id="markdown-toc-vps-frame-rate">VPS Frame Rate</a></li>
+  <li><a href="#container-frame-rate" id="markdown-toc-container-frame-rate">Container Frame Rate</a></li>
+  <li><a href="#pts-frame-rate" id="markdown-toc-pts-frame-rate">PTS Frame Rate</a></li>
+</ul>
+
+<p><code>Frame Rate</code>是显示器上显示图像的频率,单位是 Hz,它作为视频文件的一个重要参数，本文记录<code>HEVC</code>码流中它的计算方法。</p>
+
+<!--more-->
+
+<p>HEVC 中关于<code>Frame Rate</code>的计算可以包含五中：从<code>SPS</code>中获取、从<code>VPS</code>中获取、从视频文件的<code>Container</code>层获取、根据PTS获取、选择默认值。</p>
+
+<h2 id="sps-frame-rate">SPS Frame Rate</h2>
+
+<ul>
+  <li>vui_parameters_present_flag 值为 1 表示该码流中<code>vui_parameters()</code>语法结构存在。否则，该码流中不存在 VUI 结构。</li>
+  <li>vui_timing_info_present_flag 值为 1 表示该码流中<code>vui_num_units_in_tick</code>、<code>vui_time_scale</code>、<code>vui_poc_proportional_to_timing_flag</code>和<code>vui_hrd_parameters_present_flag</code>存在，否则这些语法元素不存在。</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">if(vui_timing_info_present_flag){</th>
+      <th style="text-align: center"> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">vui_num_units_in_tick</td>
+      <td style="text-align: center">u(u32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vui_time_scale</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vui_poc_proportional_to_timing_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>vui_num_units_in_tick 是运行在<code>time_scale Hz</code>的频率（相应地时钟跳变计数器加一，称作一个时钟跳变）下的时钟的时间单元的数量。<code>vui_num_units_in_tick</code>应该大于 0。
+一个时钟跳变(单位是秒)，它等于<code>vui_num_units_in_tick</code>除以<code>vui_time_scale</code>的四分之一。例如，视频信号的采样率是 25Hz,<code>vui_time_scale</code>值为 27000000,<code>vui_num_units_in_tick</code>值为1080000,因此一个时钟跳变值为 0.04 秒。</li>
+</ul>
+
+<p>当 SPS 参考的 VPS 中有<code>vps_num_units_in_tick</code>存在时，<code>vui_num_units_in_tick</code>如果存在，就应该等于<code>vps_num_units_in_tick</code>,<code>vui_num_units_in_tick</code>如果不存在，被推断为<code>vps_num_units_in_tick</code>。</p>
+
+<ul>
+  <li>vui_time_scale 是一秒内时间单元的数量。例如，一个以 27MHz 的时钟测量时间的时间坐标系的<code>time_scale</code>为 27000000。<code>vui_time_scale</code>的值应该大于 0。</li>
+</ul>
+
+<p>当 SPS 参考的 VPS 中有<code>vps_time_scale</code>存在时，<code>vui_time_scale</code>如果存在，就应该等于<code>vps_time_scale</code>,<code>vui_time_scale</code>如果不存在，被推断为<code>vps_num_units_in_tick</code>。</p>
+
+<p>通过 SPS 计算的 FPS 的值为<code>fps = sps-&gt;vui-&gt;time_scale/sps-&gt;vui_num_units_in_tick</code>。</p>
+
+<h2 id="vps-frame-rate">VPS Frame Rate</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">if(vps_timing_info_present_flag){</th>
+      <th style="text-align: center"> </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">vps_num_units_in_tick</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vps_time_scale</td>
+      <td style="text-align: center">u(32)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">vps_poc_proporitonal_to_timing_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>
+    <p>vps_num_units_in_tick 是运行在<code>vps_time_scale Hz</code>的频率（相应地时钟跳变计数器加一，称作一个时钟跳变）下的时钟的时间单元的数量。<code>vps_num_units_in_tick</code>应该大于 0。
+一个时钟跳变(单位是秒)，它等于<code>vps_num_units_in_tick</code>除以<code>vps_time_scale</code>的四分之一。例如，视频信号的采样率是 25Hz,<code>vps_time_scale</code>值为 27000000,<code>vps_num_units_in_tick</code>值为1080000,因此一个时钟跳变值为 0.04 秒。</p>
+  </li>
+  <li>
+    <p>vps_time_scale 是一秒内时间单元的数量。例如，一个以 27MHz 的时钟测量时间的时间坐标系的<code>vps_time_scale</code>为 27000000。<code>vps_time_scale</code>的值应该大于 0。</p>
+  </li>
+</ul>
+
+<p>通过 VPS 计算的 FPS 的值为<code>fps = vps-&gt;time_scale / vps-&gt;num_units_in_tick</code>。</p>
+
+<h2 id="container-frame-rate">Container Frame Rate</h2>
+
+<p>这种方法得到的<code>Frame Rate</code>，其实并不是通过解码器得到的，而是通过从 DMX 端通过分析<code>Container</code>得到的，此处不做分析。</p>
+
+<h2 id="pts-frame-rate">PTS Frame Rate</h2>
+
+<p>如果上面都没有<code>Frame Rate</code>的信息，就可以通过<code>PTS</code>来计算出<code>Frame Rate</code>。方法就是通过计算 PTS 的间隔，然后得出<code>Frame Rate</code>的值。</p>
+
+<blockquote>
+  <p>注意，对于<code>HEVC</code>中，如果是<code>Interlace</code>码流，<code>Frame Rate</code>需要减半。</p>
+</blockquote>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC 学习之SEI——Recovery_Point]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/24/hevc-sei-recovery-point/"/>
+    <updated>2016-11-24T18:05:50-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/24/hevc-sei-recovery-point</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#recovery-point-sei-" id="markdown-toc-recovery-point-sei-">Recovery point SEI 消息语法</a></li>
+  <li><a href="#recovery-point-sei--1" id="markdown-toc-recovery-point-sei--1">Recovery point SEI 消息语义</a></li>
+  <li><a href="#hm--recoverypoint" id="markdown-toc-hm--recoverypoint">HM 中的 Recovery_Point</a></li>
+</ul>
+
+<p>本文主要记录 HEVC 中的 Recovery_Point 这一类 SEI PayloadType 的介绍。<code>recovery point</code>与<code>H264</code>中<code>recovery point</code>的功能是相似的，主要作用是帮助解码器确认，在解码器凯斯随机
+访问或解码器遇到序列中断的链接以后，解码过程生成能够合格显示的图像的时间。</p>
+
+<!--more-->
+
+<h2 id="recovery-point-sei-">Recovery point SEI 消息语法</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">recovery_point(payloadSize)</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">recovery_poc_cnt</td>
+      <td style="text-align: center">se(v)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">exact_match_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">broken_link_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="recovery-point-sei--1">Recovery point SEI 消息语义</h2>
+
+<p>当解码过程从一个解码顺序中与<code>recovery point sei payloadType</code>关联的访问单元开始时，所有此<code>SEI</code>消息指明的输出
+顺序中<code>recovery point</code>以后的解码图像都是内容正确或大致正确的(即显示时不会有明显的马赛克)。有<code>recovery point sei payloadType</code>关联
+的图像之前的随机访问单元生成的解码图像在内容上不一定是正确的，直到指定的<code>recovery point</code>。从与<code>recovery point sei payloadType</code>的访问
+单元开始的解码过程操作可以包含对解码图像缓冲区不存在的图像的引用。</p>
+
+<ul>
+  <li>
+    <p>recovery_poc_cnt 指定输出顺序中解码图像的恢复点。如果存在图像A, 以解码顺序看它在当前图像(与当前的 SEI 消息关联的图像)的后面，并且
+它的 POC 等于当前图像的 POC 加上<code>recovery_poc_cnt</code>的值，则图像A被认定为<code>recovery point picture</code>。否则，显示顺序中第一个 POC 大于当前
+图像 POC 加上 <code>recovery_poc_cnt</code>值的图像被认定为<code>recovery point picture</code>。<code>recovery point</code>图像在解码顺序中不能再当前图像的前面。以显示
+顺序来看，从<code>recovery point</code>图像之后的所有解码图像在内容上都是正确或基本正确的。<code>recovery_poc_cnt</code>的值应当在<code>-MaxPicOrderCntLsb / 2</code>和
+<code>MaxPicOrderCntLsb / 2 - 1</code>的范围内。</p>
+  </li>
+  <li>
+    <p>exact_match_flag 表示在与恢复点 SEI 消息关联的访问单元处开始的解码过程输出的特定恢复点之后的解码图像，是否应该是一个与 NAL 单元流中
+的前一个 IDR 访问单元位置处开始的解码过程生成的图像精确匹配的图像。值为 0 表示不一定精确匹配，为 1 表示精确匹配。</p>
+  </li>
+</ul>
+
+<p>当解码从恢复点 SEI 消息开始时，所有对不可获得的参考图像的引用应当推断为对只包含用内部宏块预测方式编码的宏块，样点值为 Y 等于 128, Cb 和 Cr 等于
+128（中度灰）的图像的引用，目的是确定与<code>exact_match_flag</code>的取值的一致性。</p>
+
+<ul>
+  <li>broken_link_flag 表示在恢复点 SEI 消息处 NAL 单元流的链接是否出现中断。它的语义如下：
+—— 如果<code>broken_link_flag</code>值为 1， 在前一个 IDR 访问单元位置处开始的解码过程生成的图像可能包含不希望的视觉假象，以致于在输出顺序中关联恢复点 SEI 消息的访问单元之后
+的解码图像不可显示，直到指定的输出顺序中的恢复点。<br />
+—— 如果<code>broken_link_flag</code>值为 0, 没有预示会出现潜在的视觉假象。</li>
+</ul>
+
+<h2 id="hm--recoverypoint">HM 中的 Recovery_Point</h2>
+
+<p>HM 源码中只是对<code>Recovery_Point</code>这一 SEI 信息做了 parse，但并没有使用解析出来的信息，可以认为 HM 中是不支持 <code>recovery_point</code>的。 其中解析的源码如下：</p>
+
+<p><figure class='code'><figcaption><span>recovery_point </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">Void</span> <span class="n">SEIReader</span><span class="o">::</span><span class="n">xParseSEIRecoveryPoint</span><span class="p">(</span><span class="n">SEIRecoveryPoint</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">sei</span><span class="p">,</span> <span class="n">UInt</span> <span class="n">payloadSize</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">ostream</span> <span class="o">*</span><span class="n">pDecodedMessageOutputStream</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">Int</span>  <span class="n">iCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">UInt</span> <span class="n">uiCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">output_sei_message_header</span><span class="p">(</span><span class="n">sei</span><span class="p">,</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">payloadSize</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">sei_read_svlc</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">iCode</span><span class="p">,</span>  <span class="err">“</span><span class="n">recovery_poc_cnt</span><span class="err">”</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_recoveryPocCnt</span>     <span class="o">=</span> <span class="n">iCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="err">“</span><span class="n">exact_matching_flag</span><span class="err">”</span> <span class="p">);</span>   <span class="n">sei</span><span class="p">.</span><span class="n">m_exactMatchingFlag</span>  <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="err">“</span><span class="n">broken_link_flag</span><span class="err">”</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_brokenLinkFlag</span>     <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">xParseByteAlign</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC学习之PAR、DAR、SAR]]></title>
+    <link href="http://lazybing.github.io/blog/2016/11/16/par-sar-dar-analyse/"/>
+    <updated>2016-11-16T08:11:53-08:00</updated>
+    <id>http://lazybing.github.io/blog/2016/11/16/par-sar-dar-analyse</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Aspect_ratio_(image)">Aspect Ratio</a> 是图片的宽高比。<br />
+<!--more--></p>
+
+<p>主要有 3 种<code>aspect ratio</code>：PAR(Pixel Aspect Ratio)、DAR(Display Aspect Ratio)、SAR(Sample Aspect Ratio)。</p>
+
+<p>PAR(Pixel Aspect Ratio): 像素纵横比；<br />
+DAR(Display Aspect Ratio):显示纵横比；<br />
+SAR(Sample Aspect Ratio):采样纵横比；</p>
+
+<p>三者的关系为PAR x SAR = DAR 或者 PAR = DAR / SAR。</p>
+
+<h2 id="sarsample-aspect-ration">SAR(Sample Aspect Ration)采样纵横比</h2>
+
+<p>HEVC SPEC 中关于 SAR 语法元素的描述如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">vui_parameters(){</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">aspect_ratio_info_present_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">if(aspect_ratio_info_present_flag){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">aspect_ratio_idc</td>
+      <td style="text-align: center">u(8)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">if(aspect_ratio_idc == EXTENDED_SRA){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">sar_width</td>
+      <td style="text-align: center">u(16)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">sar_height</td>
+      <td style="text-align: center">u(16)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>上面提到的 SAR 语法元素的语义如下：</p>
+
+<ul>
+  <li>aspect_ratio_info_present_flag 值为 1，指定<code>aspect_ratio_idc</code>在码流中存在；否则该语法元素不存在。</li>
+  <li>aspect_ratio_idc 指定亮度采样的<code>SAR</code>的值。下面的表格展示它的含义。当<code>aspect_ratio_idc</code>值为 255，表明<code>EXTENDED_SRA</code>时，<code>SAR</code>的值
+等于<code>sar_width:sar_height</code>。当<code>aspect_ratio_idc</code>语法不存在时，该值可以被认为是 0。<code>aspect_ratio_idc</code>的范围是<code>17-254</code>时，未使用，并且不该出现在码流中，此时解码器可以指定为 0。</li>
+  <li>sar_width 表示<code>SAR</code>的水平大小。</li>
+  <li>sar_height 表示<code>SAR</code>的竖直大小。<br />
+<code>sar_width</code>和<code>sar_height</code>等于0、或<code>aspect_ratio_idc</code>等于0时，SPEC 未定义它的行为。</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">asepct_ratio_idc</th>
+      <th style="text-align: center">Sample aspect ratio</th>
+      <th>Examples of use(informative)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">Unspecified</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">1:1(“square”)</td>
+      <td>7680x4320 16:9 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">12:11</td>
+      <td>720x576 4:3 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">10:11</td>
+      <td>720x480 4:3 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">16:11</td>
+      <td>720x576 16:9 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">16</td>
+      <td style="text-align: center">2:1</td>
+      <td>960x1080 16:9 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">17…254</td>
+      <td style="text-align: center">Reserved</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">255</td>
+      <td style="text-align: center">EXTENDED_SAR</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="parpixel-aspect-ratio">PAR(Pixel Aspect Ratio)</h2>
+
+<p>PAR 示例如下：</p>
+
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-1to1.svg.png" title="‘1to1_PAR’" ></p>
+
+<p><img src="/images/PAR_DAR_SAR/220px-PAR-2to1.svg.png" title="‘2to1_PAR’" ></p>
+
+<h2 id="dardisplay-aspect-ratio">DAR(Display Aspect Ratio)</h2>
+
+<p>DAR 示例如下：</p>
+
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="‘16to9_DAR’" ></p>
+
+<p><img src="/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="‘4to3_DAR’" ></p>
+
+<h2 id="section">参考资料</h2>
+<ol>
+  <li><a href="https://www.animemusicvideos.org/guides/avtech3/theory-videoaspectratios.html">Advanced Aspect Ratios - PAR, DAR and SAR</a></li>
+  <li><a href="http://forum.mediacoderhq.com/viewtopic.php?f=17&amp;t=8197">Understanding Aspect Ratios (DAR and PAR)</a></li>
+  <li><a href="https://bavc.org/blog/par-sar-and-dar-making-sense-standard-definition-sd-video-pixels">PAR, SAR, and DAR: Making Sense of Standard Definition (SD) video pixels</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[HEVC SPEC学习之Profiles-Tiers-Levels]]></title>
+    <link href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/"/>
+    <updated>2016-06-27T07:52:00-07:00</updated>
+    <id>http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
+  <li><a href="#hevc-spec--profile-tier-level-" id="markdown-toc-hevc-spec--profile-tier-level-">HEVC SPEC 中 Profile Tier Level 语法</a></li>
+  <li><a href="#hm--profile-tier-level-" id="markdown-toc-hm--profile-tier-level-">HM 中 Profile Tier Level 实现</a></li>
+</ul>
+
+<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
+
+<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
+Profile 指出码流中使用了哪些编码工具和算法。</p>
+
+<!--more-->
+
+<p>Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
+值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。</p>
+
+<p>在 HEVC 的设计中，应用可以只依据最大的码率和 CPB 大小就可以区分。为了解决这个问题，有些 Level 定义了
+两个 Tier——Main Tier 用于大多数应用，High Tier 用于那些最苛刻的应用。</p>
+
+<p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
+<code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
+
+<h2 id="hevc-spec--profile-tier-level-">HEVC SPEC 中 Profile Tier Level 语法</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">profle_tier_level(profilePresentFlag, maxNumSubLayersMinus1){</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">if(profilePresentFlag){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_profile_space</td>
+      <td style="text-align: center">u(2)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_tier_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_profile_idc</td>
+      <td style="text-align: center">u(5)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">for(j = 0; j &lt; 32; j++)</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_profile_compatibility_flag[i]</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_progressive_source_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_interlaced_source_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">general_level_idc</td>
+      <td style="text-align: center">u(8)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>general_profile_idc 当<code>general_profile_space</code>等于 0，该值表明了<code>profile</code>的标准，它的值必须是<code>Annex A</code>中包含的值，其他值未定义，保留。</li>
+  <li>general_level_idc 表明该视频流遵守的 level 值，它是在<code>Annex A</code>中定义的。码流中不应包含<code>Annex A</code>中未定义的值。</li>
+</ul>
+
+<blockquote>
+  <p>注意，<code>general_level_idc</code>值越大，表示更高的 level。同一个<code>CVS</code>中，码流中<code>VPS</code>指定的最大 level 可能大于<code>SPS</code>指定的最大 level。</p>
+</blockquote>
+
+<h2 id="hm--profile-tier-level-">HM 中 Profile Tier Level 实现</h2>
+
+<p>HM 中关于 ProfileTierLevel 的定义如下：</p>
+
+<p>```
+namespace Profile
+{
+    enum Name
+    {
+        NONE               = 0,
+        MAIN               = 1,
+        MAIN10             = 2,
+        MAINSTILLPICTURE   = 3,
+        MAINREXT           = 4,
+        HIGHTHROUGHPUTREXT = 5
+    };
+}</p>
+
+<p>namespace Level
+{
+    enum Tier
+    {
+        MAIN = 0,
+        HIGH = 1,
+    };</p>
+
+<pre><code>enum Name
+{
+    NONE       = 0,
+    LEVEL1     = 30,
+    LEVEL2     = 60,
+    LEVEL2_1   = 63,
+    LEVEL3     = 90,
+    LEVEL3_1   = 93,
+    LEVEL4     = 120,
+    LEVEL4_1   = 123,
+    LEVEL5     = 150,
+    LEVEL5_1   = 153,
+    LEVEL5_2   = 156,
+    LEVEL6     = 180,
+    LEVEL6_1   = 183,
+    LEVEL6_2   = 186,
+    LEVEL8_5   = 255,
+}; }
+</code></pre>
+
+<p>class ProfileTierLevel
+{
+    Int            m_profileSpace;
+    Level::Tier    m_tierFlag;
+    Profile::Name  m_profileIdc;
+    Bool           m_profileCompatibilityFlag[32];
+    Level::Name    m_levelIdc;</p>
+
+<pre><code>Bool           m_progressiveSourceFlag;
+Bool           m_interlacedSourceFlag;
+Bool           m_nonPackedConstraintFlag;
+Bool           m_frameOnlyConstraintFlag;
+UInt           m_bitDepthConstraintValue;
+ChromaFormat   m_chromaFormatConstraintValue;
+Bool           m_intraConstraintFlag;
+Bool           m_lowerBitRateConstraintFlag; } ```
+</code></pre>
+
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,603 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>ELF格式分析手册 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="ELF Data Type The ELF Header Checking the ELF Header Loading the ELF File 本文主要记录目标文件是i386(32位架构、小端序)ELF文件的加载过程。本文中的所有代码都是 C 风格，所有代码段都会使用最简单的例子。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/03/21/elf-format-tutorial/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">ELF格式分析手册</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2018-03-21T07:30:48-07:00'><span class='date'>2018 年 03 月 21 日</span> <span class='time'>7:30 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#elf-data-type" id="markdown-toc-elf-data-type">ELF Data Type</a></li>
+  <li><a href="#the-elf-header" id="markdown-toc-the-elf-header">The ELF Header</a></li>
+  <li><a href="#checking-the-elf-header" id="markdown-toc-checking-the-elf-header">Checking the ELF Header</a></li>
+  <li><a href="#loading-the-elf-file" id="markdown-toc-loading-the-elf-file">Loading the ELF File</a></li>
+</ul>
+
+<p>本文主要记录目标文件是<code>i386(32位架构、小端序)ELF</code>文件的加载过程。本文中的所有代码都是 C 风格，所有代码段都会使用最简单的例子。后面可能会扩展到其他类型的 ELF 文件。
+<!--more--></p>
+
+<h1 id="elf-data-type">ELF Data Type</h1>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdint.h&gt;</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint16_t</span> <span class="n">Elf32_Half</span><span class="p">;</span>    <span class="c1">//Unsigned half int</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Off</span><span class="p">;</span>     <span class="c1">//Unsigned offset</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Addr</span><span class="p">;</span>    <span class="c1">//Unsigned address</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Word</span><span class="p">;</span>    <span class="c1">//Unsigned int</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">int32_t</span>  <span class="n">Elf32_Sword</span><span class="p">;</span>   <span class="c1">//Signed int</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="the-elf-header">The ELF Header</h1>
+
+<p>每个 ELF 格式文件都有位于文件开始的头部<code>Header</code>。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define ELF_NIDENT 16</span>
+</span><span class="line"><span class="k">typedef</span> <span class="k">struct</span><span class="p">{</span>
+</span><span class="line">    <span class="kt">uint8_t</span>     <span class="n">e_ident</span><span class="p">[</span><span class="n">ELF_NIDENT</span><span class="p">];</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_type</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_machine</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Word</span>  <span class="n">e_version</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Addr</span>  <span class="n">e_entry</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Off</span>   <span class="n">e_phoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Off</span>   <span class="n">e_shoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_phoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_phentsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_phnum</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shentsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shnum</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shstrndx</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="n">ELF32_Ehdr</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">enum</span> <span class="n">Elf_Ident</span><span class="p">{</span>
+</span><span class="line">    <span class="n">EI_MAG0</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//0x7F</span>
+</span><span class="line">    <span class="n">EI_MAG1</span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//‘E’</span>
+</span><span class="line">    <span class="n">EI_MAG2</span>    <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="c1">//‘L’</span>
+</span><span class="line">    <span class="n">EI_MAG3</span>    <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="c1">//‘F’</span>
+</span><span class="line">    <span class="n">EI_CLASS</span>   <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="c1">//Architecture(32/64)</span>
+</span><span class="line">    <span class="n">EI_DATA</span>    <span class="o">=</span> <span class="mi">5</span><span class="p">,</span><span class="c1">//Byte Order</span>
+</span><span class="line">    <span class="n">EI_VERSION</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="c1">//ELF Version</span>
+</span><span class="line">    <span class="n">EI_OSABI</span>   <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="c1">//OS Specific</span>
+</span><span class="line">    <span class="n">EI_ABIVERSION</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="c1">//OS Specific</span>
+</span><span class="line">    <span class="n">EI_PAD</span>        <span class="o">=</span> <span class="mi">9</span>  <span class="c1">//Padding</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define ELFMAG0    0x7F   </span><span class="c1">//e_ident[EI_MAG0]</span>
+</span><span class="line"><span class="cp">#define ELFMAG1    &#39;E&#39;    </span><span class="c1">//e_ident[EI_MAG1]</span>
+</span><span class="line"><span class="cp">#define ELFMAG2    &#39;L&#39;    </span><span class="c1">//e_ident[EI_MAG2]</span>
+</span><span class="line"><span class="cp">#define ELFMAG3    &#39;F&#39;    </span><span class="c1">//e_ident[EI_MAG3]</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define ELFDATA2LSB (1)   </span><span class="c1">//Little Endian</span>
+</span><span class="line"><span class="cp">#define ELFCLASS32  (1)   </span><span class="c1">//32-bit Architecture</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">enum</span> <span class="n">Elf_Type</span><span class="p">{</span>
+</span><span class="line">    <span class="n">ET_NONE</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//Unknown Type</span>
+</span><span class="line">    <span class="n">ET_REL</span>     <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//Relocatable File</span>
+</span><span class="line">    <span class="n">ET_EXEC</span>    <span class="o">=</span> <span class="mi">2</span>  <span class="c1">//Executable File</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line"><span class="cp">#define EM_386     (3) </span><span class="c1">//x86 Machine Type</span>
+</span><span class="line"><span class="cp">#define EV_CURRENT (1) </span><span class="c1">//ELF Current Version</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="checking-the-elf-header">Checking the ELF Header</h1>
+
+<p>在对<code>ELF</code>文件进行加载、链接、重定向或其他操作之前，首先要确保机器是否支持上述的操作。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">bool</span> <span class="nf">elf_check_file</span><span class="p">(</span><span class="n">Elf32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">hdr</span><span class="p">)</span> <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG0</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG0 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG1</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG1 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG2</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG2 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG3</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG3</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG2 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">bool</span> <span class="nf">elf_check_supported</span><span class="p">(</span><span class="n">ELF32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">elf_check_file</span><span class="p">(</span><span class="n">hdr</span><span class="p">)){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Invalid ELF File.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_CLASS</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFCLASS32</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File Class.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_DATA</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFDATA2LSB</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File byte order.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_machine</span> <span class="o">!=</span> <span class="n">EM_386</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File target.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_VERSION</span><span class="p">]</span> <span class="o">!=</span> <span class="n">EV_CURRENT</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File version.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_REL</span> <span class="o">&amp;&amp;</span> <span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_EXEC</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File type.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="loading-the-elf-file">Loading the ELF File</h1>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2018-03-21T07:30:48-07:00'><span class='date'>2018 年 03 月 21 日</span> <span class='time'>7:30 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/03/21/elf-format-tutorial/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/03/21/elf-format-tutorial/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2018/01/11/assemble-hello-world/" title="Previous Post: 汇编语言实现hello world">&laquo; 汇编语言实现hello world</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2018 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

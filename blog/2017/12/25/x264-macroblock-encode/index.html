@@ -1,0 +1,469 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>X264 源码解析之x264_macroblock_encode函数 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="x264_macroblock_encode 概述 I_PCM 编码模式 P_Skip 模式和 B_Skip 模式编码 本文主要记录 X264 中对于x264_macroblock_encode函数的分析，该函数主要变换和量化，对应 X264 中的宏块编码模块。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">X264 源码解析之x264_macroblock_encode函数</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2017-12-25T19:52:38-08:00'><span class='date'>2017 年 12 月 25 日</span> <span class='time'>7:52 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#x264macroblockencode-" id="markdown-toc-x264macroblockencode-">x264_macroblock_encode 概述</a>    <ul>
+      <li><a href="#ipcm-" id="markdown-toc-ipcm-">I_PCM 编码模式</a></li>
+      <li><a href="#pskip--bskip-" id="markdown-toc-pskip--bskip-">P_Skip 模式和 B_Skip 模式编码</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>本文主要记录 X264 中对于<code>x264_macroblock_encode</code>函数的分析，该函数主要变换和量化，对应 X264 中的宏块编码模块。<br />
+<!--more--></p>
+
+<h2 id="x264macroblockencode-">x264_macroblock_encode 概述</h2>
+
+<p>该函数主要在<code>x264_slice_write()</code>函数调用，它主要完成了编码器中的变换、量化部分，该函数主要是封装了<code>x264_macroblock_encode_internal()</code>函数，它包括如下几个步骤：</p>
+
+<figure class="code"><figcaption><span>x264_macroblock_encode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_macroblock_encode</span><span class="p">(</span><span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">CHROMA444</span><span class="p">)</span>
+</span><span class="line">        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ol>
+  <li>如果宏块类型为 PCM 类型，直接存储重建帧数据。</li>
+  <li>如果宏块类型为 Skip 类型，调用<code>x264_macroblock_encode_skip()</code>编码 Skip 类型宏块，包括<code>P_SKIP</code>和<code>B_SKIP</code>类型。</li>
+  <li>如果宏块类型为<code>I_16x16</code>，调用<code>x264_mb_encode_i16x16()</code>编码 Intra 16x16 类型的宏块，该函数除了进行 DCT 变换之外，还对 16 个小块的 DC 系数进行 Hadamard 变换。</li>
+  <li>如果宏块类型为<code>I_4x4</code>，调用<code>x264_mb_encode_i4x4()</code>编码 Intra 4x4 类型的宏块。</li>
+  <li>帧间宏块编码，该部分并没有单独的函数完成，而是写在了<code>x264_macroblock_encode_internal</code>函数内部。</li>
+  <li>调用<code>x264_mb_encode_chroma()</code>函数编码色度卡。</li>
+</ol>
+
+<h3 id="ipcm-">I_PCM 编码模式</h3>
+
+<p>I_PCM 是一种帧内编码模式，在该模式下，编码器直接传输图像的像素值，而不经过预测和变换。在一些特殊的情况下，特别是图像
+内容不规则或者量化参数非常低时，该模式比常规的操作（帧内预测-变换-量化-编码）效率更高。</p>
+
+<p>I_PCM 模式用于以下目的：</p>
+
+<ol>
+  <li>允许编码器精确地表示像素值。</li>
+  <li>提供表示不规则图像内容的准确性，而不引起重大的数据量增加。</li>
+  <li>严格限制宏块解码比特数，但不降低编码效率。</li>
+</ol>
+
+<p>对 I_PCM 类型的编码，实现代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">I_PCM</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="c1">//if PCM is chosen, we need to store reconstructed frame data</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">p</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="n">plane_count</span><span class="p">;</span> <span class="n">p</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">chroma</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">&gt;&gt;</span> <span class="n">CHROMA_V_SHIFT</span><span class="p">;</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="pskip--bskip-">P_Skip 模式和 B_Skip 模式编码</h3>
+
+<ul>
+  <li>P_Skip 类型宏块：即 COPY 宏块，无像素残差，无运动矢量残差(MVD)。直接利用预测 MV 得到的像素预测值。像素重构值= 像素预测值。</li>
+  <li>B_Skip 类型宏块：无像素残差，无运动矢量残差(MVD)。解码时，通过 Direct 预测模式(时间或空间)计算出前、后向 MV 后，直接利用前、后向 MV 得到像素预测值。像素重构值 = 像素预测值。</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2017-12-25T19:52:38-08:00'><span class='date'>2017 年 12 月 25 日</span> <span class='time'>7:52 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/x264/'>x264</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2017/11/13/x264-macroblock-analyse/" title="Previous Post: X264 源码解析之x264_macroblock_analyse函数">&laquo; X264 源码解析之x264_macroblock_analyse函数</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2018/01/11/assemble-hello-world/" title="Next Post: 汇编语言实现hello world">汇编语言实现hello world &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2018 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>PAR、DAR、SAR分析 - 懒人李冰</title>
+  <title>HEVC SPEC学习之PAR、DAR、SAR - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">PAR、DAR、SAR分析</h1>
+      <h1 class="entry-title">HEVC SPEC学习之PAR、DAR、SAR</h1>
     
     
       <p class="meta">
@@ -109,17 +109,143 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 
 <p>三者的关系为PAR x SAR = DAR 或者 PAR = DAR / SAR。</p>
 
+<h2 id="sarsample-aspect-ration">SAR(Sample Aspect Ration)采样纵横比</h2>
+
+<p>HEVC SPEC 中关于 SAR 语法元素的描述如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">vui_parameters(){</th>
+      <th style="text-align: center">Descriptor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">aspect_ratio_info_present_flag</td>
+      <td style="text-align: center">u(1)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">if(aspect_ratio_info_present_flag){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">aspect_ratio_idc</td>
+      <td style="text-align: center">u(8)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">if(aspect_ratio_idc == EXTENDED_SRA){</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">sar_width</td>
+      <td style="text-align: center">u(16)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">sar_height</td>
+      <td style="text-align: center">u(16)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">}</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>上面提到的 SAR 语法元素的语义如下：</p>
+
+<ul>
+  <li>aspect_ratio_info_present_flag 值为 1，指定<code>aspect_ratio_idc</code>在码流中存在；否则该语法元素不存在。</li>
+  <li>aspect_ratio_idc 指定亮度采样的<code>SAR</code>的值。下面的表格展示它的含义。当<code>aspect_ratio_idc</code>值为 255，表明<code>EXTENDED_SRA</code>时，<code>SAR</code>的值
+等于<code>sar_width:sar_height</code>。当<code>aspect_ratio_idc</code>语法不存在时，该值可以被认为是 0。<code>aspect_ratio_idc</code>的范围是<code>17-254</code>时，未使用，并且不该出现在码流中，此时解码器可以指定为 0。</li>
+  <li>sar_width 表示<code>SAR</code>的水平大小。</li>
+  <li>sar_height 表示<code>SAR</code>的竖直大小。<br />
+<code>sar_width</code>和<code>sar_height</code>等于0、或<code>aspect_ratio_idc</code>等于0时，SPEC 未定义它的行为。</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">asepct_ratio_idc</th>
+      <th style="text-align: center">Sample aspect ratio</th>
+      <th>Examples of use(informative)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">Unspecified</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">1:1(“square”)</td>
+      <td>7680x4320 16:9 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">12:11</td>
+      <td>720x576 4:3 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">10:11</td>
+      <td>720x480 4:3 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">16:11</td>
+      <td>720x576 16:9 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">…</td>
+      <td style="text-align: center">…</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">16</td>
+      <td style="text-align: center">2:1</td>
+      <td>960x1080 16:9 frame without horizontal overscan</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">17…254</td>
+      <td style="text-align: center">Reserved</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td style="text-align: center">255</td>
+      <td style="text-align: center">EXTENDED_SAR</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="parpixel-aspect-ratio">PAR(Pixel Aspect Ratio)</h2>
+
 <p>PAR 示例如下：</p>
 
 <p><img src="/images/PAR_DAR_SAR/220px-PAR-1to1.svg.png" title="'1to1_PAR'" /></p>
 
 <p><img src="/images/PAR_DAR_SAR/220px-PAR-2to1.svg.png" title="'2to1_PAR'" /></p>
 
+<h2 id="dardisplay-aspect-ratio">DAR(Display Aspect Ratio)</h2>
+
 <p>DAR 示例如下：</p>
 
 <p><img src="/images/PAR_DAR_SAR/Aspect_ratio_16_9_example3.jpg" title="'16to9_DAR'" /></p>
 
 <p><img src="/images/PAR_DAR_SAR/Aspect_ratio_4_3_example.jpg" title="'4to3_DAR'" /></p>
+
+<h2 id="section">参考资料</h2>
+<ol>
+  <li><a href="https://www.animemusicvideos.org/guides/avtech3/theory-videoaspectratios.html">Advanced Aspect Ratios - PAR, DAR and SAR</a></li>
+  <li><a href="http://forum.mediacoderhq.com/viewtopic.php?f=17&amp;t=8197">Understanding Aspect Ratios (DAR and PAR)</a></li>
+  <li><a href="https://bavc.org/blog/par-sar-and-dar-making-sense-standard-definition-sd-video-pixels">PAR, SAR, and DAR: Making Sense of Standard Definition (SD) video pixels</a></li>
+</ol>
 
 </div>
 
@@ -141,7 +267,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+    <a class='category' href='/blog/categories/hevcxue-xi/'>hevc学习</a>
   
 </span>
 
@@ -162,7 +288,7 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
         <a class="basic-alignment left" href="/blog/2016/11/05/ffmpeg-learning-of-ffplay/" title="Previous Post: FFmpeg 学习之 FFplay 源码分析">&laquo; FFmpeg 学习之 FFplay 源码分析</a>
       
       
-        <a class="basic-alignment right" href="/blog/2016/12/05/av-register-all/" title="Next Post: FFMPEG 源码分析：av_register_all">FFMPEG 源码分析：av_register_all &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2016/11/24/hevc-sei-recovery-point/" title="Next Post: HEVC SPEC 学习之SEI——Recovery_Point">HEVC SPEC 学习之SEI——Recovery_Point &raquo;</a>
       
     </p>
   </footer>
@@ -176,10 +302,12 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (18)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
 <li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
@@ -192,23 +320,23 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之X264_bitstream_init函数</a>
+        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/10/19/reference-frame/">X264 源码解析之参考帧</a>
+        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/10/11/x264-slicetype-decide/">X264 源码解析之判断帧类型</a>
+        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
       </li>
     
   </ul>
@@ -328,7 +456,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2017 - 李冰 -
+  Copyright &copy; 2018 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

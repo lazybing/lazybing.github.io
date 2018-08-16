@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2017-11-12T18:55:10-08:00</updated>
+  <updated>2018-06-24T08:16:39-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,7 +14,729 @@
 
   
   <entry>
-    <title type="html"><![CDATA[X264源码解析之X264_bitstream_init函数]]></title>
+    <title type="html"><![CDATA[ELF格式分析手册]]></title>
+    <link href="http://lazybing.github.io/blog/2018/03/21/elf-format-tutorial/"/>
+    <updated>2018-03-21T07:30:48-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/03/21/elf-format-tutorial</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#elf-data-type" id="markdown-toc-elf-data-type">ELF Data Type</a></li>
+  <li><a href="#the-elf-header" id="markdown-toc-the-elf-header">The ELF Header</a></li>
+  <li><a href="#checking-the-elf-header" id="markdown-toc-checking-the-elf-header">Checking the ELF Header</a></li>
+  <li><a href="#loading-the-elf-file" id="markdown-toc-loading-the-elf-file">Loading the ELF File</a></li>
+</ul>
+
+<p>本文主要记录目标文件是<code>i386(32位架构、小端序)ELF</code>文件的加载过程。本文中的所有代码都是 C 风格，所有代码段都会使用最简单的例子。后面可能会扩展到其他类型的 ELF 文件。
+<!--more--></p>
+
+<h1 id="elf-data-type">ELF Data Type</h1>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdint.h&gt;</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint16_t</span> <span class="n">Elf32_Half</span><span class="p">;</span>    <span class="c1">//Unsigned half int</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Off</span><span class="p">;</span>     <span class="c1">//Unsigned offset</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Addr</span><span class="p">;</span>    <span class="c1">//Unsigned address</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Word</span><span class="p">;</span>    <span class="c1">//Unsigned int</span>
+</span><span class="line"><span class="k">typedef</span> <span class="kt">int32_t</span>  <span class="n">Elf32_Sword</span><span class="p">;</span>   <span class="c1">//Signed int</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="the-elf-header">The ELF Header</h1>
+
+<p>每个 ELF 格式文件都有位于文件开始的头部<code>Header</code>。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define ELF_NIDENT 16</span>
+</span><span class="line"><span class="k">typedef</span> <span class="k">struct</span><span class="p">{</span>
+</span><span class="line">    <span class="kt">uint8_t</span>     <span class="n">e_ident</span><span class="p">[</span><span class="n">ELF_NIDENT</span><span class="p">];</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_type</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_machine</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Word</span>  <span class="n">e_version</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Addr</span>  <span class="n">e_entry</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Off</span>   <span class="n">e_phoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Off</span>   <span class="n">e_shoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_phoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shoff</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_phentsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_phnum</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shentsize</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shnum</span><span class="p">;</span>
+</span><span class="line">    <span class="n">Elf32_Half</span>  <span class="n">e_shstrndx</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="n">ELF32_Ehdr</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">enum</span> <span class="n">Elf_Ident</span><span class="p">{</span>
+</span><span class="line">    <span class="n">EI_MAG0</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//0x7F</span>
+</span><span class="line">    <span class="n">EI_MAG1</span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//‘E’</span>
+</span><span class="line">    <span class="n">EI_MAG2</span>    <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="c1">//‘L’</span>
+</span><span class="line">    <span class="n">EI_MAG3</span>    <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="c1">//‘F’</span>
+</span><span class="line">    <span class="n">EI_CLASS</span>   <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="c1">//Architecture(32/64)</span>
+</span><span class="line">    <span class="n">EI_DATA</span>    <span class="o">=</span> <span class="mi">5</span><span class="p">,</span><span class="c1">//Byte Order</span>
+</span><span class="line">    <span class="n">EI_VERSION</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="c1">//ELF Version</span>
+</span><span class="line">    <span class="n">EI_OSABI</span>   <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="c1">//OS Specific</span>
+</span><span class="line">    <span class="n">EI_ABIVERSION</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="c1">//OS Specific</span>
+</span><span class="line">    <span class="n">EI_PAD</span>        <span class="o">=</span> <span class="mi">9</span>  <span class="c1">//Padding</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define ELFMAG0    0x7F   </span><span class="c1">//e_ident[EI_MAG0]</span>
+</span><span class="line"><span class="cp">#define ELFMAG1    &#39;E&#39;    </span><span class="c1">//e_ident[EI_MAG1]</span>
+</span><span class="line"><span class="cp">#define ELFMAG2    &#39;L&#39;    </span><span class="c1">//e_ident[EI_MAG2]</span>
+</span><span class="line"><span class="cp">#define ELFMAG3    &#39;F&#39;    </span><span class="c1">//e_ident[EI_MAG3]</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define ELFDATA2LSB (1)   </span><span class="c1">//Little Endian</span>
+</span><span class="line"><span class="cp">#define ELFCLASS32  (1)   </span><span class="c1">//32-bit Architecture</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">enum</span> <span class="n">Elf_Type</span><span class="p">{</span>
+</span><span class="line">    <span class="n">ET_NONE</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//Unknown Type</span>
+</span><span class="line">    <span class="n">ET_REL</span>     <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//Relocatable File</span>
+</span><span class="line">    <span class="n">ET_EXEC</span>    <span class="o">=</span> <span class="mi">2</span>  <span class="c1">//Executable File</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line"><span class="cp">#define EM_386     (3) </span><span class="c1">//x86 Machine Type</span>
+</span><span class="line"><span class="cp">#define EV_CURRENT (1) </span><span class="c1">//ELF Current Version</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="checking-the-elf-header">Checking the ELF Header</h1>
+
+<p>在对<code>ELF</code>文件进行加载、链接、重定向或其他操作之前，首先要确保机器是否支持上述的操作。</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">bool</span> <span class="nf">elf_check_file</span><span class="p">(</span><span class="n">Elf32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">hdr</span><span class="p">)</span> <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG0</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG0 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG1</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG1 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG2</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG2 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG3</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG3</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;ELF Header EI_MAG2 incorrect.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">bool</span> <span class="nf">elf_check_supported</span><span class="p">(</span><span class="n">ELF32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">elf_check_file</span><span class="p">(</span><span class="n">hdr</span><span class="p">)){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Invalid ELF File.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_CLASS</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFCLASS32</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File Class.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_DATA</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFDATA2LSB</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File byte order.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_machine</span> <span class="o">!=</span> <span class="n">EM_386</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File target.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_VERSION</span><span class="p">]</span> <span class="o">!=</span> <span class="n">EV_CURRENT</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File version.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_REL</span> <span class="o">&amp;&amp;</span> <span class="n">hdr</span><span class="o">-&gt;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_EXEC</span><span class="p">){</span>
+</span><span class="line">        <span class="n">ERROR</span><span class="p">(</span><span class="s">&quot;Unsupported ELF File type.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="loading-the-elf-file">Loading the ELF File</h1>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[汇编语言实现hello World]]></title>
+    <link href="http://lazybing.github.io/blog/2018/01/11/assemble-hello-world/"/>
+    <updated>2018-01-11T21:29:27-08:00</updated>
+    <id>http://lazybing.github.io/blog/2018/01/11/assemble-hello-world</id>
+    <content type="html"><![CDATA[
+<p>接下来的工作可能要用到汇编语言。</p>
+
+<!--more-->
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">.data                   # section declaration
+</span><span class="line">msg:
+</span><span class="line">    .ascii  "Hello, world!\n"   # our dear string
+</span><span class="line">    len = . - msg               # length of our dear string
+</span><span class="line">
+</span><span class="line">.text                           # section declaration
+</span><span class="line">
+</span><span class="line">                            # we must export the entry point to the ELF linker or
+</span><span class="line">    .global _start          # loader. They conventionally recognize _start as their 
+</span><span class="line">                            # entry point. Use ld -e foo to override the default.
+</span><span class="line">
+</span><span class="line">_start:
+</span><span class="line">
+</span><span class="line"># write our string to stdout
+</span><span class="line">    
+</span><span class="line">    movl $len, %edx        # third argument:message length
+</span><span class="line">    movl $msg, %ecx        # second argument:pointer to message to write
+</span><span class="line">    movl $1, %ebx          # first argument:file handle(stdout) 
+</span><span class="line">    movl $4, %eax          # system call number (sys_write)
+</span><span class="line">    int  $0x80             # call kernel
+</span><span class="line">
+</span><span class="line"># and exit
+</span><span class="line">
+</span><span class="line">    movl $0, %ebx           # first argument:exit code
+</span><span class="line">    movl $1, %eax           # system call number (sys_exit)
+</span><span class="line">    int  $0x80              # call kernel</span></code></pre></td></tr></table></div></figure>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[X264 源码解析之x264_macroblock_encode函数]]></title>
+    <link href="http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode/"/>
+    <updated>2017-12-25T19:52:38-08:00</updated>
+    <id>http://lazybing.github.io/blog/2017/12/25/x264-macroblock-encode</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#x264macroblockencode-" id="markdown-toc-x264macroblockencode-">x264_macroblock_encode 概述</a>    <ul>
+      <li><a href="#ipcm-" id="markdown-toc-ipcm-">I_PCM 编码模式</a></li>
+      <li><a href="#pskip--bskip-" id="markdown-toc-pskip--bskip-">P_Skip 模式和 B_Skip 模式编码</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>本文主要记录 X264 中对于<code>x264_macroblock_encode</code>函数的分析，该函数主要变换和量化，对应 X264 中的宏块编码模块。<br />
+<!--more--></p>
+
+<h2 id="x264macroblockencode-">x264_macroblock_encode 概述</h2>
+
+<p>该函数主要在<code>x264_slice_write()</code>函数调用，它主要完成了编码器中的变换、量化部分，该函数主要是封装了<code>x264_macroblock_encode_internal()</code>函数，它包括如下几个步骤：</p>
+
+<figure class="code"><figcaption><span>x264_macroblock_encode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_macroblock_encode</span><span class="p">(</span><span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">CHROMA444</span><span class="p">)</span>
+</span><span class="line">        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">        <span class="n">x264_macroblock_encode_internal</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ol>
+  <li>如果宏块类型为 PCM 类型，直接存储重建帧数据。</li>
+  <li>如果宏块类型为 Skip 类型，调用<code>x264_macroblock_encode_skip()</code>编码 Skip 类型宏块，包括<code>P_SKIP</code>和<code>B_SKIP</code>类型。</li>
+  <li>如果宏块类型为<code>I_16x16</code>，调用<code>x264_mb_encode_i16x16()</code>编码 Intra 16x16 类型的宏块，该函数除了进行 DCT 变换之外，还对 16 个小块的 DC 系数进行 Hadamard 变换。</li>
+  <li>如果宏块类型为<code>I_4x4</code>，调用<code>x264_mb_encode_i4x4()</code>编码 Intra 4x4 类型的宏块。</li>
+  <li>帧间宏块编码，该部分并没有单独的函数完成，而是写在了<code>x264_macroblock_encode_internal</code>函数内部。</li>
+  <li>调用<code>x264_mb_encode_chroma()</code>函数编码色度卡。</li>
+</ol>
+
+<h3 id="ipcm-">I_PCM 编码模式</h3>
+
+<p>I_PCM 是一种帧内编码模式，在该模式下，编码器直接传输图像的像素值，而不经过预测和变换。在一些特殊的情况下，特别是图像
+内容不规则或者量化参数非常低时，该模式比常规的操作（帧内预测-变换-量化-编码）效率更高。</p>
+
+<p>I_PCM 模式用于以下目的：</p>
+
+<ol>
+  <li>允许编码器精确地表示像素值。</li>
+  <li>提供表示不规则图像内容的准确性，而不引起重大的数据量增加。</li>
+  <li>严格限制宏块解码比特数，但不降低编码效率。</li>
+</ol>
+
+<p>对 I_PCM 类型的编码，实现代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">I_PCM</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="c1">//if PCM is chosen, we need to store reconstructed frame data</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">p</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="n">plane_count</span><span class="p">;</span> <span class="n">p</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">chroma</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">&gt;&gt;</span> <span class="n">CHROMA_V_SHIFT</span><span class="p">;</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">copy</span><span class="p">[</span><span class="n">PIXEL_8x8</span><span class="p">](</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fdec</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">pic</span><span class="p">.</span><span class="n">p_fenc</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">FENC_STRIDE</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="pskip--bskip-">P_Skip 模式和 B_Skip 模式编码</h3>
+
+<ul>
+  <li>P_Skip 类型宏块：即 COPY 宏块，无像素残差，无运动矢量残差(MVD)。直接利用预测 MV 得到的像素预测值。像素重构值= 像素预测值。</li>
+  <li>B_Skip 类型宏块：无像素残差，无运动矢量残差(MVD)。解码时，通过 Direct 预测模式(时间或空间)计算出前、后向 MV 后，直接利用前、后向 MV 得到像素预测值。像素重构值 = 像素预测值。</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[X264 源码解析之x264_macroblock_analyse函数]]></title>
+    <link href="http://lazybing.github.io/blog/2017/11/13/x264-macroblock-analyse/"/>
+    <updated>2017-11-13T07:06:23-08:00</updated>
+    <id>http://lazybing.github.io/blog/2017/11/13/x264-macroblock-analyse</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">宏块分析概述</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">帧内预测</a>    <ul>
+      <li><a href="#intra16x16-" id="markdown-toc-intra16x16-">Intra16x16 预测模式分析</a></li>
+      <li><a href="#intra4x4-" id="markdown-toc-intra4x4-">Intra4x4 预测模式分析</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-2" id="markdown-toc-section-2">帧间预测</a>    <ul>
+      <li><a href="#section-3" id="markdown-toc-section-3">运动补偿块</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">运动矢量</a></li>
+      <li><a href="#mv-" id="markdown-toc-mv-">MV 预测</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">帧间预测函数分析</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>本文主要记录 X264 中对于<code>x264_macroblock_analyse</code>函数的分析，该函数主要完成 2 个任务：对于帧内宏块，分析帧内预测模式；对于帧间宏块，进行运动估计、分析帧间预测模式。 <br />
+<!--more--></p>
+
+<h2 id="section">宏块分析概述</h2>
+
+<p>首先看一下<code>x264_macroblock_analyse</code>函数实现过程的大体过程：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void x264_macroblock_analyse(x264_t *)
+</span><span class="line">{
+</span><span class="line">    h-&gt;mb.i_qp = x264_ratecontrol_mb_qp(h); //get QP of the MB
+</span><span class="line">    ...
+</span><span class="line">    x264_mb_analyse_init(h, &amp;analysis, h-&gt;mb.i_qp);
+</span><span class="line">
+</span><span class="line">    if(h-&gt;sh.i_type == SLICE_TYPE_I)
+</span><span class="line">    {
+</span><span class="line">        x264_mb_analyse_intra(h, &amp;analysis, CONST_MAX);
+</span><span class="line">    }
+</span><span class="line">    else if(h-&gt;sh.i_type == SLICE_TYPE_P)
+</span><span class="line">    {
+</span><span class="line">        x264_macroblock_probe_pskip(h);
+</span><span class="line">
+</span><span class="line">        x264_mb_analyse_inter_p16x16(h, &amp;analysis);
+</span><span class="line">
+</span><span class="line">        x264_mb_analyse_inter_p8x8(h, &amp;analysis);
+</span><span class="line">
+</span><span class="line">        x264_mb_analyse_inter_p4x4(h, &amp;analysis, i);
+</span><span class="line">        
+</span><span class="line">        x264_mb_analyse_inter_p8x4(h, &amp;analysis, i);
+</span><span class="line">
+</span><span class="line">        x264_mb_analyse_inter_p4x8(h, &amp;analysis, i);
+</span><span class="line">
+</span><span class="line">        x264_mb_analyse_inter_p16x8(h, &amp;analysis, i_cost);
+</span><span class="line">
+</span><span class="line">        x264_mb_analyse_inter_p8x16(h, &amp;analysis, i_cost);
+</span><span class="line">
+</span><span class="line">        x264_me_refine_qpel(h, &amp;analysis.xxxx);
+</span><span class="line">    }
+</span><span class="line">    else if(h-&gt;sh.i_type == SLICE_TYPE_B)
+</span><span class="line">    {
+</span><span class="line">        x264_mb_analyse_inter_b16x16(h, &amp;analysis);
+</span><span class="line">        x264_mb_analyse_inter_b8x8( h, &amp;analysis );
+</span><span class="line">        x264_mb_analyse_inter_b16x8( h, &amp;analysis );
+</span><span class="line">    }
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<p>上面只是给出了该函数中调用的函数，并没有给出实际编码中的逻辑判断。它的实现如下：</p>
+
+<ol>
+  <li>如果当前是I Slice, 调用<code>x264_mb_analyse_intra()</code>进行Intra宏块的帧内预测模式分析。</li>
+  <li>如果当前是P Slice, 则进行下面流程的分析：</li>
+</ol>
+
+<blockquote>
+  <p>a.调用<code>x264_macroblock_probe_pskip()</code>分析是否为skip宏块，如果是skip宏块，则不再进行下面分析。<br />
+b.调用<code>x264_mb_analyse_inter_p16x16()</code>分析P16x16帧间预测的代价。<br />
+c.调用<code>x264_mb_analyse_inter_p8x8</code>分析P8x8帧间预测的代价。<br />
+d.如果 P8x8 代价值小于 P16x16，则依次对 4 个 8x8 的子宏块分割进行判断： <br />
+ * 调用<code>x264_mb_analyse_inter_p4x4()</code>分析 P4x4 帧间预测的代价。<br />
+ * 如果P4x4代价值小于P8x8，则调用<code>x264_mb_analyse_inter_p8x4()</code>和<code>x264_mb_analyse_inter_p4x8()</code>分析P8x4和P4x8帧间预测的代价。<br />
+e.如果P8x8代价值小于P16x16,调用<code>x264_mb_analyse_inter_p16x8()</code>和<code>x264_mb_analyse_inter_p8x16()</code>分析P16x8和P8x16帧间预测的代价。<br />
+f.此外，还要调用<code>x264_mb_analyse_intra()</code>，检查当前宏块作为 Intra 宏块编码的代价是否小于作为 P 宏块编码的代价。</p>
+</blockquote>
+
+<ol>
+  <li>如果当前是B Slice，则进行和 P Slice 类似的处理。</li>
+</ol>
+
+<h2 id="section-1">帧内预测</h2>
+
+<p>帧内预测模式种，预测块 P 是基于已编码重建块和当前块形成的，对亮度像素来说，P 块用于 4x4 子块或者 16x16 宏块的相关操作。其中 4x4 宏块，有 9 种可选预测模式，适用于
+带有大量细节的图像编码；16x16 宏块适用于比较平坦的图像，该宏块有 4 种预测模式，预测整个 16x16 亮度块。色度块也有 4 种预测模式，与 16x16 亮度块预测模式类似。编码器
+通常会选择使 P 块和编码块之间差异最小的预测模式。</p>
+
+<p>除此之外，还有一种帧内预测模式称为 I_PCM 编码模式。该模式下，编码器直接传输图像像素值，而不经过预测和变换。在一些特殊的情况下，特别是
+图像内容不规则或者量化参数非常低时该模式比常规操作(帧内预测-变换-量化-熵编码)效率更高。I_PCM 模式用于以下目的：</p>
+
+<ol>
+  <li>允许编码器精确的表示像素值</li>
+  <li>提供表示不规则图像内容的准确值，而不引起重大的数据量增加</li>
+  <li>严格限制宏块解码比特数，但不损害编码效率</li>
+</ol>
+
+<p>关于帧内预测的原理介绍部分，参考<a href="http://lazybing.github.io/blog/2017/06/30/x264-intra-prediction/">X264 源码解析之帧内预测</a>。</p>
+
+<p><code>x264_mb_analyse_intra</code>中关于帧内预测模式的选择判断，整体思路是，遍历所有可能的预测模式，包括 4 种 16x16 的预测模式、9 种 4x4 的预测模式，具体流程如下：</p>
+
+<h3 id="intra16x16-">Intra16x16 预测模式分析</h3>
+<p>对于非<code>AVC-Intra Compat</code>，首先根据当前宏块左边、上边宏块的可参考情况，判断该宏块可能存在的预测模式。
+对于每个宏块，根据重建宏块和预测模式，调用<code>predict_16x16[]</code>做帧内预测;调用<code>x264_pixel_function_t</code>中的<code>mbcmp[]</code>计算编码代价。
+选择最小的编码代价，记录编码代价的值，并记录编码模式。核心代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">for</span><span class="p">(;</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">predict_mode</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_mode</span> <span class="o">=</span> <span class="o">*</span><span class="n">predict_mode</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">b_lossless</span><span class="p">)</span>
+</span><span class="line">        <span class="n">x264_predict_lossless_16x16</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i_mode</span><span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">predict_16x16</span><span class="p">[</span><span class="n">i_mode</span><span class="p">](</span><span class="n">p_dst</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">i_satd</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">pixf</span><span class="p">.</span><span class="n">mbcmp</span><span class="p">[</span><span class="n">PIXEL_16x16</span><span class="p">](</span><span class="n">p_dst</span><span class="p">,</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">psr</span><span class="p">,</span> <span class="n">FENC_STRIDE</span><span class="p">)</span> <span class="o">+</span>
+</span><span class="line">        <span class="n">lambda</span> <span class="o">*</span> <span class="n">bs_size_ue</span><span class="p">(</span><span class="n">x264_mb_pred_mode16x16_fix</span><span class="p">[</span><span class="n">i_mode</span><span class="p">]);</span>
+</span><span class="line">    <span class="n">COPY2_IF_LT</span><span class="p">(</span><span class="n">a</span><span class="o">-&gt;</span><span class="n">i_satd_i16x16</span><span class="p">,</span> <span class="n">i_satd</span><span class="p">,</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_predict16x16</span><span class="p">,</span> <span class="n">i_mode</span><span class="p">);</span>
+</span><span class="line">    <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_satd_i16x16_dir</span><span class="p">[</span><span class="n">i_mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="intra4x4-">Intra4x4 预测模式分析</h3>
+
+<p>循环处理 16 个 4x4 的块：首先调用<code>x264_mb_predict_intra4x4_mode()</code>函数根据周围宏块情况判断该宏块可用的预测模式。之后循环计算 9 种 Intra4x4 的帧内预测模式，调用<code>predict_4x4[]</code>函数根据重建帧宏块进行帧内预测，调用<code>x264_pixel_funtion_t</code>中的<code>mbcmp[]</code>计算编码代码。
+获取最小代缴的 Intra4x4 模式。将 16 个 4x4 宏块的最小代价相加，得到总代价。核心代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">const</span> <span class="kt">int8_t</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">=</span> <span class="n">predict_4x4_mode_available</span><span class="p">(</span><span class="n">a</span><span class="o">-&gt;</span><span class="n">b_avoid_topright</span><span class="p">,</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_neighbour4</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">idx</span><span class="p">);</span>
+</span><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="k">for</span><span class="p">(</span> <span class="p">;</span> <span class="o">*</span><span class="n">predict_mode</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">predict_mode</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">i_mode</span> <span class="o">=</span> <span class="o">*</span><span class="n">predict_mode</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">b_lossless</span> <span class="p">)</span>
+</span><span class="line">        <span class="n">x264_predict_lossless_4x4</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">p_dst_by</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">i_mode</span> <span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">        <span class="n">h</span><span class="o">-&gt;</span><span class="n">predict_4x4</span><span class="p">[</span><span class="n">i_mode</span><span class="p">](</span> <span class="n">p_dst_by</span> <span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">i_satd</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">pixf</span><span class="p">.</span><span class="n">mbcmp</span><span class="p">[</span><span class="n">PIXEL_4x4</span><span class="p">](</span> <span class="n">p_dst_by</span><span class="p">,</span> <span class="n">FDEC_STRIDE</span><span class="p">,</span> <span class="n">p_src_by</span><span class="p">,</span> <span class="n">FENC_STRIDE</span> <span class="p">);</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">i_pred_mode</span> <span class="o">==</span> <span class="n">x264_mb_pred_mode4x4_fix</span><span class="p">(</span><span class="n">i_mode</span><span class="p">)</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">i_satd</span> <span class="o">-=</span> <span class="n">lambda</span> <span class="o">*</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">i_satd</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="p">)</span>
+</span><span class="line">        <span class="p">{</span>
+</span><span class="line">            <span class="n">i_best</span> <span class="o">=</span> <span class="n">i_satd</span><span class="p">;</span>
+</span><span class="line">            <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_predict4x4</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_mode</span><span class="p">;</span>
+</span><span class="line">            <span class="k">break</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">COPY2_IF_LT</span><span class="p">(</span> <span class="n">i_best</span><span class="p">,</span> <span class="n">i_satd</span><span class="p">,</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">i_predict4x4</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">i_mode</span> <span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section-2">帧间预测</h2>
+
+<p>帧间预测时指利用视频时间域相关性，使用临近已编码图像像素预测当前图像的像素，以达到有效去除视频时域冗余的目的。
+由于视频序列通常包括较强的时域相关性，因此预测残差值接近于0，将残差信号作为后续模块的输入进行变换、量化、扫描、熵编码，可实现对视频信号的高效压缩。</p>
+
+<p>接下来主要介绍基于<code>Baseline Profile</code>支持的 P 帧预测模式工具以及<code>Main Profile</code>和<code>Extended Profile</code>支持的 B 帧和加权预测等帧间预测工具。</p>
+
+<h3 id="section-3">运动补偿块</h3>
+
+<p>每个宏块(16x16 像素)可分割为 4 种方式：一个 16x16,两个 16x8, 两个 8x16,四个 8x8。其运动补偿也有相应的四种。8x8 模式的每个子宏块还
+可以继续分割，分割方式为：一个 8x8，两个 4x8，两个 8x4，四个 4x4。</p>
+
+<p>每个分割或子宏块都有一个独立的运动补偿。每个 MV 必须被编码、传输，分割的选择也需要编码到压缩码流中。对于大的尺寸而言，MV 选择和分割
+类型只需少量的比特，但运动补偿残差在多细节区域能量将非常高。小尺寸分割运动补偿残差能量低，但需要较多的比特表示 MV 和分割选择。分割
+尺寸的选择影响了压缩性能。整体而言，大的分割尺寸适合平坦的区域，而小尺寸适合多细节区域。</p>
+
+<p>宏块的色度成分(Cr 和 Cb)则为相应亮度的一半(水平和垂直各一半)。色度块采用和亮度块同样的分割模式，只是尺寸减半(水平和垂直方向都减半)。
+例如，8x16 的亮度块相应色度块尺寸为 4x8，8x4 亮度块相应色度块尺寸为 4x2 等等。色度块的 MV 也是通过相应亮度 MV 水平和垂直分量减半而得。</p>
+
+<h3 id="section-4">运动矢量</h3>
+
+<p>帧间编码宏块的每个分割或子宏块都是从参考图像某一相同尺寸区域预测而得。两者之间的差异(MV)对亮度成分采用 1/4 像素精度，色度 1/8 像素精度。
+亚像素位置的亮度和色度像素并不存在于参考图像中，需利用临近已编码点进行内插而得。如果 MV 的垂直和水平分量为正数，则参考块相应像素实际存在，
+如果其中一个或两个为分数，则预测像素要通过参考帧中相应像素内插获得。</p>
+
+<h3 id="mv-">MV 预测</h3>
+
+<p>每个分割 MV 的编码需要相当数目的比特，特别是使用小分割尺寸时。为了减少传输比特数，可利用邻近分割的 MV 较强的相关性，MV 可由邻近已编码分割
+的 MV 预测而得。预测矢量 MVp 基于已计算 MV 和 MVD（预测与当前的差异）并被编码和传送。MVp 则取决于运动补偿尺寸和邻近 MV 的有无。</p>
+
+<p>示例如下：</p>
+
+<p><img src="http://lazybing.github.io/images/macroblock_analyse/mv_prediction_macroblock.png" /></p>
+
+<p>E 为当前宏块或宏块分割子宏块。A、B、C 分别为 E 的左、上、右上方的三个相对应块。如果 E 的左边不止一个分割，取其中最上的一个为 A；上方
+不止一个分割时，取最左边一个为 B。</p>
+
+<p>1)  传输分割不包括 16x8 和 8x16 时，MVP 为 A、B、C 分割 MV 的中值；<br />
+2） 16x8 分割，上面部分 MVp 由 B 预测，下面部分 MVp 由 A 预测；<br />
+3） 8x16 分割，左面部分 MVp 由 A 预测，右面部分 MVp 由 B 预测；<br />
+4） skipped MB 类型同 1 。</p>
+
+<h3 id="section-5">帧间预测函数分析</h3>
+
+<p>帧间预测的帧类型大多是 P 帧或 B 帧。对于 P 帧，它的宏块分析流程为：</p>
+
+<ol>
+  <li>调用<code>x264_macroblock_probe_pskip()</code>分析是否为 Skip 宏块，如果是则不进行后面的分析。</li>
+  <li>调用<code>x264_mb_analyse_inter_p16x16()</code>分析 P16x16 帧间预测的代价。</li>
+  <li>调用<code>x264_mb_analyse_inter_p8x8()</code>分析 P8x8 帧间预测的代价。</li>
+  <li>如果 P8x8 代价小于 P16x16, 则依次对 4 个 8x8 的子宏块分割进行判断：<br />
+ i. 调用<code>x264_mb_analyse_inter_p4x4()</code>分析 P4x4 的帧间预测代价。<br />
+ ii. 如果 P4x4 代价值小于 P8x8，则调用<code>x264_mb_analyse_inter_p8x4()</code>和<code>x264_mb_analyse_inter_p4x8()</code>分析 P8x4 和 P4x8 帧间预测的代价。</li>
+  <li>如果 P8x8 代价值小于 P16x8，调用<code>x264_mb_analyse_inter_p16x8()</code>和<code>x264_mb_analyse_inter_p8x16()</code>分析 P16x8 和 P8x16 帧间预测的代价。</li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[X264源码解析之x264_bitstream_init函数]]></title>
     <link href="http://lazybing.github.io/blog/2017/11/12/bitstream-init/"/>
     <updated>2017-11-12T06:48:31-08:00</updated>
     <id>http://lazybing.github.io/blog/2017/11/12/bitstream-init</id>
@@ -408,7 +1130,7 @@ c. 字节流的结束，由未规定的方式判决。</li>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<p>找<code>start_code</code>的定义如下：</p>
+<p>找<code>start_code</code>的定义如下,该函数的参数<code>zeros_in_startcode</code>可能为 3 或 4,寻找<code>0x000001</code>或<code>0x00000001</code>。</p>
 
 <figure class="code"><figcaption><span>FindStartCode </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -474,6 +1196,167 @@ c. 字节流的结束，由未规定的方式判决。</li>
 </span></code></pre></td></tr></table></div></figure>
 
 <h2 id="x264--bitstream-">X264 中 Bitstream 的源码分析</h2>
+
+<p><code>X264</code>中关于<code>AnnexB</code>部分的描述主要是在<code>common/bitstream.c</code>中的<code>void x264_bitstream_init(int cpu, x264_bitstream_function_t *pf)</code>完成。
+其中的<code>x264_bitstream_function_t</code>结构体定义如下：</p>
+
+<figure class="code"><figcaption><span>x264_bitstream_function_t </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">nal_escape</span><span class="p">)</span> <span class="p">(</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">cabac_block_residual_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class="line">                                           <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">cabac_block_residual_rd_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class="line">                                              <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">cabac_block_residual_8x8_rd_internal</span><span class="p">)(</span> <span class="n">dctcoef</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b_interlaced</span><span class="p">,</span>
+</span><span class="line">                                                  <span class="kt">intptr_t</span> <span class="n">ctx_block_cat</span><span class="p">,</span> <span class="kt">x264_cabac_t</span> <span class="o">*</span><span class="n">cb</span> <span class="p">);</span>
+</span><span class="line"><span class="p">}</span> <span class="kt">x264_bitstream_function_t</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中<code>x264_bitstream_init</code>的定义如下：</p>
+
+<figure class="code"><figcaption><span>X264_bitstream_init </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">X264_bitstream_init</span><span class="p">(</span><span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_bitstream_function_t</span> <span class="o">*</span><span class="n">pf</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">memset</span><span class="p">(</span><span class="n">pf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">pf</span><span class="p">));</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">nal_escape</span> <span class="o">=</span> <span class="n">x264_nal_escape_c</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">cabac_block_residual_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_internal_sse2</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">cabac_block_residual_rd_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_rd_internal_sse2</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">cabac_block_residual_8x8_rd_internal</span> <span class="o">=</span> <span class="n">x264_cabac_block_residual_8x8_rd_internal_sse2</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>其中的<code>x264_nal_escape_c</code>定义如下：</p>
+
+<figure class="code"><figcaption><span>x264_nal_escape_c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="nf">x264_nal_escape_c</span><span class="p">(</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">src</span> <span class="o">&lt;</span> <span class="n">end</span> <span class="p">)</span> <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">src</span> <span class="o">&lt;</span> <span class="n">end</span> <span class="p">)</span> <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">src</span> <span class="o">&lt;</span> <span class="n">end</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mh">0x03</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">dst</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">dst</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+</span><span class="line">            <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x03</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src</span><span class="o">++</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">dst</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>最后，给出 X264 中关于每个 NALU 的编码的实现：</p>
+
+<figure class="code"><figcaption><span>x264_nal_encode </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/****************************************************************************</span>
+</span><span class="line"><span class="cm"> * x264_nal_encode:</span>
+</span><span class="line"><span class="cm"> ****************************************************************************/</span>
+</span><span class="line"><span class="kt">void</span> <span class="nf">x264_nal_encode</span><span class="p">(</span> <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">x264_nal_t</span> <span class="o">*</span><span class="n">nal</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">src</span> <span class="o">=</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">end</span> <span class="o">=</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span> <span class="o">+</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_payload</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">orig_dst</span> <span class="o">=</span> <span class="n">dst</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">b_long_startcode</span> <span class="p">)</span>
+</span><span class="line">            <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="mh">0x01</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">else</span> <span class="cm">/* save room for size later */</span>
+</span><span class="line">        <span class="n">dst</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* nal header */</span>
+</span><span class="line">    <span class="o">*</span><span class="n">dst</span><span class="o">++</span> <span class="o">=</span> <span class="p">(</span> <span class="mh">0x00</span> <span class="o">&lt;&lt;</span> <span class="mi">7</span> <span class="p">)</span> <span class="o">|</span> <span class="p">(</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_ref_idc</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span> <span class="p">)</span> <span class="o">|</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_type</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">dst</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">bsf</span><span class="p">.</span><span class="n">nal_escape</span><span class="p">(</span> <span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">end</span> <span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">dst</span> <span class="o">-</span> <span class="n">orig_dst</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* Write the size header for mp4/etc */</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="cm">/* Size doesn&#39;t include the size of the header we&#39;re writing now. */</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span><span class="mi">24</span><span class="p">;</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span><span class="mi">16</span><span class="p">;</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">;</span>
+</span><span class="line">        <span class="n">orig_dst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="o">&gt;&gt;</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_payload</span> <span class="o">=</span> <span class="n">size</span><span class="o">+</span><span class="mi">4</span><span class="p">;</span>
+</span><span class="line">    <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span> <span class="o">=</span> <span class="n">orig_dst</span><span class="p">;</span>
+</span><span class="line">    <span class="n">x264_emms</span><span class="p">();</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
@@ -1319,9 +2202,39 @@ c. 字节流的结束，由未规定的方式判决。</li>
     <updated>2017-08-23T08:43:19-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/08/23/x264-quant-init</id>
     <content type="html"><![CDATA[
-<p>本文主要记录 X264 中使用到的量化。该函数主要对<code>x264_quant_functions_t</code>结构体中的函数指针进行赋值，</p>
+<p>本文主要记录 X264 中使用到的量化。该函数主要对<code>x264_quant_function_t</code>结构体中的函数指针进行赋值，</p>
 
 <!--more-->
+
+<p>量化模块的初始化函数为<code>x264_quant_init()</code>。该函数对<code>x264_quant_function_t</code>结构体中的函数指针进行了赋值。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_quant_init</span><span class="p">(</span><span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_quant_function_t</span> <span class="o">*</span><span class="n">pf</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_8x8</span> <span class="o">=</span> <span class="n">quant_8x8</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_4x4</span> <span class="o">=</span> <span class="n">quant_4x4</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_4x4x4</span> <span class="o">=</span> <span class="n">quant_4x4x4</span><span class="p">;</span>
+</span><span class="line">    <span class="c1">//intra16x16中，16个系数Hadamard变换后对的量化</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_4x4_dc</span> <span class="o">=</span> <span class="n">quant_4x4_dc</span><span class="p">;</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">quant_2x2_dc</span> <span class="o">=</span> <span class="n">quant_2x2_dc</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="c1">//反量化</span>
+</span><span class="line">    <span class="n">pf</span><span class="o">-&gt;</span><span class="n">dequant_4x4</span> <span class="o">=</span> <span class="n">dequant_4x4</span><span class="p">;</span>
+</span><span class="line">    <span class="p">....</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 <p>首先看其中的一个例子<code>quant_8x8</code>函数，它的定义位于<code>common/quant.c</code>中，定义如下：</p>
 
@@ -1370,9 +2283,12 @@ c. 字节流的结束，由未规定的方式判决。</li>
     <updated>2017-08-22T07:48:31-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/08/22/x264-mc-init</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">运动估计</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">参考资料</a></li>
+  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">亮度运动补偿</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-2" id="markdown-toc-section-2">运动估计</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">参考资料</a></li>
 </ul>
 
 <p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
@@ -1382,7 +2298,7 @@ c. 字节流的结束，由未规定的方式判决。</li>
 
 <h3 id="section">运动补偿原理</h3>
 
-<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
+<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>(Motion Compensation)是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
 
 <p>一个视频序列包含一定数量的图片–通常称为帧（frame）。相邻的图片通常很相似，也就是说，包含了很多冗余。使用运动补偿的目的是通过消除这种冗余，来提高压缩比。
 最早的运动补偿的设计只是简单的从当前帧中减去参考帧，从而得到通常含有较少能量（或者称为信息）的”残差”，从而可以用较低的码率进行编码。解码器可以通过简单的加法完全恢复编码帧。<br />
@@ -1392,9 +2308,63 @@ c. 字节流的结束，由未规定的方式判决。</li>
 
 <p>运动补偿的方法包含：<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.85.A8.E5.B1.80.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">全局运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.8F.AF.E5.8F.98.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">可变分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E9.87.8D.E5.8F.A0.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">重叠分块运动个补偿</a>。</p>
 
-<p>运动估计就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
+<h4 id="section-1">亮度运动补偿</h4>
 
-<h3 id="section-1">运动估计</h3>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">x264_hpel_ref0</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+</span><span class="line"><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">x264_hpel_ref1</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">mc_luma</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_dst_stride</span><span class="p">,</span>
+</span><span class="line">                    <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="kt">intptr_t</span> <span class="n">i_src_stride</span><span class="p">,</span>
+</span><span class="line">                    <span class="kt">int</span> <span class="n">mvx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mvy</span><span class="p">,</span>
+</span><span class="line">                    <span class="kt">int</span> <span class="n">i_width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i_height</span><span class="p">,</span> <span class="k">const</span> <span class="kt">x264_weight_t</span> <span class="o">*</span><span class="n">weight</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">qpel_idx</span> <span class="o">=</span> <span class="p">((</span><span class="n">mvy</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mvx</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="n">mvy</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">i_src_stride</span> <span class="o">+</span> <span class="p">(</span><span class="n">mvx</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class="line">    <span class="n">pixel</span> <span class="o">*</span><span class="n">src1</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">x264_hpel_ref0</span><span class="p">[</span><span class="n">qpel_idx</span><span class="p">]]</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">+</span> <span class="p">((</span><span class="n">mvy</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">i_src_stride</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">qpel_idx</span> <span class="o">&amp;</span> <span class="mi">5</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">pixel</span> <span class="o">*</span><span class="n">src2</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">x264_hpel_ref1</span><span class="p">[</span><span class="n">qpel_idx</span><span class="p">]]</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">+</span> <span class="p">((</span><span class="n">mvx</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class="line">        <span class="n">pixel_avg</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">src1</span><span class="p">,</span> <span class="n">i_src_stride</span><span class="p">,</span>
+</span><span class="line">                  <span class="n">src2</span><span class="p">,</span> <span class="n">i_src_stride</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">weight</span><span class="o">-&gt;</span><span class="n">weightfn</span><span class="p">)</span>
+</span><span class="line">            <span class="n">mc_weight</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">weight</span><span class="o">-&gt;</span><span class="n">weightfn</span><span class="p">)</span>
+</span><span class="line">            <span class="n">mc_weight</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">src1</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">            <span class="n">mc_copy</span><span class="p">(</span><span class="n">src1</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-2">运动估计</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Motion_estimation">运动估计</a>(Motion estimation)就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
 
 <p>运动估计的基本思想是将图像序列的每一帧分成许多互不重叠的宏块，并认为宏块内所有象素的位移量都相同，然后对每个宏块到参考帧某一给定特定搜索范围内根据一定的匹配准则找出与当前块最相似的块，即匹配块，匹配块与当前块的相对位移即为运动矢量。视频压缩的时候，只需保存运动矢量和残差数据就可以完全恢复出当前块。得到运动矢量的过程被称为运动估计。</p>
 
@@ -1404,7 +2374,7 @@ c. 字节流的结束，由未规定的方式判决。</li>
 
 <p>运动估计算法是视频压缩编码的核心算法之一。高质量的运动估计算法是高效视频编码的前提和基础。其中块匹配法（BMA, Block Match Algorithm）由于算法简单和易于硬件实现，被广泛应用于各视频编码标准中。块匹配法的基本思想是先将图像划分为许多子块，然后对当前帧中的每一块根据一定的匹配准则在相邻帧中找出当前块的匹配块，由此得到两者的相对位移，即当前块的运动矢量。在H.264标准的搜索算法中，图像序列的当前帧被划分成互不重叠16×16大小的子块，而每个子块又可划分成更小的子块，当前子块按一定的块匹配准则在参考帧中对应位置的一定搜索范围内寻找最佳匹配块，由此得到运动矢量和匹配误差。运动估计的估计精度和运算复杂度取决于搜索策略和块匹配准则。</p>
 
-<h3 id="section-2">参考资料</h3>
+<h3 id="section-3">参考资料</h3>
 
 <ol>
   <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
@@ -1415,12 +2385,12 @@ c. 字节流的结束，由未规定的方式判决。</li>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[X264源码解析之块滤波]]></title>
+    <title type="html"><![CDATA[X264源码解析之x264_deblock_init函数]]></title>
     <link href="http://lazybing.github.io/blog/2017/07/22/deblock-filter/"/>
     <updated>2017-07-22T06:16:09-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/07/22/deblock-filter</id>
     <content type="html"><![CDATA[
-<p>本文主要介绍 X264 中滤波的部分。<br />
+<p>本文主要介绍 X264 中滤波的部分,<code>x264_deblock_init</code>函数主要对<code>x264_deblock_function_t</code>结构体中的函数指针赋值。<br />
 <!--more--></p>
 
 ]]></content>
@@ -1745,9 +2715,40 @@ QPmax，可能造成 ABR 码率控制失败。不建议调整该参数。</p>
     <updated>2017-07-10T08:48:23-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/07/10/x264-dct-init</id>
     <content type="html"><![CDATA[
-<p>本文主要记录 X264 中对于 DCT 变换的初始化过程。</p>
+<p>本文主要记录 X264 中对于 DCT 变换的初始化过程。宏块的编码过程就是一个<code>DCT变换+量化</code>的过程。</p>
 
 <!--more-->
+
+<p>DCT 变换的核心理念就是把图像的低频信息（对应大面积平坦区域）变换到系数矩阵的左上角，而把高频信息变换到系数矩阵的
+右下角，之后在压缩时就可以去除掉人眼不敏感的高频信息（位于矩阵右下角的系数），从而达到压缩数据的目的。</p>
+
+<p>关于 DCT 的计算，都是通过<code>x264_dct_init</code>函数内定义的DCT和IDCT函数完成的，定义如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_dct_init</span><span class="p">(</span><span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="kt">x264_dct_function_t</span> <span class="o">*</span><span class="n">dctf</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">sub4x4_dct</span>  <span class="o">=</span> <span class="n">sub4x4_dct</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">add4x4_idct</span> <span class="o">=</span> <span class="n">add4x4_idct</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">sub8x8_dct</span>     <span class="o">=</span> <span class="n">sub8x8_dct</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">sub8x8_dct_dc</span>  <span class="o">=</span> <span class="n">sub8x8_dct_dc</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">add8x8_dct</span>     <span class="o">=</span> <span class="n">add8x8_dct</span><span class="p">;</span>
+</span><span class="line">    <span class="n">dctf</span><span class="o">-&gt;</span><span class="n">add8x8_dct_dc</span>  <span class="o">=</span> <span class="n">add8x8_dct_dc</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 <p>DCT 变化理论比较抽象，先从 X264 中代码入手，然后经过 DCT 变换后，比较变换前和变换后的数据，能够更好的理解 DCT 变换。</p>
 
@@ -1845,6 +2846,94 @@ QPmax，可能造成 ABR 码率控制失败。不建议调整该参数。</p>
 </span><span class="line">    <span class="p">}</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<p>上面的代码实现的是下面矩阵乘法：</p>
+
+<p><img src="http://lazybing.github.io/images/dct/4x4dct.png" /></p>
+
+<p>4x4 DCT 反变换实现如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="n">ALWAYS_INLINE</span> <span class="n">pixel</span> <span class="nf">x264_clip_pixel</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="p">((</span><span class="n">x</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">PIXEL_MAX</span><span class="p">)</span><span class="o">?</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">)</span><span class="o">&gt;&gt;</span><span class="mi">31</span> <span class="o">&amp;</span> <span class="nl">PIXEL_MAX</span><span class="p">:</span><span class="n">x</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">add4x4_idct</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">p_dst</span><span class="p">,</span> <span class="n">dctcoef</span> <span class="n">dct</span><span class="p">[</span><span class="mi">16</span><span class="p">])</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">dctcoef</span> <span class="n">d</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+</span><span class="line">    <span class="n">dctcoef</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s02</span> <span class="o">=</span> <span class="n">dct</span><span class="p">[</span><span class="mi">0</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">dct</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d02</span> <span class="o">=</span> <span class="n">dct</span><span class="p">[</span><span class="mi">0</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">dct</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s13</span> <span class="o">=</span> <span class="n">dct</span><span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">dct</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d13</span> <span class="o">=</span> <span class="p">(</span><span class="n">dct</span><span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">dct</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s02</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d02</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">s13</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">d13</span> <span class="o">=</span> <span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">        <span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">s02</span> <span class="o">+</span> <span class="n">s13</span> <span class="o">+</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">;</span>
+</span><span class="line">        <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">d02</span> <span class="o">+</span> <span class="n">d13</span> <span class="o">+</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">;</span>
+</span><span class="line">        <span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">d02</span> <span class="o">-</span> <span class="n">d13</span> <span class="o">+</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">;</span>
+</span><span class="line">        <span class="n">d</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">s02</span> <span class="o">-</span> <span class="n">d13</span> <span class="o">+</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">            <span class="n">p_dst</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_clip_pixel</span><span class="p">(</span><span class="n">p_dst</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">+</span> <span class="n">d</span><span class="p">[</span><span class="n">y</span><span class="o">*</span><span class="mi">4</span><span class="o">+</span><span class="n">x</span><span class="p">]);</span>
+</span><span class="line">        <span class="n">p_dst</span> <span class="o">+=</span> <span class="n">FDEC_STRIDE</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>上面的代码实现的是下面矩阵乘法：</p>
+
+<p><img src="http://lazybing.github.io/images/dct/4x4idct.png" /></p>
 
 <p>其中的<code>pixel_sub_wxh</code>是获取 pix1 和 pix2 两块数据的残差。这里对 pix1 和 pix2 随意举两个相似的4x4的矩阵作为例子，
 之所以要<code>随意</code>是为了突出其普遍性，适用于大多数的 DCT 变换；而<code>相似</code>是因为 pix1 为编码块，pix2 为预测块，它们理论上就应该是相似的。为此举例如下：</p>
@@ -3385,7 +4474,11 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 
 <blockquote><p>This Intra_16x16 prediction mode shall be used only when the samples p[x, -1] with x=0...15 are marked as "available for Intra_16x16 prediction".The values of the prediction samples pred[x, y] with x,y=0...15, are derived by pred[x,y]=p[x,-1],with x,y=0...15</p></blockquote>
 
-<p>x264 中关于模式 Vertical 的代码如下：</p>
+<p>从 SPEC 中可以看出，只要<code>16x16</code>宏块正上方的 16 个元素可用，就可以使用使用<code>Intra_16x16_Vertical</code>预测模式，至于该宏块的左边像素是否可用，并不影响。示例如下：</p>
+
+<p><img src="http://lazybing.github.io/images/x264_intra_predict/intra_16x16_vertical.png" /></p>
+
+<p>x264 中关于模式 Vertical 的C 代码如下：</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -3430,11 +4523,40 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 </span><span class="line">#deinfe M32(src) (((x264_union32_t *)(src))-&gt;i)  
 </span><span class="line">typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;</span></code></pre></td></tr></table></div></figure>
 
+<p>分析上面的代码结合上面的图，可以看出，每执行一次 for 循环，都对<code>16x16</code>的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素需要4次赋值完成，值得大小就是宏块的上一行像素值得大小。
+执行完整个 for 循环后，16x16 宏块像素赋值结束。</p>
+
+<p>针对<code>AARCH64</code>平台，X264 做了汇编优化，其代码如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">function x264_predict_16x16_v_neon, export=1
+</span><span class="line">    sub     x0, x0, #FDEC_STRIDE
+</span><span class="line">    mov     x7, #FDEC_STRIDE
+</span><span class="line">    ldl     {v0.16b}, [x0], x7
+</span><span class="line">.rept 16
+</span><span class="line">    stl     {v0.16b}, [x0], x7
+</span><span class="line">.endr
+</span><span class="line">    ret
+</span><span class="line">endfunc</span></code></pre></td></tr></table></div></figure>
+
+<p>上面的汇编代码可以看出，同样是循环执行16次，因为是64位，所以每次赋值即可实现16字节的运算，相对于上面的C语言版，赋值语句是其1/4，实现了效率上的优化。</p>
+
 <h3 id="intra16x16horizontal-">Intra_16x16_Horizontal 预测模式</h3>
 
 <p>在 SPEC 中，关于该预测模式的定义如下：</p>
 
 <blockquote><p>This Intra_16x16 prediction mode shall be used only when the samples p[−1, y] with y = 0..15 are marked as "available<br />for Intra_16x16 prediction".<br />The values of the prediction samples predL[ x, y ], with x, y = 0..15, are derived by<br />predL[ x, y ] = p[ −1, y ], with x, y = 0..15</p></blockquote>
+
+<p>从 SPEC 中可以看出，只要<code>16x16</code>宏块左方的 16 个元素可用，就可以使用使用<code>Intra_16x16_Vertical</code>预测模式，至于该宏块的上边像素是否可用，并不影响。示例如下：</p>
+
+<p><img src="http://lazybing.github.io/images/x264_intra_predict/intra_16x16_horizontal.png" /></p>
 
 <p>x264 中关于模式 Horizontal 的代码如下：</p>
 
@@ -3468,12 +4590,43 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">#   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)</span></code></pre></td></tr></table></div></figure>
+<p>该宏的作用是将1字节的数据，扩展为4字节的数据，其中的每个字节大小与起始的第一个字节相等。
+分析上面的代码结合上面的图，可以看出，每执行一次for循环，都对<code>16x16</code>的每一行像素进行赋值，而赋值的最小单位是4byte，一行像素
+需要4次赋值完成，值得大小就是宏块的左边像素值得大小。执行完整个for循环后，16x16宏块像素值结束。</p>
+
+<p>针对<code>AARCH64</code>平台，X264 做了汇编优化，其代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">function x264_predict_16x16_h_neon, export=1
+</span><span class="line">    sub x1, x0, #1
+</span><span class="line">    mov x7, #FDEC_STRIDE
+</span><span class="line">.rept 8
+</span><span class="line">    ldlr {v0.16b}, [x1], x7
+</span><span class="line">    ldlr {v0.16b}, [x1], x7
+</span><span class="line">    stl  {v0.16b}, [x0], x7
+</span><span class="line">    stl  {v0.16b}, [x0], x7
+</span><span class="line">.endr
+</span><span class="line">    ret
+</span><span class="line">endfunc</span></code></pre></td></tr></table></div></figure>
 
 <h3 id="intra16x16dc-">Intra_16x16_DC 预测模式</h3>
 
 <p>在 SPEC 中，关于该预测模式的定义如下：</p>
 
-<blockquote><p>This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for<br />Intra_16x16 prediction", as follows:  </p><p>If all neighbouring samples p[x,-1] ], with x = 0..15, and p[ −1, y ], with y = 0..15, are marked as "available for<br />Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by:  <br />$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+\sum_{y'=0}^{15}p[-1,y']+16)&gt;&gt;5, with x,y=0..15$  </p><p>Otherwise, if any of the neighbouring samples p[ x, .1 ], with x = 0..15, are marked as "not available for Intra_16x16<br />prediction" and all of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "available for Intra_16x16<br />prediction", the prediction for all luma samples in the macroblock is given by:  <br />$pred_L[x,y]=(\sum_{y'=0}^{15}p[-1,y']+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise, if any of the neighbouring samples p[ −1, y ], with y = 0..15, are marked as "not available for Intra_16x16<br />prediction" and all of the neighbouring samples p[ x, −1 ], with x = 0..15, are marked as "available for Intra_16x16<br />prediction", the prediction for all luma samples in the macroblock is given by:  <br />$pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise (some of the neighbouring samples p[ x, .1 ], with x = 0..15, and some of the neighbouring samples<br />p[ .1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction"), the prediction for all luma samples<br />in the macroblock is given by:  <br />$pred_L[x,y]=(1&lt;&lt;(BitDepth_Y - 1)), with x,y=0..15$</p></blockquote>
+<blockquote><p>This Intra_16x16 prediction mode operates, depending on whether the neighbouring samples are marked as "available for Intra_16x16 prediction", as follows:  </p><p>If all neighbouring samples p[x,-1] ], with x = 0..15, and p[ −1, y ], with y = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+\sum_{y'=0}^{15}p[-1,y']+16)&gt;&gt;5, with x,y=0..15$  </p><p>Otherwise, if any of the neighbouring samples p[ x, .1 ], with x = 0..15, are marked as "not available for Intra_16x16 prediction" and all of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{y'=0}^{15}p[-1,y']+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise, if any of the neighbouring samples p[ −1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction" and all of the neighbouring samples p[ x, −1 ], with x = 0..15, are marked as "available for Intra_16x16 prediction", the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(\sum_{x'=0}^{15}p[x',-1]+8)&gt;&gt;4, with x,y=0..15$   </p><p>Otherwise (some of the neighbouring samples p[ x, .1 ], with x = 0..15, and some of the neighbouring samples p[ .1, y ], with y = 0..15, are marked as "not available for Intra_16x16 prediction"), the prediction for all luma samples in the macroblock is given by: $pred_L[x,y]=(1&lt;&lt;(BitDepth_Y - 1)), with x,y=0..15$</p></blockquote>
+
+<p>通过 SPEC 描述可以看出来，DC 模式分为4种情况，一种是宏块的上方和左方宏块像素均可用时，此时宏块内的像素值为参考像素值得平均值；第二种是当左方像素不可用、上方像素可用时，宏块内的像素值为上方可用像素的平均值；
+第三种是当上方像素不可用、左方像素可用时，宏块内的像素值为左方可用像素的平均值。最后一种，当上方和左方像素均不可用时，宏块内像素值与BitDepth有关。此处仅仅举例上方和左方像素均可用的例子。</p>
 
 <p>x264 中关于模式 DC 的代码如下：</p>
 
@@ -3602,948 +4755,6 @@ $pix2[4x4]=[(20,23,27,29),(23,24,26,27),(25,26,25,28),(26,24,28,30)];$</p>
 </span><span class="line">    <span class="k">return</span> <span class="p">(</span> <span class="p">(</span><span class="n">x</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">PIXEL_MAX</span><span class="p">)</span> <span class="o">?</span> <span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">)</span><span class="o">&gt;&gt;</span><span class="mi">31</span> <span class="o">&amp;</span> <span class="nl">PIXEL_MAX</span> <span class="p">:</span> <span class="n">x</span> <span class="p">);</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264源码解析之x264_encoder_open函数]]></title>
-    <link href="http://lazybing.github.io/blog/2017/06/24/x264-encoder-open/"/>
-    <updated>2017-06-24T18:24:01-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/06/24/x264-encoder-open</id>
-    <content type="html"><![CDATA[
-<p>本文主要记录<code>x264_encoder_open</code>函数。</p>
-
-<!--more-->
-
-<p><code>x264_encoder_open</code>函数是<code>encode</code>函数的几大主要函数之一。从名字可以看出，该函数主要是打开编码器，
-它的主要作用是对编码器用到的一些参数进行初始化、并对编码器用到的一些与编码算法相关的函数进行初始化。
-可以首先看一下它的声明：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">/* x264_encoder_open:
-</span><span class="line"> *      create a new encoder handler, all parameters from x264_param_t are copied */
-</span><span class="line">x264_t *x264_encoder_open( x264_param_t * );</span></code></pre></td></tr></table></div></figure>
-<p><code>x264_encoder_open</code>中会调用到一些宏定义的函数，比如<code>x264_reduce_fraction</code>，这里先把该函数的定义给出来：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/****************************************************************************</span>
-</span><span class="line"><span class="cm"> * x264_reduce_fraction:</span>
-</span><span class="line"><span class="cm"> ****************************************************************************/</span>
-</span><span class="line"><span class="cp">#define REDUCE_FRACTION( name, type )\</span>
-</span><span class="line"><span class="cp">void name( type *n, type *d )\</span>
-</span><span class="line"><span class="cp">{                   \</span>
-</span><span class="line"><span class="cp">    type a = *n;    \</span>
-</span><span class="line"><span class="cp">    type b = *d;    \</span>
-</span><span class="line"><span class="cp">    type c;         \</span>
-</span><span class="line"><span class="cp">    if( !a || !b )  \</span>
-</span><span class="line"><span class="cp">        return;     \</span>
-</span><span class="line"><span class="cp">    c = a % b;      \</span>
-</span><span class="line"><span class="cp">    while( c )      \</span>
-</span><span class="line"><span class="cp">    {               \</span>
-</span><span class="line"><span class="cp">        a = b;      \</span>
-</span><span class="line"><span class="cp">        b = c;      \</span>
-</span><span class="line"><span class="cp">        c = a % b;  \</span>
-</span><span class="line"><span class="cp">    }               \</span>
-</span><span class="line"><span class="cp">    *n /= b;        \</span>
-</span><span class="line"><span class="cp">    *d /= b;        \</span>
-</span><span class="line"><span class="cp">}</span>
-</span><span class="line">
-</span><span class="line"><span class="n">REDUCE_FRACTION</span><span class="p">(</span> <span class="n">x264_reduce_fraction</span>  <span class="p">,</span> <span class="kt">uint32_t</span> <span class="p">)</span>
-</span><span class="line"><span class="n">REDUCE_FRACTION</span><span class="p">(</span> <span class="n">x264_reduce_fraction64</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>将上面的<code>x264_reduce_fraction</code>展开，代码如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_reduce_fraction</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="n">n</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="o">*</span><span class="n">d</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">	<span class="kt">uint32_t</span> <span class="n">a</span> <span class="o">=</span> <span class="o">*</span><span class="n">n</span><span class="p">;</span>
-</span><span class="line">	<span class="kt">uint32_t</span> <span class="n">b</span> <span class="o">=</span> <span class="o">*</span><span class="n">d</span><span class="p">;</span>
-</span><span class="line">	<span class="kt">uint32_t</span> <span class="n">c</span><span class="p">;</span>
-</span><span class="line">	
-</span><span class="line">	<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">a</span> <span class="o">||</span> <span class="o">!</span><span class="n">b</span><span class="p">)</span>
-</span><span class="line">	    <span class="k">return</span><span class="p">;</span>
-</span><span class="line">	<span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">%</span> <span class="n">b</span><span class="p">;</span>
-</span><span class="line">	<span class="k">while</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
-</span><span class="line">	<span class="p">{</span>
-</span><span class="line">		<span class="n">a</span> <span class="o">=</span> <span class="n">b</span><span class="p">;</span>
-</span><span class="line">		<span class="n">b</span> <span class="o">=</span> <span class="n">c</span><span class="p">;</span>
-</span><span class="line">		<span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">%</span> <span class="n">b</span><span class="p">;</span>
-</span><span class="line">	<span class="p">}</span>
-</span><span class="line">	<span class="o">*</span><span class="n">n</span> <span class="o">/=</span><span class="n">b</span><span class="p">;</span>
-</span><span class="line">	<span class="o">*</span><span class="n">d</span> <span class="o">/=</span><span class="n">b</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>通过上面的展开可能一眼看不出所以然，其实这是一个非常简单的算法应用，求两个数 n 和 m 约分后再分别
-赋值给相应的分子和分母，函数的前半部分就是经典的求最大公约数 b 的过程，可以参考<a href="http://blog.csdn.net/so_geili/article/details/50955291">细说算法–最大公约数</a>。</p>
-
-<p>暂时先理解这段代码的含义，至于为什么要这么做，后面在分析。</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264 参数详解]]></title>
-    <link href="http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra/"/>
-    <updated>2017-06-23T20:07:55-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">输入</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">预设值</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">帧类型</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">码率控制</a></li>
-</ul>
-
-<p>x264 中参数选项详解</p>
-
-<!--more-->
-
-<h2 id="section">输入</h2>
-<p>用1个绝对路径定义输入文件（或者2个，rawYUV文件）。如下例：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">x264.exe -o NUL C:\input.avs  
-</span><span class="line">x264 -o /dev/null ~/input.y4m  </span></code></pre></td></tr></table></div></figure>
-
-<p>如果输入文件是rawYUV格式的，还要把分辨率一并输入。如果开启了比特率控制，还需要输入帧率。如下例：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">x264.exe -o NUL –fps 25 D:\input.yuv 1280×720  
-</span><span class="line">x264 -o /dev/null –fps 30000/1001 ~/input.yuv 640×480  </span></code></pre></td></tr></table></div></figure>
-
-<h2 id="section-1">预设值</h2>
-<p>预设值是x264在r1177版本增加的一个方便的命令行选项。可以用x264.exe –fullhelp查看所有的命令行帮助。</p>
-
-<ul>
-  <li>
-    <p>profile<br />
-默认：无<br />
-说明：限制输出文件的profile。这个参数将覆盖其它所有值，此选项能保证输出profile兼容的视频流。如果使用了这个选项，将不能进行无损压缩（qp 0 or crf 0）。<br />
-可选：baseline，main，high<br />
-建议：不设置。除非解码环境只支持main或者baseline profile的解码。</p>
-  </li>
-  <li>
-    <p>preset<br />
-默认：medium<br />
-一些在压缩效率和运算时间中平衡的预设值。如果指定了一个预设值，它会在其它选项生效前生效。<br />
-可选：ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow and placebo.<br />
-建议：可接受的最慢的值</p>
-  </li>
-  <li>
-    <p>tune<br />
-默认：无<br />
-说明：在上一个选项基础上进一步优化输入。如果定义了一个tune值，它将在preset之后，其它选项之前生效。<br />
-可选：film, animation, grain, stillimage, psnr, ssim, fastdecode, zerolatency and touhou.<br />
-建议：根据输入选择。如果没有合适的就不要指定。</p>
-  </li>
-  <li>
-    <p>slow-firstpass<br />
-默认：无<br />
-说明：随着预设值机制在r1177版本的出现，使用–pass 1会在解析命令行时增加以下设置：<code>ref 1</code>
-<code>no-8x8dct</code><code>partitions i4x4 (if originally enabled, else none)</code><code>me dia</code><code>subme MIN( 2, subme )</code><code>trellis 0</code><br />
-如果设置preset=placebo则自动关闭此特性。如果想显式关闭此特性，使用slow-firstpass。</p>
-  </li>
-</ul>
-
-<h2 id="section-2">帧类型</h2>
-
-<ul>
-  <li>
-    <p>keyint<br />
-默认：250<br />
-说明：设置x264输出中最大的IDR帧（亦称关键帧）间距。<br />
-IDR帧是视频流的“分隔符”，所有帧都不可以使用越过关键帧的帧作为参考帧。IDR帧是I帧的一种，所以它们也不参照其它帧。这意味着它们可以作为视频的搜索（seek）点。<br />
-通过这个设置可以设置IDR帧的最大间隔帧数（亦称最大图像组长度）。较大的值将导致IDR帧减少（会用占用空间更少的P帧和B帧取代），也就同时减弱了参照帧选择的限制。较小的值导致减少搜索一个随机帧所需的平均时间。<br />
-建议：默认值（fps的10倍）对大多数视频都很好。如果在为蓝光、广播、直播流或者其它什么专业流编码，也许会需要更小的图像组长度（一般等于fps）。<br />
-参见：min-keyint, scenecut, intra-refresh</p>
-  </li>
-  <li>
-    <p>min-keyint<br />
-默认：auto（keyint/10）<br />
-说明：参见keyint的说明。过小的keyint范围会导致产生“错误的”IDR帧（比如说，一个闪屏场景，参见上一篇blog）。此选项限制了IDR帧之间的最小距离。<br />
-建议：默认，或者与fps相等<br />
-参见：keyint, scenecut</p>
-  </li>
-  <li>
-    <p>no-scenecut<br />
-默认：无<br />
-说明：完全关闭自适应I帧决策。<br />
-参见：scenecut</p>
-  </li>
-  <li>
-    <p>scenecut<br />
-默认：40<br />
-说明：设置决策使用I帧、IDR帧的阈值（场景变换检测）。<br />
-x264会计算每一帧与前一帧的不同程度并得出一个值。如果这个值低于scenecut，那么就算检测到一个“场景变换”。如果此时距离上一帧的距离小于 min-keyint则插入一个I帧，反之则插入一个IDR帧。较高的值会增加侦测到“场景变换”纪律。参见更详细的<a href="http://forum.doom9.org/showthread.PHP?t=121116">工作原理</a><br />
-设置scenecut=0与no-scenecut等效。<br />
-建议：使用默认值<br />
-参见：keyint, min-keyint, no-scenecut</p>
-  </li>
-  <li>
-    <p>intra-refresh<br />
-默认：off<br />
-说明：让x264为每keyint数量的帧使用宏块内部编码取代IDR帧。块以水平移动列的方式更新，也叫刷新波。对于低延迟的流，这样可以让帧的尺寸比使用标准的IDR帧更加保持恒定。而且这样可以增强视频流对丢包的容错能力。这个选项会降低压缩率，所以在确实需要的时候才选择它。<br />
-还有一些有意思的事情：1、第一帧依然是IDR帧。2、内部宏块只在P帧中存在，刷新波在一个或多个B帧后的P帧中广泛存在。3、主要的压缩率下降原因是在宏块中新（左边）的波并不能参考旧（右边）的波。<br />
-建议：使用默认值</p>
-  </li>
-  <li>
-    <p>bframes
-默认：3<br />
-说明：设置x264可使用的B帧的最大连续数量。<br />
-没有B帧时，一个典型的x264流帧类型是这样的：IPPPPP…PI。如果设置了-bframes 2，那么两个连续的P帧就可以用B帧替换，然后就像这样：IBPBBPBPPPB…PI。<br />
-B帧和P帧的区别在于它可以参照它之后的帧，这个特点让它可以显著地提升压缩率。他们的平均品质受 –pbratio选项的控制。<br />
-还有一些有意思的事情：<br />
-1、x264有2种B帧，一种可以作为参照帧，一种不能；<br />
-2、关于x264如何决策B帧或P帧，可以看看这个ffmpeg-devel<a href="http://article.gmane.org /gmane.comp.video.ffmpeg.devel/29064">邮件列表</a>。这种情况下帧类型看起来就像这样IBBBPBBBPBPI（假设设置 –bframes 3）。<br />
-参见：–no-b-adapt, –b-bias, –b-pyramid, –ref, –pbratio, –partitions, –weightb</p>
-  </li>
-  <li>
-    <p>b-adapt
-默认：1<br />
-说明：设置B帧决策算法，这个选项会影响到x264使用P帧或者B帧。<br />
-0 —— 关闭。总是使用B帧。和以前的 no-b-adapt选项效果相同；<br />
-1 —— ‘快速’算法。快速，–b-frames越大速度越快。推荐配合使用–bframes 16；<br />
-2 —— ‘最佳’算法，慢速，–b-frames越大速度越慢；<br />
-注意：多趟编码时，只有第一趟编码的此选项起效，因为第一趟编码结束时，帧类型就已经被决定了。</p>
-  </li>
-  <li>
-    <p>b-bias<br />
-默认：0<br />
-说明：调节使用B帧的力度。越大的值越偏向B帧，可以在-100和100之间选择。100或-100不能保证完全或是全是B帧（使用 –b-adapt 0）。请只在你认为你能做出比x264更好的码率控制时才使用这个选项。<br />
-参见： –b-frames, –ipratio</p>
-  </li>
-  <li>
-    <p>b-pyramid
-默认：normal<br />
-说明：允许B帧作为参照帧。如果关闭，那么只有I帧和P帧才能作为参照帧。可以作为参照帧的B帧的量化参数会介于P帧和普通B帧之间。只在–b-frames设置大于等于2时此选项才生效。如果是在为蓝光光盘编码，请使用none或者strict。<br />
-none —— 不允许B帧作为参照帧；<br />
-strict —— 一个图像组内只允许一个B帧参照帧，这是蓝光编码强制要求的标准；<br />
-normal —— 任意使用B帧参照帧；<br />
-参见：–bframes, –refs, –no-mixed-refs</p>
-  </li>
-  <li>
-    <p>open-gop
-默认：none<br />
-说明：Open-GOP是一个提升压缩效率的编码技术。它有以下选项：<br />
-none —— 关闭<br />
-normal —— 开启<br />
-bluray —— 开启。一个稍低效的open-GOP版本，因为normal模式不能用于蓝光编码<br />
-有些解码器不能完全支持open-GOP流，因此这个选项默认关闭。如果要用，请测试你的解码器。
-更多open-gop的资料参见该<a href="http://forum.doom9.org/showthread.php?p=1300124#post1300124">链接</a></p>
-  </li>
-  <li>
-    <p>no-cabac<br />
-默认：无<br />
-说明：关闭CABAC (Context Adaptive Binary Arithmetic Coder)压缩，使用较为低效的CAVLC (Context Adaptive Variable Length Coder)。这两者在压缩效率和解码效率上有10%-20%的差别。</p>
-  </li>
-  <li>
-    <p>ref<br />
-默认：3<br />
-说明：控制DPB (Decoded Picture Buffer)的大小。可以在0-16之间选择。简单地说，就是设置P帧可以选择它之前的多少帧作为参照帧（B帧的值要小1-2，取决于那个B帧能不能作为参照）。最小可以选择值1，只参照自己前面的那帧。注意H.264标准限制了每个level可以参照的帧的数量。如果选择level4.1，1080p最大选4，720p最大选9。<br />
-参照： –b-pyramid, –no-mixed-refs, –level</p>
-  </li>
-  <li>
-    <p>no-deblock<br />
-默认：无<br />
-说明：完全关闭内置去块滤镜。不推荐使用。<br />
-参见： –deblock</p>
-  </li>
-  <li>
-    <p>deblock<br />
-默认：0:0<br />
-说明：调节H.264标准中的内置去块滤镜。这是个性价比很高的选则。详解参见<a href="http://forum.doom9.org/showthread.php?t=109747">参数运作原理</a>。
-参见: –no-deblock</p>
-  </li>
-  <li>
-    <p>slices  　　
-默认：0  　　
-说明：设置每帧的分片数，强制使用矩形分片。（会被–slice-max-size 或 –slice-max-mbs选项覆盖)如果是在为蓝光光盘编码，设置为4。如果不是，不要使用这个选项，除非你确定你需要它。  　　
-参见：–slice-max-size, –slice-max-mbs  　　　　</p>
-  </li>
-  <li>
-    <p>slice-max-size  　　
-默认：0  　　
-说明：设置每个分块包括NAL头的最大大小（bytes）。 (目前与 –interlaced选项不兼容)  　　
-参见：–slices  　　</p>
-  </li>
-  <li>slice-max-mbs  　　
-默认：0  　　
-说明：设置每个分块包含的最大宏块数量。 (目前与 –interlaced选项不兼容)  　　
-参见：–slices 
- 　　</li>
-  <li>
-    <p>tff<br />
-说明：开启隔行编码并设置上半场在前。x264的隔行编码使用MBAFF，因此效率不如逐行扫描。所以，仅在需要在隔行显示的设备上显示时才开启这个选项（或是送给x264之前无法进行反隔行扫描）。这个选项会触发 –pic-struct开启。</p>
-  </li>
-  <li>
-    <p>bff<br />
-说明：开启隔行编码并设置下半场在前。更多信息同–tff。</p>
-  </li>
-  <li>
-    <p>constrained-intra<br />
-默认：无<br />
-说明：开启SVC编码的底层要求的强制帧内预测。选择每个人都无视SVC了，你也可以忽略这个设置。</p>
-  </li>
-  <li>
-    <p>pulldown<br />
-默认：none<br />
-说明：为你的输入流（逐行扫描的，固定帧率的）使用一组预设的“软性电视模式”。“软性电视模式”在HandBrake Wiki里面有很好的解释。<br />
-可选的参数有：none、22、32、64、double、triple、euro。除了none之外的选项都会触发 –pic-struct开启。</p>
-  </li>
-  <li>fake-interlaced<br />
-默认：无<br />
-说明：把流标志为隔行的但不按隔行编码。用于编码25p和30p的蓝光兼容视频。</li>
-</ul>
-
-<h2 id="section-3">码率控制</h2>
-
-<ul>
-  <li>
-    <p>qp<br />
-默认：无<br />
-说明：三种可选的码率控制方法之一。设置x264使用固定量化参数模式。给定的数量将被作为P帧的量化参数，I帧和B帧的量化参数由–ipratio and –pbratio参数进一步算出。QP模式适用固定的量化参数，这意味着最终的文件大小是不可知的（可以通过一些其他方法预测）。设置为0将产出无损的输出。相同视觉质量时，QP模式产出的文件比crf模式大。QP模式将关闭自适应量化器，因为它是固定QP的。
-这个选项和 –bitrate和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。一般而言crf都能代替QP模式，不过QP因为完全不需要预测所以它会运行地更快些。<br />
-参见：–bitrate, –crf, –ipratio, –pbratio</p>
-  </li>
-  <li>
-    <p>bitrate<br />
-默认：无<br />
-说明：三种可选的码率控制方法之二。设置x264使用固定目标比特率模式。固定目标比特率意味着最终文件的大小是可知的，但是目标的质量是不可知的。 x264会试图让最终文件的整体码率与给定的码率相等。参数的量纲为kilobits/sec（8bit = 1byte）。通常这个选项和–pass选项配合进行2趟编码。
-这个选项和 –qp和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。<br />
-参见：–qp, –crf, –ratetol, –pass, –stats</p>
-  </li>
-  <li>
-    <p>crf
-默认：23.0<br />
-说明：三种可选的码率控制方法之二。固定ratefactor。QP是固定量化器，bitrate是固定文件大小，crf则是固定“质量”。crf可以提供跟QP一样的视觉的质量，但是文件更小。crf的单位是ratefactor。
-crf是通过降低那些“不那么重要”的帧的质量做到这一切的。“不那么重要”意思是过于耗费码率又难以用肉眼察觉的帧，比如复杂或者超高速运行的场景。省下来的码率会用在其它更有效的帧里。
-crf编码比2趟编码快，因为它相当于省略了第1趟编码。所以crf的最终码率也是不可预测的。你应该根据应用场景来选择码率控制方式。这个选项和 –qp和–crf是互斥的，三者只能选一个，参见<a href="http://blog.yikuyiku.com/index.php/archives/1901">原理</a>。<br />
-参见：–qp, –bitrate</p>
-  </li>
-  <li>
-    <p>rc-lookahead<br />
-默认：40<br />
-说明：为mb-tree ratecontrol（Macroblock Tree Ratecontrol）和vbv-lookahead设置可用的帧的数量。最大可设置为250。对于mb-tree而言，调大这个值会得到更准确地结果，但也会更慢。mb-tree能使用的最大值是–rc-lookahead和–keyint中较小的那一个。对于vbv-lookahead而言，调大这个值会得更稳定和精确的码率控制。vbv-lookahead能使用的最大值是如下公式算出来的：<code>MIN(rc-lookahead, MAX(–keyint, MAX(–vbv-maxrate, –bitrate) / –vbv-bufsize * –fps))</code><br />
-参见：–no-mbtree, –vbv-bufsize, –vbv-maxrate</p>
-  </li>
-  <li>
-    <p>vbv-maxrate<br />
-默认：0<br />
-说明：设置VBV（Video Buffering Verifier）可用的最大码率。使用VBV会降低视频质量，只在真正需要的才设定它。<br />
-参见：–vbv-bufsize, –vbv-init，<a href="http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding">详解</a></p>
-  </li>
-  <li>
-    <p>vbv-bufsize<br />
-默认：0<br />
-说明：设置VBV（Video Buffering Verifier）可用的最大缓冲区，单位是kilobits。使用VBV会降低视频质量，只在真正需要的才设定它。<br />
-参见：–vbv-maxsize, –vbv-init，<a href="http://mewiki.project357.com/wiki/X264_Encoding_Suggestions#VBV_Encoding">详解</a></p>
-  </li>
-  <li>
-    <p>vbv-init<br />
-默认：0.9<br />
-说明：设置重放之前必须先载入多大的VBV缓冲。如果值小于1，那么大小就为 vbv-init * vbv-bufsize。如果大于1，则是以kbits为单位的值。<br />
-参见：–vbv-maxsize, –vbv-bufsize</p>
-  </li>
-  <li>
-    <p>crf-max<br />
-默认：无<br />
-说明：类似 –qp-max，但是设置的是最大的ratefactor值而不是量化参数。这个选项仅用于crf和vbv同时启用的时候。它阻止x264使用小于给定值的ratefactor（也就是“质量”），哪怕会违反vbv。一般用于流服务器。<a href="http://Git.videolan.org /gitweb.cgi/x264.git/?a=commit; h=81eee062a4ce9aae1eceb3befcae855c25e5ec52">更多的信息</a>。<br />
-参见：–crf, –vbv-maxrate, –vbv-bufsize</p>
-  </li>
-  <li>
-    <p>qpmin<br />
-默认：10<br />
-说明：设置x264可以使用的最小量化器。量化参数越小，输出越接近输入。使用某些值时，x264的输出可以和输入看起来完全一样，虽然其实并不是精确相同的，通常就够了没有必要使用更多比特在宏块上了。
-如果开启了自适应量化器（默认开启），则不鼓励提高qpmin的值，那样可能会降低帧的平坦部分的质量。<br />
-参见：–qpmax, –ipratio</p>
-  </li>
-  <li>
-    <p>qpmax<br />
-默认：51<br />
-说明：qpmin的反面，设置x264可以使用的最大量化器。默认值51是H.264标准中的最大值，质量非常低。默认值51其实相当于没有设置 qpmax。如果你想控制x264输出的最低品质，也许你想要把这个值调低一点（调到30-40最低了），但一般而言不推荐调节这个值。<br />
-参见：–qpmin, –pbratio, –crf-max</p>
-  </li>
-  <li>
-    <p>qpstep<br />
-默认：4<br />
-说明：设置2帧间量化器最大的可变值。</p>
-  </li>
-  <li>
-    <p>ratetol<br />
-默认：1.0<br />
-说明：这个参数有2个可能的含义：<br />
-1、在1趟bitrate编码时，这个参数控制x264可以偏离给定的平均目标比特率的百分比。可以设置为inf完全关闭码率溢出侦测。最低可以设置为 0.01。较高的值可以让x264更好地处理影片结束部分的复杂场景。对于这个目的而言单位是百分比（1.0意味着允许1%的bitrate偏差）。很多影片（比如说动作打斗片）在最后的片段里十分复杂。1趟编码并不知道哪里是最复杂的片断，往往到最后比特都已经用完了。把rateol设置为inf就能解决这个问题，它允许编码器用类似 –crf的方式工作，当然，文件大小会溢出。<br />
-2、当开启了vbv时（只要使用了任何–vbv-开头的选项就会开启），这个选项意味着vbv的强度。更高的值意味着允许更高的在设定的vbv值上下波动。在这个含义时，可以使用任意的度量单位。</p>
-  </li>
-  <li>
-    <p>ipratio<br />
-默认：1.40<br />
-说明：设置平均的I帧的量化器相比P帧量化器增值。更高的值意味着更高的I帧质量。<br />
-参见：–pbratio</p>
-  </li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[SODB RBSP EBSP 的区别与联系]]></title>
-    <link href="http://lazybing.github.io/blog/2017/06/22/sodb-rbsp-ebsp/"/>
-    <updated>2017-06-22T08:48:25-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/06/22/sodb-rbsp-ebsp</id>
-    <content type="html"><![CDATA[
-<p>简单总结 SODB、RBSP、EBSP、NALU 和 H.264 字节流的联系。</p>
-
-<!--more-->
-
-<ul>
-  <li>SODB：String of Data Bits，数据比特串，它是最原始的编码数据。</li>
-  <li>RBSP：Raw Byte Sequence Payload, 原始字节序列载荷，它是在 SODB 的后面添加了结尾比特和若干比特<code>0</code>，以便字节对齐。</li>
-  <li>EBSP：Encapsulate Byte Sequence Payload，扩展字节序列载荷，它是在 RBSP 基础上添加了防校验字节<code>0x03</code>后得到的。</li>
-</ul>
-
-<p>关系大致如下：</p>
-
-<p><code>SODB</code>+<code>RBSP Stop bit</code>+<code>0 bits</code>= <code>RBSP</code></p>
-
-<p><code>RBSP part1</code>+<code>0x03</code>+<code>RBSP part2</code>+<code>0x03</code>+…+<code>RBSP partn</code> = <code>EBSP</code></p>
-
-<p><code>NALU Header</code>+<code>EBSP</code>=<code>NALU</code></p>
-
-<p><code>start code</code>+<code>NALU</code>+…+<code>start code</code>+<code>NALU</code>=<code>H.264 Byte Stream</code></p>
-
-<p>在 H264 SPEC 中，SODB 定义如下：</p>
-
-<blockquote>
-  <p>3.149 string of data bits(SODB) : A sequence of some number of bits representing syntax elements present within a raw byte sequence payload prior to the raw byte sequnece payload stop bit.Within an SODB,the left-most bit is considered to be the first and most significant bit,and the right-most bit is considered to be the last and least significant bit。</p>
-</blockquote>
-
-<p>要组成一个 NALU 单元，首先要有原始数据，称之为 SODB 数据。它是原始的 H264 数据编码得到的，不包含 3 字节/4 字节的起始码，即不包含<code>0x000001</code>/<code>0x00000001</code>,同样的也不包括 1 字节的 NALU 头，NALU 头部信息包含了一些基础信息，比如 NALU 类型。</p>
-
-<blockquote>
-  <p>注意：起始码包括两种：3 字节(0x000001) 和 4 字节(0x00000001)，在 SPS、PPS 和 Access Unit 的第一个 NALU 使用 4 字节起始码，其余情况均使用 3 字节起始码。</p>
-</blockquote>
-
-<p>在 H264 SPEC 中，RBSP 定义如下：</p>
-
-<blockquote>
-  <p>3.118 raw byte sequence payload(RBSP): A syntax structure containing an integer number of bytes that is encapsulated in a NAL unit.An RBSP is either empty or has the form of a string of data bits containing syntax elements followed by an RBSp stop bit and followed by zero or more subsequent bits equal to 0.
-3.119 raw byte sequence payload(RBSP) stop bit: A bit equal to 1 present within a raw byte sequence payload(RBSP) after a string of data bits.The location of the end of the string of data bits within an RBSP can be identified by searching from the end of the RBSP for the RBSP stop bit, which is the last non-zero bit in the RBSP.</p>
-</blockquote>
-
-<p>在 SODB 结束处添加表示结束的 bit 1 来表示 SODB 已经结束，因此添加的 bit 1 称为<code>rbsp_stop_one_bit</code>, <code>RBSP</code>也需要字节对齐，为此需要在<code>rbsp_stop_one_bit</code>后添加若干 0 补齐。<br />
-简单说，要在 SODB 后面追加两样东西形成 RBSP ：</p>
-
-<ol>
-  <li>rbsp_stop_one_bit = 1</li>
-  <li>rbsp_alignment_zero_bit(s) = 0(s)</li>
-</ol>
-
-<p>RBSP 的生成过程：首先，如果 SODB 的内容是空的，则 RBSP 的内容也是空的；其次，如果 SODB 的内容非空，RBSP 的第一个字节取自 SODB 的第 1 到第 8 个比特，RBSP 字节内部按照从左到右从高到低的顺序排列。
-以此类推，RBSP 中的每个字节都直接取自 SODB 的相应比特。RBSP的最后一个字节包含 SODB 的最后几个比特，以及 trailing bits。其中，trailing bits 的第一个比特为 1，其余的比特为 0,保证字节对齐。最后，
-在结尾添加 0x0000,即 CABAC_ZERO_WORD，从而形成 RBSP。</p>
-
-<p><img src="http://lazybing.github.io/images/sodb_rbsp/sodb_rbsp.PNG" /></p>
-
-<p>EBSP 的生成过程：NALU 数据 + 起始码就形成了Annex B 格式，起始码包括两种，0x00000001 或 0x000001。为了不让NALU的主体与起始码之间产生竞争，在对 RBSP 进行扫描时，如果遇到连续的两个<code>0x00</code>字节，则在该两个字节后面添加一个<code>0x03</code>字节。在解码的时候将该<code>0x03</code>字节去掉，也成为脱壳操作。
-通过该种方式形成 EBSP，这需要将近两倍的整帧图像码流大小。为了减少存储器需求，在每个 macroblock 结束后，即检查该 macroblock 的 SODB 的起始码竞争问题，并保留 SODB 的最后两个字节的零字节个数，以便与下一个 macroblock 的 SODB 的开始字节形成连续的起始码竞争检测。对一帧图像的最后一个 macroblock，先添加结尾停止 bit，在检查起始码竞争。</p>
-
-<p>替换规则如下：</p>
-
-<ul>
-  <li>0x000000 =&gt; 0x00000300</li>
-  <li>0x000001 =&gt; 0x00000301</li>
-  <li>0x000002 =&gt; 0x00000302</li>
-  <li>0x000003 =&gt; 0x00000303</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264 实现yuv转264文件]]></title>
-    <link href="http://lazybing.github.io/blog/2017/06/16/x264-to-convert-yuv-to-264/"/>
-    <updated>2017-06-16T07:47:47-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/06/16/x264-to-convert-yuv-to-264</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#x264" id="markdown-toc-x264">X264编码样例解析</a></li>
-  <li><a href="#x264yuv" id="markdown-toc-x264yuv">x264编码YUV文件示例</a></li>
-</ul>
-
-<p>本文根据 x264 中提供的<code>example.c</code>文件，实现了将 YUV 文件编码为 264 文件，从整体上了解 x264 编码的大体过程。</p>
-
-<!--more-->
-
-<p>x264 实现编码器功能与 FFmpeg 实现编码器大致是类似的，因为 FFmpeg 本身实现 264 格式的编码，就是 x264 的库实现的。</p>
-
-<p>首先分析 x264 给定的编码样例，之后根据样例实现自己的编码器功能。</p>
-
-<h2 id="x264">X264编码样例解析</h2>
-
-<p>在 X264 中有<code>example.c</code>文件，它是 X264 库给定的一个将 YUV 编码为 h264 格式的视频文件的样例。分析其中的源码大致如下：</p>
-
-<ol>
-  <li>检测输入的参数格式是否正确。</li>
-  <li>获取编码过程中需要用到的参数，并对特定的参数进行赋值。</li>
-  <li>根据给定的视频的宽高等信息为图像结构体 <code>x264_picture_t</code> 分配内存。</li>
-  <li>打开编码器</li>
-  <li>从给定的的待编码的 YUV 文件中读取数据，放到上面分配的 <code>x264_picture_t</code> 结构体的特定字段内。</li>
-  <li>编码一帧图像。</li>
-  <li>将编码生成的 h264 格式的视频数据写到输出文件中。</li>
-  <li>循环5、6、7，实现多帧数据的编码。</li>
-  <li>将编码器内缓存的数据编码完成，并写到输出文件中。</li>
-  <li>清理工作，包括关掉编码器、释放的分配的 <code>x264_picture_t</code> 结构体。</li>
-</ol>
-
-<p>第一步中，检测输入参数格式是否正确，X264 中给出的具体实现如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">FAIL_IF_ERROR</span><span class="p">(</span> <span class="o">!</span><span class="p">(</span><span class="n">argc</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">),</span> <span class="s">&quot;Example usage: example 352x288 &lt;input.yuv &gt;output.h264</span><span class="se">\n</span><span class="s">&quot;</span> <span class="p">);</span>
-</span><span class="line"><span class="n">FAIL_IF_ERROR</span><span class="p">(</span> <span class="mi">2</span> <span class="o">!=</span> <span class="n">sscanf</span><span class="p">(</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot;%dx%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">width</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">height</span> <span class="p">),</span> <span class="s">&quot;resolution not specified or incorrect</span><span class="se">\n</span><span class="s">&quot;</span> <span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-<p>其中<code>FAIL_IF_ERROR</code>定义如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">#define FAIL_IF_ERROR( cond, ... )\
-</span><span class="line">do\
-</span><span class="line">{\
-</span><span class="line">    if( cond )\
-</span><span class="line">    {\
-</span><span class="line">        fprintf( stderr, __VA_ARGS__ );\
-</span><span class="line">        goto fail;\
-</span><span class="line">    }\
-</span><span class="line">} while( 0 )</span></code></pre></td></tr></table></div></figure>
-
-<p>第二步中，获取编码过程中需要用到的参数，并对特定的参数进行赋值。样例的实现中主要包括了三部分,代码如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">//Get default params for preset/tuning</span>
-</span><span class="line"><span class="k">if</span><span class="p">(</span> <span class="n">x264_param_default_preset</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">param</span><span class="p">,</span> <span class="s">&quot;medium&quot;</span><span class="p">,</span> <span class="nb">NULL</span> <span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
-</span><span class="line">    <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line"><span class="cm">/* Configure non-default params */</span>
-</span><span class="line"><span class="n">param</span><span class="p">.</span><span class="n">i_csp</span> <span class="o">=</span> <span class="n">X264_CSP_I420</span><span class="p">;</span>
-</span><span class="line"><span class="n">param</span><span class="p">.</span><span class="n">i_width</span>  <span class="o">=</span> <span class="n">width</span><span class="p">;</span>
-</span><span class="line"><span class="n">param</span><span class="p">.</span><span class="n">i_height</span> <span class="o">=</span> <span class="n">height</span><span class="p">;</span>
-</span><span class="line"><span class="n">param</span><span class="p">.</span><span class="n">b_vfr_input</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line"><span class="n">param</span><span class="p">.</span><span class="n">b_repeat_headers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class="line"><span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line"><span class="cm">/* Apply profile restrictions. */</span>
-</span><span class="line"><span class="k">if</span><span class="p">(</span> <span class="n">x264_param_apply_profile</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">param</span><span class="p">,</span> <span class="s">&quot;high&quot;</span> <span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
-</span><span class="line">    <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>其中对于<code>preset</code><code>tune</code><code>profile</code>参数的选择部分，请参考上一篇中的<a href="http://lazybing.github.io/blog/2017/06/23/x264-paraments-illustra/#section-1">X264参数详解</a>。<br />
-非默认参数<code>i_csp</code>指定颜色空间、<code>i_width</code>和<code>i_height</code>指定宽高信息、<code>b_vfr_input</code>指定是否使用时间戳用于帧率控制、
-<code>b_repeat_headers</code>指定是否在每个关键帧前添加 SPS/PPS 信息、<code>b_annexb</code>指定在每个 NAL 前添加起止码或者 NAL 大小。</p>
-
-<p>第三步，根据视频宽高以及颜色空间为图像结构体<code>x264_picture_t</code>分配内存。代码如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">if</span><span class="p">(</span> <span class="n">x264_picture_alloc</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">pic</span><span class="p">,</span> <span class="n">param</span><span class="p">.</span><span class="n">i_csp</span><span class="p">,</span> <span class="n">param</span><span class="p">.</span><span class="n">i_width</span><span class="p">,</span> <span class="n">param</span><span class="p">.</span><span class="n">i_height</span> <span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
-</span><span class="line">    <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>第四步，打开编码器。</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">h</span> <span class="o">=</span> <span class="n">x264_encoder_open</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">param</span> <span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>第五步，读取 YUV 文件数据到<code>x264_picture_t</code>结构体中。代码实现如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/* Read input frame */</span>
-</span><span class="line"><span class="k">if</span><span class="p">(</span> <span class="n">fread</span><span class="p">(</span> <span class="n">pic</span><span class="p">.</span><span class="n">img</span><span class="p">.</span><span class="n">plane</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">luma_size</span><span class="p">,</span> <span class="n">stdin</span> <span class="p">)</span> <span class="o">!=</span> <span class="n">luma_size</span> <span class="p">)</span>
-</span><span class="line">    <span class="k">break</span><span class="p">;</span>
-</span><span class="line"><span class="k">if</span><span class="p">(</span> <span class="n">fread</span><span class="p">(</span> <span class="n">pic</span><span class="p">.</span><span class="n">img</span><span class="p">.</span><span class="n">plane</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chroma_size</span><span class="p">,</span> <span class="n">stdin</span> <span class="p">)</span> <span class="o">!=</span> <span class="n">chroma_size</span> <span class="p">)</span>
-</span><span class="line">    <span class="k">break</span><span class="p">;</span>
-</span><span class="line"><span class="k">if</span><span class="p">(</span> <span class="n">fread</span><span class="p">(</span> <span class="n">pic</span><span class="p">.</span><span class="n">img</span><span class="p">.</span><span class="n">plane</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chroma_size</span><span class="p">,</span> <span class="n">stdin</span> <span class="p">)</span> <span class="o">!=</span> <span class="n">chroma_size</span> <span class="p">)</span>
-</span><span class="line">    <span class="k">break</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>第六/七步，编码一帧图像,并将其输入到输出文件。代码实现如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line">        <span class="n">pic</span><span class="p">.</span><span class="n">i_pts</span> <span class="o">=</span> <span class="n">i_frame</span><span class="p">;</span>
-</span><span class="line">        <span class="n">i_frame_size</span> <span class="o">=</span> <span class="n">x264_encoder_encode</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nal</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">i_nal</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pic</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pic_out</span> <span class="p">);</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">i_frame_size</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
-</span><span class="line">            <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="k">else</span> <span class="nf">if</span><span class="p">(</span> <span class="n">i_frame_size</span> <span class="p">)</span>
-</span><span class="line">        <span class="p">{</span>
-</span><span class="line">            <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="n">fwrite</span><span class="p">(</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span><span class="p">,</span> <span class="n">i_frame_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stdout</span> <span class="p">)</span> <span class="p">)</span>
-</span><span class="line">                <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>第九步，将编码器内缓存的数据编码完成，并写到输出文件中。代码如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line">    <span class="cm">/* Flush delayed frames */</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">x264_encoder_delayed_frames</span><span class="p">(</span> <span class="n">h</span> <span class="p">)</span> <span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">i_frame_size</span> <span class="o">=</span> <span class="n">x264_encoder_encode</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nal</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">i_nal</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pic_out</span> <span class="p">);</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">i_frame_size</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
-</span><span class="line">            <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="k">else</span> <span class="nf">if</span><span class="p">(</span> <span class="n">i_frame_size</span> <span class="p">)</span>
-</span><span class="line">        <span class="p">{</span>
-</span><span class="line">            <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="n">fwrite</span><span class="p">(</span> <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span><span class="p">,</span> <span class="n">i_frame_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stdout</span> <span class="p">)</span> <span class="p">)</span>
-</span><span class="line">                <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="p">}</span>
-</span><span class="line">    <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>第十步，最后是清理工作，代码如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">x264_encoder_close</span><span class="p">(</span> <span class="n">h</span> <span class="p">);</span>
-</span><span class="line"><span class="n">x264_picture_clean</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">pic</span> <span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h2 id="x264yuv">x264编码YUV文件示例</h2>
-
-<figure class="code"><figcaption><span>x264_encoder.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-<span class="line-number">42</span>
-<span class="line-number">43</span>
-<span class="line-number">44</span>
-<span class="line-number">45</span>
-<span class="line-number">46</span>
-<span class="line-number">47</span>
-<span class="line-number">48</span>
-<span class="line-number">49</span>
-<span class="line-number">50</span>
-<span class="line-number">51</span>
-<span class="line-number">52</span>
-<span class="line-number">53</span>
-<span class="line-number">54</span>
-<span class="line-number">55</span>
-<span class="line-number">56</span>
-<span class="line-number">57</span>
-<span class="line-number">58</span>
-<span class="line-number">59</span>
-<span class="line-number">60</span>
-<span class="line-number">61</span>
-<span class="line-number">62</span>
-<span class="line-number">63</span>
-<span class="line-number">64</span>
-<span class="line-number">65</span>
-<span class="line-number">66</span>
-<span class="line-number">67</span>
-<span class="line-number">68</span>
-<span class="line-number">69</span>
-<span class="line-number">70</span>
-<span class="line-number">71</span>
-<span class="line-number">72</span>
-<span class="line-number">73</span>
-<span class="line-number">74</span>
-<span class="line-number">75</span>
-<span class="line-number">76</span>
-<span class="line-number">77</span>
-<span class="line-number">78</span>
-<span class="line-number">79</span>
-<span class="line-number">80</span>
-<span class="line-number">81</span>
-<span class="line-number">82</span>
-<span class="line-number">83</span>
-<span class="line-number">84</span>
-<span class="line-number">85</span>
-<span class="line-number">86</span>
-<span class="line-number">87</span>
-<span class="line-number">88</span>
-<span class="line-number">89</span>
-<span class="line-number">90</span>
-<span class="line-number">91</span>
-<span class="line-number">92</span>
-<span class="line-number">93</span>
-<span class="line-number">94</span>
-<span class="line-number">95</span>
-<span class="line-number">96</span>
-<span class="line-number">97</span>
-<span class="line-number">98</span>
-<span class="line-number">99</span>
-<span class="line-number">100</span>
-<span class="line-number">101</span>
-<span class="line-number">102</span>
-<span class="line-number">103</span>
-<span class="line-number">104</span>
-<span class="line-number">105</span>
-<span class="line-number">106</span>
-<span class="line-number">107</span>
-<span class="line-number">108</span>
-<span class="line-number">109</span>
-<span class="line-number">110</span>
-<span class="line-number">111</span>
-<span class="line-number">112</span>
-<span class="line-number">113</span>
-<span class="line-number">114</span>
-<span class="line-number">115</span>
-<span class="line-number">116</span>
-<span class="line-number">117</span>
-<span class="line-number">118</span>
-<span class="line-number">119</span>
-<span class="line-number">120</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdint.h&gt;</span>
-</span><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class="line"><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class="line"><span class="cp">#include &lt;x264.h&gt;</span>
-</span><span class="line">
-</span><span class="line"><span class="cp">#define FAIL_IF_ERROR(cond, ...) \</span>
-</span><span class="line"><span class="cp">do\</span>
-</span><span class="line"><span class="cp">{\</span>
-</span><span class="line"><span class="cp">    if(cond)\</span>
-</span><span class="line"><span class="cp">    {\</span>
-</span><span class="line"><span class="cp">        fprintf(stderr, __VA_ARGS__);\</span>
-</span><span class="line"><span class="cp">        goto fail;\</span>
-</span><span class="line"><span class="cp">    }\</span>
-</span><span class="line"><span class="cp">}while(0)</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">x264_param_t</span> <span class="n">param</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">x264_picture_t</span> <span class="n">pic</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">x264_picture_t</span> <span class="n">pic_out</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">i_frame</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">i_frame_size</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">x264_nal_t</span> <span class="o">*</span><span class="n">nal</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">i_nal</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fp_src</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">FILE</span> <span class="o">*</span><span class="n">fp_dst</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">FAIL_IF_ERROR</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">argc</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">),</span> <span class="s">&quot;x264_encoder usage:x264_encoder widthxheight &lt;input.yuv&gt; output.264</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="n">FAIL_IF_ERROR</span><span class="p">(</span><span class="mi">2</span> <span class="o">!=</span> <span class="n">sscanf</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot;%dx%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">width</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">height</span><span class="p">),</span> <span class="s">&quot;resolution not sepcified or incorrect</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">fp_src</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s">&quot;rb&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fp_src</span><span class="p">){</span>
-</span><span class="line">        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;open input yuv file faile</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">fp_dst</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&quot;wb&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fp_src</span><span class="p">){</span>
-</span><span class="line">        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;open output h264 file faile</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1">//Get default params for preset/tunnig</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">x264_param_default_preset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">param</span><span class="p">,</span> <span class="s">&quot;medium&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class="line">        <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1">//Configure non-default params</span>
-</span><span class="line">    <span class="n">param</span><span class="p">.</span><span class="n">i_csp</span> <span class="o">=</span> <span class="n">X264_CSP_I420</span><span class="p">;</span>
-</span><span class="line">    <span class="n">param</span><span class="p">.</span><span class="n">i_width</span> <span class="o">=</span> <span class="n">width</span><span class="p">;</span>
-</span><span class="line">    <span class="n">param</span><span class="p">.</span><span class="n">i_height</span> <span class="o">=</span> <span class="n">height</span><span class="p">;</span>
-</span><span class="line">    <span class="n">param</span><span class="p">.</span><span class="n">b_vfr_input</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="n">param</span><span class="p">.</span><span class="n">b_repeat_headers</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class="line">    <span class="n">param</span><span class="p">.</span><span class="n">b_annexb</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1">//Apply profile restrictions.</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">x264_param_apply_profile</span><span class="p">(</span><span class="o">&amp;</span><span class="n">param</span><span class="p">,</span> <span class="s">&quot;high&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class="line">        <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">x264_picture_alloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pic</span><span class="p">,</span> <span class="n">param</span><span class="p">.</span><span class="n">i_csp</span><span class="p">,</span> <span class="n">param</span><span class="p">.</span><span class="n">i_width</span><span class="p">,</span> <span class="n">param</span><span class="p">.</span><span class="n">i_height</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class="line">        <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line"><span class="cp">#undef fail</span>
-</span><span class="line"><span class="cp">#define fail fail2</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">h</span> <span class="o">=</span> <span class="n">x264_encoder_open</span><span class="p">(</span><span class="o">&amp;</span><span class="n">param</span><span class="p">);</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">h</span><span class="p">)</span>
-</span><span class="line">        <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line"><span class="cp">#undef fail</span>
-</span><span class="line"><span class="cp">#define fail fail3</span>
-</span><span class="line">
-</span><span class="line">    <span class="kt">int</span> <span class="n">luma_size</span> <span class="o">=</span> <span class="n">width</span><span class="o">*</span><span class="n">height</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">chroma_size</span> <span class="o">=</span> <span class="n">luma_size</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">;</span>
-</span><span class="line">    <span class="c1">//Encode frames</span>
-</span><span class="line">    <span class="k">for</span><span class="p">(;;</span><span class="n">i_frame</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="c1">//Read input frame</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">fread</span><span class="p">(</span><span class="n">pic</span><span class="p">.</span><span class="n">img</span><span class="p">.</span><span class="n">plane</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">luma_size</span><span class="p">,</span> <span class="n">fp_src</span><span class="p">)</span><span class="o">!=</span><span class="n">luma_size</span><span class="p">)</span>
-</span><span class="line">            <span class="k">break</span><span class="p">;</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">fread</span><span class="p">(</span><span class="n">pic</span><span class="p">.</span><span class="n">img</span><span class="p">.</span><span class="n">plane</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chroma_size</span><span class="p">,</span> <span class="n">fp_src</span><span class="p">)</span><span class="o">!=</span><span class="n">chroma_size</span><span class="p">)</span>
-</span><span class="line">            <span class="k">break</span><span class="p">;</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">fread</span><span class="p">(</span><span class="n">pic</span><span class="p">.</span><span class="n">img</span><span class="p">.</span><span class="n">plane</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">chroma_size</span><span class="p">,</span> <span class="n">fp_src</span><span class="p">)</span><span class="o">!=</span><span class="n">chroma_size</span><span class="p">)</span>
-</span><span class="line">            <span class="k">break</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">        <span class="n">pic</span><span class="p">.</span><span class="n">i_pts</span> <span class="o">=</span> <span class="n">i_frame</span><span class="p">;</span>
-</span><span class="line">        <span class="n">i_frame_size</span> <span class="o">=</span> <span class="n">x264_encoder_encode</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nal</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">i_nal</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pic</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pic_out</span><span class="p">);</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">i_frame_size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class="line">            <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">i_frame_size</span><span class="p">)</span>
-</span><span class="line">        <span class="p">{</span>
-</span><span class="line">            <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fwrite</span><span class="p">(</span><span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span><span class="p">,</span> <span class="n">i_frame_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fp_dst</span><span class="p">))</span>
-</span><span class="line">                <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="p">}</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1">//Flush delayed frames</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">x264_encoder_delayed_frames</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">i_frame_size</span> <span class="o">=</span> <span class="n">x264_encoder_encode</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nal</span><span class="p">,</span><span class="o">&amp;</span><span class="n">i_nal</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pic_out</span><span class="p">);</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">i_frame_size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class="line">            <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">i_frame_size</span><span class="p">)</span>
-</span><span class="line">        <span class="p">{</span>
-</span><span class="line">            <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fwrite</span><span class="p">(</span><span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span><span class="p">,</span> <span class="n">i_frame_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fp_dst</span><span class="p">))</span>
-</span><span class="line">                <span class="k">goto</span> <span class="n">fail</span><span class="p">;</span>
-</span><span class="line">        <span class="p">}</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="n">x264_encoder_close</span><span class="p">(</span><span class="n">h</span><span class="p">);</span>
-</span><span class="line">    <span class="n">x264_picture_clean</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pic</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fclose</span><span class="p">(</span><span class="n">fp_dst</span><span class="p">);</span>
-</span><span class="line">    <span class="n">fclose</span><span class="p">(</span><span class="n">fp_src</span><span class="p">);</span>
-</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line"><span class="cp">#undef fail</span>
-</span><span class="line">
-</span><span class="line"><span class="nl">fail3</span><span class="p">:</span>
-</span><span class="line">    <span class="n">x264_encoder_close</span><span class="p">(</span><span class="n">h</span><span class="p">);</span>
-</span><span class="line"><span class="nl">fail2</span><span class="p">:</span>
-</span><span class="line">    <span class="n">x264_picture_clean</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pic</span><span class="p">);</span>
-</span><span class="line"><span class="nl">fail</span><span class="p">:</span>
-</span><span class="line">    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>注意，在 Ubuntu 下编译时编译命令为</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">gcc x264_encoder.c -o x264_encoder -phread -lm -lx264</span></code></pre></td></tr></table></div></figure>
-
-<p>执行时命令如下</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">x264_encoder widthxheight input.yuv output.264</span></code></pre></td></tr></table></div></figure>
-
 ]]></content>
   </entry>
   

@@ -9,8 +9,8 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="运动补偿原理 运动估计 参考资料 本文主要记录 X264 中使用到的运动补偿。该函数主要对x264_mc_functions_t结构体中的函数指针进行赋值，
-完成了像素内插、拷贝、求平均的函数等等。 运动补偿原理 运动补偿是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法， &hellip;">
+  <meta name="description" content="运动补偿原理 亮度运动补偿 运动估计 参考资料 本文主要记录 X264 中使用到的运动补偿。该函数主要对x264_mc_functions_t结构体中的函数指针进行赋值，
+完成了像素内插、拷贝、求平均的函数等等。 运动补偿原理 运动补偿(Motion Compensation)是一种描述相邻帧（ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -100,9 +100,12 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">运动估计</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">参考资料</a></li>
+  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">亮度运动补偿</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-2" id="markdown-toc-section-2">运动估计</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">参考资料</a></li>
 </ul>
 
 <p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
@@ -112,7 +115,7 @@
 
 <h3 id="section">运动补偿原理</h3>
 
-<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
+<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>(Motion Compensation)是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
 
 <p>一个视频序列包含一定数量的图片–通常称为帧（frame）。相邻的图片通常很相似，也就是说，包含了很多冗余。使用运动补偿的目的是通过消除这种冗余，来提高压缩比。
 最早的运动补偿的设计只是简单的从当前帧中减去参考帧，从而得到通常含有较少能量（或者称为信息）的”残差”，从而可以用较低的码率进行编码。解码器可以通过简单的加法完全恢复编码帧。<br />
@@ -122,9 +125,63 @@
 
 <p>运动补偿的方法包含：<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.85.A8.E5.B1.80.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">全局运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.8F.AF.E5.8F.98.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">可变分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E9.87.8D.E5.8F.A0.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">重叠分块运动个补偿</a>。</p>
 
-<p>运动估计就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
+<h4 id="section-1">亮度运动补偿</h4>
 
-<h3 id="section-1">运动估计</h3>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">x264_hpel_ref0</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+</span><span class="line"><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">x264_hpel_ref1</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">mc_luma</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_dst_stride</span><span class="p">,</span>
+</span><span class="line">                    <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="kt">intptr_t</span> <span class="n">i_src_stride</span><span class="p">,</span>
+</span><span class="line">                    <span class="kt">int</span> <span class="n">mvx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mvy</span><span class="p">,</span>
+</span><span class="line">                    <span class="kt">int</span> <span class="n">i_width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i_height</span><span class="p">,</span> <span class="k">const</span> <span class="kt">x264_weight_t</span> <span class="o">*</span><span class="n">weight</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">qpel_idx</span> <span class="o">=</span> <span class="p">((</span><span class="n">mvy</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mvx</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="n">mvy</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">i_src_stride</span> <span class="o">+</span> <span class="p">(</span><span class="n">mvx</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class="line">    <span class="n">pixel</span> <span class="o">*</span><span class="n">src1</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">x264_hpel_ref0</span><span class="p">[</span><span class="n">qpel_idx</span><span class="p">]]</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">+</span> <span class="p">((</span><span class="n">mvy</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">i_src_stride</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">qpel_idx</span> <span class="o">&amp;</span> <span class="mi">5</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">pixel</span> <span class="o">*</span><span class="n">src2</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">x264_hpel_ref1</span><span class="p">[</span><span class="n">qpel_idx</span><span class="p">]]</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">+</span> <span class="p">((</span><span class="n">mvx</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class="line">        <span class="n">pixel_avg</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">src1</span><span class="p">,</span> <span class="n">i_src_stride</span><span class="p">,</span>
+</span><span class="line">                  <span class="n">src2</span><span class="p">,</span> <span class="n">i_src_stride</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">weight</span><span class="o">-&gt;</span><span class="n">weightfn</span><span class="p">)</span>
+</span><span class="line">            <span class="n">mc_weight</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">weight</span><span class="o">-&gt;</span><span class="n">weightfn</span><span class="p">)</span>
+</span><span class="line">            <span class="n">mc_weight</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">src1</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">            <span class="n">mc_copy</span><span class="p">(</span><span class="n">src1</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-2">运动估计</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Motion_estimation">运动估计</a>(Motion estimation)就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
 
 <p>运动估计的基本思想是将图像序列的每一帧分成许多互不重叠的宏块，并认为宏块内所有象素的位移量都相同，然后对每个宏块到参考帧某一给定特定搜索范围内根据一定的匹配准则找出与当前块最相似的块，即匹配块，匹配块与当前块的相对位移即为运动矢量。视频压缩的时候，只需保存运动矢量和残差数据就可以完全恢复出当前块。得到运动矢量的过程被称为运动估计。</p>
 
@@ -134,7 +191,7 @@
 
 <p>运动估计算法是视频压缩编码的核心算法之一。高质量的运动估计算法是高效视频编码的前提和基础。其中块匹配法（BMA, Block Match Algorithm）由于算法简单和易于硬件实现，被广泛应用于各视频编码标准中。块匹配法的基本思想是先将图像划分为许多子块，然后对当前帧中的每一块根据一定的匹配准则在相邻帧中找出当前块的匹配块，由此得到两者的相对位移，即当前块的运动矢量。在H.264标准的搜索算法中，图像序列的当前帧被划分成互不重叠16×16大小的子块，而每个子块又可划分成更小的子块，当前子块按一定的块匹配准则在参考帧中对应位置的一定搜索范围内寻找最佳匹配块，由此得到运动矢量和匹配误差。运动估计的估计精度和运算复杂度取决于搜索策略和块匹配准则。</p>
 
-<h3 id="section-2">参考资料</h3>
+<h3 id="section-3">参考资料</h3>
 
 <ol>
   <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
@@ -179,7 +236,7 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2017/07/22/deblock-filter/" title="Previous Post: X264源码解析之块滤波">&laquo; X264源码解析之块滤波</a>
+        <a class="basic-alignment left" href="/blog/2017/07/22/deblock-filter/" title="Previous Post: X264源码解析之x264_deblock_init函数">&laquo; X264源码解析之x264_deblock_init函数</a>
       
       
         <a class="basic-alignment right" href="/blog/2017/08/23/x264-quant-init/" title="Next Post: X264源码解析之x264_quant_init函数">X264源码解析之x264_quant_init函数 &raquo;</a>
@@ -196,10 +253,12 @@
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (18)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (7)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
 <li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
@@ -212,23 +271,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之X264_bitstream_init函数</a>
+        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/10/19/reference-frame/">X264 源码解析之参考帧</a>
+        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/10/11/x264-slicetype-decide/">X264 源码解析之判断帧类型</a>
+        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/09/29/coding-tips/">编程小技巧</a>
+        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/09/12/video-coding/">视频编解码算法之编码</a>
+        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
       </li>
     
   </ul>
@@ -348,7 +407,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2017 - 李冰 -
+  Copyright &copy; 2018 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>
