@@ -88,7 +88,8 @@ H264 编码格式的码流包含许多编码符合，这些编码符号包括各
 
 决定是否要将变量 suffixLength 的值加一的阈值如下表，第一个阈值是0，表示在第一个非零系数被编码后，suffixLength 的值总是增加 1.  
 
-|:--当前suffixLength--:|:--阈值--:|
+|当前suffixLength|阈值|
+|:----:|:----:|
 |           0          |     0    |
 |           1          |     3    |
 |           2          |     6    |
@@ -129,19 +130,20 @@ H264 编码格式的码流包含许多编码符合，这些编码符号包括各
 * 变量NC = 3  
 
 编码过程：  
-| 元素 | 数值 | 编码 |
-|:---:|:---:|:---:|
-| Coeff_token | TotalCoeffs=5,TraillingOnew=2|0000101|
-| Trailing_onews_sign_flag | + | 1 |
-| Trailing_onews_sign_flag | - | 0 |
-| Level(1) | 2(suffixLength=0) | 001(前缀) |
-| Level(0) | 3(suffixLength=1) | 001(前缀)0(后缀) |
-| Total_zeros | 5 | 101 |
-| Run_before(4) | Zreoleft=5,run_before=3 | 010 |
-| Run_before(3) | Zreoleft=2,run_before=0 | 1 |
-| Run_before(2) | Zreoleft=2,run_before=0 | 1 |
-| Run_before(1) | Zreoleft=2,run_before=0 | 1 |
-| Run_before(0) | Zreoleft=2,run_before=2 | 最后一个系数不需要编码 |
+
+| 元素 | 数值 | 编码 |  
+|:----:|:----:|:----:|
+| Coeff_token | TotalCoeffs=5,TraillingOnew=2|0000101|  
+| Trailing_onews_sign_flag | + | 1 |  
+| Trailing_onews_sign_flag | - | 0 |  
+| Level(1) | 2(suffixLength=0) | 001(前缀) |  
+| Level(0) | 3(suffixLength=1) | 001(前缀)0(后缀) |  
+| Total_zeros | 5 | 101 |  
+| Run_before(4) | Zreoleft=5,run_before=3 | 010 |  
+| Run_before(3) | Zreoleft=2,run_before=0 | 1 |  
+| Run_before(2) | Zreoleft=2,run_before=0 | 1 |  
+| Run_before(1) | Zreoleft=2,run_before=0 | 1 |  
+| Run_before(0) | Zreoleft=2,run_before=2 | 最后一个系数不需要编码 |  
 
 `CAVLC`编码输出的码流：`0000101100010010101010111`
 
