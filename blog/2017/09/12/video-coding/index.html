@@ -132,9 +132,9 @@
 <p>熵编码是无损压缩编码方法，它生成的码流可以经解码无失真地恢复出原数据。在<code>H.264</code>中的<code>CAVLC</code>（基于上下文自适应的可变长编码）中，通过
 根据已编码句法元素的情况动态调整编码中使用的码表，取得了极高的压缩比。</p>
 
-<p><code>CAVLC</code>用于亮度和色度残差数据的编码。残差经过变换量化后的数据表现出如下特性：4<em>4 块数据经过预测、变换、量化后，非零系数主要集中在
+<p><code>CAVLC</code>用于亮度和色度残差数据的编码。残差经过变换量化后的数据表现出如下特性：<code>4*4</code>块数据经过预测、变换、量化后，非零系数主要集中在
 低频部分，而高频系数大部分是零；量化后的数据经过<code>zig-zag</code>扫描，DC 系数附近的非零系数值较大，而高频位置上的非零系数值大部分是+1和-1;
-相邻的 4</em>4 块的非零系数的数目是相关的。<code>CAVLC</code>充分利用残差经过整数变换、量化后数据的特性进行压缩，进一步减少数据中的冗余信息，为<code>H.264</code>卓越的编码效率奠定了基础。</p>
+相邻的<code>4*4</code>块的非零系数的数目是相关的。<code>CAVLC</code>充分利用残差经过整数变换、量化后数据的特性进行压缩，进一步减少数据中的冗余信息，为<code>H.264</code>卓越的编码效率奠定了基础。</p>
 
 <h3 id="cavlc--2">CAVLC 的上下文模型</h3>
 
@@ -152,37 +152,39 @@
 共有 4 个变长表格和 1 个定长表格可供选择。其中的定长表格的码字是 6 个比特长，高 4 位表示非零系数的个数(TotalCoeffs)，最低两位表示拖尾系数的个数(TrailingOnes)。</p>
 
 <p>表格的选择是根据变量NC（Number Current,当前块值）的值来选择的，在求变量 NC 值得过程中，体现了基于上下文的思想。除了色度的直流系数外，其他系数类型的 NC 值是根据当前
-块左边 4<em>4 块的非零细数数目(NA)和当前块上面 4</em>4 块的非零系数数目(NB)求得的。当输入的系数是色度的直流系数时，NC=-1。求 NC 的过程见表6.10，X 表示与当前快同属于一个片并可用。
+块左边<code>4*4</code>块的非零细数数目(NA)和当前块上面<code>4*4</code>块的非零系数数目(NB)求得的。当输入的系数是色度的直流系数时，NC=-1。求 NC 的过程见表6.10，X 表示与当前快同属于一个片并可用。
 选择非零系数数目和拖尾细数数目的编码表格的过程见表。</p>
 
 <p>计算 NC 的值</p>
 
 <table>
+  <thead>
+    <tr>
+      <th style="text-align: center">上面的块(NB)</th>
+      <th style="text-align: center">左边的块(NA)</th>
+      <th style="text-align: center">NC</th>
+    </tr>
+  </thead>
   <tbody>
     <tr>
-      <td>:–上面的块(NB)–:</td>
-      <td>:–左边的块(NA)–:</td>
-      <td>:–NC–:</td>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center">(NA+NB)/2</td>
     </tr>
     <tr>
-      <td>X</td>
-      <td>X</td>
-      <td>(NA+NB)/2</td>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">NA</td>
     </tr>
     <tr>
-      <td>X</td>
-      <td> </td>
-      <td>NA</td>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">NB</td>
     </tr>
     <tr>
-      <td>X</td>
-      <td> </td>
-      <td>NB</td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td> </td>
-      <td>0</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">0</td>
     </tr>
   </tbody>
 </table>
@@ -190,30 +192,32 @@
 <p>选择非零系数数目和拖尾系数数目的编码表格</p>
 
 <table>
+  <thead>
+    <tr>
+      <th style="text-align: center">NC</th>
+      <th style="text-align: center">表格</th>
+    </tr>
+  </thead>
   <tbody>
     <tr>
-      <td>:–NC–:</td>
-      <td>:–表格–:</td>
+      <td style="text-align: center">0&lt;=NC&lt;2</td>
+      <td style="text-align: center">变长表格1</td>
     </tr>
     <tr>
-      <td>0&lt;=NC&lt;2</td>
-      <td>变长表格1</td>
+      <td style="text-align: center">2&lt;=NC&lt;4</td>
+      <td style="text-align: center">变长表格2</td>
     </tr>
     <tr>
-      <td>2&lt;=NC&lt;4</td>
-      <td>变长表格2</td>
+      <td style="text-align: center">5&lt;=NC&lt;8</td>
+      <td style="text-align: center">变长表格3</td>
     </tr>
     <tr>
-      <td>5&lt;=NC&lt;8</td>
-      <td>变长表格3</td>
+      <td style="text-align: center">NC=-1</td>
+      <td style="text-align: center">变长表格4</td>
     </tr>
     <tr>
-      <td>NC=-1</td>
-      <td>变长表格4</td>
-    </tr>
-    <tr>
-      <td>NC&gt;=8</td>
-      <td>定长表格</td>
+      <td style="text-align: center">NC&gt;=8</td>
+      <td style="text-align: center">定长表格</td>
     </tr>
   </tbody>
 </table>
