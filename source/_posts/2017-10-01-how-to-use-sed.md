@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "How to use sed"
+title: "Linux常用命令之sed"
 date: 2017-10-01 08:35:06 -0700
 comments: true
-categories: 
+categories: 编程工具
 ---
 
 * list element with functor item
@@ -30,14 +30,14 @@ NEW new old
 
 一. 基本用法：
 
-1. 将`text`文本中每行第一个小写字母`t`替换为大写字母`T`.  
+* 将`text`文本中每行第一个小写字母`t`替换为大写字母`T`.  
 
 ```
 $cat text | sed 's/t/T/'
 $sed 's/t/T/' text
 ```
 
-2. 将`text`文本中每行所有的小写字母`t`替换为大写字母`T`.  
+* 将`text`文本中每行所有的小写字母`t`替换为大写字母`T`.  
 
 ```
 $sed 's/t/T/g' text
@@ -47,19 +47,19 @@ $sed -i 's/t/T/g' text
 
 二、与正则表达式结合
 
-1. 如果一行中第一个字符是`t`，就将它替换为`T`，其他字符不变。  
+* 如果一行中第一个字符是`t`，就将它替换为`T`，其他字符不变。  
 
 ```
 sed 's/^t/T/g' text
 ```
 
-2. 如果一行中最后一个字符是`t`，就将它替换为`T`，其他字符不变。  
+* 如果一行中最后一个字符是`t`，就将它替换为`T`，其他字符不变。  
 
 ```
 sed 's/t$/T/g' text
 ```
 
-3. 将所有的数字/小写字母、大写字母、所有的字母替换为`*`。 
+* 将所有的数字/小写字母、大写字母、所有的字母替换为`*`。 
 
 ```
 sed 's/[0-9]/*/g' text
