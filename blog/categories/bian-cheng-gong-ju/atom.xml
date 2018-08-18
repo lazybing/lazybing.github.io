@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-08-18T00:15:13-07:00</updated>
+  <updated>2018-08-18T00:26:13-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,16 +18,27 @@
     <link href="http://lazybing.github.io/blog/2018/08/17/how-to-use-valgrind/"/>
     <updated>2018-08-17T19:07:13-07:00</updated>
     <id>http://lazybing.github.io/blog/2018/08/17/how-to-use-valgrind</id>
-    <content type="html"><![CDATA[<p>Valgrind 工具简介</p>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#valgrind-" id="markdown-toc-valgrind-">Valgrind 工具简介</a></li>
+  <li><a href="#valgrind--1" id="markdown-toc-valgrind--1">Valgrind 前期准备</a></li>
+  <li><a href="#valgrind--2" id="markdown-toc-valgrind--2">Valgrind 执行程序</a></li>
+  <li><a href="#valgrind--3" id="markdown-toc-valgrind--3">Valgrind 使用示例</a></li>
+  <li><a href="#valgrind--4" id="markdown-toc-valgrind--4">Valgrind 内存错误类型</a></li>
+  <li><a href="#valgrind--5" id="markdown-toc-valgrind--5">Valgrind 学习参考</a></li>
+</ul>
+
+<!--more-->
+
+<h2 id="valgrind-">Valgrind 工具简介</h2>
 
 <p><code>Valgrind</code>工具提供了很多<code>Debugging</code>和<code>Profiling</code>工具，来帮助开发者开发出更好快更正确的程序。其中最常用的工具是<code>内存检测</code>。它可以
 检测到<code>C/C++</code>中内存相关的错误，这些错误可能会导致系统崩溃<code>Crashes</code>或者其他莫名其妙的行为。</p>
 
-<p>Valgrind 前期准备</p>
+<h2 id="valgrind--1">Valgrind 前期准备</h2>
 
 <p>编译程序时，使用<code>-g</code>选项，用来包含<code>Debugging</code>信息，使得<code>Memcheck</code>工具在检测错误时，给出更具体的信息。如果可以容忍性能的降低，也可以添加<code>-O0</code>编译选择。</p>
 
-<p>Valgrind 执行程序</p>
+<h2 id="valgrind--2">Valgrind 执行程序</h2>
 
 <p>假设执行程序时，使用如下命令：</p>
 
@@ -44,7 +55,7 @@ valgrind --lead-check=yes myprog arg1 arg2
 <p><code>Memcheck</code>是默认的工具，所以<code>--leak-check</code>选项可以省略。使用<code>Valgrind</code>会使得程序变慢，并使用更多的内存，<code>Memcheck</code>
 会检测到内存错误、内存泄漏。</p>
 
-<p>Valgrind 使用示例</p>
+<h2 id="valgrind--3">Valgrind 使用示例</h2>
 
 <p>下面是一段<code>C 示例</code>，该段代码内有内存错误和内存泄漏。</p>
 
@@ -158,6 +169,22 @@ bing@ubuntu:~/work$ valgrind –leak-check=full ./mem_file <br />
 <p><code>Memcheck</code>对未初始化变量，同样会有错误提示，通常提示信息为<code>Conditional jump or move depends on uninitialised value(s)</code>。这类错误的<code>roo cause</code>比较难发现，使用<code>--track-origins=yes</code>来获取更多信息。
 该选项虽会使<code>Memcheck</code>运行更慢但额外信息会使开发者更容易的找到未初始化变量的位置。</p>
 
+<h2 id="valgrind--4">Valgrind 内存错误类型</h2>
+
+<ul>
+  <li>Illegal read/Illegal write errors</li>
+  <li>Use of Uninitialised values</li>
+  <li>Use of uninitialised or unaddressable values in system calls</li>
+  <li>Illegal frees</li>
+  <li>When a heap block is freed with an inappropriate deallocation function</li>
+  <li>Overlapping source and destination blocks</li>
+  <li>Fishy argument values</li>
+  <li>Memory leak detection</li>
+</ul>
+
+<h2 id="valgrind--5">Valgrind 学习参考</h2>
+
+<p><a href="http://valgrind.org/docs/manual/valgrind_manual.pdf">Valgrind_mannual</a></p>
 ]]></content>
   </entry>
   
