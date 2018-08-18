@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-08-18T06:48:23-07:00</updated>
+  <updated>2018-08-18T08:18:49-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -2107,6 +2107,7 @@ c. 字节流的结束，由未规定的方式判决。</li>
       <li><a href="#cavlc--1" id="markdown-toc-cavlc--1">CAVLC 的基本原理</a></li>
       <li><a href="#cavlc--2" id="markdown-toc-cavlc--2">CAVLC 的上下文模型</a></li>
       <li><a href="#cavlc--3" id="markdown-toc-cavlc--3">CAVLC 的编码过程</a></li>
+      <li><a href="#cavlc--4" id="markdown-toc-cavlc--4">CAVLC 编码示例</a></li>
     </ul>
   </li>
   <li><a href="#cabac-" id="markdown-toc-cabac-">CABAC 基于上下文的自适应二进制算术熵编码</a></li>
@@ -2303,6 +2304,64 @@ c. 字节流的结束，由未规定的方式判决。</li>
 <p>在<code>CAVLC</code>中，对每个非零系数前零的个数的编码时依赖于<code>ZerosLeft</code>的值，<code>ZerosLeft</code>表示当前非零系数左边的所有零的个数，<code>ZerosLeft</code>的初始值
 等于<code>TotalZeros</code>，在每个非零系数的<code>RunBefore</code>值编码后进行更新。用这种编码方法，有助于进一步压缩编码的比特数目。例如：如果当前<code>ZerosLft</code>等于 1， 就是
 只剩下一个零没有编码，下一个非零系数前零的数目只可能是0或1，编码只需要一个比特。</p>
+
+<h3 id="cavlc--4">CAVLC 编码示例</h3>
+
+<p>假设有一个<code>4x4</code>块数据：</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>0</td>
+      <td>-1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>2</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li><code>zig-zag</code>数据重排序：<code>0,0,5,3,2,-1,0,0,0,1...</code></li>
+  <li>非零系数的数目(TotalCoeffs) = 5</li>
+  <li>拖尾系数的数目(TrailingOnes) = 2</li>
+  <li>最后一个非零系数前零的数目(Total_zeros) = 5</li>
+  <li>变量NC = 3</li>
+</ul>
+
+<p>编码过程：<br />
+| 元素 | 数值 | 编码 |
+|:—:|:—:|:—:|
+| Coeff_token | TotalCoeffs=5,TraillingOnew=2|0000101|
+| Trailing_onews_sign_flag | + | 1 |
+| Trailing_onews_sign_flag | - | 0 |
+| Level(1) | 2(suffixLength=0) | 001(前缀) |
+| Level(0) | 3(suffixLength=1) | 001(前缀)0(后缀) |
+| Total_zeros | 5 | 101 |
+| Run_before(4) | Zreoleft=5,run_before=3 | 010 |
+| Run_before(3) | Zreoleft=2,run_before=0 | 1 |
+| Run_before(2) | Zreoleft=2,run_before=0 | 1 |
+| Run_before(1) | Zreoleft=2,run_before=0 | 1 |
+| Run_before(0) | Zreoleft=2,run_before=2 | 最后一个系数不需要编码 |</p>
+
+<p><code>CAVLC</code>编码输出的码流：<code>0000101100010010101010111</code></p>
 
 <h2 id="cabac-">CABAC 基于上下文的自适应二进制算术熵编码</h2>
 
