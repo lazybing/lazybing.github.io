@@ -6,16 +6,23 @@ comments: true
 categories: 编程工具
 ---
 
-Valgrind 工具简介
+* list element with functor item
+{:toc}
+
+`Valgrind`是一个很好地内存检测工具，本文记录如何开始`Valgrind`的使用。  
+
+<!--more-->
+
+## Valgrind 工具简介
 
 `Valgrind`工具提供了很多`Debugging`和`Profiling`工具，来帮助开发者开发出更好快更正确的程序。其中最常用的工具是`内存检测`。它可以
 检测到`C/C++`中内存相关的错误，这些错误可能会导致系统崩溃`Crashes`或者其他莫名其妙的行为。  
 
-Valgrind 前期准备
+## Valgrind 前期准备
 
 编译程序时，使用`-g`选项，用来包含`Debugging`信息，使得`Memcheck`工具在检测错误时，给出更具体的信息。如果可以容忍性能的降低，也可以添加`-O0`编译选择。
 
-Valgrind 执行程序
+## Valgrind 执行程序
 
 假设执行程序时，使用如下命令：  
 
@@ -32,7 +39,7 @@ valgrind --lead-check=yes myprog arg1 arg2
 `Memcheck`是默认的工具，所以`--leak-check`选项可以省略。使用`Valgrind`会使得程序变慢，并使用更多的内存，`Memcheck`
 会检测到内存错误、内存泄漏。  
 
-Valgrind 使用示例
+## Valgrind 使用示例
 
 下面是一段`C 示例`，该段代码内有内存错误和内存泄漏。  
 
@@ -129,3 +136,17 @@ bing@ubuntu:~/work$ valgrind --leak-check=full ./mem_file
 `Memcheck`对未初始化变量，同样会有错误提示，通常提示信息为`Conditional jump or move depends on uninitialised value(s)`。这类错误的`roo cause`比较难发现，使用`--track-origins=yes`来获取更多信息。
 该选项虽会使`Memcheck`运行更慢但额外信息会使开发者更容易的找到未初始化变量的位置。 
 
+## Valgrind 内存错误类型  
+
+* Illegal read/Illegal write errors  
+* Use of Uninitialised values  
+* Use of uninitialised or unaddressable values in system calls  
+* Illegal frees  
+* When a heap block is freed with an inappropriate deallocation function  
+* Overlapping source and destination blocks  
+* Fishy argument values  
+* Memory leak detection  
+
+## Valgrind 学习参考  
+
+[Valgrind_mannual](http://valgrind.org/docs/manual/valgrind_manual.pdf)  
