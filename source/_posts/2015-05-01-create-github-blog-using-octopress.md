@@ -314,6 +314,24 @@ $ cd ./_deploy
 $ git pull origin master  # update the local master branch
 ```
 
+为防止出现`non-fast-forward`错误，操作顺序示例：  
+
+```
+$ git clone -b source git@github.com:lazybing/lazybing.github.io octopress
+$ cd octopress/
+$ git clone git@github.com:lazybing/lazybing.github.io _deploy
+$ git pull origin source
+$ cd ./_deploy/
+$ git pull origin master
+$ cd ..
+$ git status
+$ git branch -a
+$ git add .
+$ git commit -m "commit comment"
+$ git push origin source
+$ rake generate;rake deploy
+```
+
 参考博文:[让Octopress博客在多台Mac上同时使用](http://foggry.com/blog/2014/04/02/ru-he-pei-zhi-rang-ni-de-octopressbo-ke-zai-duo-tai-macshang-tong-shi-shi-yong/)
 
 ##octopress中添加Latex支持  
