@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-08-18T00:29:24-07:00</updated>
+  <updated>2018-08-18T00:36:24-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,214 +12,6 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[系统内存检测工具Valgrind入门]]></title>
-    <link href="http://lazybing.github.io/blog/2018/08/17/how-to-use-valgrind/"/>
-    <updated>2018-08-17T19:07:13-07:00</updated>
-    <id>http://lazybing.github.io/blog/2018/08/17/how-to-use-valgrind</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#valgrind-" id="markdown-toc-valgrind-">Valgrind 工具简介</a></li>
-  <li><a href="#valgrind--1" id="markdown-toc-valgrind--1">Valgrind 前期准备</a></li>
-  <li><a href="#valgrind--2" id="markdown-toc-valgrind--2">Valgrind 执行程序</a></li>
-  <li><a href="#valgrind--3" id="markdown-toc-valgrind--3">Valgrind 使用示例</a></li>
-  <li><a href="#valgrind--4" id="markdown-toc-valgrind--4">Valgrind 内存错误类型</a></li>
-  <li><a href="#valgrind--5" id="markdown-toc-valgrind--5">Valgrind 学习参考</a></li>
-</ul>
-
-<p><code>Valgrind</code>是一个很好地内存检测工具，本文记录如何开始<code>Valgrind</code>的使用。</p>
-
-<!--more-->
-
-<h2 id="valgrind-">Valgrind 工具简介</h2>
-
-<p><code>Valgrind</code>工具提供了很多<code>Debugging</code>和<code>Profiling</code>工具，来帮助开发者开发出更好快更正确的程序。其中最常用的工具是<code>内存检测</code>。它可以
-检测到<code>C/C++</code>中内存相关的错误，这些错误可能会导致系统崩溃<code>Crashes</code>或者其他莫名其妙的行为。</p>
-
-<h2 id="valgrind--1">Valgrind 前期准备</h2>
-
-<p>编译程序时，使用<code>-g</code>选项，用来包含<code>Debugging</code>信息，使得<code>Memcheck</code>工具在检测错误时，给出更具体的信息。如果可以容忍性能的降低，也可以添加<code>-O0</code>编译选择。</p>
-
-<h2 id="valgrind--2">Valgrind 执行程序</h2>
-
-<p>假设执行程序时，使用如下命令：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">myprog arg1 arg2</span></code></pre></td></tr></table></div></figure>
-
-<p>使用<code>Valgrind</code>命令行如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">valgrind --lead-check=yes myprog arg1 arg2</span></code></pre></td></tr></table></div></figure>
-
-<p><code>Memcheck</code>是默认的工具，所以<code>--leak-check</code>选项可以省略。使用<code>Valgrind</code>会使得程序变慢，并使用更多的内存，<code>Memcheck</code>
-会检测到内存错误、内存泄漏。</p>
-
-<h2 id="valgrind--3">Valgrind 使用示例</h2>
-
-<p>下面是一段<code>C 示例</code>，该段代码内有内存错误和内存泄漏。</p>
-
-<figure class="code"><figcaption><span>mem_file.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class="line"><span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="o">*</span><span class="n">x</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
-</span><span class="line">    <span class="n">x</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>  <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>         <span class="c1">//problem 1: heap block overrun</span>
-</span><span class="line">                        <span class="c1">//problem 2: memory leak -- x not freed</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">f</span><span class="p">();</span>
-</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>编译该程序</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">gcc -g -o mem_file mem_file.c</span></code></pre></td></tr></table></div></figure>
-
-<p>使用<code>valgrind</code>运行该程序:</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">valgrind --leak-check=full ./mem_file</span></code></pre></td></tr></table></div></figure>
-
-<p>运行<code>valgring</code>后，输出的<code>Debug</code>信息如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">bing@ubuntu:~/work$ valgrind --leak-check=full ./mem_file   
-</span><span class="line">==10566== Memcheck, a memory error detector    
-</span><span class="line">==10566== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.  
-</span><span class="line">==10566== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info  
-</span><span class="line">==10566== Command: ./mem_file  
-</span><span class="line">==10566==   
-</span><span class="line">==10566== Invalid write of size 4  
-</span><span class="line">==10566==    at 0x400544: f (mem_file.c:6)  
-</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12)  
-</span><span class="line">==10566==  Address 0x5204068 is 0 bytes after a block of size 40 alloc'd  
-</span><span class="line">==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)  
-</span><span class="line">==10566==    by 0x400537: f (mem_file.c:5)  
-</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12)  
-</span><span class="line">==10566==   
-</span><span class="line">==10566==   
-</span><span class="line">==10566== HEAP SUMMARY:  
-</span><span class="line">==10566==     in use at exit: 40 bytes in 1 blocks  
-</span><span class="line">==10566==   total heap usage: 1 allocs, 0 frees, 40 bytes allocated  
-</span><span class="line">==10566==   
-</span><span class="line">==10566== 40 bytes in 1 blocks are definitely lost in loss record 1 of 1  
-</span><span class="line">==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)  
-</span><span class="line">==10566==    by 0x400537: f (mem_file.c:5)  
-</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12)  
-</span><span class="line">==10566==   
-</span><span class="line">==10566== LEAK SUMMARY:  
-</span><span class="line">==10566==    definitely lost: 40 bytes in 1 blocks  
-</span><span class="line">==10566==    indirectly lost: 0 bytes in 0 blocks  
-</span><span class="line">==10566==      possibly lost: 0 bytes in 0 blocks  
-</span><span class="line">==10566==    still reachable: 0 bytes in 0 blocks  
-</span><span class="line">==10566==         suppressed: 0 bytes in 0 blocks  
-</span><span class="line">==10566==   
-</span><span class="line">==10566== For counts of detected and suppressed errors, rerun with: -v  
-</span><span class="line">==10566== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)  
-</span><span class="line">   </span></code></pre></td></tr></table></div></figure>
-
-<p>大多数<code>valgrind</code>的输出格式就是这样的。</p>
-
-<ul>
-  <li><code>10566</code>是进城ID，命令行下，该值不是特别重要。</li>
-  <li><code>Invalid write of size 4</code>这一行指示错误类型。</li>
-  <li>错误类型后紧跟着的是调用栈，告诉开发者问题出在某个函数的某一行。</li>
-  <li><code>0x400544</code>地址，通常不是很重要，但它也会指示问题地址，帮助开发者追踪问题。</li>
-  <li>一些错误还会有更多的信息描述内存地址。上面的例子展示了写入内存超出了分配内存块，该内存块是在<code>example.c</code>中的第 5 行分配的。</li>
-</ul>
-
-<p>内存泄漏格式如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">
-</span><span class="line">==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)    
-</span><span class="line">==10566==    by 0x400537: f (mem_file.c:5)    
-</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12) 
-</span><span class="line">   </span></code></pre></td></tr></table></div></figure>
-
-<p>该调用信息告知开发者泄漏的内存的分配位置。<code>Memcheck</code>不会告知开发者为什么出现内存泄漏。内存的泄漏可以分配两类：</p>
-
-<ul>
-  <li><code>definitely lost</code>:程序出现内存泄漏，必须修复。</li>
-  <li><code>probably lost</code>:程序出现内存泄漏，只有在开发者使用指针做一些事情时才会发生。</li>
-</ul>
-
-<p><code>Memcheck</code>对未初始化变量，同样会有错误提示，通常提示信息为<code>Conditional jump or move depends on uninitialised value(s)</code>。这类错误的<code>roo cause</code>比较难发现，使用<code>--track-origins=yes</code>来获取更多信息。
-该选项虽会使<code>Memcheck</code>运行更慢但额外信息会使开发者更容易的找到未初始化变量的位置。</p>
-
-<h2 id="valgrind--4">Valgrind 内存错误类型</h2>
-
-<ul>
-  <li>Illegal read/Illegal write errors</li>
-  <li>Use of Uninitialised values</li>
-  <li>Use of uninitialised or unaddressable values in system calls</li>
-  <li>Illegal frees</li>
-  <li>When a heap block is freed with an inappropriate deallocation function</li>
-  <li>Overlapping source and destination blocks</li>
-  <li>Fishy argument values</li>
-  <li>Memory leak detection</li>
-</ul>
-
-<h2 id="valgrind--5">Valgrind 学习参考</h2>
-
-<p><a href="http://valgrind.org/docs/manual/valgrind_manual.pdf">Valgrind_mannual</a></p>
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[ELF格式分析手册]]></title>
@@ -1655,6 +1447,214 @@ c. 字节流的结束，由未规定的方式判决。</li>
     <updated>2017-10-11T08:59:17-07:00</updated>
     <id>http://lazybing.github.io/blog/2017/10/11/x264-slicetype-decide</id>
     <content type="html"><![CDATA[
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[系统内存检测工具Valgrind入门]]></title>
+    <link href="http://lazybing.github.io/blog/2017/10/05/how-to-use-valgrind/"/>
+    <updated>2017-10-05T19:07:13-07:00</updated>
+    <id>http://lazybing.github.io/blog/2017/10/05/how-to-use-valgrind</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#valgrind-" id="markdown-toc-valgrind-">Valgrind 工具简介</a></li>
+  <li><a href="#valgrind--1" id="markdown-toc-valgrind--1">Valgrind 前期准备</a></li>
+  <li><a href="#valgrind--2" id="markdown-toc-valgrind--2">Valgrind 执行程序</a></li>
+  <li><a href="#valgrind--3" id="markdown-toc-valgrind--3">Valgrind 使用示例</a></li>
+  <li><a href="#valgrind--4" id="markdown-toc-valgrind--4">Valgrind 内存错误类型</a></li>
+  <li><a href="#valgrind--5" id="markdown-toc-valgrind--5">Valgrind 学习参考</a></li>
+</ul>
+
+<p><code>Valgrind</code>是一个很好地内存检测工具，本文记录如何开始<code>Valgrind</code>的使用。</p>
+
+<!--more-->
+
+<h2 id="valgrind-">Valgrind 工具简介</h2>
+
+<p><code>Valgrind</code>工具提供了很多<code>Debugging</code>和<code>Profiling</code>工具，来帮助开发者开发出更好快更正确的程序。其中最常用的工具是<code>内存检测</code>。它可以
+检测到<code>C/C++</code>中内存相关的错误，这些错误可能会导致系统崩溃<code>Crashes</code>或者其他莫名其妙的行为。</p>
+
+<h2 id="valgrind--1">Valgrind 前期准备</h2>
+
+<p>编译程序时，使用<code>-g</code>选项，用来包含<code>Debugging</code>信息，使得<code>Memcheck</code>工具在检测错误时，给出更具体的信息。如果可以容忍性能的降低，也可以添加<code>-O0</code>编译选择。</p>
+
+<h2 id="valgrind--2">Valgrind 执行程序</h2>
+
+<p>假设执行程序时，使用如下命令：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">myprog arg1 arg2</span></code></pre></td></tr></table></div></figure>
+
+<p>使用<code>Valgrind</code>命令行如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">valgrind --lead-check=yes myprog arg1 arg2</span></code></pre></td></tr></table></div></figure>
+
+<p><code>Memcheck</code>是默认的工具，所以<code>--leak-check</code>选项可以省略。使用<code>Valgrind</code>会使得程序变慢，并使用更多的内存，<code>Memcheck</code>
+会检测到内存错误、内存泄漏。</p>
+
+<h2 id="valgrind--3">Valgrind 使用示例</h2>
+
+<p>下面是一段<code>C 示例</code>，该段代码内有内存错误和内存泄漏。</p>
+
+<figure class="code"><figcaption><span>mem_file.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class="line"><span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="o">*</span><span class="n">x</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+</span><span class="line">    <span class="n">x</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>  <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>         <span class="c1">//problem 1: heap block overrun</span>
+</span><span class="line">                        <span class="c1">//problem 2: memory leak -- x not freed</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">f</span><span class="p">();</span>
+</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>编译该程序</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">gcc -g -o mem_file mem_file.c</span></code></pre></td></tr></table></div></figure>
+
+<p>使用<code>valgrind</code>运行该程序:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">valgrind --leak-check=full ./mem_file</span></code></pre></td></tr></table></div></figure>
+
+<p>运行<code>valgring</code>后，输出的<code>Debug</code>信息如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">bing@ubuntu:~/work$ valgrind --leak-check=full ./mem_file   
+</span><span class="line">==10566== Memcheck, a memory error detector    
+</span><span class="line">==10566== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.  
+</span><span class="line">==10566== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info  
+</span><span class="line">==10566== Command: ./mem_file  
+</span><span class="line">==10566==   
+</span><span class="line">==10566== Invalid write of size 4  
+</span><span class="line">==10566==    at 0x400544: f (mem_file.c:6)  
+</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12)  
+</span><span class="line">==10566==  Address 0x5204068 is 0 bytes after a block of size 40 alloc'd  
+</span><span class="line">==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)  
+</span><span class="line">==10566==    by 0x400537: f (mem_file.c:5)  
+</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12)  
+</span><span class="line">==10566==   
+</span><span class="line">==10566==   
+</span><span class="line">==10566== HEAP SUMMARY:  
+</span><span class="line">==10566==     in use at exit: 40 bytes in 1 blocks  
+</span><span class="line">==10566==   total heap usage: 1 allocs, 0 frees, 40 bytes allocated  
+</span><span class="line">==10566==   
+</span><span class="line">==10566== 40 bytes in 1 blocks are definitely lost in loss record 1 of 1  
+</span><span class="line">==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)  
+</span><span class="line">==10566==    by 0x400537: f (mem_file.c:5)  
+</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12)  
+</span><span class="line">==10566==   
+</span><span class="line">==10566== LEAK SUMMARY:  
+</span><span class="line">==10566==    definitely lost: 40 bytes in 1 blocks  
+</span><span class="line">==10566==    indirectly lost: 0 bytes in 0 blocks  
+</span><span class="line">==10566==      possibly lost: 0 bytes in 0 blocks  
+</span><span class="line">==10566==    still reachable: 0 bytes in 0 blocks  
+</span><span class="line">==10566==         suppressed: 0 bytes in 0 blocks  
+</span><span class="line">==10566==   
+</span><span class="line">==10566== For counts of detected and suppressed errors, rerun with: -v  
+</span><span class="line">==10566== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)  
+</span><span class="line">   </span></code></pre></td></tr></table></div></figure>
+
+<p>大多数<code>valgrind</code>的输出格式就是这样的。</p>
+
+<ul>
+  <li><code>10566</code>是进城ID，命令行下，该值不是特别重要。</li>
+  <li><code>Invalid write of size 4</code>这一行指示错误类型。</li>
+  <li>错误类型后紧跟着的是调用栈，告诉开发者问题出在某个函数的某一行。</li>
+  <li><code>0x400544</code>地址，通常不是很重要，但它也会指示问题地址，帮助开发者追踪问题。</li>
+  <li>一些错误还会有更多的信息描述内存地址。上面的例子展示了写入内存超出了分配内存块，该内存块是在<code>example.c</code>中的第 5 行分配的。</li>
+</ul>
+
+<p>内存泄漏格式如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">
+</span><span class="line">==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)    
+</span><span class="line">==10566==    by 0x400537: f (mem_file.c:5)    
+</span><span class="line">==10566==    by 0x400555: main (mem_file.c:12) 
+</span><span class="line">   </span></code></pre></td></tr></table></div></figure>
+
+<p>该调用信息告知开发者泄漏的内存的分配位置。<code>Memcheck</code>不会告知开发者为什么出现内存泄漏。内存的泄漏可以分配两类：</p>
+
+<ul>
+  <li><code>definitely lost</code>:程序出现内存泄漏，必须修复。</li>
+  <li><code>probably lost</code>:程序出现内存泄漏，只有在开发者使用指针做一些事情时才会发生。</li>
+</ul>
+
+<p><code>Memcheck</code>对未初始化变量，同样会有错误提示，通常提示信息为<code>Conditional jump or move depends on uninitialised value(s)</code>。这类错误的<code>roo cause</code>比较难发现，使用<code>--track-origins=yes</code>来获取更多信息。
+该选项虽会使<code>Memcheck</code>运行更慢但额外信息会使开发者更容易的找到未初始化变量的位置。</p>
+
+<h2 id="valgrind--4">Valgrind 内存错误类型</h2>
+
+<ul>
+  <li>Illegal read/Illegal write errors</li>
+  <li>Use of Uninitialised values</li>
+  <li>Use of uninitialised or unaddressable values in system calls</li>
+  <li>Illegal frees</li>
+  <li>When a heap block is freed with an inappropriate deallocation function</li>
+  <li>Overlapping source and destination blocks</li>
+  <li>Fishy argument values</li>
+  <li>Memory leak detection</li>
+</ul>
+
+<h2 id="valgrind--5">Valgrind 学习参考</h2>
+
+<p><a href="http://valgrind.org/docs/manual/valgrind_manual.pdf">Valgrind_mannual</a></p>
 ]]></content>
   </entry>
   
