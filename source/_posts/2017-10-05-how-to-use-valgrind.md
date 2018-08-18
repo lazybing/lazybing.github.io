@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "系统内存检测工具Valgrind入门"
-date: 2018-08-17 19:07:13 -0700
+date: 2017-10-05 19:07:13 -0700
 comments: true
 categories: 编程工具
 ---
