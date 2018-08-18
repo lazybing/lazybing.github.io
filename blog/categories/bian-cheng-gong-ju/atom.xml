@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-08-17T18:34:13-07:00</updated>
+  <updated>2018-08-18T00:15:13-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,154 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[系统内存检测工具Valgrind入门]]></title>
+    <link href="http://lazybing.github.io/blog/2018/08/17/how-to-use-valgrind/"/>
+    <updated>2018-08-17T19:07:13-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/08/17/how-to-use-valgrind</id>
+    <content type="html"><![CDATA[<p>Valgrind 工具简介</p>
+
+<p><code>Valgrind</code>工具提供了很多<code>Debugging</code>和<code>Profiling</code>工具，来帮助开发者开发出更好快更正确的程序。其中最常用的工具是<code>内存检测</code>。它可以
+检测到<code>C/C++</code>中内存相关的错误，这些错误可能会导致系统崩溃<code>Crashes</code>或者其他莫名其妙的行为。</p>
+
+<p>Valgrind 前期准备</p>
+
+<p>编译程序时，使用<code>-g</code>选项，用来包含<code>Debugging</code>信息，使得<code>Memcheck</code>工具在检测错误时，给出更具体的信息。如果可以容忍性能的降低，也可以添加<code>-O0</code>编译选择。</p>
+
+<p>Valgrind 执行程序</p>
+
+<p>假设执行程序时，使用如下命令：</p>
+
+<p><code>
+myprog arg1 arg2
+</code></p>
+
+<p>使用<code>Valgrind</code>命令行如下：</p>
+
+<p><code>
+valgrind --lead-check=yes myprog arg1 arg2
+</code></p>
+
+<p><code>Memcheck</code>是默认的工具，所以<code>--leak-check</code>选项可以省略。使用<code>Valgrind</code>会使得程序变慢，并使用更多的内存，<code>Memcheck</code>
+会检测到内存错误、内存泄漏。</p>
+
+<p>Valgrind 使用示例</p>
+
+<p>下面是一段<code>C 示例</code>，该段代码内有内存错误和内存泄漏。</p>
+
+<p><figure class='code'><figcaption><span>mem_file.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="o">*</span><span class="n">x</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">x</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>  <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>         <span class="c1">//problem 1: heap block overrun</span>
+</span><span class='line'>                        <span class="c1">//problem 2: memory leak -- x not freed</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">stdlib</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">f</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>编译该程序</p>
+
+<p><code>
+gcc -g -o mem_file mem_file.c
+</code></p>
+
+<p>使用<code>valgrind</code>运行该程序:</p>
+
+<p><code>
+valgrind --leak-check=full ./mem_file
+</code></p>
+
+<p>运行<code>valgring</code>后，输出的<code>Debug</code>信息如下：</p>
+
+<p>```
+bing@ubuntu:~/work$ valgrind –leak-check=full ./mem_file <br />
+==10566== Memcheck, a memory error detector  <br />
+==10566== Copyright (C) 2002-2015, and GNU GPL’d, by Julian Seward et al.<br />
+==10566== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info<br />
+==10566== Command: ./mem_file<br />
+==10566== <br />
+==10566== Invalid write of size 4<br />
+==10566==    at 0x400544: f (mem_file.c:6)<br />
+==10566==    by 0x400555: main (mem_file.c:12)<br />
+==10566==  Address 0x5204068 is 0 bytes after a block of size 40 alloc’d<br />
+==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)<br />
+==10566==    by 0x400537: f (mem_file.c:5)<br />
+==10566==    by 0x400555: main (mem_file.c:12)<br />
+==10566== <br />
+==10566== <br />
+==10566== HEAP SUMMARY:<br />
+==10566==     in use at exit: 40 bytes in 1 blocks<br />
+==10566==   total heap usage: 1 allocs, 0 frees, 40 bytes allocated<br />
+==10566== <br />
+==10566== 40 bytes in 1 blocks are definitely lost in loss record 1 of 1<br />
+==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)<br />
+==10566==    by 0x400537: f (mem_file.c:5)<br />
+==10566==    by 0x400555: main (mem_file.c:12)<br />
+==10566== <br />
+==10566== LEAK SUMMARY:<br />
+==10566==    definitely lost: 40 bytes in 1 blocks<br />
+==10566==    indirectly lost: 0 bytes in 0 blocks<br />
+==10566==      possibly lost: 0 bytes in 0 blocks<br />
+==10566==    still reachable: 0 bytes in 0 blocks<br />
+==10566==         suppressed: 0 bytes in 0 blocks<br />
+==10566== <br />
+==10566== For counts of detected and suppressed errors, rerun with: -v<br />
+==10566== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)</p>
+
+<p>```</p>
+
+<p>大多数<code>valgrind</code>的输出格式就是这样的。</p>
+
+<ul>
+  <li><code>10566</code>是进城ID，命令行下，该值不是特别重要。</li>
+  <li><code>Invalid write of size 4</code>这一行指示错误类型。</li>
+  <li>错误类型后紧跟着的是调用栈，告诉开发者问题出在某个函数的某一行。</li>
+  <li><code>0x400544</code>地址，通常不是很重要，但它也会指示问题地址，帮助开发者追踪问题。</li>
+  <li>一些错误还会有更多的信息描述内存地址。上面的例子展示了写入内存超出了分配内存块，该内存块是在<code>example.c</code>中的第 5 行分配的。</li>
+</ul>
+
+<p>内存泄漏格式如下：</p>
+
+<p>```</p>
+
+<p>==10566==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)  <br />
+==10566==    by 0x400537: f (mem_file.c:5)  <br />
+==10566==    by 0x400555: main (mem_file.c:12)</p>
+
+<p>```</p>
+
+<p>该调用信息告知开发者泄漏的内存的分配位置。<code>Memcheck</code>不会告知开发者为什么出现内存泄漏。内存的泄漏可以分配两类：</p>
+
+<ul>
+  <li><code>definitely lost</code>:程序出现内存泄漏，必须修复。</li>
+  <li><code>probably lost</code>:程序出现内存泄漏，只有在开发者使用指针做一些事情时才会发生。</li>
+</ul>
+
+<p><code>Memcheck</code>对未初始化变量，同样会有错误提示，通常提示信息为<code>Conditional jump or move depends on uninitialised value(s)</code>。这类错误的<code>roo cause</code>比较难发现，使用<code>--track-origins=yes</code>来获取更多信息。
+该选项虽会使<code>Memcheck</code>运行更慢但额外信息会使开发者更容易的找到未初始化变量的位置。</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Linux常用命令之sed]]></title>
@@ -646,125 +794,6 @@ Floating point exception (core dumped)
   [0x0000003b]  Extended opcode 1: End of Sequence
 </code>
 从上面可以看出到 addr 在 0x400520-0x400527之间时，行号为5.</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[如何使用gprof]]></title>
-    <link href="http://lazybing.github.io/blog/2016/09/22/how-to-use-gprof/"/>
-    <updated>2016-09-22T09:52:06-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/09/22/how-to-use-gprof</id>
-    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Gprof">Gprof</a> 是一个 Unix 应用程序性能分析工具。
-<!--more--></p>
-
-<p><a href="https://sourceware.org/binutils/docs/gprof/index.html">Profiling</a> 可以使我们看到程序运行时程序的调用关系、函数的消耗时长等。这些信息可以使我们了解程序中那块代码耗时高于预期。</p>
-
-<p>使用 Profiling 主要包括如下三步：</p>
-
-<ul>
-  <li>
-    <p>编译链接程序时要使能 profiling 。</p>
-  </li>
-  <li>
-    <p>执行编译处的可执行文件，产生 profile 数据文件。</p>
-  </li>
-  <li>
-    <p>使用 gpro 分析 profile 数据。</p>
-  </li>
-</ul>
-
-<p>根据产生的 profile ，可以产生各种不同实行的分析输出。如 The Flat Profile、The Call Graph、The Annotated Source Listing。</p>
-
-<p>示例分析：
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;include-stdioh&quot;</span><span class="o">&gt;</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">stdlib</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;time.h&gt;&lt;/time.h&gt;&lt;/stdlib.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">fun2</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">fun1</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">5</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">fun2</span><span class="p">();</span> <span class="p">}</span>
-</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">10</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">fun1</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>编译，注意要添加<code>-pg</code>选项，这样才能与后面的 gprof 结合使用。</p>
-
-<p><code>
-gcc -pg -o test test.c
-</code></p>
-
-<p>执行, 执行完毕后，会生成 gmon.out 文件，用于性能分析的文件。</p>
-
-<p><code>
-./test
-</code></p>
-
-<p>分析, 使用 gprof 分析。
-<code>
-gprof test gmon.out &gt; analysis.txt
-</code></p>
-
-<p>此时生成的分析文件 analysis.txt 中有两种形式的分析数据。</p>
-
-<p>Flat Profile 如图：</p>
-
-<p><img src="http://lazybing.github.io/images/gprof/Flat_profile.png" /></p>
-
-<p>Call Graph 如图：</p>
-
-<p><img src="http://lazybing.github.io/images/gprof/Call_graph.png" /></p>
 
 ]]></content>
   </entry>
