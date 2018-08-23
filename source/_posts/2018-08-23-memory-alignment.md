@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "memory_alignment"
-date: 2018-08-23 08:23:49 -0700
+title: "如何理解内存对齐"
+date: 2018-08-22 08:23:49 -0700
 comments: true
 categories: 总结积累
 ---
