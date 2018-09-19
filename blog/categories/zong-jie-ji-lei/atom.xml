@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-08-23T09:24:35-07:00</updated>
+  <updated>2018-09-19T08:41:45-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,214 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Linux下C语言调用静态库和动态库简介]]></title>
+    <link href="http://lazybing.github.io/blog/2018/09/18/linux-c-static-dynamic-library/"/>
+    <updated>2018-09-18T21:27:55-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/09/18/linux-c-static-dynamic-library</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">动态库和静态库简述</a></li>
+  <li><a href="#endif" id="markdown-toc-endif">endif</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">静态库使用示例</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">动态库使用示例</a></li>
+    </ul>
+  </li>
+  <li><a href="#define-lib-libsayhelloso" id="markdown-toc-define-lib-libsayhelloso">define LIB “./libsayhello.so”</a>    <ul>
+      <li><a href="#section-3" id="markdown-toc-section-3">动态库和静态库整合</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">参考文档</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>最近工作中遇到要把第三方静态库整合到自己的动态开里的问题，在此记录并整理一些关于静态库和动态库的知识，并用特定的例子。</p>
+
+<!--more-->
+
+<h3 id="section">动态库和静态库简述</h3>
+
+<p>动态库和静态库本质上是一种可执行代码的二进制形式，它们可以被操作系统载入内存执行。两者的主要区别是，静态库是在编译过程中被载入可执行程序的，体积较大；动态库是在可执行程序在运行时被载入内存的，在编译过程中仅仅使用简单的引用，体积较小。</p>
+
+<p>给出示例代码如下：</p>
+
+<p><figure class='code'><figcaption><span>sayhello.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &quot;sayhello.h&quot;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Hello</span> <span class="n">World</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><figcaption><span>sayhello.h </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#ifndef &lt;em&gt;SAYHELLO_H&lt;/em&gt;</span>
+</span><span class='line'><span class="cp">#define &lt;em&gt;SAYHELLO_H&lt;/em&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;endif&quot;</span><span class="o">&gt;</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="section-1">静态库使用示例</h3>
+
+<p>编译静态库：</p>
+
+<p><code>
+$ gcc -Wall -O2 -fPIC -I./ -c -o sayhello.o sayhello.c
+$ ar crv libsayhello.a sayhello.o
+</code></p>
+
+<p><code>ar</code>命令会生成<code>libsayhello.a</code>的静态库。该命令的参数如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">意义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">-r</td>
+      <td style="text-align: center">将objectfile 文件插入静态库尾或替换静态库中同名文件</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-x</td>
+      <td style="text-align: center">从静态库文件中抽取文件objfile</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-t</td>
+      <td style="text-align: center">打印静态库的成员文件列表</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-d</td>
+      <td style="text-align: center">从静态库中删除文件objfile</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-s</td>
+      <td style="text-align: center">重置静态库文件索引</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-v</td>
+      <td style="text-align: center">创建文件冗余信息</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-c</td>
+      <td style="text-align: center">创建静态库文件</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>生成了静态库后，可以在可执行文件中调用静态库内的函数,示例代码：</p>
+
+<p><figure class='code'><figcaption><span>lang: test_hello_stactic.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="k">extern</span> <span class="kt">void</span> <span class="nf">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">helloworld</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>编译命令:</p>
+
+<p><code>
+$ gcc test_hello_stactic.c -o test_hello_sta ./libsayhello.a
+</code></p>
+
+<h3 id="section-2">动态库使用示例</h3>
+
+<p>编译动态库：</p>
+
+<p><code>
+$ gcc -O2 -fPIC -shared sayhello.c -o libsayhello.so
+或
+$ gcc -O2 -fPIC -c sayhello.c
+$ gcc -shared -o libsayhello.so sayhello.o
+</code></p>
+
+<p>其中</p>
+
+<ul>
+  <li>fPIC:产生与位置无关码，全部使用相对地址</li>
+  <li>shared:生成动态库</li>
+</ul>
+
+<p>调用动态库的示例代码：</p>
+
+<p><figure class='code'><figcaption><span>lang: test_hello_shared.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;dlfcn.h&gt;&lt;/dlfcn.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-lib-libsayhelloso&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LIB</span> <span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">libsayhello</span><span class="p">.</span><span class="n">so</span><span class="err">”</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">dl</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="n">LIB</span><span class="p">,</span> <span class="n">RTLD_LAZY</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">dl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="nl">Error</span><span class="p">:</span><span class="n">faile</span> <span class="n">to</span> <span class="n">load</span> <span class="n">libary</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)()</span> <span class="o">=</span> <span class="n">dlsym</span><span class="p">(</span><span class="n">dl</span><span class="p">,</span> <span class="s">&quot;helloworld&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">func</span><span class="p">();</span>
+</span><span class='line'><span class="n">dlclose</span><span class="p">(</span><span class="n">dl</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="section-3">动态库和静态库整合</h3>
+
+<h3 id="section-4">参考文档</h3>
+
+<ol>
+  <li><a href="http://answerywj.com/2016/10/10/Linux%E4%B8%8BC%E8%B0%83%E7%94%A8%E9%9D%99%E6%80%81%E5%BA%93%E5%92%8C%E5%8A%A8%E6%80%81%E5%BA%93/">Linux下C调用静态库和动态库</a></li>
+  <li><a href="https://liam0205.me/2017/04/03/not-to-link-libstdc-statically-and-why/">为什么不能再动态库里静态链接</a></li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[如何理解内存对齐]]></title>
@@ -952,107 +1160,6 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 <p><img src="/images/linux_tips/linuxcommandshortcut.png"></p>
 
 <h2 id="section-2">其他技巧</h2>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[YUV 数据分析]]></title>
-    <link href="http://lazybing.github.io/blog/2016/05/23/the-data-layout/"/>
-    <updated>2016-05-23T09:23:07-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/05/23/the-data-layout</id>
-    <content type="html"><![CDATA[<p>图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。
-<!--more--></p>
-
-<h2 id="yuv-">YUV 数据</h2>
-<p>对于 YUV 图像来说，会有如下几个特性：<code>FOURCC</code> <code>Format</code> <code>Component Order</code> <code>Image Resolution</code> <code>Interlace/Progressive</code> <code>Packed/Planar</code> 。</p>
-
-<p><code>FOURCC</code>包括：<code>UYVY</code> <code>UYNV</code> <code>Y422</code> <code>IUYV</code> 等等；</p>
-
-<p><code>Format</code>包括：<code>YUV420</code> <code>YUV422</code> <code>YUV444</code> <code>RGB444</code> <code>MONO</code>等等：</p>
-
-<p><code>Component Order</code>包括：<code>YUV</code> <code>YVU</code>。</p>
-
-<h3 id="yuv420">YUV420摆放格式</h3>
-
-<p>progressive 的摆放格式如图：</p>
-
-<p><img src="http://lazybing.github.io/images/datalayout/Yuv420.png" /></p>
-
-<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：</p>
-
-<p><figure class='code'><figcaption><span>splityuvfile </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>                                                                                                                              <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
-</span><span class='line'>     <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
-</span><span class='line'><span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-</code></pre>
-
-<p>上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
-interlace 的摆放格式如图：</p>
 
 ]]></content>
   </entry>
