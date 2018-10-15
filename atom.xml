@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-09-19T08:41:45-07:00</updated>
+  <updated>2018-10-15T07:58:51-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,15 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Av1解码详解(一)]]></title>
+    <link href="http://lazybing.github.io/blog/2018/10/15/av1-startup/"/>
+    <updated>2018-10-15T07:43:02-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/10/15/av1-startup</id>
+    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Linux下C语言调用静态库和动态库简介]]></title>
@@ -3703,192 +3712,6 @@ c. 字节流的结束，由未规定的方式判决。</li>
 <p><img src="http://lazybing.github.io/images/zigzag/field_scan_orders.png" /></p>
 
 <p>上面的图片给出了扫描的顺序，X264 中的源码，与 4x4 frame 类似，此处不在重复。</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264源码解析之码流控制]]></title>
-    <link href="http://lazybing.github.io/blog/2017/07/15/x264-rake-control/"/>
-    <updated>2017-07-15T07:19:27-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/07/15/x264-rake-control</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">码率控制基本概念</a></li>
-  <li><a href="#x264-" id="markdown-toc-x264-">X264 中码率控制</a>    <ul>
-      <li><a href="#x264--qp" id="markdown-toc-x264--qp">X264 中关于 QP</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-1" id="markdown-toc-section-1">参考文档</a></li>
-</ul>
-
-<p>本文主要记录 X264 中使用到的码流控制。</p>
-
-<!--more-->
-
-<h2 id="section">码率控制基本概念</h2>
-
-<p>码率控制是指视频编码中决定输出码率的过程。首先介绍一下 X264 中使用到的与码率控制相关的几个概念：</p>
-
-<ul>
-  <li>
-    <p>CQP(Constant QP),恒定QP（Quantization Parameter）,追求量化失真的恒定，瞬时码率会随场景
-复杂度而波动，该模式基本被淘汰(被 CRF 取代)，只有用”-pq 0”来进行无损编码还有价值。</p>
-  </li>
-  <li>
-    <p>CRF(Constant Rate Factor),恒定质量因子，与恒定 QP 类似，但追求主观感知到的质量恒定，瞬时码率也
-会随场景复杂度波动。对于快速运动或细节丰富的场景会适当增大量化失真（因为人眼不易注意到），反之
-对于静止或平坦区域则减少量化失真。</p>
-  </li>
-  <li>
-    <p>ABR(Average Bitrate),平均码率，追求整个文件的码率平均达到指定值（对于流媒体有何特殊之处？）。
-瞬时码率也会随着场景复杂度波动，但最终要受平均值的约束。</p>
-  </li>
-  <li>
-    <p>CBR(Constant Bitrate),恒定码率。前面几个模式都属于可变码率（瞬时码率在波动），即VBR（Variable Bitrate）；
-恒定码率与之相对，即码率保持不变。</p>
-  </li>
-</ul>
-
-<p>x264 并没有直接提供 CBR 这种模式，但可以通过在 VBR 模式的基础上做进一步限制来达到恒定码率的目标。
-CRF 和 ABR 模式都能通过<code>--vbv-maxrate</code> <code>--vbv-bufsize</code>来限制码率波动。</p>
-
-<p>关于这几个概念的参考如下：</p>
-
-<p>1.<a href="https://codesequoia.wordpress.com/2010/04/19/what-are-cbr-vbv-and-cpb/">Waht are CBR,VBV and CPB?</a><br />
-2.<a href="https://trac.ffmpeg.org/wiki/Encode/H.264">FFmpeg and H.264 Encoding Guide</a><br />
-3.<a href="http://slhck.info/video/2017/02/24/crf-guide.html">CRF Guide(Constant Rate Factor in X264 and X265)</a><br />
-4.<a href="https://en.wikibooks.org/wiki/MeGUI/x264_Settings">MeGUI/x264 setting</a></p>
-
-<h2 id="x264-">X264 中码率控制</h2>
-
-<p>X264 中对于码率控制方法有三种：X264_RC_CQP、X264_RC_CRF、X264_RC_ABR。默认情况是选择 CRF 方法，设置是在
-<code>x264_param_default</code>函数里设置的</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">param-&gt;rc.i_rc_method = X264_RC_CRF;
-</span><span class="line">param-&gt;rc.f_rf_constant = 23;</span></code></pre></td></tr></table></div></figure>
-<p>关于这三种方法，网上有提到优先级是<code>ABR&gt;CQP&gt;CRF</code>的，但分析 X264 的源码，并没有看出有优先级顺序，关于码率控制方法的设置代码如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line">    <span class="n">OPT</span><span class="p">(</span><span class="s">&quot;bitrate&quot;</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">p</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_bitrate</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
-</span><span class="line">        <span class="n">p</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_rc_method</span> <span class="o">=</span> <span class="n">X264_RC_ABR</span><span class="p">;</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="n">OPT2</span><span class="p">(</span><span class="s">&quot;qp&quot;</span><span class="p">,</span> <span class="s">&quot;qp_constant&quot;</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">p</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
-</span><span class="line">        <span class="n">p</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_rc_method</span> <span class="o">=</span> <span class="n">X264_RC_CQP</span><span class="p">;</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="n">OPT</span><span class="p">(</span><span class="s">&quot;crf&quot;</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">p</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">f_rf_constant</span> <span class="o">=</span> <span class="n">atof</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
-</span><span class="line">        <span class="n">p</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_rc_method</span> <span class="o">=</span> <span class="n">X264_RC_CRF</span><span class="p">;</span>
-</span><span class="line">    <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="x264--qp">X264 中关于 QP</h3>
-
-<p>首先看一段 X264 中关于 QP 值的代码，该段代码在<code>x264_ratecontrol_new</code>：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">rc</span><span class="o">-&gt;</span><span class="n">ip_offset</span> <span class="o">=</span> <span class="mf">6.0</span> <span class="o">*</span> <span class="n">log2f</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_ip_factor</span><span class="p">);</span>
-</span><span class="line"><span class="n">rc</span><span class="o">-&gt;</span><span class="n">pb_offset</span> <span class="o">=</span> <span class="mf">6.0</span> <span class="o">*</span> <span class="n">log2f</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_pb_factor</span><span class="p">);</span>
-</span><span class="line"><span class="n">rc</span><span class="o">-&gt;</span><span class="n">qp_constant</span><span class="p">[</span><span class="n">SLICE_TYPE_P</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span><span class="p">;</span>
-</span><span class="line"><span class="n">rc</span><span class="o">-&gt;</span><span class="n">qp_constant</span><span class="p">[</span><span class="n">SLICE_TYPE_I</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_clip3</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span> <span class="o">-</span> <span class="n">rc</span><span class="o">-&gt;</span><span class="n">ip_offset</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">QP_MAX</span><span class="p">);</span>
-</span><span class="line"><span class="n">rc</span><span class="o">-&gt;</span><span class="n">qp_constant</span><span class="p">[</span><span class="n">SLICE_TYPE_B</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_clip3</span><span class="p">(</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_constant</span> <span class="o">+</span> <span class="n">rc</span><span class="o">-&gt;</span><span class="n">pb_offset</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">QP_MAX</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>从上面的代码可以看出，默认的<code>i_qp_constant</code>或者通过命令行传入的<code>qp</code> <code>qp_constant</code>实际设置的是 P 帧的 QP。
-I 帧和 B 帧的 QP 设置是根据<code>f_ip_factor</code> <code>f_pb_factor</code>计算得到。</p>
-
-<p>在研究编码算法的时候，一般会选用 CQP 方法，设定 QP 为 24、28、32、36、40等（一般选 4 个 QP 值），然后比较算法优劣。
-在 X264 中，关于QPmin、QPmax、QPstep的默认设置如下：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">param</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_min</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line"><span class="n">param</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_max</span> <span class="o">=</span> <span class="n">QP_MAX</span><span class="p">;</span>
-</span><span class="line"><span class="n">param</span><span class="o">-&gt;</span><span class="n">rc</span><span class="p">.</span><span class="n">i_qp_step</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<ul>
-  <li>
-    <p>QPmin,默认值：0.定义 X264 可以使用的最小量化值，量化值越小，输出视频质量越好。当 QP 小于某一个值后，
-编码输出的宏块质量与原始块极为相近，此时没必要继续降低 QP。如果开启了自适应量化器（默认开启），不建议
-提高 QPmin 的值，因为这会降低平滑背景区域的视觉质量。</p>
-  </li>
-  <li>
-    <p>QPmax，默认值：51.定义 X264 可以使用的最大量化值。默认值 51 是 H.264 规格中可供使用的最大量化值。如果
-想要控制 X264 输出的最低品质，可以将此值设置的小一些。QPmin 和 QPmax 在CRF，ABR方法下是有效的，过低的设置
-QPmax，可能造成 ABR 码率控制失败。不建议调整该参数。</p>
-  </li>
-  <li>
-    <p>QPstep，默认值：4.设置两帧间量化值的最大变化幅度。</p>
-  </li>
-</ul>
-
-<p>帧间 QP 变化，帧内宏块 QP 不变，输出码率未知，各帧输出视觉质量有变化（高 QP 底码率的情况下会更明显）。</p>
-
-<p>比较三种码率控制方式如下：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">码率控制方法</th>
-      <th style="text-align: center">视觉质量稳定性</th>
-      <th style="text-align: center">即时输出码率</th>
-      <th style="text-align: center">输出文件大小</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">CBR</td>
-      <td style="text-align: center">不稳定</td>
-      <td style="text-align: center">恒定</td>
-      <td style="text-align: center">可控</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">VBR</td>
-      <td style="text-align: center">稳定</td>
-      <td style="text-align: center">变化</td>
-      <td style="text-align: center">不可控</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">ABR</td>
-      <td style="text-align: center">基本稳定</td>
-      <td style="text-align: center">变化</td>
-      <td style="text-align: center">可控</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="section-1">参考文档</h2>
-
-<ol>
-  <li><a href="https://mailman.videolan.org/pipermail/x264-devel/2010-February/006933.html">Making sense out of x264 rate control methods</a></li>
-  <li><a href="http://slhck.info/video/2017/03/01/rate-control.html">Understanding Rate Control Modes (x264, x265)</a></li>
-  <li><a href="http://slhck.info/video/2017/02/24/crf-guide.html">CRF Guide (Constant Rate Factor in x264 and x265)</a></li>
-</ol>
 
 ]]></content>
   </entry>
