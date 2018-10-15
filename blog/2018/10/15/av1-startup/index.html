@@ -9,8 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AV1作为一个开放、免专利的视频编码
-">
+  <meta name="description" content="AV1作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看SPEC,最好的方法是看源码aom。 AV1 前期准备 安装CMake，版本需求 3.5 以上。 安装Git。 安装Perl。 对于x86,需要安装yasm或nasm。 安装python。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,7 +98,58 @@
   </header>
 
 
-<div class="entry-content"><p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码</p>
+<div class="entry-content"><p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看<a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">SPEC</a>,最好的方法是看源码<code>aom</code>。</p>
+
+<h1 id="av1-">AV1 前期准备</h1>
+
+<ul>
+  <li>安装<code>CMake</code>，版本需求 3.5 以上。</li>
+  <li>安装<code>Git</code>。</li>
+  <li>安装<code>Perl</code>。</li>
+  <li>对于<code>x86</code>,需要安装<code>yasm</code>或<code>nasm</code>。</li>
+  <li>安装<code>python</code>。</li>
+</ul>
+
+<h1 id="section">获取源码</h1>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$ git clone https://aomedia.googlesource.com/aom</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="section-1">编译</h1>
+
+<h2 id="section-2">最简单的编译方法</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$ cmake path/to/aom
+</span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
+<p>上面的方法就可以用到<code>Linux</code>平台下，生成<code>aomdec</code>可执行文件，进行解码。</p>
+
+<h2 id="windows-">Windows 下编译方法</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$ make aom_vs
+</span><span class="line">$ cd aom_vs
+</span><span class="line">$ cmake /path/to/aom -G "Visual Studio 12 2013 Vin64" -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0 -DAOM_TARGET_CPU=generic</span></code></pre></td></tr></table></div></figure>
+<p>此时在<code>aom_vs</code>路径下，会生成一个<code>AOM.sln</code>,用<code>VisualStudio 2013</code>打开该文件后，编译运行即可使用<code>VisualStudio</code>调试学习了。</p>
+
+<h2 id="section-3">交叉编译</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$ make aom_armv7
+</span><span class="line">$ cd aom_armv7
+</span><span class="line">$ CFLAGS="-pie -fPIE" LDFLAGS="-pie -fpIE" cmake /path/to/aom -DCROSS=/path/to/cross_build_tool_bin/ -DCMAKE_TOOLCHAIN_FILE=/path/to/tools -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0
+</span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
+
+<h1 id="section-4">配置选项</h1>
+
+<p>上面再编译的过程中，已经提到了很多配置选项，例如<code>-DCONFIG_AV1_ENCODER=0</code>表示不编译<code>av1 encoder</code>。</p>
+
 </div>
 
 
