@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Linux常用命令之Find - 懒人李冰</title>
+  <title>Av1解码详解之film_grain(三) - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Find 命令概述 Find 命令示例 参考资料 本文主要记录 Linux 中常用命令之一Find 的使用方法。 Find 命令概述 Linux 中的 Find 命令是 Linux 系统中最重要最常用的命令之一。它是用来在指定目录下查找文件的，并对查找到的文件进行处理。它的使用格式如下： $ &hellip;">
+  <meta name="description" content="Film Grain 简介 参考文档 Film Grain在电视和电影内容中广泛存在，它经常是创作内容的一部分，在编码过程中需要保留下来，因为film grain的随机性，导致很难用传统的压缩算法进行压缩。 Film Grain 简介 film grain模型和整体框架如图所示。film &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2017/08/25/linux-command-find/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">Linux常用命令之Find</h1>
+      <h1 class="entry-title">Av1解码详解之film_grain(三)</h1>
     
     
       <p class="meta">
@@ -91,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2017-08-25T08:39:05-07:00'><span class='date'>2017 年 08 月 25 日</span> <span class='time'>8:39 am</span></time>
+<time class='entry-date' datetime='2018-10-17T08:35:36-07:00'><span class='date'>2018 年 10 月 17 日</span> <span class='time'>8:35 am</span></time>
         
       </p>
     
@@ -99,132 +99,27 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#find-" id="markdown-toc-find-">Find 命令概述</a></li>
-  <li><a href="#find--1" id="markdown-toc-find--1">Find 命令示例</a></li>
-  <li><a href="#section" id="markdown-toc-section">参考资料</a></li>
+  <li><a href="#film-grain-" id="markdown-toc-film-grain-">Film Grain 简介</a></li>
+  <li><a href="#section" id="markdown-toc-section">参考文档</a></li>
 </ul>
 
-<p>本文主要记录 Linux 中常用命令之一Find 的使用方法。</p>
+<p><code>Film Grain</code>在电视和电影内容中广泛存在，它经常是创作内容的一部分，在编码过程中需要保留下来，因为<code>film grain</code>的随机性，导致很难用传统的压缩算法进行压缩。</p>
 
 <!--more-->
 
-<h2 id="find-">Find 命令概述</h2>
+<h1 id="film-grain-">Film Grain 简介</h1>
 
-<p>Linux 中的 Find 命令是 Linux 系统中最重要最常用的命令之一。它是用来在指定目录下查找文件的，并对查找到的文件进行处理。它的使用格式如下：</p>
+<p><code>film grain</code>模型和整体框架如图所示。<code>film grain</code>在去噪音过程中会从视频中去除掉，<code>grain</code>参数会通过噪音视频序列和去噪视频序列的差异中获得,这些参数会和压缩视频流一起传输到解码端。</p>
 
-<blockquote>
-  <p>$find <指定目录> <指定条件> <指定动作></指定动作></指定条件></指定目录></p>
-</blockquote>
+<p>解码后，<code>film grain</code>会被加到重建视频帧中。</p>
 
-<ul>
-  <li>指定目录:所要搜索的目录，比如默认为当前目录，或指定特定的目录。</li>
-  <li>指定条件:所要搜索的文件特征比如文件名称、文件大小、文件属性等。</li>
-  <li>指定动作:对搜索结果进行特定的处理，比如对搜索到的结果删除、将搜索结果放到特定文件中。</li>
-</ul>
-
-<p>任何位于参数之前的字符串都被视为搜索目录。
-它可以根据不同的命令参数选择不同的搜索方式，常用的参数选项有：</p>
-
-<ul>
-  <li>-name <filename>:指定搜索文件名称。</filename></li>
-  <li>-type <filetype>:指定搜索文件的类型。</filetype></li>
-  <li>-size <filesize>:指定搜索文件的大小。</filesize></li>
-  <li>-user <username>:指定特定用户。</username></li>
-  <li>-group <groupname>:指定特定组。</groupname></li>
-  <li>-maxdepth/mindepth <num>:指定搜索目录级别。</num></li>
-  <li>-exec <command />:假设 find 指令的回传值为 TRUE，就执行 command 指令。</li>
-</ul>
-
-<h2 id="find--1">Find 命令示例</h2>
-
-<p>查看当前目录及其子目录下的所有文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">find</span></code></pre></td></tr></table></div></figure>
-
-<p>根据名字查找文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">//find [dir-path] -name [filename]
-</span><span class="line">$ find . -name testfile1.txt
-</span><span class="line">$ find /home -name testfile1.txt</span></code></pre></td></tr></table></div></figure>
-
-<p>查找某种特定类型的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . -name "*.txt"</span></code></pre></td></tr></table></div></figure>
-
-<p>忽视大小写来查找文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">//find -iname [filename]
-</span><span class="line">$ find -iname testfile1.txt</span></code></pre></td></tr></table></div></figure>
-
-<p>查找与搜索模式不匹配的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . -not -name "*.txt"
-</span><span class="line">$find . ! -name "*.txt"</span></code></pre></td></tr></table></div></figure>
-
-<p>限定搜索目录级别。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . -maxdepth 3 -name "*.txt"
-</span><span class="line">$find . -mindepth 3 -name "*.txt"
-</span><span class="line">$find . -mindepth 2 -maxdepth 4 -name "*.txt"</span></code></pre></td></tr></table></div></figure>
-
-<p>显示所有的空文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . -empty</span></code></pre></td></tr></table></div></figure>
-
-<p>查找某个特定组的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . -group bing -name "*.txt"</span></code></pre></td></tr></table></div></figure>
-
-<p>查找某个特定用户的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . -user bing -name "*.txt"</span></code></pre></td></tr></table></div></figure>
-
-<p>查找最近修改过的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . -mmin 1 -name "*.txt"</span></code></pre></td></tr></table></div></figure>
-
-<p>查找特定类型的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">// find -type &lt;filetype&gt;
-</span><span class="line">$find -type d //查找目录文件</span></code></pre></td></tr></table></div></figure>
-
-<p>查找两种类型的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find . \( -name a.out -o -name '*.o' -o name 'core' \) -exec rm {} \;</span></code></pre></td></tr></table></div></figure>
-
-<p>对查找到的文件执行某些命令。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$find $HOME/. -name *.txt -exec head -n 1 -v {} \; &gt; report.txt</span></code></pre></td></tr></table></div></figure>
-
-<h2 id="section">参考资料</h2>
+<h1 id="section">参考文档</h1>
 
 <ol>
-  <li><a href="https://en.wikipedia.org/wiki/Find">Find Command Wiki</a></li>
-  <li><a href="http://man7.org/linux/man-pages/man1/find.1.html">Find Command Man Page</a></li>
-  <li><a href="https://www.howtoforge.com/tutorial/linux-find-command/">14 Practical Examples of Linux Find Command for Beginners</a></li>
-  <li><a href="https://www.ibm.com/developerworks/cn/aix/library/es-unix-find.html">使用 UNIX find 命令的高级技术</a></li>
+  <li><a href="https://aomediacodec.github.io/av1-spec/">AV1 Bitstream &amp; Decoding Process</a></li>
 </ol>
 
+<p>(未完待续…)</p>
 </div>
 
 
@@ -240,12 +135,12 @@
 
 
 
-<time class='entry-date' datetime='2017-08-25T08:39:05-07:00'><span class='date'>2017 年 08 月 25 日</span> <span class='time'>8:39 am</span></time>
+<time class='entry-date' datetime='2018-10-17T08:35:36-07:00'><span class='date'>2018 年 10 月 17 日</span> <span class='time'>8:35 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a>
+    <a class='category' href='/blog/categories/av1/'>av1</a>
   
 </span>
 
@@ -254,7 +149,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/08/25/linux-command-find/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/08/25/linux-command-find/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis/" >Tweet</a>
   
   
   
@@ -263,10 +158,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2017/08/23/x264-quant-init/" title="Previous Post: X264源码解析之x264_quant_init函数">&laquo; X264源码解析之x264_quant_init函数</a>
+        <a class="basic-alignment left" href="/blog/2018/10/15/av1-startup/" title="Previous Post: av1解码详解(一)">&laquo; av1解码详解(一)</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2017/08/25/linux-command-grep/" title="Next Post: Linux常用命令之Grep ">Linux常用命令之Grep  &raquo;</a>
       
     </p>
   </footer>
