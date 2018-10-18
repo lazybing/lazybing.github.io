@@ -6,7 +6,12 @@ comments: true
 categories: 总结积累
 ---
 
+* list element with functor item
+{:toc}
+
 Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。  
+
+<!--more-->
 
 ## 快速搜索命令
 

@@ -15,9 +15,11 @@ categories: av1
 
 # Film Grain 简介
 
-`film grain`模型和整体框架如图所示。`film grain`在去噪音过程中会从视频中去除掉，`grain`参数会通过噪音视频序列和去噪视频序列的差异中获得,这些参数会和压缩视频流一起传输到解码端。  
+`film grain`模型和整体框架如图所示。
 
-解码后，`film grain`会被加到重建视频帧中。
+{% img /images/film_grain_av1/film_grain_framework.png %}
+
+`film grain`在去噪音过程中会从视频中去除掉，`grain`参数会通过噪音视频序列和去噪视频序列的差异中获得,这些参数会和压缩视频流一起传输到解码端。 解码后，`film grain`会被加到重建视频帧中。
 
 
 # 参考文档
