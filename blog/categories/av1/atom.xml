@@ -4,7 +4,7 @@
   <title><![CDATA[分类:av1 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/av1/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-10-18T07:47:13-07:00</updated>
+  <updated>2018-10-18T08:29:29-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -20,6 +20,7 @@
     <id>http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#film-grain-" id="markdown-toc-film-grain-">Film Grain 简介</a></li>
+  <li><a href="#film-grain--1" id="markdown-toc-film-grain--1">Film Grain 流程</a></li>
   <li><a href="#section" id="markdown-toc-section">参考文档</a></li>
 </ul>
 
@@ -33,7 +34,19 @@
 
 <p><img src="/images/film_grain_av1/film_grain_framework.png"></p>
 
-<p><code>film grain</code>在去噪音过程中会从视频中去除掉，<code>grain</code>参数会通过噪音视频序列和去噪视频序列的差异中获得,这些参数会和压缩视频流一起传输到解码端。 解码后，<code>film grain</code>会被加到重建视频帧中。</p>
+<p><code>film grain</code>在去噪音过程中会从视频中去除掉，<code>grain</code>参数会通过噪音视频序列和去噪视频序列的差异中获得,这些参数会和压缩视频流一起传输到解码端。 解码后，<code>film grain</code>会被叠加到重建视频帧中。</p>
+
+<h1 id="film-grain--1">Film Grain 流程</h1>
+
+<p>从上面的框架图可以看出，<code>film grain</code>包括压缩前的去噪、编码参数、解码参数、噪音叠加到重建帧等几个过程，这里不讨论去噪的过程，主要讨论<code>film grain modeling synthesis</code>。
+流程可以从<code>SPEC</code>中看到，也可以从源码中学习，<code>film grain</code>中在源码中主要集中在<code>aom/aom_dsp/grain_synthesis.c</code>中的<code>av1_add_film_grain_run</code>函数中，分析源码可知大致分为如下流程：</p>
+
+<ul>
+  <li>init_array. 为<code>film grain</code>准备后面用到的内存，大致分为三类<code>grain buffer(luma_grain_block/cb_grain_block/cr_grain_block)</code>、<code>line buf(y_line_buf/cb_line_buf/cr_line_buf)</code>、<code>column buf(y_col_buf/cb_col_buf/cr_col_buf)</code>。</li>
+  <li>generate_luma_grain_block 和 generate_chroma_grain_blocks. 它会根据码流中 parse 出来的<code>grain_scale_shift/ar_coeff_lag</code>的值和<code>gaussian_sequence</code>表来填充<code>grain block</code>。</li>
+  <li>init_scaling_function. 它是利用码流中 parse 出来的 <code>scaling_points_y</code>来填充<code>scaling_lut_y/scaling_lut_cb/scaling_lut_cr</code>数组。</li>
+  <li>add_noise_to_block。它会根据上面生成的<code>grain block</code>叠加到重建帧上。</li>
+</ul>
 
 <h1 id="section">参考文档</h1>
 
