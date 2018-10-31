@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AV1 前期准备 获取源码 编译 最简单的编译方法 Windows 下编译方法 交叉编译 配置选项 AV1作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看SPEC,最好的方法是看源码aom。 AV1 前期准备 安装CMake，版本需求 3.5 &hellip;">
+  <meta name="description" content="AV1 前期准备 获取源码 编译 Linux 下编译方法 Windows 下编译方法 交叉编译 配置选项 参考文档 AV1作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看SPEC,最好的方法是看源码aom。 AV1 前期准备 安装CMake， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -102,19 +102,20 @@
   <li><a href="#av1-" id="markdown-toc-av1-">AV1 前期准备</a></li>
   <li><a href="#section" id="markdown-toc-section">获取源码</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">编译</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">最简单的编译方法</a></li>
+      <li><a href="#linux-" id="markdown-toc-linux-">Linux 下编译方法</a></li>
       <li><a href="#windows-" id="markdown-toc-windows-">Windows 下编译方法</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">交叉编译</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">交叉编译</a></li>
     </ul>
   </li>
-  <li><a href="#section-4" id="markdown-toc-section-4">配置选项</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">配置选项</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">参考文档</a></li>
 </ul>
 
 <p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看<a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">SPEC</a>,最好的方法是看源码<code>aom</code>。</p>
 
 <!--more-->
 
-<h1 id="av1-">AV1 前期准备</h1>
+<h2 id="av1-">AV1 前期准备</h2>
 
 <ul>
   <li>安装<code>CMake</code>，版本需求 3.5 以上。</li>
@@ -124,14 +125,36 @@
   <li>安装<code>python</code>。</li>
 </ul>
 
-<h1 id="section">获取源码</h1>
+<h2 id="section">获取源码</h2>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">$ git clone https://aomedia.googlesource.com/aom</span></code></pre></td></tr></table></div></figure>
 
-<h1 id="section-1">编译</h1>
+<h2 id="section-1">编译</h2>
 
-<h2 id="section-2">最简单的编译方法</h2>
+<p><code>AV1</code>采用的配制方法不再是通常的<code>config</code>命令，而是<code>cmake</code>.<code>cmake</code>会生成配置文件和编译文件，大多数系统中，默认的编译文件是<code>Makefile</code>。
+执行<code>cmake</code>会得到如下提示:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">cmake [options] &lt;path-to-source&gt;
+</span><span class="line">...
+</span><span class="line">Options
+</span><span class="line">    -G &lt;generator-name&gt; = Specify a build system generator.</span></code></pre></td></tr></table></div></figure>
+
+<p>某些参数可以直接通过 cmake传递进去，如是否编译<code>encoder</code>。</p>
+
+<blockquote>
+  <blockquote>
+    <p>其实不止 AV1 的官方代码，<code>DAV1D</code>工程，同样有类似的配置过程，只不过它使用的是<code>meson</code>而不是<code>cmake</code>，但效果是一样的。</p>
+  </blockquote>
+</blockquote>
+
+<h3 id="linux-">Linux 下编译方法</h3>
+
+<p>Linux 下的编译最简单了，只需要用<code>cmake</code>配置，然后<code>make</code>编译即可。</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -139,9 +162,9 @@
 </span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
 <p>上面的方法就可以用到<code>Linux</code>平台下，生成<code>aomdec</code>可执行文件，进行解码。</p>
 
-<h2 id="windows-">Windows 下编译方法</h2>
+<h3 id="windows-">Windows 下编译方法</h3>
 
-<p><code>Windows</code>下，nyang</p>
+<p><code>Windows</code>下使用<code>Visual Studio</code>同样可以编译运行<code>av1</code>的代码。只需要在<code>cmake</code>时指定 VS 版本号即可,支持的工具可以通过<code>cmake --help</code>来查看。</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -151,20 +174,31 @@
 </span><span class="line">$ cmake /path/to/aom -G "Visual Studio 12 2013 Win64" -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0 -DAOM_TARGET_CPU=generic</span></code></pre></td></tr></table></div></figure>
 <p>此时在<code>aom_vs</code>路径下，会生成一个<code>AOM.sln</code>,用<code>VisualStudio 2013</code>打开该文件后，编译运行即可使用<code>VisualStudio</code>调试学习了。</p>
 
-<h2 id="section-3">交叉编译</h2>
+<h3 id="section-2">交叉编译</h3>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 <span class="line-number">3</span>
 <span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$ make aom_armv7
+</pre></td><td class="code"><pre><code class=""><span class="line">$ mkdir aom_armv7
 </span><span class="line">$ cd aom_armv7
 </span><span class="line">$ CFLAGS="-pie -fPIE" LDFLAGS="-pie -fpIE" cmake /path/to/aom -DCROSS=/path/to/cross_build_tool_bin/ -DCMAKE_TOOLCHAIN_FILE=/path/to/tools -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0
 </span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
 
-<h1 id="section-4">配置选项</h1>
+<h2 id="section-3">配置选项</h2>
 
-<p>上面再编译的过程中，已经提到了很多配置选项，例如<code>-DCONFIG_AV1_ENCODER=0</code>表示不编译<code>av1 encoder</code>。</p>
+<p>上面再编译的过程中，已经提到了很多配置选项，在此举几个例子：</p>
+
+<ul>
+  <li><code>-DCONFIG_AV1_ENCODER=0</code>表示不编译<code>av1 encoder</code>。</li>
+  <li><code>-DAOM_TARGET_CPU=generic</code>表示不编译汇编。</li>
+  <li><code>-G "Visual Studio 12 2013 Win64"</code>表示生成的配置文件，可以通过<code>VS2013</code>来打开编译运行。</li>
+  <li><code>-DCMAKE_CONFIGURATION_TYPES=Debg</code>表示生成Debug 类型的可执行文件。</li>
+</ul>
+
+<h2 id="section-4">参考文档</h2>
+
+<p><a href="https://aomedia.googlesource.com/aom/+/master/README.md">AV1 Codec Library</a></p>
 
 </div>
 
