@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-11-05T07:49:46-08:00</updated>
+  <updated>2018-11-05T08:21:13-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -42,39 +42,24 @@
 
 <p>给出示例代码如下：</p>
 
-<p><figure class='code'><figcaption><span>sayhello.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &quot;sayhello.h&quot;&lt;/stdio.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Hello</span> <span class="n">World</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c sayhello.c %}
+#include <stdio.h>
+#include "sayhello.h"</stdio.h></p>
 
-<p><figure class='code'><figcaption><span>sayhello.h </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#ifndef &lt;em&gt;SAYHELLO_H&lt;/em&gt;</span>
-</span><span class='line'><span class="cp">#define &lt;em&gt;SAYHELLO_H&lt;/em&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;endif&quot;</span><span class="o">&gt;</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>void helloworld(void)
+{
+    printf(“Hello World\n”);
+}
+{% endcodeblock %}</p>
+
+<p>{% codeblock lang:c sayhello.h %}
+#ifndef <em>SAYHELLO_H</em>
+#define <em>SAYHELLO_H</em></p>
+
+<p>void helloworld(void);</p>
+
+<h1 id="endif">endif</h1>
+<p>{% endcodeblock %}</p>
 
 <h3 id="section-1">静态库使用示例</h3>
 
@@ -128,22 +113,15 @@ $ ar crv libsayhello.a sayhello.o
 
 <p>生成了静态库后，可以在可执行文件中调用静态库内的函数,示例代码：</p>
 
-<p><figure class='code'><figcaption><span>lang: test_hello_stactic.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="k">extern</span> <span class="kt">void</span> <span class="nf">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">helloworld</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang: test_hello_stactic.c %}
+#include <stdio.h>
+extern void helloworld(void);</stdio.h></p>
+
+<p>int main(int argc, char **argv)
+{
+    helloworld();
+}
+{% endcodeblock %}</p>
 
 <p>编译命令:</p>
 
@@ -171,42 +149,24 @@ $ gcc -shared -o libsayhello.so sayhello.o
 
 <p>调用动态库的示例代码：</p>
 
-<p><figure class='code'><figcaption><span>lang: test_hello_shared.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;dlfcn.h&gt;&lt;/dlfcn.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-lib-libsayhelloso&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LIB</span> <span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">libsayhello</span><span class="p">.</span><span class="n">so</span><span class="err">”</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">dl</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="n">LIB</span><span class="p">,</span> <span class="n">RTLD_LAZY</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">dl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="nl">Error</span><span class="p">:</span><span class="n">faile</span> <span class="n">to</span> <span class="n">load</span> <span class="n">libary</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)()</span> <span class="o">=</span> <span class="n">dlsym</span><span class="p">(</span><span class="n">dl</span><span class="p">,</span> <span class="s">&quot;helloworld&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">func</span><span class="p">();</span>
-</span><span class='line'><span class="n">dlclose</span><span class="p">(</span><span class="n">dl</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>{% codeblock lang: test_hello_shared.c %}
+#include <stdio.h>
+#include <dlfcn.h></dlfcn.h></stdio.h></p>
+
+<h1 id="define-lib-libsayhelloso">define LIB “./libsayhello.so”</h1>
+<p>int main(int argc, char **argv)
+{
+    void *dl = dlopen(LIB, RTLD_LAZY);
+    if(dl == NULL)
+    {
+        fprintf(stderr, “Error:faile to load libary.\n”);
+    }</p>
+
+<pre><code>void (*func)() = dlsym(dl, "helloworld");
+func();
+dlclose(dl);
+
+return 0; } {% endcodeblock %}
 </code></pre>
 
 <h3 id="section-3">动态库和静态库整合</h3>
@@ -354,213 +314,111 @@ struct foo8{
 
 <h3 id="section-5">代码测试示例</h3>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdbool.h&gt;&lt;/stdbool.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo1</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">long</span> <span class="n">x</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo2</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>      <span class="cm">/* 1 byte &lt;em&gt;/</span>
-</span><span class='line'><span class="cm">    char pad[7]; /&lt;/em&gt; 7 bytes &lt;em&gt;/</span>
-</span><span class='line'><span class="cm">    char *p;     /&lt;/em&gt; 8 bytes &lt;em&gt;/</span>
-</span><span class='line'><span class="cm">    long x;      /&lt;/em&gt; 8 bytes */</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo3</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">p</span><span class="p">;</span>     <span class="o">/&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="mi">8</span> <span class="n">bytes</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;/</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>      <span class="o">/&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="mi">1</span> <span class="n">byte</span> <span class="err">*/</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo4</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">short</span> <span class="n">s</span><span class="p">;</span>     <span class="cm">/* 2 bytes &lt;em&gt;/</span>
-</span><span class='line'><span class="cm">    char c;      /&lt;/em&gt; 1 byte */</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo5</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">struct</span> <span class="n">foo5_inner</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
-</span><span class='line'>        <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span> <span class="n">inner</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo6</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">short</span> <span class="n">s</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">flip</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">nybble</span><span class="p">:</span><span class="mi">4</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">septet</span><span class="p">:</span><span class="mi">7</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo7</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo8</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield1</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield1</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield2</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield2</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo9</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield1</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield2</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield1</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield2</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo10</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">struct</span> <span class="n">foo10</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo11</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">struct</span> <span class="n">foo11</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo12</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">struct</span> <span class="n">foo12_inner</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
-</span><span class='line'>        <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span> <span class="n">inner</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span>        <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">long</span><span class="p">)</span>          <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">long</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span>           <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">short</span><span class="p">)</span>         <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">short</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">)</span>          <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">)</span>         <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>        <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo1</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo1</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo2</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo2</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo3</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo3</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo4</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo4</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo5</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo5</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo6</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo6</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo7</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo7</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo8</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo8</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo9</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo9</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo10</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo10</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo11</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo11</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo12</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo12</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c %}
+#include <stdio.h>
+#include <stdbool.h></stdbool.h></stdio.h></p>
+
+<p>struct foo1 {
+    char *p;
+    char c;
+    long x;
+};</p>
+
+<p>struct foo2 {
+    char c;      /* 1 byte <em>/
+    char pad[7]; /</em> 7 bytes <em>/
+    char *p;     /</em> 8 bytes <em>/
+    long x;      /</em> 8 bytes */
+};</p>
+
+<p>struct foo3 {
+    char <em>p;     /</em> 8 bytes <em>/
+    char c;      /</em> 1 byte */
+};</p>
+
+<p>struct foo4 {
+    short s;     /* 2 bytes <em>/
+    char c;      /</em> 1 byte */
+};</p>
+
+<p>struct foo5 {
+    char c;
+    struct foo5_inner {
+        char *p;
+        short x;
+    } inner;
+};</p>
+
+<p>struct foo6 {
+    short s;
+    char c;
+    int flip:1;
+    int nybble:4;
+    int septet:7;
+};</p>
+
+<p>struct foo7 {
+    int bigfield:31;
+    int littlefield:1;
+};</p>
+
+<p>struct foo8 {
+    int bigfield1:31;
+    int littlefield1:1;
+    int bigfield2:31;
+    int littlefield2:1;
+};</p>
+
+<p>struct foo9 {
+    int bigfield1:31;
+    int bigfield2:31;
+    int littlefield1:1;
+    int littlefield2:1;
+};</p>
+
+<p>struct foo10 {
+    char c;
+    struct foo10 *p;
+    short x;
+};</p>
+
+<p>struct foo11 {
+    struct foo11 *p;
+    short x;
+    char c;
+};</p>
+
+<p>struct foo12 {
+    struct foo12_inner {
+        char *p;
+        short x;
+    } inner;
+    char c;
+};</p>
+
+<p>main(int argc, char *argv)
+{
+    printf(“sizeof(char *)        = %zu\n”, sizeof(char *));
+    printf(“sizeof(long)          = %zu\n”, sizeof(long));
+    printf(“sizeof(int)           = %zu\n”, sizeof(int));
+    printf(“sizeof(short)         = %zu\n”, sizeof(short));
+    printf(“sizeof(char)          = %zu\n”, sizeof(char));
+    printf(“sizeof(float)         = %zu\n”, sizeof(float));
+    printf(“sizeof(double)        = %zu\n”, sizeof(double));
+    printf(“sizeof(struct foo1)   = %zu\n”, sizeof(struct foo1));
+    printf(“sizeof(struct foo2)   = %zu\n”, sizeof(struct foo2));
+    printf(“sizeof(struct foo3)   = %zu\n”, sizeof(struct foo3));
+    printf(“sizeof(struct foo4)   = %zu\n”, sizeof(struct foo4));
+    printf(“sizeof(struct foo5)   = %zu\n”, sizeof(struct foo5));
+    printf(“sizeof(struct foo6)   = %zu\n”, sizeof(struct foo6));
+    printf(“sizeof(struct foo7)   = %zu\n”, sizeof(struct foo7));
+    printf(“sizeof(struct foo8)   = %zu\n”, sizeof(struct foo8));
+    printf(“sizeof(struct foo9)   = %zu\n”, sizeof(struct foo9));
+    printf(“sizeof(struct foo10)   = %zu\n”, sizeof(struct foo10));
+    printf(“sizeof(struct foo11)   = %zu\n”, sizeof(struct foo11));
+    printf(“sizeof(struct foo12)   = %zu\n”, sizeof(struct foo12));
+}
+{% endcodeblock %}</p>
 
 <h3 id="section-6">参考文档</h3>
 
@@ -591,226 +449,131 @@ struct foo8{
 
 <h1 id="elf-data-type">ELF Data Type</h1>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdint.h&gt;</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">uint16_t</span> <span class="n">Elf32_Half</span><span class="p">;</span>    <span class="c1">//Unsigned half int</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Off</span><span class="p">;</span>     <span class="c1">//Unsigned offset</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Addr</span><span class="p">;</span>    <span class="c1">//Unsigned address</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">Elf32_Word</span><span class="p">;</span>    <span class="c1">//Unsigned int</span>
-</span><span class='line'><span class="k">typedef</span> <span class="kt">int32_t</span>  <span class="n">Elf32_Sword</span><span class="p">;</span>   <span class="c1">//Signed int</span>
-</span></code></pre></td></tr></table></div></figure></stdint.h></p>
+<p>{% codeblock lang:c %}
+#include <stdint.h>
+typedef uint16_t Elf32_Half;    //Unsigned half int
+typedef uint32_t Elf32_Off;     //Unsigned offset
+typedef uint32_t Elf32_Addr;    //Unsigned address
+typedef uint32_t Elf32_Word;    //Unsigned int
+typedef int32_t  Elf32_Sword;   //Signed int
+{% endcodeblock %}</stdint.h></p>
 
 <h1 id="the-elf-header">The ELF Header</h1>
 
 <p>每个 ELF 格式文件都有位于文件开始的头部<code>Header</code>。</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define ELF_NIDENT 16</span>
-</span><span class='line'><span class="k">typedef</span> <span class="k">struct</span><span class="p">{</span>
-</span><span class='line'>    <span class="kt">uint8_t</span>     <span class="n">e_ident</span><span class="p">[</span><span class="n">ELF_NIDENT</span><span class="p">];</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_type</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_machine</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Word</span>  <span class="n">e_version</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Addr</span>  <span class="n">e_entry</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Off</span>   <span class="n">e_phoff</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Off</span>   <span class="n">e_shoff</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_phoff</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shoff</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Word</span>  <span class="n">e_flags</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_ehsize</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_phentsize</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_phnum</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shentsize</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shnum</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">Elf32_Half</span>  <span class="n">e_shstrndx</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span><span class="n">ELF32_Ehdr</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c %}
+#define ELF_NIDENT 16
+typedef struct{
+    uint8_t     e_ident[ELF_NIDENT];
+    Elf32_Half  e_type;
+    Elf32_Half  e_machine;
+    Elf32_Word  e_version;
+    Elf32_Addr  e_entry;
+    Elf32_Off   e_phoff;
+    Elf32_Off   e_shoff;
+    Elf32_Word  e_flags;
+    Elf32_Half  e_ehsize;
+    Elf32_Half  e_phoff;
+    Elf32_Half  e_shoff;
+    Elf32_Word  e_flags;
+    Elf32_Half  e_ehsize;
+    Elf32_Half  e_phentsize;
+    Elf32_Half  e_phnum;
+    Elf32_Half  e_shentsize;
+    Elf32_Half  e_shnum;
+    Elf32_Half  e_shstrndx;
+}ELF32_Ehdr;
+{% endcodeblock %}</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">enum</span> <span class="n">Elf_Ident</span><span class="p">{</span>
-</span><span class='line'>    <span class="n">EI_MAG0</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//0x7F</span>
-</span><span class='line'>    <span class="n">EI_MAG1</span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//‘E’</span>
-</span><span class='line'>    <span class="n">EI_MAG2</span>    <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="c1">//‘L’</span>
-</span><span class='line'>    <span class="n">EI_MAG3</span>    <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="c1">//‘F’</span>
-</span><span class='line'>    <span class="n">EI_CLASS</span>   <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="c1">//Architecture(32/64)</span>
-</span><span class='line'>    <span class="n">EI_DATA</span>    <span class="o">=</span> <span class="mi">5</span><span class="p">,</span><span class="c1">//Byte Order</span>
-</span><span class='line'>    <span class="n">EI_VERSION</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="c1">//ELF Version</span>
-</span><span class='line'>    <span class="n">EI_OSABI</span>   <span class="o">=</span> <span class="mi">7</span><span class="p">,</span> <span class="c1">//OS Specific</span>
-</span><span class='line'>    <span class="n">EI_ABIVERSION</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="c1">//OS Specific</span>
-</span><span class='line'>    <span class="n">EI_PAD</span>        <span class="o">=</span> <span class="mi">9</span>  <span class="c1">//Padding</span>
-</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-elfmag0----0x7f---eidenteimag0&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">ELFMAG0</span>    <span class="mh">0x7F</span>   <span class="c1">//e_ident[EI_MAG0]&lt;/h1&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">ELFMAG1</span>    <span class="err">‘</span><span class="n">E</span><span class="err">’</span>    <span class="c1">//e_ident[EI_MAG1]</span>
-</span><span class='line'><span class="cp">#define ELFMAG2    ‘L’    </span><span class="c1">//e_ident[EI_MAG2]</span>
-</span><span class='line'><span class="cp">#define ELFMAG3    ‘F’    </span><span class="c1">//e_ident[EI_MAG3]&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-elfdata2lsb-1---little-endian&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">ELFDATA2LSB</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>   <span class="c1">//Little Endian&lt;/h1&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">ELFCLASS32</span>  <span class="p">(</span><span class="mi">1</span><span class="p">)</span>   <span class="c1">//32-bit Architecture</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c %}
+enum Elf_Ident{
+    EI_MAG0    = 0, //0x7F
+    EI_MAG1    = 1, //‘E’
+    EI_MAG2    = 2, //‘L’
+    EI_MAG3    = 3, //‘F’
+    EI_CLASS   = 4, //Architecture(32/64)
+    EI_DATA    = 5,//Byte Order
+    EI_VERSION = 6, //ELF Version
+    EI_OSABI   = 7, //OS Specific
+    EI_ABIVERSION = 8, //OS Specific
+    EI_PAD        = 9  //Padding
+};</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">enum</span> <span class="n">Elf_Type</span><span class="p">{</span>
-</span><span class='line'>    <span class="n">ET_NONE</span>    <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="c1">//Unknown Type</span>
-</span><span class='line'>    <span class="n">ET_REL</span>     <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="c1">//Relocatable File</span>
-</span><span class='line'>    <span class="n">ET_EXEC</span>    <span class="o">=</span> <span class="mi">2</span>  <span class="c1">//Executable File</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="cp">#define EM_386     (3) </span><span class="c1">//x86 Machine Type</span>
-</span><span class='line'><span class="cp">#define EV_CURRENT (1) </span><span class="c1">//ELF Current Version</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<h1 id="define-elfmag0----0x7f---eidenteimag0">define ELFMAG0    0x7F   //e_ident[EI_MAG0]</h1>
+<p>#define ELFMAG1    ‘E’    //e_ident[EI_MAG1]
+#define ELFMAG2    ‘L’    //e_ident[EI_MAG2]
+#define ELFMAG3    ‘F’    //e_ident[EI_MAG3]</p>
+
+<h1 id="define-elfdata2lsb-1---little-endian">define ELFDATA2LSB (1)   //Little Endian</h1>
+<p>#define ELFCLASS32  (1)   //32-bit Architecture
+{% endcodeblock %}</p>
+
+<p>{% codeblock lang:c %}
+enum Elf_Type{
+    ET_NONE    = 0, //Unknown Type
+    ET_REL     = 1, //Relocatable File
+    ET_EXEC    = 2  //Executable File
+};
+#define EM_386     (3) //x86 Machine Type
+#define EV_CURRENT (1) //ELF Current Version
+{% endcodeblock %}</p>
 
 <h1 id="checking-the-elf-header">Checking the ELF Header</h1>
 
 <p>在对<code>ELF</code>文件进行加载、链接、重定向或其他操作之前，首先要确保机器是否支持上述的操作。
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">bool</span> <span class="nf">elf_check_file</span><span class="p">(</span><span class="n">Elf32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">hdr</span><span class="p">)</span> <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG0</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG0</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG1</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG1</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG2</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG2</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_MAG3</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFMAG3</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">ELF</span> <span class="n">Header</span> <span class="n">EI_MAG2</span> <span class="n">incorrect</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+{% codeblock lang:c %}
+bool elf_check_file(Elf32_Ehdr *hdr){
+    if(!hdr) return false;
+    if(hdr-&gt;e_ident[EI_MAG0] != ELFMAG0){
+        ERROR(“ELF Header EI_MAG0 incorrect.\n”); 
+        return false;
+    }
+    if(hdr-&gt;e_ident[EI_MAG1] != ELFMAG1){
+        ERROR(“ELF Header EI_MAG1 incorrect.\n”); 
+        return false;
+    }
+    if(hdr-&gt;e_ident[EI_MAG2] != ELFMAG2){
+        ERROR(“ELF Header EI_MAG2 incorrect.\n”); 
+        return false;
+    }
+    if(hdr-&gt;e_ident[EI_MAG3] != ELFMAG3){
+        ERROR(“ELF Header EI_MAG2 incorrect.\n”); 
+        return false;
+    }
+    return true;
+}
+{% endcodeblock %}</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">bool</span> <span class="nf">elf_check_supported</span><span class="p">(</span><span class="n">ELF32_Ehdr</span> <span class="o">*</span><span class="n">hdr</span><span class="p">){</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">elf_check_file</span><span class="p">(</span><span class="n">hdr</span><span class="p">)){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Invalid</span> <span class="n">ELF</span> <span class="n">File</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_CLASS</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFCLASS32</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">Class</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_DATA</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ELFDATA2LSB</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">byte</span> <span class="n">order</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_machine</span> <span class="o">!=</span> <span class="n">EM_386</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">target</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_ident</span><span class="p">[</span><span class="n">EI_VERSION</span><span class="p">]</span> <span class="o">!=</span> <span class="n">EV_CURRENT</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">version</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_REL</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">hdr</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">e_type</span> <span class="o">!=</span> <span class="n">ET_EXEC</span><span class="p">){</span>
-</span><span class='line'>        <span class="n">ERROR</span><span class="p">(</span><span class="err">“</span><span class="n">Unsupported</span> <span class="n">ELF</span> <span class="n">File</span> <span class="n">type</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c %}
+bool elf_check_supported(ELF32_Ehdr *hdr){
+    if(!elf_check_file(hdr)){
+        ERROR(“Invalid ELF File.\n”);
+        return false;
+    }
+    if(hdr-&gt;e_ident[EI_CLASS] != ELFCLASS32){
+        ERROR(“Unsupported ELF File Class.\n”);
+        return false;
+    }
+    if(hdr-&gt;e_ident[EI_DATA] != ELFDATA2LSB){
+        ERROR(“Unsupported ELF File byte order.\n”);
+        return false;
+    }
+    if(hdr-&gt;e_machine != EM_386){
+        ERROR(“Unsupported ELF File target.\n”);
+        return false;
+    }
+    if(hdr-&gt;e_ident[EI_VERSION] != EV_CURRENT){
+        ERROR(“Unsupported ELF File version.\n”);
+        return false;
+    }
+    if(hdr-&gt;e_type != ET_REL &amp;&amp; hdr-&gt;e_type != ET_EXEC){
+        ERROR(“Unsupported ELF File type.\n”);
+        return false;
+    }
+    return true;
+}
+{% endcodeblock %}</p>
 
 <h1 id="loading-the-elf-file">Loading the ELF File</h1>
 
@@ -851,76 +614,48 @@ struct foo8{
 
 <p>实现思路：获取文件字符串的最后一个字符，依次向前寻找<code>.</code>，<code>.</code>后面即为后缀名。</p>
 
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">get_filename_extension</span><span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">ext</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span> <span class="n">filename</span> <span class="p">);</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="o">*</span><span class="n">ext</span> <span class="o">!=</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ext</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'>        <span class="n">ext</span><span class="err">–</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">ext</span> <span class="o">+=</span> <span class="o">*</span><span class="n">ext</span> <span class="o">==</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">ext</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c get_filename_extension %}
+static inline char *get_filename_extension( char *filename )
+{
+    char *ext = filename + strlen( filename );
+    while( *ext != ‘.’ &amp;&amp; ext &gt; filename )
+        ext–;
+    ext += *ext == ‘.’;
+    return ext;
+}
+{% endcodeblock %}</p>
 
 <h3 id="c--1">C++ 语言实现</h3>
 
 <p>实现思路：首先将文件或路径名转换为一个<code>string</code>类，使用它的成员函数<code>rfind</code>找到最后一个<code>.</code>的位置，最后使用<code>substr</code>成员函数返回<code>.</code>后的所有内容，即得后缀名。</p>
 
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="k">using</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">;</span>
-</span><span class='line'><span class="n">string</span> <span class="n">getFileExt</span><span class="p">(</span><span class="k">const</span> <span class="n">string</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">s</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">string</span><span class="o">::</span><span class="n">npos</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="err">“”</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c++ get_filename_extension %}
+using std::string;
+string getFileExt(const string&amp; s)
+{
+    size_t i = s.rfind(‘.’, s.length());
+    if(i != string::npos)
+    {
+        return(s.substr(i+1, s.length() - i));
+    }
+    return (“”);
+}
+{% endcodeblock %}</p>
 
 <h3 id="shell-">Shell 脚本实现</h3>
 
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/sh</span>
-</span><span class='line'><span class="nv">fullfilename</span><span class="o">=</span><span class="nv">$1</span>
-</span><span class='line'><span class="nv">filename</span><span class="o">=</span><span class="k">$(</span>basename “<span class="nv">$fullfilename</span>”<span class="k">)</span>
-</span><span class='line'><span class="nv">fname</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">%.&lt;em&gt;</span><span class="k">}</span>”
-</span><span class='line'><span class="nv">ext</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">##&lt;/em&gt;.</span><span class="k">}</span>”&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;echo “Input File:<span class="nv">$fullfilename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Path:<span class="nv">$filename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Extension:<span class="nv">$fname</span>”
-</span><span class='line'><span class="nb">echo</span> “File Extension without Name:<span class="nv">$ext</span>”
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:sh get_filename_extension %}
+#!/bin/sh
+fullfilename=$1
+filename=$(basename “$fullfilename”)
+fname=”${filename%.<em>}”
+ext=”${filename##</em>.}”</p>
+
+<p>echo “Input File:$fullfilename”
+echo “Filename without Path:$filename”
+echo “Filename without Extension:$fname”
+echo “File Extension without Name:$ext”
+{% endcodeblock %}</p>
 
 <h2 id="section-1">调试信息分级打印</h2>
 
@@ -929,100 +664,52 @@ struct foo8{
 
 <p>实现思路：将需要打印的信息级别与默认打印信息级别进行比较，级别高时，将信息打印出来；级别低时，不打印信息。</p>
 
-<p><figure class='code'><figcaption><span>log_level </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-logdefault-2&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LOG_DEFAULT</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">LOG_NONE</span>    <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="cp">#define LOG_ERROR   0</span>
-</span><span class='line'><span class="cp">#define LOG_WARNING 1</span>
-</span><span class='line'><span class="cp">#define LOG_INFO    2</span>
-</span><span class='line'><span class="cp">#define LOG_DEBUG   3&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">Printf</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="kt">va_list</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="kt">char</span> <span class="o">*</span><span class="n">psz_prefix</span><span class="p">;</span>
-</span><span class='line'>   <span class="k">switch</span><span class="p">(</span><span class="n">i_level</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_ERROR</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">error</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_WARNING</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">warning</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_INFO</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">info</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_DEBUG</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">debug</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">brengak</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">default</span><span class="o">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">unknown</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>   <span class="n">vfprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i_level</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">LOG_DEFAULT</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">va_list</span> <span class="n">arg</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">va_start</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">Printf</span><span class="p">(</span><span class="n">i_level</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">va_end</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c log_level %}</p>
+
+<h1 id="define-logdefault-2">define LOG_DEFAULT 2</h1>
+<p>#define LOG_NONE    (-1)
+#define LOG_ERROR   0
+#define LOG_WARNING 1
+#define LOG_INFO    2
+#define LOG_DEBUG   3</p>
+
+<p>void Printf(int i_level, const char *psz_fmt, va_list arg)
+{
+   char *psz_prefix;
+   switch(i_level) 
+   {
+        case LOG_ERROR:
+            psz_prefix = “error”;
+            break;
+        case LOG_WARNING:
+            psz_prefix = “warning”;
+            break;
+        case LOG_INFO:
+            psz_prefix = “info”;
+            break;
+        case LOG_DEBUG:
+            psz_prefix = “debug”;
+            brengak;
+        default:
+            psz_prefix = “unknown”;
+            break;
+   }
+   vfprintf(stderr, psz_fmt, arg);
+}</p>
+
+<p>void LOG_PRINT(int i_level, const char *psz_fmt, …); 
+void LOG_PRINT(int i_level, const char *psz_fmt, …)
+{
+    if(i_level &lt;= LOG_DEFAULT)
+    {
+        va_list arg;
+        va_start(arg, psz_fmt);
+        Printf(i_level, psz_fmt, arg);
+        va_end(arg);
+    }
+}</p>
+
+<p>{% endcodeblock %}</p>
 
 <h2 id="section-2">分析特定格式的文件</h2>
 
@@ -1042,52 +729,30 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 
 <p>分析<code>filelist.txt</code>示例代码：</p>
 
-<p><figure class='code'><figcaption><span>parse_filelist </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">char</span> <span class="n">Codec_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Compare_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Release_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Bitstream_Path</span><span class="p">[</span><span class="mi">200</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">filelist</span><span class="p">.</span><span class="n">txt</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">open</span> <span class="n">file</span> <span class="n">fail</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">pFile</span><span class="p">))</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fscanf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="err">“</span><span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">,</span> <span class="n">Compare_Type</span><span class="p">,</span> <span class="n">Release_Type</span><span class="p">,</span> <span class="n">Bitstream_Path</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">HEVC</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">H264</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">H264</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c parse_filelist %}
+char Codec_Type[10];
+char Compare_Type[10];
+char Release_Type[10];
+char Bitstream_Path[200];</p>
+
+<p>FILE *pFile = fopen(“./filelist.txt”, “rb”);
+if(pFile == NULL)
+{
+    fprintf(stderr, “open file fail %s”, strerror(errno));
+}</p>
+
+<p>while(!feof(pFile))
+{
+    fscanf(pFile, “%s %s %s %s”, Codec_Type, Compare_Type, Release_Type, Bitstream_Path);
+}</p>
+
+<p>if(!strcmp(“HEVC”, Codec_Type)) printf(“Codec Type is HEVC\n”);
+if(!strcmp(“H264”, Codec_Type)) printf(“Codec Type is H264\n”);
+…</p>
+
+<p>if(!strcasecmp(“hevc”, Codec_Type)) printf(“Codec Type is HEVC\n”);
+…
+{% endcodeblock %}</p>
 
 <p>注意上面表示出来了通过<code>strcmp</code>来判断<code>Codec_Type</code>的类型，后面的<code>Compare_Type</code>可以用同样的方法来给出。</p>
 
@@ -1112,22 +777,15 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 
 <p>关于<code>fopen</code>的使用，通常会判断返回值是否<code>NULL</code>来判断是否打开成功，其实除此之外，还可以继续监测出错的类型<code>errno</code>，并用<code>strerror()</code>函数直接显示出错的具体原因。技巧如下：</p>
 
-<p><figure class='code'><figcaption><span>fopen_tips </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;error.h&gt;&lt;/error.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="n">file_full_path</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Open</span> <span class="n">File</span> <span class="nl">Fail</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<p>{% codeblock lang:c fopen_tips %}
+#include <error.h></error.h></p>
+
+<p>FILE *pFile = fopen(“file_full_path”, “rb”);
+if(pFile == NULL)
+{
+    fprintf(stderr, “Open File Fail:%s\n”, strerror(errno));
+}
+{% endcodeblock %}</p>
 
 ]]></content>
   </entry>
@@ -1166,7 +824,7 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
   <li><code>Ctrl+k</code> 从光标处删除至命令行行尾</li>
 </ul>
 
-<p><img src="/images/linux_tips/linuxcommandshortcut.png"></p>
+<p>{% img /images/linux_tips/linuxcommandshortcut.png %}</p>
 
 <h2 id="vmdk">清理虚拟机vmdk文件大小</h2>
 
