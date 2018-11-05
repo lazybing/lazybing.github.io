@@ -4,7 +4,7 @@
   <title><![CDATA[分类:编程工具 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/bian-cheng-gong-ju/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-11-05T08:21:13-08:00</updated>
+  <updated>2018-11-05T08:23:48-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -61,21 +61,34 @@ valgrind --lead-check=yes myprog arg1 arg2
 
 <p>下面是一段<code>C 示例</code>，该段代码内有内存错误和内存泄漏。</p>
 
-<p>{% codeblock lang:c mem_file.c %}
-#include <stdlib.h>
-void f(void)
-{
-    int *x = malloc(10 * sizeof(int));
-    x[10]  = 0;         //problem 1: heap block overrun
-                        //problem 2: memory leak -- x not freed
-}</stdlib.h></p>
-
-<p>int main(void)
-{
-    f();
-    return 0;
-}
-{% endcodeblock %}</p>
+<p><figure class='code'><figcaption><span>mem_file.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="o">*</span><span class="n">x</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">x</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>  <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>         <span class="c1">//problem 1: heap block overrun</span>
+</span><span class='line'>                        <span class="c1">//problem 2: memory leak -- x not freed</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">stdlib</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">f</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>编译该程序</p>
 
@@ -190,17 +203,7 @@ bing@ubuntu:~/work$ valgrind –leak-check=full ./mem_file <br />
 
 <p>假设有文本文件<code>text</code>，内容如下：</p>
 
-<p>{% blockquote %}
-10 tiny toes
-this is that
-5 funny 0
-one two three
-tree twice
-new newer
-NEW
-newer new
-NEW new old
-{% endblockquote %}</p>
+<p><blockquote><p>10 tiny toes<br/>this is that<br/>5 funny 0<br/>one two three<br/>tree twice<br/>new newer<br/>NEW<br/>newer new<br/>NEW new old</p></blockquote></p>
 
 <p>一. 基本用法：</p>
 
@@ -291,11 +294,7 @@ sed -f mysedscript text
 </code></p>
 
 <p>其中的<code>mysedscript</code>内容是：
-{% blockquote %}
-s/T/t/g
-s/e/E/g
-s/\w*.//
-{% endblockquote %}</p>
+<blockquote><p>s/T/t/g<br/>s/e/E/g<br/>s/\w*.//</p></blockquote></p>
 
 <p>八、只替换完整的一个单词，使用边界符</p>
 
@@ -760,20 +759,33 @@ $find $HOME/. -name *.txt -exec head -n 1 -v {} \; &gt; report.txt
 <p>输出格式为<code>FILENAME:LINENO</code>，默认情况下，每个输入地址对应一行输出。</p>
 
 <h2 id="addr2line--1">addr2line 的使用示例</h2>
-<p>{% codeblock lang:c %}
-#include <stdio.h></stdio.h></p>
-
-<p>int div(int numerator, int denominator)
-{
-    return numerator / denominator;
-}</p>
-
-<p>int main(int argc, char **argv)
-{
-    int numerator   = 10;
-    int denominator = 0;</p>
-
-<pre><code>return div(numerator, denominator); } {% endcodeblock %}
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">div</span><span class="p">(</span><span class="kt">int</span> <span class="n">numerator</span><span class="p">,</span> <span class="kt">int</span> <span class="n">denominator</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">numerator</span>   <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">denominator</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="n">div</span><span class="p">(</span><span class="n">numerator</span><span class="p">,</span> <span class="n">denominator</span><span class="p">);</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
 <p>编译：gcc -o div -g div.c

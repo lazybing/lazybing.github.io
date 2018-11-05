@@ -434,8 +434,152 @@
 
 <h2 id="avcodeccontext">AVCodecContext结构体解析</h2>
 
+<p>AVCodecContext 可能是最复杂的结构体了。因为结构体内的变量非常多，不可能一一分析，而且有的变量是编码时候用到、有的是解码时候用到，此处只对几个常用的变量做简要的记录。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVCodecContext</span><span class="p">{</span>
+</span><span class="line">	<span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">log_level_offset</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">codec_type</span><span class="p">;</span>
+</span><span class="line">	<span class="k">const</span> <span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVCodecID</span>     <span class="n">codec_id</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">codec_tag</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class="line">	<span class="k">struct</span> <span class="n">AVCodecInternal</span> <span class="o">*</span><span class="n">internal</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">bit_rate</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">bit_rate_tolerance</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">global_quality</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">compression_level</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">flags2</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">uint8_t</span> <span class="o">*</span><span class="n">extradata</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">extradata_size</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">time_base</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">ticks_per_frame</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">delay</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">coded_width</span><span class="p">,</span> <span class="n">coded_height</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">gop_size</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="n">pix_fmt</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">draw_horiz_band</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">int</span> <span class="n">offset</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">],</span>
+</span><span class="line">                            <span class="kt">int</span> <span class="n">y</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">	<span class="k">enum</span> <span class="nf">AVPixelFormat</span> <span class="p">(</span><span class="o">*</span><span class="n">get_format</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="k">const</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="o">*</span> <span class="n">fmt</span><span class="p">);</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">max_b_frames</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">b_quant_factor</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">b_frame_strategy</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">b_quant_offset</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">has_b_frames</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">mpeg_quant</span><span class="p">;</span> 		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">i_quant_factor</span><span class="p">;</span> 	<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">i_quant_offset</span><span class="p">;</span> 	<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">lumi_masking</span><span class="p">;</span>		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">temporal_cplx_masking</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">spatial_cplx_masking</span><span class="p">;</span>  <span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">p_masking</span><span class="p">;</span>		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">dark_masking</span><span class="p">;</span>		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">slice_count</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">prediction_method</span><span class="p">;</span>	<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="o">*</span><span class="n">slice_offset</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">me_cmp</span><span class="p">;</span>				<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">me_sub_cmp</span><span class="p">;</span>			<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">mb_cmp</span><span class="p">;</span>				<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line"><span class="p">}</span><span class="n">AVCodecContext</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>AVMediaType codec_type:编解码器的类型，如音频、视频、字幕。</li>
+  <li>AVCdec *codec:采用的解码器 AVCodec。</li>
+  <li>bit_rate: 平均比特率。</li>
+  <li>int width, height: 视频的宽高。</li>
+  <li>int refs: 运动估计参考帧的个数。</li>
+  <li>int sample_rate: 采样率。</li>
+  <li>int channels: 声道数。</li>
+</ul>
+
+<p>AVCodecContext 使用 avcodec_alloc_context3 分配，该函数除了分配 AVCodecContext 外，还会初始化默认的字段。分配的内存必须通过 avcodec_free_context 释放。</p>
+
+<p>上面提到的几个结构体 AVCodec/AVCodecContext，联合使用，通常是如下形式：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">avcodec_register_all</span><span class="p">();</span>
+</span><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="n">codec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">AV_CODEC_ID_H264</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">codec</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="n">context</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
 <h2 id="avstream">AVStream结构体解析</h2>
+
 <p>AVStream用于存储一个视频流、音频流的结构体。</p>
+
 <figure class="code"><figcaption><span>AVStream </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -555,7 +699,7 @@
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/av1/'>av1 (2)</a></li>
-<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (17)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (16)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
