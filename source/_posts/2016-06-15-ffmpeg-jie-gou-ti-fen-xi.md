@@ -213,8 +213,94 @@ avcodec_open2(ctx, codec, NULL);
 
 ##AVCodecContext结构体解析
 
+AVCodecContext 可能是最复杂的结构体了。因为结构体内的变量非常多，不可能一一分析，而且有的变量是编码时候用到、有的是解码时候用到，此处只对几个常用的变量做简要的记录。
+
+
+{% codeblock lang:c %}
+typedef struct AVCodecContext{
+	const AVClass *av_class;
+	int log_level_offset;
+	enum AVMediaType codec_type;
+	const struct AVCodec *codec;
+	enum AVCodecID     codec_id;
+	unsigned int codec_tag;
+	void *priv_data;
+	struct AVCodecInternal *internal;
+	void *opaque;
+	int bit_rate;
+	int bit_rate_tolerance;
+	int global_quality;
+	int compression_level;
+	int flags;
+	int flags2;
+	uint8_t *extradata;
+	int extradata_size;
+	AVRational time_base;
+	int ticks_per_frame;
+	int delay;
+	int width, height;
+	int coded_width, coded_height;
+	int gop_size;
+	enum AVPixelFormat pix_fmt;
+	void (*draw_horiz_band)(struct AVCodecContext *s,
+                            const AVFrame *src, int offset[AV_NUM_DATA_POINTERS],
+                            int y, int type, int height);
+	enum AVPixelFormat (*get_format)(struct AVCodecContext *s, const enum AVPixelFormat * fmt);
+	int max_b_frames;
+	float b_quant_factor;
+	int b_frame_strategy;
+	float b_quant_offset;
+	int has_b_frames;
+	int mpeg_quant; 		/*decoding: unused*/
+	float i_quant_factor; 	/*decoding: unused*/
+	float i_quant_offset; 	/*decoding: unused*/
+	float lumi_masking;		/*decoding: unused*/
+	float temporal_cplx_masking; /*decoding: unused*/
+	float spatial_cplx_masking;  /*decoding: unused*/
+	float p_masking;		/*decoding: unused*/
+	float dark_masking;		/*decoding: unused*/
+	int slice_count;
+	int prediction_method;	/*decoding: unused*/
+	int *slice_offset;
+	AVRational sample_aspect_ratio;
+	int me_cmp;				/*decoding: unused*/
+	int me_sub_cmp;			/*decoding: unused*/
+	int mb_cmp;				/*decoding: unused*/
+    ...
+}AVCodecContext;
+
+{% endcodeblock %}
+
+* AVMediaType codec_type:编解码器的类型，如音频、视频、字幕。
+* AVCdec *codec:采用的解码器 AVCodec。
+* bit_rate: 平均比特率。
+* int width, height: 视频的宽高。
+* int refs: 运动估计参考帧的个数。
+* int sample_rate: 采样率。
+* int channels: 声道数。
+
+AVCodecContext 使用 avcodec_alloc_context3 分配，该函数除了分配 AVCodecContext 外，还会初始化默认的字段。分配的内存必须通过 avcodec_free_context 释放。
+
+上面提到的几个结构体 AVCodec/AVCodecContext，联合使用，通常是如下形式：
+
+{% codeblock lang:c %}
+avcodec_register_all();
+...
+codec = avcodec_find_decoder(AV_CODEC_ID_H264);
+if(!codec)
+    exit(1);
+
+context = avcodec_alloc_context3(codec);
+
+if(avcodec_open2(context, codec, opts) < 0)
+    exit(1);
+
+{% endcodeblock %}
+
 ##AVStream结构体解析
+
 AVStream用于存储一个视频流、音频流的结构体。
+
 {% codeblock lang:c AVStream %}
 typedef struct AVStream{
 	int index;	//stream index in AVFormatContext
