@@ -31,5 +31,13 @@ Linux 命令行经常遇到输入错误，需要修改的时候，此时如果�
 
 {% img /images/linux_tips/linuxcommandshortcut.png %}
 
+## 清理虚拟机vmdk文件大小
+
+MacOS 虚拟机在使用过程中，占用空间越来越大，分配的40G竟然有点卡了，找了好多办法都没成功，最后还是通过`VMVare Tools`工具瘦身成功的，节省了接近 15G 的空间。方法很简单，只需要一条命令即可：  
+
+```
+sudo  /Library/Application\ Support/VMware\ Tools/vmware-tools-cli disk shrink  /
+```
+
 ## 其他技巧
 

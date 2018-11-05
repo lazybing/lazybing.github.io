@@ -246,3 +246,8 @@ typedef struct AVStream{
 
 * index:标识该视频流、音频流，是 AVFormatContext 中的流索引。
 * id：
+
+##参考文章：  
+1.[FFMPEG结构体分析：AVFrame](http://blog.csdn.net/leixiaohua1020/article/details/14214577)  
+2.[FFMPEG结构体分析：AVFrame](http://www.jianshu.com/p/18fa498eb19e)  
+3.[ FFMPeg代码分析：AVFrame结构体及其相关的函数](http://blog.csdn.net/shaqoneal/article/details/16959671)  
