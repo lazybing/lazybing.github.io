@@ -608,6 +608,45 @@
 <span class="line-number">24</span>
 <span class="line-number">25</span>
 <span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+<span class="line-number">63</span>
+<span class="line-number">64</span>
+<span class="line-number">65</span>
 </pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVStream</span><span class="p">{</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">index</span><span class="p">;</span>	<span class="c1">//stream index in AVFormatContext</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">id</span><span class="p">;</span>
@@ -633,12 +672,55 @@
 </span><span class="line">    <span class="kt">int</span> <span class="n">last_IP_duration</span><span class="p">;</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">probe_packets</span><span class="p">;</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">codec_info_nb_frames</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* av_read_frame() support */</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVStreamParseType</span> <span class="n">need_parsing</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">AVCodecParserContext</span> <span class="o">*</span><span class="n">parser</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">AVPacketList</span> <span class="o">*</span><span class="n">last_in_packet_buffer</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVProbeData</span> <span class="n">probe_data</span><span class="p">;</span>
+</span><span class="line">	<span class="cp">#define MAX_REORDER_DELAY 16</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pts_buffer</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">AVIndexEntry</span> <span class="o">*</span><span class="n">index_entries</span><span class="p">;</span> <span class="cm">/**&lt; Only used if the format does not</span>
+</span><span class="line"><span class="cm">                                    support seeking natively. */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_index_entries</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">index_entries_allocated_size</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVRational</span> <span class="n">r_frame_rate</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">stream_identifier</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">interleaver_chunk_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">interleaver_chunk_duration</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">request_probe</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">skip_to_keyframe</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">skip_samples</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">start_skip_samples</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">first_discard_sample</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">last_discard_sample</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_decoded_frames</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">mux_ts_offset</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pts_wrap_reference</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">pts_wrap_behavior</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">update_initial_durations_done</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pts_reorder_error</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">pts_reorder_error_count</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">last_dts_for_order_check</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">dts_ordered</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">dts_misordered</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">inject_global_side_data</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">recommended_encoder_configuration</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVRational</span> <span class="n">display_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">struct</span> <span class="n">FFFrac</span> <span class="o">*</span><span class="n">priv_pts</span><span class="p">;</span>
 </span><span class="line"><span class="p">}</span><span class="n">AVStream</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 <ul>
   <li>index:标识该视频流、音频流，是 AVFormatContext 中的流索引。</li>
-  <li>id：</li>
+  <li>AVCodecContext *codec:指向该视频、音频流的内容。</li>
+  <li>AVRational time_base:通过该值可以把 PTS/DTS 转化为真正的时间。</li>
+  <li>int64_t duration:该视频、音频流长度。</li>
+  <li>AVDictionary *metadata: 元数据信息。</li>
+  <li>AVRational avg_frame_rate: 帧率。</li>
 </ul>
 
 <h2 id="avformatcontext-">AVFormatContext 结构体解析</h2>
@@ -861,7 +943,7 @@
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/av1/'>av1 (2)</a></li>
-<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (14)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
