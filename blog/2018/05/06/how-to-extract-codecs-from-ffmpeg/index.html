@@ -5,14 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>FFMPEG 源码分析：av_read_frame - 懒人李冰</title>
+  <title>如何从FFMpeg中提取CODEC(以TTA Decoder为例) - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="函数声明 函数调用关系 源码分析 av_read_frame函数的作用是返回文件中保存的数据。它会文件中保存的数据分成不同的帧，
-每次调用都会返回一帧。注意，该函数不会忽略帧与帧之间无效数据(非帧数据)，目的是给解码器
-最多的信息用于解码。 函数声明 1
-int av_read_frame( &hellip;">
+  <meta name="description" content="TTA 简介 FFMpeg 中 TTA Decoder 提取 TTA Decoder 中可能遇到的问题 提取 TTA Decoder 实现 FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -21,7 +18,7 @@ int av_read_frame( &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/15/av_read_frame/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -85,7 +82,7 @@ int av_read_frame( &hellip;">
   
   <header>
     
-      <h1 class="entry-title">FFMPEG 源码分析：av_read_frame</h1>
+      <h1 class="entry-title">如何从FFMpeg中提取CODEC(以TTA Decoder为例)</h1>
     
     
       <p class="meta">
@@ -94,7 +91,7 @@ int av_read_frame( &hellip;">
 
 
 
-<time class='entry-date' datetime='2016-12-15T06:18:07-08:00'><span class='date'>2016 年 12 月 15 日</span> <span class='time'>6:18 am</span></time>
+<time class='entry-date' datetime='2018-05-06T07:55:35-07:00'><span class='date'>2018 年 05 月 06 日</span> <span class='time'>7:55 am</span></time>
         
       </p>
     
@@ -102,40 +99,58 @@ int av_read_frame( &hellip;">
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">函数声明</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">函数调用关系</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">源码分析</a></li>
+  <li><a href="#tta-" id="markdown-toc-tta-">TTA 简介</a></li>
+  <li><a href="#ffmpeg--tta-decoder" id="markdown-toc-ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</a></li>
+  <li><a href="#tta-decoder-" id="markdown-toc-tta-decoder-">提取 TTA Decoder 中可能遇到的问题</a></li>
+  <li><a href="#tta-decoder--1" id="markdown-toc-tta-decoder--1">提取 TTA Decoder 实现</a></li>
 </ul>
 
-<p><code>av_read_frame</code>函数的作用是返回文件中保存的数据。它会文件中保存的数据分成不同的帧，
-每次调用都会返回一帧。注意，该函数不会忽略帧与帧之间无效数据(非帧数据)，目的是给解码器
-最多的信息用于解码。</p>
+<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA Decoder 为例，介绍如何同 FFMpeg 中提取 CODEC。</p>
 
 <!--more-->
 
-<h2 id="section">函数声明</h2>
+<h2 id="tta-">TTA 简介</h2>
+
+<p>TTA(The True Audio Codec) 是免费、简单、实时无损视频压缩。基于 Adaptive Prognostic Filters, TTA 同其他同类的开源项目有强竞争力。</p>
+
+<h2 id="ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</h2>
+
+<p>FFMpeg 中关于 TTA Decoder 的部分在<code>libavcodec/tta.c</code>中定义:</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">int av_read_frame(AVFormatContext *s, AVPacket *pkt);</span></code></pre></td></tr></table></div></figure>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">AVCodec ff_tta_decoder = {
+</span><span class="line">    .name           = "tta",
+</span><span class="line">    .long_name      = NULL_IF_CONFIG_SMALL("TTA (True Audio)"),
+</span><span class="line">    .type           = AVMEDIA_TYPE_AUDIO,
+</span><span class="line">    .id             = AV_CODEC_ID_TTA,
+</span><span class="line">    .priv_data_size = sizeof(TTAContext),
+</span><span class="line">    .init           = tta_decode_init,
+</span><span class="line">    .close          = tta_decode_close,
+</span><span class="line">    .decode         = tta_decode_frame,
+</span><span class="line">    .init_thread_copy = ONLY_IF_THREADS_ENABLED(init_thread_copy),
+</span><span class="line">    .capabilities     = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_FRAME_THREADS,
+</span><span class="line">    .priv_class       = &amp;tta_decoder_class,
+</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
 
-<p>如果<code>pkt-&gt;buf</code>是 NULL,包直到下一次调用<code>av_read_frame</code>或<code>avformat_close_input</code>时都是有效的。
-不需要时，包必须通过<code>av_free_packet</code>释放。对于视频，<code>packet</code>只包含一帧；对于音频，如果每帧有固定大小(如 PCM 或 ADPCM 数据)，
-<code>packet</code>可以包含多个音频帧（必须是整数帧）,如果音频帧大小可变(如MPEG 音频)，它只能包含一帧数据。</p>
+<p>从 TTA AVCodec 的定义可以看出，Decoder 的主要函数只有三个<code>tta_decode_init</code>、<code>tta_decode_frame</code>、<code>tta_decode_close</code>三部分。其中 init 部分主要是解析 TTA Header 信息，decode 部分是真正解码部分，close 主要是释放内存。</p>
 
-<p><code>pkt-&gt;pts</code><code>pkt-&gt;dts</code><code>pkt-&gt;duration</code>都是以<code>AVStream.time_base_units</code>为单位的。
-如果视频格式里包含 B 帧，<code>pkt-&gt;pts</code>可以是<code>AV_NOPTS_VALUE</code>,因此如果不解压缩数据，最好
-查看<code>pkt-&gt;dts</code>。</p>
+<p>不管是硬件解码还是软件解码，Decoder 部分一般都包含六部分：解码器初始化、解码器释放、设置压缩数据给解码器、从解码器获取解码后的数据、设置参数给解码器、从解码器获取参数信息。因此我们可以按照上面的思路，将 FFMpeg 中的这几个函数拆分成相应的函数。</p>
 
-<p>如果函数返回0，正确；小于0，则为到文件尾或出错。</p>
+<h2 id="tta-decoder-">提取 TTA Decoder 中可能遇到的问题</h2>
 
-<h2 id="section-1">函数调用关系</h2>
-
-<p><img src="/images/av_read_frame/av_read_frame.png" /></p>
-
-<h2 id="section-2">源码分析</h2>
-
-<p><code>av_read_frame</code>函数会判断在未解码缓存中是否有数据，如果有数据则调用<code>read_from_packet_buffer</code>。</p>
-
+<h2 id="tta-decoder--1">提取 TTA Decoder 实现</h2>
 </div>
 
 
@@ -151,7 +166,7 @@ int av_read_frame( &hellip;">
 
 
 
-<time class='entry-date' datetime='2016-12-15T06:18:07-08:00'><span class='date'>2016 年 12 月 15 日</span> <span class='time'>6:18 am</span></time>
+<time class='entry-date' datetime='2018-05-06T07:55:35-07:00'><span class='date'>2018 年 05 月 06 日</span> <span class='time'>7:55 am</span></time>
       
 
 <span class="categories">
@@ -165,7 +180,7 @@ int av_read_frame( &hellip;">
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/15/av_read_frame/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/15/av_read_frame/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/" >Tweet</a>
   
   
   
@@ -174,10 +189,10 @@ int av_read_frame( &hellip;">
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/12/10/avcodec-open2/" title="Previous Post: FFMPEG 源码分析：avcodec_open2">&laquo; FFMPEG 源码分析：avcodec_open2</a>
+        <a class="basic-alignment left" href="/blog/2018/03/21/elf-format-tutorial/" title="Previous Post: ELF格式分析手册">&laquo; ELF格式分析手册</a>
       
       
-        <a class="basic-alignment right" href="/blog/2016/12/20/avcodec_decode_video/" title="Next Post: FFMPEG 源码分析：avcodec_decode_video2">FFMPEG 源码分析：avcodec_decode_video2 &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2018/08/22/memory-alignment/" title="Next Post: 如何理解内存对齐">如何理解内存对齐 &raquo;</a>
       
     </p>
   </footer>
