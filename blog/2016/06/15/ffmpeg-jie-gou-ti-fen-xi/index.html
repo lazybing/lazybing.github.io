@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AVPacket结构体解析 AVFrame结构体解析 AVCodec结构体解析 AVCodecContext结构体解析 AVStream结构体解析 AVFormatContext 结构体解析 参考文章： FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 &hellip;">
+  <meta name="description" content="AVPacket结构体解析 AVFrame结构体解析 AVCodec结构体解析 AVCodecContext结构体解析 AVStream结构体解析 AVFormatContext 结构体解析 AVIOContext 结构体解析 参考文章 FFMpeg 作为音视频领域的开源工具， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -105,7 +105,8 @@
   <li><a href="#avcodeccontext" id="markdown-toc-avcodeccontext">AVCodecContext结构体解析</a></li>
   <li><a href="#avstream" id="markdown-toc-avstream">AVStream结构体解析</a></li>
   <li><a href="#avformatcontext-" id="markdown-toc-avformatcontext-">AVFormatContext 结构体解析</a></li>
-  <li><a href="#section" id="markdown-toc-section">参考文章：</a></li>
+  <li><a href="#aviocontext-" id="markdown-toc-aviocontext-">AVIOContext 结构体解析</a></li>
+  <li><a href="#section" id="markdown-toc-section">参考文章</a></li>
 </ul>
 
 <p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中，经常使用到的结构体的含义以及使用场景。
@@ -884,7 +885,80 @@
   <li>AVDictionary *metadata; 元数据，适用于整个文件。</li>
 </ul>
 
-<h2 id="section">参考文章：</h2>
+<h2 id="aviocontext-">AVIOContext 结构体解析</h2>
+
+<p>AVIOContext 是 FFMpeg 管理输入输出数据的结构体。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVIOContext</span><span class="p">{</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>  <span class="cm">/**&lt; Start of the buffer. */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">buffer_size</span><span class="p">;</span>        <span class="cm">/**&lt; Maximum buffer size */</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buf_ptr</span><span class="p">;</span> <span class="cm">/**&lt; Current position in the buffer */</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buf_end</span><span class="p">;</span> <span class="cm">/**&lt; End of the data */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">read_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">write_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">*</span><span class="n">seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int64_t</span> <span class="n">offset</span><span class="p">,</span> <span class="kt">int</span> <span class="n">whence</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pos</span><span class="p">;</span>            <span class="cm">/**&lt; position in the file of the current buffer */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">must_flush</span><span class="p">;</span>         <span class="cm">/**&lt; true if the next seek should flush */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">eof_reached</span><span class="p">;</span>        <span class="cm">/**&lt; true if eof reached */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">write_flag</span><span class="p">;</span>         <span class="cm">/**&lt; true if open for writing */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">max_packet_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">checksum_ptr</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="nf">long</span> <span class="p">(</span><span class="o">*</span><span class="n">update_checksum</span><span class="p">)(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">error</span><span class="p">;</span>              <span class="cm">/**&lt; contains the error code or 0 if no error happened */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">read_pause</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pause</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">*</span><span class="n">read_seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">stream_index</span><span class="p">,</span>
+</span><span class="line">                         <span class="kt">int64_t</span> <span class="n">timestamp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">seekable</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">maxsize</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">direct</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">bytes_read</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">seek_count</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">writeout_count</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">orig_buffer_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">short_seek_threshold</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>unsigned char *buffer:缓存开始位置。</li>
+  <li>int buffer_size:缓存大小。</li>
+  <li>unsigned char *buf_ptr:当前指针读取到的位置。</li>
+  <li>unsigned char *buf_end:缓存结束的位置。</li>
+</ul>
+
+<h2 id="section">参考文章</h2>
 <p>1.<a href="http://blog.csdn.net/leixiaohua1020/article/details/14214577">FFMPEG结构体分析：AVFrame</a><br />
 2.<a href="http://www.jianshu.com/p/18fa498eb19e">FFMPEG结构体分析：AVFrame</a><br />
 3.<a href="http://blog.csdn.net/shaqoneal/article/details/16959671"> FFMPeg代码分析：AVFrame结构体及其相关的函数</a></p>
@@ -943,7 +1017,7 @@
       <h1>分类目录</h1>
         <ul id="categories">
                 <li class='category'><a href='/blog/categories/av1/'>av1 (2)</a></li>
-<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (12)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
