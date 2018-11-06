@@ -327,11 +327,54 @@ typedef struct AVStream{
     int last_IP_duration;
 	int probe_packets;
 	int codec_info_nb_frames;
+
+    /* av_read_frame() support */
+    enum AVStreamParseType need_parsing;
+    struct AVCodecParserContext *parser;
+    struct AVPacketList *last_in_packet_buffer;
+    AVProbeData probe_data;
+	#define MAX_REORDER_DELAY 16
+    int64_t pts_buffer[MAX_REORDER_DELAY+1];
+
+    AVIndexEntry *index_entries; /**< Only used if the format does not
+                                    support seeking natively. */
+    int nb_index_entries;
+    unsigned int index_entries_allocated_size;
+    AVRational r_frame_rate;
+    int stream_identifier;
+
+    int64_t interleaver_chunk_size;
+    int64_t interleaver_chunk_duration;
+    int request_probe;
+    int skip_to_keyframe;
+    int skip_samples;
+    int64_t start_skip_samples;
+    int64_t first_discard_sample;
+    int64_t last_discard_sample;
+    int nb_decoded_frames;
+    int64_t mux_ts_offset;
+    int64_t pts_wrap_reference;
+    int pts_wrap_behavior;
+    int update_initial_durations_done;
+    int64_t pts_reorder_error[MAX_REORDER_DELAY+1];
+    uint8_t pts_reorder_error_count[MAX_REORDER_DELAY+1];
+    int64_t last_dts_for_order_check;
+    uint8_t dts_ordered;
+    uint8_t dts_misordered;
+    int inject_global_side_data;
+    char *recommended_encoder_configuration;
+    AVRational display_aspect_ratio;
+
+    struct FFFrac *priv_pts;
 }AVStream;
 {% endcodeblock %}
 
 * index:标识该视频流、音频流，是 AVFormatContext 中的流索引。
-* id：
+* AVCodecContext *codec:指向该视频、音频流的内容。
+* AVRational time_base:通过该值可以把 PTS/DTS 转化为真正的时间。
+* int64_t duration:该视频、音频流长度。
+* AVDictionary *metadata: 元数据信息。
+* AVRational avg_frame_rate: 帧率。
 
 ## AVFormatContext 结构体解析
 
