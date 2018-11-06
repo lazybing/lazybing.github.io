@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放以及添加水印"
+title: "FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放"
 date: 2017-01-01 08:17:10 -0700
 comments: true
 categories: FFMPEG源码分析
@@ -9,10 +9,12 @@ categories: FFMPEG源码分析
 * list element with functor item
 {:toc}
 
-[FFMpeg]("https://ffmpeg.org/") 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理，本文主要利用 FFMpeg 官方提供的 SDK 实现音视频最简单的几个实例：编码、解码、封装、解封装、转码、缩放以及添加水印。  
+[FFMpeg](https://ffmpeg.org/) 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理，本文主要利用 FFMpeg 官方提供的 SDK 实现音视频最简单的几个实例：编码、解码、封装、解封装、转码、缩放以及添加水印。  
+
 <!--more-->
 接下来会由发现问题－＞分析问题－＞解决问题－＞实现方案，循序渐进的完成。  
-参考代码：[ｌａｚｙｂｉｎｇ]("https://github.com/lazybing/ffmpeg-study-recording")
+
+参考代码:[ffmpeg_sdk](https://github.com/lazybing/ffmpeg-study-recording)
 
 ##FFMpeg 编码实现
 
@@ -766,5 +768,11 @@ struct SwsContext *sws_getContext(int srcW, int srcH, enum AVPixelFormat srcForm
 * dstFormat:目标图像的格式  
 * flags:指定了使用何种算法和选项进行缩放  
 
-##FFMpeg 添加水印实现
+编译时用`make examples`后生成 scaling_video 可执行文件。命令行如下：
+
+```
+$ /scaling_video 001_bit_rv8_64P_352x288.yuv hd1080
+```
+注意，输入时 YUV 数据，输出时 RGB 数据，会根据后面的 size 生成不同分辨率的数据。
+
 
