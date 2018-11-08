@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-11-08T06:59:19-08:00</updated>
+  <updated>2018-11-08T08:31:40-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,58 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[音频概念介绍(采样频率、帧率、通道数等)]]></title>
+    <link href="http://lazybing.github.io/blog/2018/11/08/audio-basic-concept/"/>
+    <updated>2018-11-08T07:54:32-08:00</updated>
+    <id>http://lazybing.github.io/blog/2018/11/08/audio-basic-concept</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">音频基础概述</a></li>
+  <li><a href="#pcm-" id="markdown-toc-pcm-">PCM 数据摆放格式</a></li>
+</ul>
+
+<p>最近在给现代汽车做一个从 FFMpeg 中提取各个音频解码器的项目，很多都是音频。因为之前做的大多数都是视频项目，音频知识比较匮乏。限制记录一下。
+<!--more--></p>
+
+<h2 id="section">音频基础概述</h2>
+
+<p>首先我们用 MediaInfo 来看下音频流的一些信息如图所示：</p>
+
+<p><img src="/images/audio_basic_concept/audio_basic_concept.png"></p>
+
+<p>逐个分析：</p>
+
+<p><code>
+Format:AC-3
+Format/Info:Audio Coding 3
+Duration:33s 984ms
+Bit rate:448 Kbps
+Channel(s):6 channels
+Channel positions: Front:L C R, Side:L R LFE
+Sampling rate:48.0KHz
+Bit depth:16bits
+Frame rate:31.250 fps 
+</code></p>
+
+<p>采样率(sampling rate)：声音信号在”模数”转换过程中单位时间内采样的次数。采样率是指每一次采样周期内声音模拟信号的数值，一般的采样率包括：8kHz/11.025kHz/22.05kHz/16kHz/37.8kHz/44.1kHz/48kHz。</p>
+
+<p>帧率(Frame rate):每秒钟中帧数，单位是fps，如上面的 31.250 fps。</p>
+
+<p>通道数(channels):声音的通道数，常用的有单声道和立体声之分。上面的声道数是 6 通道。</p>
+
+<p>比特率(bit rate):每秒的传输速率(比特率)。</p>
+
+<p>bitspersample:每个 sample 占用的 bits 数。</p>
+
+<h2 id="pcm-">PCM 数据摆放格式</h2>
+
+<p>在做项目的过程中，经常用到的一点是在输出 PCM 数据时，经常要了解 PCM 的摆放格式。根据不同的 bps 和 channels，数据的摆放时不同的。</p>
+
+<p><img src="/images/audio_basic_concept/pcm_channels_bps.png"></p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Linux下C语言调用静态库和动态库简介]]></title>
@@ -1128,55 +1180,6 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 </span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Open</span> <span class="n">File</span> <span class="nl">Fail</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Linux 使用小技巧总结]]></title>
-    <link href="http://lazybing.github.io/blog/2017/05/01/linux-tips/"/>
-    <updated>2017-05-01T19:03:52-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/05/01/linux-tips</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">快速搜索命令</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">命令行快捷键</a></li>
-  <li><a href="#vmdk" id="markdown-toc-vmdk">清理虚拟机vmdk文件大小</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">其他技巧</a></li>
-</ul>
-
-<p>Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。</p>
-
-<!--more-->
-
-<h2 id="section">快速搜索命令</h2>
-
-<p>Linux 使用大部分是在命令行下进行的，某些命令是前面使用到的，此时我们不想重新完整的输入命令，而是想根据命令中的某些关键字搜索到该命令，然后直接执行。
-此时第一个想到的方法可能是<code>history</code>命令，然后复制粘贴，其实还有一个更智能的命令搜索命令<code>Ctrl+r</code>。执行完<code>Ctrl+r</code>后，可直接输出要查找的命令中的某个
-关键字。然后直接回车即可！非常方便，尤其是命令行比较长的时候。</p>
-
-<h2 id="section-1">命令行快捷键</h2>
-
-<p>Linux 命令行经常遇到输入错误，需要修改的时候，此时如果命令行特别长，想要用方向键或退格键来进行修改删除，速度会特别慢，其实 Linux 命令行也有
-很多快捷键可以使用。具体有如下几个：</p>
-
-<ul>
-  <li><code>Ctrl+a</code> 移至命令行行首</li>
-  <li><code>Ctrl+e</code> 移至命令行行尾</li>
-  <li><code>Ctrl+u</code> 从光标处删除至命令行行首</li>
-  <li><code>Ctrl+k</code> 从光标处删除至命令行行尾</li>
-</ul>
-
-<p><img src="/images/linux_tips/linuxcommandshortcut.png"></p>
-
-<h2 id="vmdk">清理虚拟机vmdk文件大小</h2>
-
-<p>MacOS 虚拟机在使用过程中，占用空间越来越大，分配的40G竟然有点卡了，找了好多办法都没成功，最后还是通过<code>VMVare Tools</code>工具瘦身成功的，节省了接近 15G 的空间。方法很简单，只需要一条命令即可：</p>
-
-<p><code>
-sudo  /Library/Application\ Support/VMware\ Tools/vmware-tools-cli disk shrink  /
-</code></p>
-
-<h2 id="section-2">其他技巧</h2>
 
 ]]></content>
   </entry>

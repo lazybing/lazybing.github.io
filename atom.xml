@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-11-08T06:59:19-08:00</updated>
+  <updated>2018-11-08T08:31:40-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,65 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[音频概念介绍(采样频率、帧率、通道数等)]]></title>
+    <link href="http://lazybing.github.io/blog/2018/11/08/audio-basic-concept/"/>
+    <updated>2018-11-08T07:54:32-08:00</updated>
+    <id>http://lazybing.github.io/blog/2018/11/08/audio-basic-concept</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">音频基础概述</a></li>
+  <li><a href="#pcm-" id="markdown-toc-pcm-">PCM 数据摆放格式</a></li>
+</ul>
+
+<p>最近在给现代汽车做一个从 FFMpeg 中提取各个音频解码器的项目，很多都是音频。因为之前做的大多数都是视频项目，音频知识比较匮乏。限制记录一下。
+<!--more--></p>
+
+<h2 id="section">音频基础概述</h2>
+
+<p>首先我们用 MediaInfo 来看下音频流的一些信息如图所示：</p>
+
+<p><img src="http://lazybing.github.io/images/audio_basic_concept/audio_basic_concept.png" /></p>
+
+<p>逐个分析：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">Format:AC-3
+</span><span class="line">Format/Info:Audio Coding 3
+</span><span class="line">Duration:33s 984ms
+</span><span class="line">Bit rate:448 Kbps
+</span><span class="line">Channel(s):6 channels
+</span><span class="line">Channel positions: Front:L C R, Side:L R LFE
+</span><span class="line">Sampling rate:48.0KHz
+</span><span class="line">Bit depth:16bits
+</span><span class="line">Frame rate:31.250 fps </span></code></pre></td></tr></table></div></figure>
+
+<p>采样率(sampling rate)：声音信号在”模数”转换过程中单位时间内采样的次数。采样率是指每一次采样周期内声音模拟信号的数值，一般的采样率包括：8kHz/11.025kHz/22.05kHz/16kHz/37.8kHz/44.1kHz/48kHz。</p>
+
+<p>帧率(Frame rate):每秒钟中帧数，单位是fps，如上面的 31.250 fps。</p>
+
+<p>通道数(channels):声音的通道数，常用的有单声道和立体声之分。上面的声道数是 6 通道。</p>
+
+<p>比特率(bit rate):每秒的传输速率(比特率)。</p>
+
+<p>bitspersample:每个 sample 占用的 bits 数。</p>
+
+<h2 id="pcm-">PCM 数据摆放格式</h2>
+
+<p>在做项目的过程中，经常用到的一点是在输出 PCM 数据时，经常要了解 PCM 的摆放格式。根据不同的 bps 和 channels，数据的摆放时不同的。</p>
+
+<p><img src="http://lazybing.github.io/images/audio_basic_concept/pcm_channels_bps.png" /></p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Av1解码详解(二)之film_grain]]></title>
@@ -3671,113 +3730,6 @@ c. 字节流的结束，由未规定的方式判决。</li>
 </span><span class="line"><span class="cp">    nz |= (coef); \</span>
 </span><span class="line"><span class="cp">}</span>
 </span></code></pre></td></tr></table></div></figure>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264源码解析之x264_mc_init函数]]></title>
-    <link href="http://lazybing.github.io/blog/2017/08/22/x264-mc-init/"/>
-    <updated>2017-08-22T07:48:31-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/08/22/x264-mc-init</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">运动补偿原理</a>    <ul>
-      <li><a href="#section-1" id="markdown-toc-section-1">亮度运动补偿</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-2" id="markdown-toc-section-2">运动估计</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">参考资料</a></li>
-</ul>
-
-<p>本文主要记录 X264 中使用到的运动补偿。该函数主要对<code>x264_mc_functions_t</code>结构体中的函数指针进行赋值，
-完成了像素内插、拷贝、求平均的函数等等。</p>
-
-<!--more-->
-
-<h3 id="section">运动补偿原理</h3>
-
-<p><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿</a>(Motion Compensation)是一种描述相邻帧（相邻指编码关系上的相邻，播放顺序未必相邻）差别的方法，具体来说是描述前一帧的每个小块怎样移动到当前帧中的某个位置去。该方法常被视频压缩/视频编解码器用来减少视频序列中的时域冗余，还可用来进行去交织以及运动插值的操作。</p>
-
-<p>一个视频序列包含一定数量的图片–通常称为帧（frame）。相邻的图片通常很相似，也就是说，包含了很多冗余。使用运动补偿的目的是通过消除这种冗余，来提高压缩比。
-最早的运动补偿的设计只是简单的从当前帧中减去参考帧，从而得到通常含有较少能量（或者称为信息）的”残差”，从而可以用较低的码率进行编码。解码器可以通过简单的加法完全恢复编码帧。<br />
-一个稍微复杂一点的设计是估计一下整帧场景的移动和场景中物体的移动，并将这些运动通过一定的参数编码到码流中去。这样预测帧上的像素值就是由参考帧上具有一定位移的相应像素值而生成的。这样的方法比简单的相减可以获得能量更小的残差，从而获得更好的压缩比–当然，用来描述运动的参数不能在码流中占据太大的部分，否则就会抵消复杂的运动估计带来的好处。<br />
-通常，图像帧是一组一组进行处理的。每组的第一帧（通常是第一帧）在编码的时候不使用运动估计的办法，这种帧称为帧内编码帧（Intra frame）或者I帧。该组中的其它帧使用帧间编码帧（Inter frame），通常是P帧。这种编码方式通常被称为IPPPP，表示编码的时候第一帧是I帧，其它帧是P帧。<br />
-在进行预测的时候，不仅仅可以从过去的帧来预测当前帧，还可以使用未来的帧来预测当前帧。当然在编码的时候，未来的帧必须比当前帧更早的编码，也就是说，编码的顺序和播放的顺序是不同的。通常这样的当前帧是使用过去和未来的I帧或者P帧同时进行预测，被称为双向预测帧，即B帧。这种编码方式的编码顺序的一个例子为IBBPBBPBBPBB。</p>
-
-<p>运动补偿的方法包含：<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.85.A8.E5.B1.80.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">全局运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E5.8F.AF.E5.8F.98.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">可变分块运动补偿</a>、<a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF#.E9.87.8D.E5.8F.A0.E5.88.86.E5.9D.97.E8.BF.90.E5.8A.A8.E8.A1.A5.E5.81.BF">重叠分块运动个补偿</a>。</p>
-
-<h4 id="section-1">亮度运动补偿</h4>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">x264_hpel_ref0</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
-</span><span class="line"><span class="k">const</span> <span class="kt">uint8_t</span> <span class="n">x264_hpel_ref1</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">};</span>
-</span><span class="line">
-</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">mc_luma</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="kt">intptr_t</span> <span class="n">i_dst_stride</span><span class="p">,</span>
-</span><span class="line">                    <span class="n">pixel</span> <span class="o">*</span><span class="n">src</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="kt">intptr_t</span> <span class="n">i_src_stride</span><span class="p">,</span>
-</span><span class="line">                    <span class="kt">int</span> <span class="n">mvx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mvy</span><span class="p">,</span>
-</span><span class="line">                    <span class="kt">int</span> <span class="n">i_width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i_height</span><span class="p">,</span> <span class="k">const</span> <span class="kt">x264_weight_t</span> <span class="o">*</span><span class="n">weight</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">qpel_idx</span> <span class="o">=</span> <span class="p">((</span><span class="n">mvy</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mvx</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">);</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="n">mvy</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">i_src_stride</span> <span class="o">+</span> <span class="p">(</span><span class="n">mvx</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class="line">    <span class="n">pixel</span> <span class="o">*</span><span class="n">src1</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">x264_hpel_ref0</span><span class="p">[</span><span class="n">qpel_idx</span><span class="p">]]</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">+</span> <span class="p">((</span><span class="n">mvy</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">i_src_stride</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">qpel_idx</span> <span class="o">&amp;</span> <span class="mi">5</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">pixel</span> <span class="o">*</span><span class="n">src2</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">x264_hpel_ref1</span><span class="p">[</span><span class="n">qpel_idx</span><span class="p">]]</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">+</span> <span class="p">((</span><span class="n">mvx</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">);</span>
-</span><span class="line">        <span class="n">pixel_avg</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">src1</span><span class="p">,</span> <span class="n">i_src_stride</span><span class="p">,</span>
-</span><span class="line">                  <span class="n">src2</span><span class="p">,</span> <span class="n">i_src_stride</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
-</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="n">weight</span><span class="o">-&gt;</span><span class="n">weightfn</span><span class="p">)</span>
-</span><span class="line">            <span class="n">mc_weight</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">weight</span><span class="o">-&gt;</span><span class="n">weightfn</span><span class="p">)</span>
-</span><span class="line">            <span class="n">mc_weight</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">src1</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
-</span><span class="line">    <span class="k">else</span>
-</span><span class="line">            <span class="n">mc_copy</span><span class="p">(</span><span class="n">src1</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">i_dst_stride</span><span class="p">,</span> <span class="n">i_width</span><span class="p">,</span> <span class="n">i_height</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="section-2">运动估计</h3>
-
-<p><a href="https://en.wikipedia.org/wiki/Motion_estimation">运动估计</a>(Motion estimation)就是寻找最优或次优的运动向量的过程。某个块的预测误差量常常是指在运动补偿区域所有像素中，预测像素和实际像素数值的均方差或者绝对差别总和。</p>
-
-<p>运动估计的基本思想是将图像序列的每一帧分成许多互不重叠的宏块，并认为宏块内所有象素的位移量都相同，然后对每个宏块到参考帧某一给定特定搜索范围内根据一定的匹配准则找出与当前块最相似的块，即匹配块，匹配块与当前块的相对位移即为运动矢量。视频压缩的时候，只需保存运动矢量和残差数据就可以完全恢复出当前块。得到运动矢量的过程被称为运动估计。</p>
-
-<p>运动矢量和经过运动匹配后得到的预测误差共同发送到解码端，在解码端按照运动矢量指明的位置，从已经解码的邻近参考帧图像中找到相应的块或宏块，和预测误差相加后就得到了块或宏块在当前帧中的位置。</p>
-
-<p>实际应用时，只将运动矢量及最佳匹配块与当前块之间的差值块一起编码传输。在接收端，通过运动矢量在已经恢复的相邻帧中找到当前块的最佳匹配块，并与接收到的差值块相加恢复出当前块，这就是运动补偿基本过程。</p>
-
-<p>运动估计算法是视频压缩编码的核心算法之一。高质量的运动估计算法是高效视频编码的前提和基础。其中块匹配法（BMA, Block Match Algorithm）由于算法简单和易于硬件实现，被广泛应用于各视频编码标准中。块匹配法的基本思想是先将图像划分为许多子块，然后对当前帧中的每一块根据一定的匹配准则在相邻帧中找出当前块的匹配块，由此得到两者的相对位移，即当前块的运动矢量。在H.264标准的搜索算法中，图像序列的当前帧被划分成互不重叠16×16大小的子块，而每个子块又可划分成更小的子块，当前子块按一定的块匹配准则在参考帧中对应位置的一定搜索范围内寻找最佳匹配块，由此得到运动矢量和匹配误差。运动估计的估计精度和运算复杂度取决于搜索策略和块匹配准则。</p>
-
-<h3 id="section-3">参考资料</h3>
-
-<ol>
-  <li><a href="https://zh.wikipedia.org/wiki/%E8%BF%90%E5%8A%A8%E8%A1%A5%E5%81%BF">运动补偿——维基百科</a></li>
-  <li><a href="http://www.cnblogs.com/AndyJee/p/3724917.html">运动估计</a></li>
-</ol>
 
 ]]></content>
   </entry>

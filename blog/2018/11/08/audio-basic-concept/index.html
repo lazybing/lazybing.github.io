@@ -5,11 +5,15 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>X264 源码解析之帧间预测 - 懒人李冰</title>
+  <title>音频概念介绍(采样频率、帧率、通道数等) - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文记录 H264 中关于帧间预测的部分，并详细解析它在 x264 中的源码实现。 ">
+  <meta name="description" content="音频基础概述 PCM 数据摆放格式 最近在给现代汽车做一个从 FFMpeg 中提取各个音频解码器的项目，很多都是音频。因为之前做的大多数都是视频项目，音频知识比较匮乏。限制记录一下。 音频基础概述 首先我们用 MediaInfo 来看下音频流的一些信息如图所示： 逐个分析： 1
+2
+3
+4
+5 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2017/07/08/x264-inter-prediction/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/11/08/audio-basic-concept/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +86,7 @@
   
   <header>
     
-      <h1 class="entry-title">X264 源码解析之帧间预测</h1>
+      <h1 class="entry-title">音频概念介绍(采样频率、帧率、通道数等)</h1>
     
     
       <p class="meta">
@@ -91,16 +95,63 @@
 
 
 
-<time class='entry-date' datetime='2017-07-08T07:44:15-07:00'><span class='date'>2017 年 07 月 08 日</span> <span class='time'>7:44 am</span></time>
+<time class='entry-date' datetime='2018-11-08T07:54:32-08:00'><span class='date'>2018 年 11 月 08 日</span> <span class='time'>7:54 am</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>本文记录 H264 中关于帧间预测的部分，并详细解析它在 x264 中的源码实现。</p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">音频基础概述</a></li>
+  <li><a href="#pcm-" id="markdown-toc-pcm-">PCM 数据摆放格式</a></li>
+</ul>
 
-<!--more-->
+<p>最近在给现代汽车做一个从 FFMpeg 中提取各个音频解码器的项目，很多都是音频。因为之前做的大多数都是视频项目，音频知识比较匮乏。限制记录一下。
+<!--more--></p>
+
+<h2 id="section">音频基础概述</h2>
+
+<p>首先我们用 MediaInfo 来看下音频流的一些信息如图所示：</p>
+
+<p><img src="/images/audio_basic_concept/audio_basic_concept.png" /></p>
+
+<p>逐个分析：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">Format:AC-3
+</span><span class="line">Format/Info:Audio Coding 3
+</span><span class="line">Duration:33s 984ms
+</span><span class="line">Bit rate:448 Kbps
+</span><span class="line">Channel(s):6 channels
+</span><span class="line">Channel positions: Front:L C R, Side:L R LFE
+</span><span class="line">Sampling rate:48.0KHz
+</span><span class="line">Bit depth:16bits
+</span><span class="line">Frame rate:31.250 fps </span></code></pre></td></tr></table></div></figure>
+
+<p>采样率(sampling rate)：声音信号在”模数”转换过程中单位时间内采样的次数。采样率是指每一次采样周期内声音模拟信号的数值，一般的采样率包括：8kHz/11.025kHz/22.05kHz/16kHz/37.8kHz/44.1kHz/48kHz。</p>
+
+<p>帧率(Frame rate):每秒钟中帧数，单位是fps，如上面的 31.250 fps。</p>
+
+<p>通道数(channels):声音的通道数，常用的有单声道和立体声之分。上面的声道数是 6 通道。</p>
+
+<p>比特率(bit rate):每秒的传输速率(比特率)。</p>
+
+<p>bitspersample:每个 sample 占用的 bits 数。</p>
+
+<h2 id="pcm-">PCM 数据摆放格式</h2>
+
+<p>在做项目的过程中，经常用到的一点是在输出 PCM 数据时，经常要了解 PCM 的摆放格式。根据不同的 bps 和 channels，数据的摆放时不同的。</p>
+
+<p><img src="/images/audio_basic_concept/pcm_channels_bps.png" /></p>
 
 </div>
 
@@ -117,12 +168,12 @@
 
 
 
-<time class='entry-date' datetime='2017-07-08T07:44:15-07:00'><span class='date'>2017 年 07 月 08 日</span> <span class='time'>7:44 am</span></time>
+<time class='entry-date' datetime='2018-11-08T07:54:32-08:00'><span class='date'>2018 年 11 月 08 日</span> <span class='time'>7:54 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/x264/'>x264</a>
+    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
   
 </span>
 
@@ -131,7 +182,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/07/08/x264-inter-prediction/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/07/08/x264-inter-prediction/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/11/08/audio-basic-concept/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/11/08/audio-basic-concept/" >Tweet</a>
   
   
   
@@ -140,10 +191,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2017/06/30/x264-intra-prediction/" title="Previous Post: x264 源码解析之帧内预测">&laquo; x264 源码解析之帧内预测</a>
+        <a class="basic-alignment left" href="/blog/2018/10/17/av1-film-grain-synthesis/" title="Previous Post: av1解码详解(二)之film_grain">&laquo; av1解码详解(二)之film_grain</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2017/07/08/x264-pixel-init-function/" title="Next Post: x264源码解析之x264_pixel_init函数">x264源码解析之x264_pixel_init函数 &raquo;</a>
       
     </p>
   </footer>
