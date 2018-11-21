@@ -194,3 +194,39 @@ if(pFile == NULL)
 }
 {% endcodeblock %}
 
+## 函数声明
+
+函数定义是指对函数功能的确立，包括指定函数名、函数值类型、形参类型、函数体等，它是一个完整的、独立的函数单位。  
+
+函数声明的作用则是把函数的名字、函数类型以及形参类型、个数和顺序通知编译系统，以便在调用函数时系统按此进行对照检查。
+
+注意，C 语言环境下，如果函数不进行声明就使用，可能会产生错误，因为默认将返回值作为 int 类型来处理，所以，最好是在使用之前对函数进行声明。  
+
+这个错误之前搞了我好久……囧，例子如下。
+
+{% codeblock lang:c float_int.c %}
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+float mid(float a, float b)
+{
+    return (a + b) * 0.5;
+}
+{% endcodeblock %}
+
+{% codeblock lang:c main.c %}
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void)
+{
+    printf("%f\n", mid(2, 5));
+    return 0;
+}
+{% endcodeblock %}
+
+编译上面的两个函数`gcc main.c float_int.c`, 之后运行它，输出时 0.00000.
+
+错误的原因是没有函数声明，默认认为函数返回值类型为 int.
+

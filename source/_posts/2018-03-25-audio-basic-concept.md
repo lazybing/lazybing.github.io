@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "音频概念介绍(采样频率、帧率、通道数等)"
-date: 2018-11-08 07:54:32 -0800
+date: 2018-03-25 07:54:32 -0800
 comments: true
 categories: 总结积累
 ---
@@ -16,7 +16,7 @@ categories: 总结积累
 
 首先我们用 MediaInfo 来看下音频流的一些信息如图所示：
 
-{% img /images/audio_basic_concept/audio_basic_concept.png %}
+{% img /images/audio_basic_concept/audio_basic_format.png %}
 
 逐个分析：
 
