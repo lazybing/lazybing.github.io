@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-11-08T08:36:00-08:00</updated>
+  <updated>2018-11-21T08:46:22-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -885,6 +885,7 @@ Frame rate:31.250 fps
   <li><a href="#define-logdefault-2" id="markdown-toc-define-logdefault-2">define LOG_DEFAULT 2</a>    <ul>
       <li><a href="#section-2" id="markdown-toc-section-2">分析特定格式的文件</a></li>
       <li><a href="#fopen-" id="markdown-toc-fopen-">fopen 函数个数限制</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">函数声明</a></li>
     </ul>
   </li>
 </ul>
@@ -1180,6 +1181,58 @@ H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
 </span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Open</span> <span class="n">File</span> <span class="nl">Fail</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure></p>
+
+<h2 id="section-3">函数声明</h2>
+
+<p>函数定义是指对函数功能的确立，包括指定函数名、函数值类型、形参类型、函数体等，它是一个完整的、独立的函数单位。</p>
+
+<p>函数声明的作用则是把函数的名字、函数类型以及形参类型、个数和顺序通知编译系统，以便在调用函数时系统按此进行对照检查。</p>
+
+<p>注意，C 语言环境下，如果函数不进行声明就使用，可能会产生错误，因为默认将返回值作为 int 类型来处理，所以，最好是在使用之前对函数进行声明。</p>
+
+<p>这个错误之前搞了我好久……囧，例子如下。</p>
+
+<p><figure class='code'><figcaption><span>float_int.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdint.h&gt;&lt;/stdint.h&gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">float</span> <span class="n">mid</span><span class="p">(</span><span class="kt">float</span> <span class="n">a</span><span class="p">,</span> <span class="kt">float</span> <span class="n">b</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><figcaption><span>main.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="o">%</span><span class="n">f</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">mid</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>编译上面的两个函数<code>gcc main.c float_int.c</code>, 之后运行它，输出时 0.00000.</p>
+
+<p>错误的原因是没有函数声明，默认认为函数返回值类型为 int.</p>
 
 ]]></content>
   </entry>
