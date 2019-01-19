@@ -52,7 +52,7 @@ Arm 计算库的目标是对于图像处理、计算机视觉和机器学习，�
 Ne10 是一个开源的 C 库，由 arm 公司在 github 上维护，它包含了一组最常用的功能，这些功能都已经为 arm 做了专项优化。Ne10 是一个模块化结构，包含了很多小的库，目前包含的主要功能有：  
 
 | Math functions | Signal Processing functions | Image processing functions | Physics functions |  
-|:--------------:|:---------------------------:|:--------------------------:| :---------------: \  
+| :--------:| :------------: | :-------------: | :-------------: |  
 | Vector Add | Floating & Fixed Point | Image Resize | Collision Detection |
 | Matrix-Add | Complex-to-Complex FFT | Image Rotate | |
 | Vector Subtract | Floating & Fixed Point | | |
@@ -118,46 +118,10 @@ NEON 在如下表格所示的领域内有广泛的使用，其中包含了很多
 
 有关 NEON 生态系统的更多合作伙伴可以参考 [DSP Ecosystem Partners page](https://developer.arm.com/technologies/dsp/arm-dsp-ecosystem-partners)。
 
-参考资源:
+## 参考资源:
 
 1. [Taming Armv8 NEON:from theory to benchmark results](https://www.youtube.com/watch?v=ixuDntaSnHI).  
 2. [Coding for NEON - Part 1: Load and Stores](https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-1-load-and-stores). 
 3. [Coding for NEON - Part 2: Dealing With Leftovers](https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-2-dealing-with-leftovers). 
 4. [Coding for NEON - Part 3: Matrix Multiplication](https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-3-matrix-multiplication).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
