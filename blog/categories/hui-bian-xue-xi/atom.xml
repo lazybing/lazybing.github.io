@@ -4,7 +4,7 @@
   <title><![CDATA[分类:汇编学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hui-bian-xue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-01-19T03:12:53-08:00</updated>
+  <updated>2019-01-19T09:08:19-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,136 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程1——加载和存储]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/19/neon-coding-load-and-store/"/>
+    <updated>2019-01-19T06:53:54-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/19/neon-coding-load-and-store</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">示例</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">技术细节</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">概述</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">语法</a>        <ul>
+          <li><a href="#section-4" id="markdown-toc-section-4">交错存取模式</a></li>
+          <li><a href="#section-5" id="markdown-toc-section-5">元素类型</a></li>
+          <li><a href="#sigle-or-multiple-elements" id="markdown-toc-sigle-or-multiple-elements">单个或多个元素(Sigle or Multiple Elements)</a></li>
+          <li><a href="#addressing" id="markdown-toc-addressing">寻址(Addressing)</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-6" id="markdown-toc-section-6">其他存取指令</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>ARM NEON 技术是 64/128 位的混合 SIMD 架构，它的设计目的就是为了提高多媒体和信号处理应用的性能，包括视频编解码、音频编解码、3D 图像、声音和图像处理。</p>
+
+<!--more-->
+
+<p>针对如何利用汇编语言为 NEON 编写 SIMD，后面会出一系列文章，本篇为第一部分。该系列文章会包含如何开始 NEON，如何高效使用它，后面还会介绍编写更复杂代码的技巧。我们先从操作内存开始，以及如何利用序列指令，灵活的使用 load 和 store。</p>
+
+<h2 id="section">示例</h2>
+
+<p>我们从一个具体的示例开始。假设你有一个 24bit RGB 图像，像素在内存中的排列格式为 R,G,B,R,G,B…，假设你想要将其中的 R 和 B 进行交换，该如何利用 NEON，是的操作更加高效呢？</p>
+
+<p>采用简单的线性 load 指令从内存中复制到寄存器里面，然后进行R/B 调换操作，会比较繁琐。示例如图</p>
+
+<p><img src="/images/neon_load_store/linear_load_rgb.png"></p>
+
+<p>基于上图中的输入，进行分割、移位、合并这种方法去交换通道会很麻烦，效率低下。</p>
+
+<p>NEON 针对此种应用场景提供了结构化的加载和存储指令，它们会从内存中加载数据的同时将数据分发到不同的寄存器。如上面例子中，VLD3 指令可以分别将加载的 R/G/B数据分别放到三个不同的寄存器中。</p>
+
+<p><img src="/images/neon_load_store/structed_load_rgb.png"></p>
+
+<p>现在，只要交换R/B寄存器的内容(VSWP d0, d2),之后用类似的存储指令 VST3 将数据写会内存中即可。</p>
+
+<h2 id="section-1">技术细节</h2>
+
+<h3 id="section-2">概述</h3>
+
+<p>NEON 结构化加载指令从内存中读取数据进入 64 位 NEON 寄存器，可以选择是否交错读取；同样的，存储指令将寄存器中的数据可以交错写回到内存中。</p>
+
+<p><img src="/images/neon_load_store/neon_structure_loads_stores.png"></p>
+
+<h3 id="section-3">语法</h3>
+
+<p>结构化加载和存取指令的语法结构有 5 部分组成。</p>
+
+<p><img src="/images/neon_load_store/neon_load_store_syntax.png"></p>
+
+<ul>
+  <li>指令助记符，VLD 用于加载，VST 用于存储。</li>
+  <li>交错存取的模式，此数字指定了相关元素之间的距离。</li>
+  <li>访问的元素类型，该类型指定了元素的位宽。</li>
+  <li>需要读取或者写入的寄存器集合，最大为4， 取决于交错存取的模式。</li>
+  <li>ARM 地址寄存器，包含需要访问的内存地址。</li>
+</ul>
+
+<h4 id="section-4">交错存取模式</h4>
+
+<p>NEON 指令能够加载和存储数据并以交错方式加载或存储1-4个相同位宽的元素，NEON 支持8、16、32bit的交错存取元素。</p>
+
+<ul>
+  <li>VLD1 是最简单的一种形式，该指令能从内存中线性加载数据到1-4个寄存器中，一般用于无交错存取的数据处理。</li>
+  <li>VLD2 可以从内存中加载数据到 2 或 4 个寄存器中，将交错的奇数和偶数项的数据分别加载到不同的寄存器中，一般用于立体声的左右声道的分离。</li>
+  <li>VLD3 加载交错距离为 3 的数据到 3 个寄存器中，一般用于图像中 RGB 通道的分离。</li>
+  <li>VLD4 加载交错距离为 4 的数据到 4 个寄存器中，一般用于图像中 ARGB 通道的分离。</li>
+</ul>
+
+<p>存储指令类似加载指令，但是在写入到内存之前就已经完成了数据元素交错。</p>
+
+<h4 id="section-5">元素类型</h4>
+
+<p>交错元素的存取规则取决于指令本身。例如，使用 VLD2.16 加载数据，完成操作后，共加载 8 个 16bit 的元素，其中偶数项元素加载到第一个寄存器，奇数项元素加载到第二个寄存器中。</p>
+
+<p><img src="/images/neon_load_store/100310_MC_diag3-1.png"></p>
+
+<p>元素大小变成 32 之后，加载同样大小的数据(4x32),然而每个寄存器中只有2个元素(2x32)，与 VLD2.16 一样，VLD2.32 同样是偶数项元素加载到第一个寄存器中，奇数项元素加载到第二个寄存器中。</p>
+
+<p><img src="/images/neon_load_store/100310_MC_diag3a-1.png"></p>
+
+<p>元素大小还会影响字节顺序，一般来讲，如果你是在存取指令中指定了正确的元素大小，从内存中读取的字节顺序将符合你的语气，并且相同的代码能在大端或者小端系统上运行良好。</p>
+
+<p>最后，元素大小对于指针对齐也有一定的影响，指针地址对齐到元素大小将具有更好的性能，例如，当加载 32 位的元素时，内存首地址最小要对齐 32 位。</p>
+
+<h4 id="sigle-or-multiple-elements">单个或多个元素(Sigle or Multiple Elements)</h4>
+
+<p>除了一次加载多个元素外，结构化的加载指令还能够一次从内存中读取一个元素，并且交错的放到不同的寄存器中，或者是放到寄存器的所有通道中，或者是放到寄存器的单个通道，其他通道不受影响。</p>
+
+<p><img src="/images/neon_load_store/deinterleaving_vector_lanes.png"></p>
+
+<p>后面的描述对于从散乱的内存中构造出一个 vector 比较有用。</p>
+
+<p><img src="/images/neon_load_store/deinterleaving_single_vect.png"></p>
+
+<p>存储指令和读取指令类似。</p>
+
+<h4 id="addressing">寻址(Addressing)</h4>
+
+<p>结构化的加载和存取指令支持 3 种格式来指定地址。</p>
+
+<ul>
+  <li><code>Register:[{,:}]</code>,这是最简单的寻址方式，数据在指定地址中进行存取</li>
+  <li><code>Register with increment after:[{,:}]!</code>, 这种寻址方式在完成数据加载后将更新指针使其指向之后待处理的元素，指针的增长大小与指令存取的字节数一致。</li>
+  <li><code>Register with post-index:[{,:}]</code>，这种寻址方式在完成数据存取之后将改变指针，指针增加指定量（由寄存器 Rm 指定），这种方式在存取元素分散在固定距离的情况下比较方便，如读取图像的一列像素。</li>
+</ul>
+
+<p>同样的，也可以通过指定 Rn 来指定指针的对齐，使用 optional:parameter 这样同样能加快内存的读取。</p>
+
+<h3 id="section-6">其他存取指令</h3>
+
+<p>这里只介绍了结构化的存取指令，NEON 还提供了如下指令：</p>
+
+<ul>
+  <li>VLDR 和 VSTR，存取单个 64 位寄存器</li>
+  <li>VLDM 和 VSTM，加载多个 64 位寄存器，方便从栈上存取数据。</li>
+</ul>
+
+<p>更多关于加载和存取操作的细节，可以参考<a href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0406b/index.html&amp;_ga=2.76337745.535197283.1547875098-60705264.1529324001">Arm Architecture Reference Manual</a>, 关于每条指令所占用的时钟周期数，可以参考<a href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.set.cortexa/index.html&amp;_ga=2.41000550.535197283.1547875098-60705264.1529324001">Technical Reference Manual for each core</a>.</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NEON 技术概述]]></title>
@@ -32,6 +162,7 @@
   </li>
   <li><a href="#section" id="markdown-toc-section">开发工具</a></li>
   <li><a href="#neon--2" id="markdown-toc-neon--2">NEON 生态系统</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">参考资源:</a></li>
 </ul>
 
 <p>ARM NEON 技术是针对<code>Arm Cortex-A/R52</code>系列处理器的一种高级 SIMD 架构扩展。NEON 技术在 Armv7-A 和 Armv7-R 架构时开始引入，现在同样是 Armv8-A 和 Armv8-R 架构的扩展。</p>
@@ -104,48 +235,44 @@
 <p>Ne10 是一个开源的 C 库，由 arm 公司在 github 上维护，它包含了一组最常用的功能，这些功能都已经为 arm 做了专项优化。Ne10 是一个模块化结构，包含了很多小的库，目前包含的主要功能有：</p>
 
 <table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Math functions</th>
+      <th style="text-align: center">Signal Processing functions</th>
+      <th style="text-align: center">Image processing functions</th>
+      <th style="text-align: center">Physics functions</th>
+    </tr>
+  </thead>
   <tbody>
     <tr>
-      <td>Math functions</td>
-      <td>Signal Processing functions</td>
-      <td>Image processing functions</td>
-      <td>Physics functions</td>
+      <td style="text-align: center">Vector Add</td>
+      <td style="text-align: center">Floating &amp; Fixed Point</td>
+      <td style="text-align: center">Image Resize</td>
+      <td style="text-align: center">Collision Detection</td>
     </tr>
     <tr>
-      <td>:————–:</td>
-      <td>:—————————:</td>
-      <td>:————————–:</td>
-      <td>:—————: \</td>
+      <td style="text-align: center">Matrix-Add</td>
+      <td style="text-align: center">Complex-to-Complex FFT</td>
+      <td style="text-align: center">Image Rotate</td>
+      <td style="text-align: center"> </td>
     </tr>
     <tr>
-      <td>Vector Add</td>
-      <td>Floating &amp; Fixed Point</td>
-      <td>Image Resize</td>
-      <td>Collision Detection</td>
+      <td style="text-align: center">Vector Subtract</td>
+      <td style="text-align: center">Floating &amp; Fixed Point</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
     </tr>
     <tr>
-      <td>Matrix-Add</td>
-      <td>Complex-to-Complex FFT</td>
-      <td>Image Rotate</td>
-      <td> </td>
+      <td style="text-align: center">Vector Subtract From</td>
+      <td style="text-align: center">Real-to-Complex FFT</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
     </tr>
     <tr>
-      <td>Vector Subtract</td>
-      <td>Floating &amp; Fixed Point</td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>Vector Subtract From</td>
-      <td>Real-to-Complex FFT</td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>Matrix Subtract</td>
-      <td>FIR Filters</td>
-      <td> </td>
-      <td> </td>
+      <td style="text-align: center">Matrix Subtract</td>
+      <td style="text-align: center">FIR Filters</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
     </tr>
   </tbody>
 </table>
@@ -296,7 +423,7 @@
 
 <p>有关 NEON 生态系统的更多合作伙伴可以参考 <a href="https://developer.arm.com/technologies/dsp/arm-dsp-ecosystem-partners">DSP Ecosystem Partners page</a>。</p>
 
-<p>参考资源:</p>
+<h2 id="section-1">参考资源:</h2>
 
 <ol>
   <li><a href="https://www.youtube.com/watch?v=ixuDntaSnHI">Taming Armv8 NEON:from theory to benchmark results</a>.</li>
