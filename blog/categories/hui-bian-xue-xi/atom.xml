@@ -4,7 +4,7 @@
   <title><![CDATA[分类:汇编学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hui-bian-xue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-01-20T07:55:41-08:00</updated>
+  <updated>2019-01-20T18:35:46-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -297,6 +297,26 @@
 </span><span class='line'>&lt;p>exit:&lt;/p>
 </span><span class='line'>
 </span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="further-considerations">Further Considerations</h3>
+
+<h4 id="beginning-or-end">Beginning or End</h4>
+
+<p>Overlapping 和 single element 技术可以应用到处理数组的开始或结束位置。如何应用程序更适合处理结束端，上面的代码可以很容易的改成处理末端的元素。</p>
+
+<h4 id="alignment">Alignment</h4>
+
+<p>加载和存储地址应该与高速缓存线对齐，这样会使得内存访问更加高效。</p>
+
+<p>对于 Cortex-A8，至少要 16 字节对齐，如果在输入或输出数组的开始位置没有对齐，就必须在数组的开始和结束位置处理元素。</p>
+
+<p>当对齐内存来加速时，记得使用加载和存储指令时加上<code>:64</code>或<code>:128</code>或<code>:256</code>。</p>
+
+<h4 id="using-arm-to-fix-up">Using Arm to Fix Up</h4>
+
+<p>在使用<code>single elements</code>方法时，你可以使用 Arm 指令来对每个元素进行单独处理。然而，同时使用 Arm 指令和 NEON 指令来存储相同的内存会降低效率，因为通过 Arm 管道来写必须在 NEON 管道写完后才能进行。</p>
+
+<p>一般情况下，应该避免同时使用 Arm 和 NEON 代码写到相同的内存区域，尤其是同一个高速缓存区域。</p>
 
 ]]></content>
   </entry>
