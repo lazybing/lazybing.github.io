@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="上一篇关于NEON 加载和存储的文章中，在NEON 处理单元（寄存器）和内存之间进行数据传输。这篇文章中，我们会处理经常遇到的问题：输入数据并不对齐，也就是输入数据的长度并不是向量长度的整数倍。我们需要在数组开始或结束的位置处理剩余的元素。使用 NEON 哪种方式最有效呢？ 使用 NEON &hellip;">
+  <meta name="description" content="修复数据(Fixing Up) Larger Arrays Notes Code Fragment Overlapping Notes Code Fragment Single Elements Notes Further Considerations Beginning or End &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -98,7 +98,33 @@
   </header>
 
 
-<div class="entry-content"><p>上一篇关于NEON 加载和存储的文章中，在NEON 处理单元（寄存器）和内存之间进行数据传输。这篇文章中，我们会处理经常遇到的问题：输入数据并不对齐，也就是输入数据的长度并不是向量长度的整数倍。我们需要在数组开始或结束的位置处理剩余的元素。使用 NEON 哪种方式最有效呢？</p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#fixing-up" id="markdown-toc-fixing-up">修复数据(Fixing Up)</a>    <ul>
+      <li><a href="#larger-arrays" id="markdown-toc-larger-arrays">Larger Arrays</a>        <ul>
+          <li><a href="#notes" id="markdown-toc-notes">Notes</a></li>
+          <li><a href="#code-fragment" id="markdown-toc-code-fragment">Code Fragment</a></li>
+        </ul>
+      </li>
+      <li><a href="#overlapping" id="markdown-toc-overlapping">Overlapping</a>        <ul>
+          <li><a href="#notes-1" id="markdown-toc-notes-1">Notes</a></li>
+          <li><a href="#code-fragment-1" id="markdown-toc-code-fragment-1">Code Fragment</a></li>
+        </ul>
+      </li>
+      <li><a href="#single-elements" id="markdown-toc-single-elements">Single Elements</a>        <ul>
+          <li><a href="#notes-2" id="markdown-toc-notes-2">Notes</a></li>
+        </ul>
+      </li>
+      <li><a href="#further-considerations" id="markdown-toc-further-considerations">Further Considerations</a>        <ul>
+          <li><a href="#beginning-or-end" id="markdown-toc-beginning-or-end">Beginning or End</a></li>
+          <li><a href="#alignment" id="markdown-toc-alignment">Alignment</a></li>
+          <li><a href="#using-arm-to-fix-up" id="markdown-toc-using-arm-to-fix-up">Using Arm to Fix Up</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>上一篇关于NEON 加载和存储的文章中，在NEON 处理单元（寄存器）和内存之间进行数据传输。这篇文章中，我们会处理经常遇到的问题：输入数据并不对齐，也就是输入数据的长度并不是向量长度的整数倍。我们需要在数组开始或结束的位置处理剩余的元素。使用 NEON 哪种方式最有效呢？</p>
 
 <!--more-->
 
@@ -430,6 +456,8 @@
         <a class="basic-alignment left" href="/blog/2019/01/19/neon-coding-load-and-store/" title="Previous Post: NEON 编程1——加载和存储">&laquo; NEON 编程1——加载和存储</a>
       
       
+        <a class="basic-alignment right" href="/blog/2019/01/21/neon-matrix-multiplication/" title="Next Post: NEON 编程3——矩阵相乘">NEON 编程3——矩阵相乘 &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -448,7 +476,7 @@
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (8)</a></li>
-<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (4)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (5)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (8)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
 <li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
@@ -459,6 +487,10 @@
 <section>
   <h1>最新文章</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/01/21/neon-matrix-multiplication/">NEON 编程3——矩阵相乘</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2019/01/20/neon-dealing-with-leftovers/">NEON 编程2——处理多余的数据</a>
@@ -474,10 +506,6 @@
     
       <li class="post">
         <a href="/blog/2018/10/17/av1-film-grain-synthesis/">Av1解码详解(二)之film_grain</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2018/10/15/av1-startup/">Av1解码详解(一)</a>
       </li>
     
   </ul>

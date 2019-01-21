@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>NEON 编程1——加载和存储 - 懒人李冰</title>
+  <title>NEON 编程3——矩阵相乘 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="示例 技术细节 概述 语法 交错存取模式 元素类型 单个或多个元素(Sigle or Multiple Elements) 寻址(Addressing) 其他存取指令 ARM NEON 技术是 64/128 位的混合 SIMD 架构，它的设计目的就是为了提高多媒体和信号处理应用的性能， &hellip;">
+  <meta name="description" content="矩阵 语法(Algorithm) 前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。 矩阵 本篇文章会分析如何有效的完成4x4矩阵相乘，这种操作在 3D 图形中经常会用到。假设矩阵存放到内存中， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2019/01/19/neon-coding-load-and-store/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">NEON 编程1——加载和存储</h1>
+      <h1 class="entry-title">NEON 编程3——矩阵相乘</h1>
     
     
       <p class="meta">
@@ -91,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2019-01-19T06:53:54-08:00'><span class='date'>2019 年 01 月 19 日</span> <span class='time'>6:53 am</span></time>
+<time class='entry-date' datetime='2019-01-21T06:44:07-08:00'><span class='date'>2019 年 01 月 21 日</span> <span class='time'>6:44 am</span></time>
         
       </p>
     
@@ -99,126 +99,23 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">示例</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">技术细节</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">概述</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">语法</a>        <ul>
-          <li><a href="#section-4" id="markdown-toc-section-4">交错存取模式</a></li>
-          <li><a href="#section-5" id="markdown-toc-section-5">元素类型</a></li>
-          <li><a href="#sigle-or-multiple-elements" id="markdown-toc-sigle-or-multiple-elements">单个或多个元素(Sigle or Multiple Elements)</a></li>
-          <li><a href="#addressing" id="markdown-toc-addressing">寻址(Addressing)</a></li>
-        </ul>
-      </li>
-      <li><a href="#section-6" id="markdown-toc-section-6">其他存取指令</a></li>
-    </ul>
-  </li>
+  <li><a href="#section" id="markdown-toc-section">矩阵</a></li>
+  <li><a href="#algorithm" id="markdown-toc-algorithm">语法(Algorithm)</a></li>
 </ul>
 
-<p>ARM NEON 技术是 64/128 位的混合 SIMD 架构，它的设计目的就是为了提高多媒体和信号处理应用的性能，包括视频编解码、音频编解码、3D 图像、声音和图像处理。</p>
+<p>前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。</p>
 
 <!--more-->
 
-<p>针对如何利用汇编语言为 NEON 编写 SIMD，后面会出一系列文章，本篇为第一部分。该系列文章会包含如何开始 NEON，如何高效使用它，后面还会介绍编写更复杂代码的技巧。我们先从操作内存开始，以及如何利用序列指令，灵活的使用 load 和 store。</p>
+<h2 id="section">矩阵</h2>
 
-<h2 id="section">示例</h2>
+<p>本篇文章会分析如何有效的完成4x4矩阵相乘，这种操作在 3D 图形中经常会用到。假设矩阵存放到内存中，并且是列优先的顺序，该格式在 OpenGL-ES 中使用。</p>
 
-<p>我们从一个具体的示例开始。假设你有一个 24bit RGB 图像，像素在内存中的排列格式为 R,G,B,R,G,B…，假设你想要将其中的 R 和 B 进行交换，该如何利用 NEON，是的操作更加高效呢？</p>
+<h2 id="algorithm">语法(Algorithm)</h2>
 
-<p>采用简单的线性 load 指令从内存中复制到寄存器里面，然后进行R/B 调换操作，会比较繁琐。示例如图</p>
+<p>先详细的检测一下矩阵相乘的操作，通过把计算扩展开，并确定哪些子操作可以使用 NEON 指令实现。</p>
 
-<p><img src="/images/neon_load_store/linear_load_rgb.png" /></p>
-
-<p>基于上图中的输入，进行分割、移位、合并这种方法去交换通道会很麻烦，效率低下。</p>
-
-<p>NEON 针对此种应用场景提供了结构化的加载和存储指令，它们会从内存中加载数据的同时将数据分发到不同的寄存器。如上面例子中，VLD3 指令可以分别将加载的 R/G/B数据分别放到三个不同的寄存器中。</p>
-
-<p><img src="/images/neon_load_store/structed_load_rgb.png" /></p>
-
-<p>现在，只要交换R/B寄存器的内容(VSWP d0, d2),之后用类似的存储指令 VST3 将数据写会内存中即可。</p>
-
-<h2 id="section-1">技术细节</h2>
-
-<h3 id="section-2">概述</h3>
-
-<p>NEON 结构化加载指令从内存中读取数据进入 64 位 NEON 寄存器，可以选择是否交错读取；同样的，存储指令将寄存器中的数据可以交错写回到内存中。</p>
-
-<p><img src="/images/neon_load_store/neon_structure_loads_stores.png" /></p>
-
-<h3 id="section-3">语法</h3>
-
-<p>结构化加载和存取指令的语法结构有 5 部分组成。</p>
-
-<p><img src="/images/neon_load_store/neon_load_store_syntax.png" /></p>
-
-<ul>
-  <li>指令助记符，VLD 用于加载，VST 用于存储。</li>
-  <li>交错存取的模式，此数字指定了相关元素之间的距离。</li>
-  <li>访问的元素类型，该类型指定了元素的位宽。</li>
-  <li>需要读取或者写入的寄存器集合，最大为4， 取决于交错存取的模式。</li>
-  <li>ARM 地址寄存器，包含需要访问的内存地址。</li>
-</ul>
-
-<h4 id="section-4">交错存取模式</h4>
-
-<p>NEON 指令能够加载和存储数据并以交错方式加载或存储1-4个相同位宽的元素，NEON 支持8、16、32bit的交错存取元素。</p>
-
-<ul>
-  <li>VLD1 是最简单的一种形式，该指令能从内存中线性加载数据到1-4个寄存器中，一般用于无交错存取的数据处理。</li>
-  <li>VLD2 可以从内存中加载数据到 2 或 4 个寄存器中，将交错的奇数和偶数项的数据分别加载到不同的寄存器中，一般用于立体声的左右声道的分离。</li>
-  <li>VLD3 加载交错距离为 3 的数据到 3 个寄存器中，一般用于图像中 RGB 通道的分离。</li>
-  <li>VLD4 加载交错距离为 4 的数据到 4 个寄存器中，一般用于图像中 ARGB 通道的分离。</li>
-</ul>
-
-<p>存储指令类似加载指令，但是在写入到内存之前就已经完成了数据元素交错。</p>
-
-<h4 id="section-5">元素类型</h4>
-
-<p>交错元素的存取规则取决于指令本身。例如，使用 VLD2.16 加载数据，完成操作后，共加载 8 个 16bit 的元素，其中偶数项元素加载到第一个寄存器，奇数项元素加载到第二个寄存器中。</p>
-
-<p><img src="/images/neon_load_store/100310_MC_diag3-1.png" /></p>
-
-<p>元素大小变成 32 之后，加载同样大小的数据(4x32),然而每个寄存器中只有2个元素(2x32)，与 VLD2.16 一样，VLD2.32 同样是偶数项元素加载到第一个寄存器中，奇数项元素加载到第二个寄存器中。</p>
-
-<p><img src="/images/neon_load_store/100310_MC_diag3a-1.png" /></p>
-
-<p>元素大小还会影响字节顺序，一般来讲，如果你是在存取指令中指定了正确的元素大小，从内存中读取的字节顺序将符合你的语气，并且相同的代码能在大端或者小端系统上运行良好。</p>
-
-<p>最后，元素大小对于指针对齐也有一定的影响，指针地址对齐到元素大小将具有更好的性能，例如，当加载 32 位的元素时，内存首地址最小要对齐 32 位。</p>
-
-<h4 id="sigle-or-multiple-elements">单个或多个元素(Sigle or Multiple Elements)</h4>
-
-<p>除了一次加载多个元素外，结构化的加载指令还能够一次从内存中读取一个元素，并且交错的放到不同的寄存器中，或者是放到寄存器的所有通道中，或者是放到寄存器的单个通道，其他通道不受影响。</p>
-
-<p><img src="/images/neon_load_store/deinterleaving_vector_lanes.png" /></p>
-
-<p>后面的描述对于从散乱的内存中构造出一个 vector 比较有用。</p>
-
-<p><img src="/images/neon_load_store/deinterleaving_single_vect.png" /></p>
-
-<p>存储指令和读取指令类似。</p>
-
-<h4 id="addressing">寻址(Addressing)</h4>
-
-<p>结构化的加载和存取指令支持 3 种格式来指定地址。</p>
-
-<ul>
-  <li><code>Register:[{,:}]</code>,这是最简单的寻址方式，数据在指定地址中进行存取</li>
-  <li><code>Register with increment after:[{,:}]!</code>, 这种寻址方式在完成数据加载后将更新指针使其指向之后待处理的元素，指针的增长大小与指令存取的字节数一致。</li>
-  <li><code>Register with post-index:[{,:}]</code>，这种寻址方式在完成数据存取之后将改变指针，指针增加指定量（由寄存器 Rm 指定），这种方式在存取元素分散在固定距离的情况下比较方便，如读取图像的一列像素。</li>
-</ul>
-
-<p>同样的，也可以通过指定 Rn 来指定指针的对齐，使用 optional:parameter 这样同样能加快内存的读取。</p>
-
-<h3 id="section-6">其他存取指令</h3>
-
-<p>这里只介绍了结构化的存取指令，NEON 还提供了如下指令：</p>
-
-<ul>
-  <li>VLDR 和 VSTR，存取单个 64 位寄存器</li>
-  <li>VLDM 和 VSTM，加载多个 64 位寄存器，方便从栈上存取数据。</li>
-</ul>
-
-<p>更多关于加载和存取操作的细节，可以参考<a href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0406b/index.html&amp;_ga=2.76337745.535197283.1547875098-60705264.1529324001">Arm Architecture Reference Manual</a>, 关于每条指令所占用的时钟周期数，可以参考<a href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.set.cortexa/index.html&amp;_ga=2.41000550.535197283.1547875098-60705264.1529324001">Technical Reference Manual for each core</a>.</p>
+<p><img src="/images/neon_matrix_multiply/neon_matrix_multiply.png" /></p>
 
 </div>
 
@@ -235,7 +132,7 @@
 
 
 
-<time class='entry-date' datetime='2019-01-19T06:53:54-08:00'><span class='date'>2019 年 01 月 19 日</span> <span class='time'>6:53 am</span></time>
+<time class='entry-date' datetime='2019-01-21T06:44:07-08:00'><span class='date'>2019 年 01 月 21 日</span> <span class='time'>6:44 am</span></time>
       
 
 <span class="categories">
@@ -249,7 +146,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/01/19/neon-coding-load-and-store/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/01/19/neon-coding-load-and-store/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/" >Tweet</a>
   
   
   
@@ -258,10 +155,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2019/01/19/neon-technology-overview/" title="Previous Post: NEON 技术概述">&laquo; NEON 技术概述</a>
+        <a class="basic-alignment left" href="/blog/2019/01/20/neon-dealing-with-leftovers/" title="Previous Post: NEON 编程2——处理多余的数据">&laquo; NEON 编程2——处理多余的数据</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2019/01/20/neon-dealing-with-leftovers/" title="Next Post: NEON 编程2——处理多余的数据">NEON 编程2——处理多余的数据 &raquo;</a>
       
     </p>
   </footer>

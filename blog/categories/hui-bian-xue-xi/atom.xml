@@ -4,7 +4,7 @@
   <title><![CDATA[分类:汇编学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hui-bian-xue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-01-20T18:35:46-08:00</updated>
+  <updated>2019-01-21T07:53:16-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,11 +14,64 @@
 
   
   <entry>
+    <title type="html"><![CDATA[NEON 编程3——矩阵相乘]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/"/>
+    <updated>2019-01-21T06:44:07-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">矩阵</a></li>
+  <li><a href="#algorithm" id="markdown-toc-algorithm">语法(Algorithm)</a></li>
+</ul>
+
+<p>前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。</p>
+
+<!--more-->
+
+<h2 id="section">矩阵</h2>
+
+<p>本篇文章会分析如何有效的完成4x4矩阵相乘，这种操作在 3D 图形中经常会用到。假设矩阵存放到内存中，并且是列优先的顺序，该格式在 OpenGL-ES 中使用。</p>
+
+<h2 id="algorithm">语法(Algorithm)</h2>
+
+<p>先详细的检测一下矩阵相乘的操作，通过把计算扩展开，并确定哪些子操作可以使用 NEON 指令实现。</p>
+
+<p><img src="/images/neon_matrix_multiply/neon_matrix_multiply.png"></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[NEON 编程2——处理多余的数据]]></title>
     <link href="http://lazybing.github.io/blog/2019/01/20/neon-dealing-with-leftovers/"/>
     <updated>2019-01-20T00:56:44-08:00</updated>
     <id>http://lazybing.github.io/blog/2019/01/20/neon-dealing-with-leftovers</id>
-    <content type="html"><![CDATA[<p>上一篇关于NEON 加载和存储的文章中，在NEON 处理单元（寄存器）和内存之间进行数据传输。这篇文章中，我们会处理经常遇到的问题：输入数据并不对齐，也就是输入数据的长度并不是向量长度的整数倍。我们需要在数组开始或结束的位置处理剩余的元素。使用 NEON 哪种方式最有效呢？</p>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#fixing-up" id="markdown-toc-fixing-up">修复数据(Fixing Up)</a>    <ul>
+      <li><a href="#larger-arrays" id="markdown-toc-larger-arrays">Larger Arrays</a>        <ul>
+          <li><a href="#notes" id="markdown-toc-notes">Notes</a></li>
+          <li><a href="#code-fragment" id="markdown-toc-code-fragment">Code Fragment</a></li>
+        </ul>
+      </li>
+      <li><a href="#overlapping" id="markdown-toc-overlapping">Overlapping</a>        <ul>
+          <li><a href="#notes-1" id="markdown-toc-notes-1">Notes</a></li>
+          <li><a href="#code-fragment-1" id="markdown-toc-code-fragment-1">Code Fragment</a></li>
+        </ul>
+      </li>
+      <li><a href="#single-elements" id="markdown-toc-single-elements">Single Elements</a>        <ul>
+          <li><a href="#notes-2" id="markdown-toc-notes-2">Notes</a></li>
+        </ul>
+      </li>
+      <li><a href="#further-considerations" id="markdown-toc-further-considerations">Further Considerations</a>        <ul>
+          <li><a href="#beginning-or-end" id="markdown-toc-beginning-or-end">Beginning or End</a></li>
+          <li><a href="#alignment" id="markdown-toc-alignment">Alignment</a></li>
+          <li><a href="#using-arm-to-fix-up" id="markdown-toc-using-arm-to-fix-up">Using Arm to Fix Up</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>上一篇关于NEON 加载和存储的文章中，在NEON 处理单元（寄存器）和内存之间进行数据传输。这篇文章中，我们会处理经常遇到的问题：输入数据并不对齐，也就是输入数据的长度并不是向量长度的整数倍。我们需要在数组开始或结束的位置处理剩余的元素。使用 NEON 哪种方式最有效呢？</p>
 
 <!--more-->
 
