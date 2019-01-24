@@ -125,9 +125,9 @@
 
 <!--more-->
 
-<h1 id="aom-">AOM 工程</h1>
+<h2 id="aom-">AOM 工程</h2>
 
-<h2 id="av1-">AV1 前期准备</h2>
+<h3 id="av1-">AV1 前期准备</h3>
 
 <ul>
   <li>安装<code>CMake</code>，版本需求 3.5 以上。</li>
@@ -137,12 +137,12 @@
   <li>安装<code>python</code>。</li>
 </ul>
 
-<h2 id="section">获取源码</h2>
+<h3 id="section">获取源码</h3>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">$ git clone https://aomedia.googlesource.com/aom</span></code></pre></td></tr></table></div></figure>
 
-<h2 id="section-1">编译</h2>
+<h3 id="section-1">编译</h3>
 
 <p><code>AV1</code>采用的配制方法不再是通常的<code>config</code>命令，而是<code>cmake</code>.<code>cmake</code>会生成配置文件和编译文件，大多数系统中，默认的编译文件是<code>Makefile</code>。
 执行<code>cmake</code>会得到如下提示:</p>
@@ -162,7 +162,7 @@
   <p>其实不止 AV1 的官方代码，<code>DAV1D</code>工程，同样有类似的配置过程，只不过它使用的是<code>meson</code>而不是<code>cmake</code>，但效果是一样的。</p>
 </blockquote>
 
-<h3 id="linux-">Linux 下编译方法</h3>
+<h4 id="linux-">Linux 下编译方法</h4>
 
 <p>Linux 下的编译最简单了，只需要用<code>cmake</code>配置，然后<code>make</code>编译即可。</p>
 
@@ -172,7 +172,7 @@
 </span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
 <p>上面的方法就可以用到<code>Linux</code>平台下，生成<code>aomdec</code>可执行文件，进行解码。</p>
 
-<h3 id="windows-">Windows 下编译方法</h3>
+<h4 id="windows-">Windows 下编译方法</h4>
 
 <p><code>Windows</code>下使用<code>Visual Studio</code>同样可以编译运行<code>av1</code>的代码。只需要在<code>cmake</code>时指定 VS 版本号即可,支持的工具可以通过<code>cmake --help</code>来查看。</p>
 
@@ -184,7 +184,7 @@
 </span><span class="line">$ cmake /path/to/aom -G "Visual Studio 12 2013 Win64" -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0 -DAOM_TARGET_CPU=generic</span></code></pre></td></tr></table></div></figure>
 <p>此时在<code>aom_vs</code>路径下，会生成一个<code>AOM.sln</code>,用<code>VisualStudio 2013</code>打开该文件后，编译运行即可使用<code>VisualStudio</code>调试学习了。</p>
 
-<h3 id="section-2">交叉编译</h3>
+<h4 id="section-2">交叉编译</h4>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -195,7 +195,7 @@
 </span><span class="line">$ CFLAGS="-pie -fPIE" LDFLAGS="-pie -fpIE" cmake /path/to/aom -DCROSS=/path/to/cross_build_tool_bin/ -DCMAKE_TOOLCHAIN_FILE=/path/to/tools -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0
 </span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
 
-<h2 id="section-3">配置选项</h2>
+<h3 id="section-3">配置选项</h3>
 
 <p>上面再编译的过程中，已经提到了很多配置选项，在此举几个例子：</p>
 
@@ -206,35 +206,35 @@
   <li><code>-DCMAKE_CONFIGURATION_TYPES=Debg</code>表示生成Debug 类型的可执行文件。</li>
 </ul>
 
-<h2 id="aom-vs-">AOM VS 工程</h2>
+<h3 id="aom-vs-">AOM VS 工程</h3>
 
 <p><img src="/images/av1_startup/aom_vs.png" /></p>
 
-<h1 id="dav1d-">DAV1D 工程</h1>
+<h2 id="dav1d-">DAV1D 工程</h2>
 
 <p>DAV1D 工程是一个跨平台的 AV1 解码器，该开源项目的目标是加速解码进度，解决目前还没有硬件支持 AV1 解码的问题。它包括了大多数 AOM 工程的特性。浏览该工程源码，该源码代码比较紧凑、很多函数甚至是宏定义完成的，调试非常困难……</p>
 
-<h2 id="dav1d--1">DAV1D 下载</h2>
+<h3 id="dav1d--1">DAV1D 下载</h3>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">$git clone git@code.videolan.org:videolan/dav1d.git
 </span><span class="line">$git clont https://code.videolan.org/videolan/dav1d.git</span></code></pre></td></tr></table></div></figure>
 
-<h2 id="dav1d--2">DAV1D 工程编译</h2>
+<h3 id="dav1d--2">DAV1D 工程编译</h3>
 
 <ol>
-  <li>安装<code>Meson（0.47或更高版本） 和 Ninja</code>，如果是 x86 平台，需要安装<code>nasm（2.13.02或更高版本）</code></li>
+  <li>安装<code>Meson(0.47或更高版本)和 Ninja</code>，如果是 x86 平台，需要安装<code>nasm(2.13.02或更高版本)</code></li>
   <li>cd dav1d</li>
   <li><code>meson --buildtype debug --backend vs2017 ./ vs2017</code>，其中各个参数的含义，可以通过<code>meson --help</code>命令查看，注意，该命令的执行要在 Visual Studio 工程的 Native Tool Command 下执行。有时可能是安装时的配置的问题，即使在 Native Tool Command 下执行，仍然有问题，我是在<code>Developer Command Prompt for VS 2017</code>下执行成功的。</li>
   <li>安装完成后，就可以使用 Visual Studio 2017 打开 dav1d.sln 了。</li>
 </ol>
 
-<h2 id="dav1d-vs-">DAV1D VS 工程</h2>
+<h3 id="dav1d-vs-">DAV1D VS 工程</h3>
 
 <p><img src="/images/av1_startup/dav1d_vs.png" /></p>
 
-<h2 id="section-4">参考文档</h2>
+<h3 id="section-4">参考文档</h3>
 
 <p><a href="https://aomedia.googlesource.com/aom/+/master/README.md">AV1 Codec Library</a></p>
 
