@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AV1 前期准备 获取源码 编译 Linux 下编译方法 Windows 下编译方法 交叉编译 配置选项 参考文档 AV1作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看SPEC,最好的方法是看源码aom。 AV1 前期准备 安装CMake， &hellip;">
+  <meta name="description" content="AOM 工程 AV1 前期准备 获取源码 编译 Linux 下编译方法 Windows 下编译方法 交叉编译 配置选项 AOM VS 工程 DAV1D 工程 DAV1D 下载 DAV1D 工程编译 DAV1D VS 工程 参考文档 AV1作为一个开放、免专利的视频编码格式， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,21 +99,33 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#av1-" id="markdown-toc-av1-">AV1 前期准备</a></li>
-  <li><a href="#section" id="markdown-toc-section">获取源码</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">编译</a>    <ul>
-      <li><a href="#linux-" id="markdown-toc-linux-">Linux 下编译方法</a></li>
-      <li><a href="#windows-" id="markdown-toc-windows-">Windows 下编译方法</a></li>
-      <li><a href="#section-2" id="markdown-toc-section-2">交叉编译</a></li>
+  <li><a href="#aom-" id="markdown-toc-aom-">AOM 工程</a>    <ul>
+      <li><a href="#av1-" id="markdown-toc-av1-">AV1 前期准备</a></li>
+      <li><a href="#section" id="markdown-toc-section">获取源码</a></li>
+      <li><a href="#section-1" id="markdown-toc-section-1">编译</a>        <ul>
+          <li><a href="#linux-" id="markdown-toc-linux-">Linux 下编译方法</a></li>
+          <li><a href="#windows-" id="markdown-toc-windows-">Windows 下编译方法</a></li>
+          <li><a href="#section-2" id="markdown-toc-section-2">交叉编译</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-3" id="markdown-toc-section-3">配置选项</a></li>
+      <li><a href="#aom-vs-" id="markdown-toc-aom-vs-">AOM VS 工程</a></li>
     </ul>
   </li>
-  <li><a href="#section-3" id="markdown-toc-section-3">配置选项</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">参考文档</a></li>
+  <li><a href="#dav1d-" id="markdown-toc-dav1d-">DAV1D 工程</a>    <ul>
+      <li><a href="#dav1d--1" id="markdown-toc-dav1d--1">DAV1D 下载</a></li>
+      <li><a href="#dav1d--2" id="markdown-toc-dav1d--2">DAV1D 工程编译</a></li>
+      <li><a href="#dav1d-vs-" id="markdown-toc-dav1d-vs-">DAV1D VS 工程</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">参考文档</a></li>
+    </ul>
+  </li>
 </ul>
 
-<p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看<a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">SPEC</a>,最好的方法是看源码<code>aom</code>。</p>
+<p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看<a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">SPEC</a>,最好的方法是看源码<code>aom</code>。本文主要记录官方工程 AOM 和 DAV1D 两个工程的建立。</p>
 
 <!--more-->
+
+<h1 id="aom-">AOM 工程</h1>
 
 <h2 id="av1-">AV1 前期准备</h2>
 
@@ -194,9 +206,39 @@
   <li><code>-DCMAKE_CONFIGURATION_TYPES=Debg</code>表示生成Debug 类型的可执行文件。</li>
 </ul>
 
+<h2 id="aom-vs-">AOM VS 工程</h2>
+
+<p><img src="/images/av1_startup/aom_vs.png" /></p>
+
+<h1 id="dav1d-">DAV1D 工程</h1>
+
+<p>DAV1D 工程是一个跨平台的 AV1 解码器，该开源项目的目标是加速解码进度，解决目前还没有硬件支持 AV1 解码的问题。它包括了大多数 AOM 工程的特性。浏览该工程源码，该源码代码比较紧凑、很多函数甚至是宏定义完成的，调试非常困难……</p>
+
+<h2 id="dav1d--1">DAV1D 下载</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$git clone git@code.videolan.org:videolan/dav1d.git
+</span><span class="line">$git clont https://code.videolan.org/videolan/dav1d.git</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="dav1d--2">DAV1D 工程编译</h2>
+
+<ol>
+  <li>安装<code>Meson（0.47或更高版本） 和 Ninja</code>，如果是 x86 平台，需要安装<code>nasm（2.13.02或更高版本）</code></li>
+  <li>cd dav1d</li>
+  <li><code>meson --buildtype debug --backend vs2017 ./ vs2017</code>，其中各个参数的含义，可以通过<code>meson --help</code>命令查看，注意，该命令的执行要在 Visual Studio 工程的 Native Tool Command 下执行。有时可能是安装时的配置的问题，即使在 Native Tool Command 下执行，仍然有问题，我是在<code>Developer Command Prompt for VS 2017</code>下执行成功的。</li>
+  <li>安装完成后，就可以使用 Visual Studio 2017 打开 dav1d.sln 了。</li>
+</ol>
+
+<h2 id="dav1d-vs-">DAV1D VS 工程</h2>
+
+<p><img src="/images/av1_startup/dav1d_vs.png" /></p>
+
 <h2 id="section-4">参考文档</h2>
 
 <p><a href="https://aomedia.googlesource.com/aom/+/master/README.md">AV1 Codec Library</a></p>
+
+<p><strong><em>欢迎添加微信交流</em></strong></p>
 
 </div>
 
