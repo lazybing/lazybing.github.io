@@ -4,7 +4,7 @@
   <title><![CDATA[分类:汇编学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hui-bian-xue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-01-24T06:02:22-08:00</updated>
+  <updated>2019-01-24T07:46:16-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,76 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ARM 汇编指令总结]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/24/neon-of-coding/"/>
+    <updated>2019-01-24T06:35:54-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/24/neon-of-coding</id>
+    <content type="html"><![CDATA[<p>学习汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
+
+<!--more-->
+
+<h2 id="sqdmulhvector">SQDMULH(vector)</h2>
+
+<p>Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+
+<p>Scalar:</p>
+
+<ul>
+  <li>SQDMULH <V><d>, <V><n>, <V><m></m></V></n></V></d></V></li>
+</ul>
+
+<p>Vector:</p>
+
+<ul>
+  <li>SQDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<T></T></Vm></T></Vn></T></Vd></li>
+</ul>
+
+<Vd>:目的寄存器 SIMD&amp;FP, <Vn>:第一个源寄存器 SIMD&amp;FP, <Vm>:第二个源寄存器 SIMD&amp;FP. <T>:4H/8H/2S/4S 中的一个。示例
+
+* sqdmulh v0.8h, v0.8h, v30.8h 
+
+
+## SQDMULH(by element)
+
+Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。
+
+Scalar:
+
+* SQDMULH <V><d>, <V><n>, <Vm>.<Ts>[<index>]
+
+Vector:
+
+* SQDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<Ts>[<index>]
+
+## SQRDMULH(vector)
+
+Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。
+
+Scalar:
+
+* SQRDMULH <V><d>, <V><n>, <V><m>
+
+Vector:
+
+* SQRDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
+
+## SQRDMULH(by element)
+
+Scalar:
+
+* SQRDMULH <V><d>, <V><n>, <Vm>.<Ts>[<index>]
+
+Vector:
+
+* SQRDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<Ts>[<index>]
+
+
+
+</index></Ts></Vm></T></Vn></T></Vd></index></Ts></Vm></n></V></d></V></T></Vm></T></Vn></T></Vd></m></V></n></V></d></V></index></Ts></Vm></T></Vn></T></Vd></index></Ts></Vm></n></V></d></V></T></Vm></Vn></Vd>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NEON 编程3——矩阵相乘]]></title>
@@ -793,85 +863,6 @@
   <li><a href="https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-3-matrix-multiplication">Coding for NEON - Part 3: Matrix Multiplication</a>.</li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[汇编语言实现hello World]]></title>
-    <link href="http://lazybing.github.io/blog/2018/01/11/assemble-hello-world/"/>
-    <updated>2018-01-11T21:29:27-08:00</updated>
-    <id>http://lazybing.github.io/blog/2018/01/11/assemble-hello-world</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#write-our-string-to-stdout" id="markdown-toc-write-our-string-to-stdout">write our string to stdout</a></li>
-  <li><a href="#and-exit" id="markdown-toc-and-exit">and exit</a></li>
-</ul>
-
-<p>接下来的工作可能要用到汇编语言。</p>
-
-<!--more-->
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>.data                   # section declaration
-</span><span class='line'>msg:
-</span><span class='line'>    .ascii  “Hello, world!\n”   # our dear string
-</span><span class='line'>    len = . - msg               # length of our dear string&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;p>.text                           # section declaration&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>                        # we must export the entry point to the ELF linker or
-</span><span class='line'>.global _start          # loader. They conventionally recognize _start as their 
-</span><span class='line'>                        # entry point. Use ld -e foo to override the default.
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p>_start:&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;h1 id="write-our-string-to-stdout">write our string to stdout&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>movl $len, %edx        # third argument:message length
-</span><span class='line'>movl $msg, %ecx        # second argument:pointer to message to write
-</span><span class='line'>movl $1, %ebx          # first argument:file handle(stdout) 
-</span><span class='line'>movl $4, %eax          # system call number (sys_write)
-</span><span class='line'>int  $0x80             # call kernel
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;h1 id="and-exit">and exit&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>movl $0, %ebx           # first argument:exit code
-</span><span class='line'>movl $1, %eax           # system call number (sys_exit)
-</span><span class='line'>int  $0x80              # call kernel
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
 ]]></content>
   </entry>
   
