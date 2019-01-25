@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>ARM 汇编指令总结 - 懒人李冰</title>
+  <title>ARM64 汇编指令总结 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="学习汇编真的太痛苦了。。。一个命令一个命令的学习记录吧 SQDMULH(vector) Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中， &hellip;">
+  <meta name="description" content="ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧 SQDMULH(vector) Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">ARM 汇编指令总结</h1>
+      <h1 class="entry-title">ARM64 汇编指令总结</h1>
     
     
       <p class="meta">
@@ -98,7 +98,7 @@
   </header>
 
 
-<div class="entry-content"><p>学习汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
+<div class="entry-content"><p>ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
 
 <!--more-->
 
@@ -114,7 +114,14 @@
 
 <p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
 
-<p><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP, <code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP, <code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP. <code>&lt;T&gt;</code>:4H/8H/2S/4S 中的一个。示例</p>
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;T&gt;</code>:4H/8H/2S/4S 中的一个</li>
+</ul>
+
+<p>示例</p>
 
 <ul>
   <li>sqdmulh v0.8h, v0.8h, v30.8h</li>
@@ -153,6 +160,125 @@
 <p>Vector:</p>
 
 <p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<h2 id="sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</h2>
+
+<p>Signed saturating Rounded Shift Right Unsigned Narrow(immediate).</p>
+
+<p>Scalar:</p>
+
+<p><code>SQRSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun v0.8b, v1.8h, #5</li>
+</ul>
+
+<p>Vector:</p>
+
+<p><code>SQRSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
+</ul>
+
+<h2 id="sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</h2>
+
+<p>Signed saturating Shift Right Unsigned Narror(immediate).</p>
+
+<p>Scalar:</p>
+
+<p><code>SQSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
+</ul>
+
+<h2 id="shl">SHL</h2>
+
+<p>Shift Left(immediate)。</p>
+
+<p>Scalar:</p>
+
+<p><code>SHL &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SHL &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+</ul>
+
+<h2 id="shll-shll2">SHLL, SHLL2</h2>
+
+<p>Shift Left Long(by element size)。</p>
+
+<p>Vector:</p>
+
+<p><code>SHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li>
+    <p><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</p>
+  </li>
+  <li>shll  v28.8h, v30.8b,  #8</li>
+  <li>shll2 v29.8h, v30.16b, #8</li>
+</ul>
+
+<h2 id="sshll-sshll2">SSHLL, SSHLL2</h2>
+
+<p>Signed Shift Left Long(immediate)。</p>
+
+<p><code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+</ul>
+
+<h2 id="ushll-ushll2">USHLL, USHLL2</h2>
+
+<p>Unsigned Shift Left Long(immediate)。</p>
+
+<p><code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+</ul>
 
 </div>
 
@@ -226,7 +352,7 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2019/01/24/neon-of-coding/">ARM 汇编指令总结</a>
+        <a href="/blog/2019/01/24/neon-of-coding/">ARM64 汇编指令总结</a>
       </li>
     
       <li class="post">
