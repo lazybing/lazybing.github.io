@@ -9,7 +9,9 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="SQDMULH(vector) SQDMULH(by element) SQRDMULH(vector) SQRDMULH(by element) SQRSHRUN, SQRSHRUN2 SQSHRUN, SQSHRUN2 SHL SHLL, SHLL2 SSHLL, SSHLL2 USHLL &hellip;">
+  <meta name="description" content="ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。 ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧 指令格式： [] , [.] * 其中尖括号的选项是必须的，花括号是可选的。
+* A32 : Rd==&gt;{R0-R14}
+* A64 : Rd &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -98,242 +100,219 @@
   </header>
 
 
-<div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#sqdmulhvector" id="markdown-toc-sqdmulhvector">SQDMULH(vector)</a></li>
-  <li><a href="#sqdmulhby-element" id="markdown-toc-sqdmulhby-element">SQDMULH(by element)</a></li>
-  <li><a href="#sqrdmulhvector" id="markdown-toc-sqrdmulhvector">SQRDMULH(vector)</a></li>
-  <li><a href="#sqrdmulhby-element" id="markdown-toc-sqrdmulhby-element">SQRDMULH(by element)</a></li>
-  <li><a href="#sqrshrun-sqrshrun2" id="markdown-toc-sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</a></li>
-  <li><a href="#sqshrun-sqshrun2" id="markdown-toc-sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</a></li>
-  <li><a href="#shl" id="markdown-toc-shl">SHL</a></li>
-  <li><a href="#shll-shll2" id="markdown-toc-shll-shll2">SHLL, SHLL2</a></li>
-  <li><a href="#sshll-sshll2" id="markdown-toc-sshll-sshll2">SSHLL, SSHLL2</a></li>
-  <li><a href="#ushll-ushll2" id="markdown-toc-ushll-ushll2">USHLL, USHLL2</a></li>
-  <li><a href="#trn1--trn2" id="markdown-toc-trn1--trn2">TRN1 &amp; TRN2</a></li>
-</ul>
+<div class="entry-content">
+<p>ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。</p>
 
 <p>ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
 
 <!--more-->
 
-<h2 id="sqdmulhvector">SQDMULH(vector)</h2>
+<p>指令格式：</p>
 
-<p>Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+<Opcode>[<Cond>]<S> <Rd>, <Rn> [.<Opcode2>]
 
-<p>Scalar:</p>
+* 其中尖括号的选项是必须的，花括号是可选的。
+* A32 : Rd==&gt;{R0-R14}
+* A64 : Rd==&gt;Xt==&gt;{X0-X30}
 
-<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
+| 标识符| 备注  |
+| :---: | :---: |
+| Opcode | 操作码，也就是助记符，说明指令需要执行的操作类型 |
+| Cond | 指令执行条件码，在编码中占4bit, 0b000-0b1110 |
+| S | 条件码设置项，决定本次指令是否影响 PSTATE 寄存器响应状态位值 |
+| Rd/Xt | 目标寄存器，A32 指令可以选择 R0-R14，T32指令大部分只能选择R0-R7,A64指令可以选择X0-X30 或 W0-W30 |
+| Rn/Xn | 第一个操作数的寄存器，和 Rd 一样，不同指令有不同要求 |
+| Opcode2 | 第二个操作数，可以是立即数，寄存器Rm 和寄存器移位方式(Rm, #shift) |
 
-<p>Vector:</p>
 
-<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+## SQDMULH(vector)
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP</li>
-  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP</li>
-  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP</li>
-  <li><code>&lt;T&gt;</code>:4H/8H/2S/4S 中的一个</li>
-</ul>
+Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。
 
-<p>示例</p>
+Scalar:
 
-<ul>
-  <li>sqdmulh v0.8h, v0.8h, v30.8h</li>
-</ul>
+`SQDMULH <V><d>, <V><n>, <V><m>`
 
-<h2 id="sqdmulhby-element">SQDMULH(by element)</h2>
+Vector:
 
-<p>Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+`SQDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<T>`
 
-<p>Scalar:</p>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 
+* `<Vn>`:第一个源寄存器 SIMD&amp;FP 
+* `<Vm>`:第二个源寄存器 SIMD&amp;FP 
+* `<T>`:4H/8H/2S/4S 中的一个
 
-<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+示例
 
-<p>Vector:</p>
+* sqdmulh v0.8h, v0.8h, v30.8h 
 
-<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+## SQDMULH(by element)
 
-<h2 id="sqrdmulhvector">SQRDMULH(vector)</h2>
+Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。
 
-<p>Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+Scalar:
 
-<p>Scalar:</p>
+`SQDMULH <V><d>, <V><n>, <Vm>.<Ts>[<index>]`
 
-<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
+Vector:
 
-<p>Vector:</p>
+`SQDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<Ts>[<index>]`
 
-<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+## SQRDMULH(vector)
 
-<h2 id="sqrdmulhby-element">SQRDMULH(by element)</h2>
+Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。
 
-<p>Scalar:</p>
+Scalar:
 
-<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+`SQRDMULH <V><d>, <V><n>, <V><m>`
 
-<p>Vector:</p>
+Vector:
 
-<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+`SQRDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<T>`
 
-<h2 id="sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</h2>
+## SQRDMULH(by element)
 
-<p>Signed saturating Rounded Shift Right Unsigned Narrow(immediate).</p>
+Scalar:
 
-<p>Scalar:</p>
+`SQRDMULH <V><d>, <V><n>, <Vm>.<Ts>[<index>]`
 
-<p><code>SQRSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+Vector:
 
-<p>示例：</p>
+`SQRDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<Ts>[<index>]`
 
-<ul>
-  <li>sqrshrun v0.8b, v1.8h, #5</li>
-</ul>
+## SQRSHRUN, SQRSHRUN2
 
-<p>Vector:</p>
+Signed saturating Rounded Shift Right Unsigned Narrow(immediate). 
 
-<p><code>SQRSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+Scalar:
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-</ul>
+`SQRSHRUN <Vb><d>, <Va><n>, #<shift>`
 
-<p>示例：</p>
+示例：
 
-<ul>
-  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
-</ul>
+* sqrshrun v0.8b, v1.8h, #5
 
-<h2 id="sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</h2>
+Vector:
 
-<p>Signed saturating Shift Right Unsigned Narror(immediate).</p>
+`SQRSHRUN{2} <Vd>.<Tb>, <Vn>.<Ta>, #<shift>`
 
-<p>Scalar:</p>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 的名字。
+* `<Tb>`:8B/16B/4H/8H/2S/4S。
+* `<Vn>`:源寄存器 SIMD&amp;FP 的名字。
+* `<Ta>`:8H/4S/2D。
 
-<p><code>SQSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+示例：
 
-<p>Vector:</p>
+* sqrshrun2 v0.16b, v1.8h, #5
 
-<p><code>SQSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+## SQSHRUN, SQSHRUN2
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-</ul>
+Signed saturating Shift Right Unsigned Narror(immediate).
 
-<p>示例：</p>
+Scalar:
 
-<ul>
-  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
-</ul>
+`SQSHRUN <Vb><d>, <Va><n>, #<shift>`
 
-<h2 id="shl">SHL</h2>
+Vector:
 
-<p>Shift Left(immediate)。</p>
+`SQSHRUN{2} <Vd>.<Tb>, <Vn>.<Ta>, #<shift>`
 
-<p>Scalar:</p>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 的名字。
+* `<Tb>`:8B/16B/4H/8H/2S/4S。
+* `<Vn>`:源寄存器 SIMD&amp;FP 的名字。
+* `<Ta>`:8H/4S/2D。
 
-<p><code>SHL &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+示例：
 
-<p>Vector:</p>
+* sqrshrun2 v0.16b, v1.8h, #5
 
-<p><code>SHL &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
+## SHL
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-</ul>
+Shift Left(immediate)。
 
-<h2 id="shll-shll2">SHLL, SHLL2</h2>
+Scalar:
 
-<p>Shift Left Long(by element size)。</p>
+`SHL <V><d>, <V><n>, #<shift>`
 
-<p>Vector:</p>
+Vector:
 
-<p><code>SHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+`SHL <Vd>.<T>, <Vn>.<T>, #<shift>`
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-  <li>
-    <p><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</p>
-  </li>
-  <li>shll  v28.8h, v30.8b,  #8</li>
-  <li>shll2 v29.8h, v30.16b, #8</li>
-</ul>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 名字。
+* `<T>`:8B/16B/4H/8H/2S/4S/2D。
+* `<Vn>`:源寄存器 SIMD&amp;FP 名字。
 
-<h2 id="sshll-sshll2">SSHLL, SSHLL2</h2>
+## SHLL, SHLL2
 
-<p>Signed Shift Left Long(immediate)。</p>
+Shift Left Long(by element size)。
 
-<p><code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+Vector:
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-</ul>
+`SHLL{2} <Vd>.<Ta>, <Vn>.<Tb>, #<shift>`
 
-<h2 id="ushll-ushll2">USHLL, USHLL2</h2>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 的名字。
+* `<Ta>`:8H/4S/2D。
+* `<Vn>`:源寄存器 SIMD&amp;FP 名字。
+* `<Tb>`:8B/16B/4H/8H/2S/4S。
 
-<p>Unsigned Shift Left Long(immediate)。</p>
+* shll  v28.8h, v30.8b,  #8
+* shll2 v29.8h, v30.16b, #8
 
-<p><code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+## SSHLL, SSHLL2
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-</ul>
+Signed Shift Left Long(immediate)。
 
-<h2 id="trn1--trn2">TRN1 &amp; TRN2</h2>
+`SSHLL{2} <Vd>.<Ta>, <Vn>.<Tb>, #<shift>`
 
-<p>TRN1:Transpose vector(primary)。</p>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 的名字。
+* `<Ta>`:8H/4S/2D。
+* `<Vn>`:源寄存器 SIMD&amp;FP 名字。
+* `<Tb>`:8B/16B/4H/8H/2S/4S。
 
-<p>Advanced SIMD variant</p>
+## USHLL, USHLL2
 
-<p><code>TRN1 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+Unsigned Shift Left Long(immediate)。
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
-</ul>
+`USHLL{2} <Vd>.<Ta>, <Vn>.<Tb>, #<shift>`
 
-<p>示例：</p>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 的名字。
+* `<Ta>`:8H/4S/2D。
+* `<Vn>`:源寄存器 SIMD&amp;FP 名字。
+* `<Tb>`:8B/16B/4H/8H/2S/4S。
 
-<ul>
-  <li>trn1 v4.2d, v4.2d, v5.2d</li>
-</ul>
+## TRN1 &amp; TRN2
 
-<p>TRN2:Transpose vectors(secondary)。</p>
+TRN1:Transpose vector(primary)。
 
-<p>Advanced SIMD variant</p>
+Advanced SIMD variant
 
-<p><code>TRN2 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+`TRN1 <Vd>.<T>, <Vn>.<T>, <Vm>.<T>`
 
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>T</code>:8B/16B/4H/8H/2S/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
-</ul>
+* `<Vd>`:目的寄存器 SIMD&amp;FP 名字。
+* `<T>`:8B/16B/4H/8H/2S/4S/2D。
+* `<Vn>`:第一个源寄存器 SIMD&amp;FP 名字。
+* `<Vm>`:第二个源寄存器 SIMD&amp;FP 名字。
 
-<p>示例：</p>
+示例：
 
-<ul>
-  <li>trn2 v7.2s v5.2s, v7.2s</li>
-</ul>
+* trn1 v4.2d, v4.2d, v5.2d
 
+TRN2:Transpose vectors(secondary)。
+
+Advanced SIMD variant
+
+`TRN2 <Vd>.<T>, <Vn>.<T>, <Vm>.<T>`
+
+* `<Vd>`:目的寄存器 SIMD&amp;FP 名字。
+* `T`:8B/16B/4H/8H/2S/4S/2D。
+* `<Vn>`:第一个源寄存器 SIMD&amp;FP 名字。
+* `<Vm>`:第二个源寄存器 SIMD&amp;FP 名字。
+
+示例：
+
+* trn2 v7.2s v5.2s, v7.2s
+
+</Vm></Vn></Vd></T></Vm></T></Vn></T></Vd></Vm></Vn></T></Vd></T></Vm></T></Vn></T></Vd></Tb></Vn></Ta></Vd></shift></Tb></Vn></Ta></Vd></Tb></Vn></Ta></Vd></shift></Tb></Vn></Ta></Vd></Tb></Vn></Ta></Vd></shift></Tb></Vn></Ta></Vd></Vn></T></Vd></shift></T></Vn></T></Vd></shift></n></V></d></V></Ta></Vn></Tb></Vd></shift></Ta></Vn></Tb></Vd></shift></n></Va></d></Vb></Ta></Vn></Tb></Vd></shift></Ta></Vn></Tb></Vd></shift></n></Va></d></Vb></index></Ts></Vm></T></Vn></T></Vd></index></Ts></Vm></n></V></d></V></T></Vm></T></Vn></T></Vd></m></V></n></V></d></V></index></Ts></Vm></T></Vn></T></Vd></index></Ts></Vm></n></V></d></V></T></Vm></Vn></Vd></T></Vm></T></Vn></T></Vd></m></V></n></V></d></V></Opcode2></Rn></Rd></S></Cond></Opcode>
 </div>
 
 
