@@ -4,7 +4,7 @@
   <title><![CDATA[分类:汇编学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hui-bian-xue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-01-25T18:09:00-08:00</updated>
+  <updated>2019-01-25T19:26:03-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -30,6 +30,11 @@
   <li><a href="#sshll-sshll2" id="markdown-toc-sshll-sshll2">SSHLL, SSHLL2</a></li>
   <li><a href="#ushll-ushll2" id="markdown-toc-ushll-ushll2">USHLL, USHLL2</a></li>
   <li><a href="#trn1--trn2" id="markdown-toc-trn1--trn2">TRN1 &amp; TRN2</a></li>
+  <li><a href="#sxtl-sxtl2" id="markdown-toc-sxtl-sxtl2">SXTL, SXTL2</a></li>
+  <li><a href="#uxtl-uxtl2" id="markdown-toc-uxtl-uxtl2">UXTL, UXTL2</a></li>
+  <li><a href="#ext" id="markdown-toc-ext">EXT</a></li>
+  <li><a href="#bfm-ubfm-sbfmbitfield-move" id="markdown-toc-bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</a></li>
+  <li><a href="#srshr" id="markdown-toc-srshr">SRSHR</a></li>
 </ul>
 
 <p>ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。</p>
@@ -298,10 +303,110 @@
 <p>示例：</p>
 
 <ul>
-  <li>trn2 v7.2s v5.2s, v7.2s</li>
+  <li>trn2 v7.2s, v5.2s, v7.2s</li>
 </ul>
 
 <p><img src="/images/neon_coding/trn.png"></p>
+
+<h2 id="sxtl-sxtl2">SXTL, SXTL2</h2>
+
+<p>SXTL:Signed extend Long,该指令</p>
+
+<p>Vector:</p>
+
+<p><code>SXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>sxtl v0.8h, v0.8b</li>
+</ul>
+
+<h2 id="uxtl-uxtl2">UXTL, UXTL2</h2>
+
+<p>UXTL:Unsigned extend Long.</p>
+
+<p>Vector:</p>
+
+<p><code>UXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>uxtl v4.8h, v4.8b</li>
+</ul>
+
+<h2 id="ext">EXT</h2>
+
+<p>EXT:Extract vector from pair of vectors.</p>
+
+<p>Advanced SIMD variant</p>
+
+<p><code>EXT &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;, #&lt;index&gt;</code></p>
+
+<p><img src="/images/neon_coding/ext.png"></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>ext v5.16b, v4.16b, v4.16b, #2</li>
+</ul>
+
+<h2 id="bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</h2>
+
+<p>BFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>BFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>BFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>SBFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>SBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>SBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>UBFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>UBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>UBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>ubfm w9, w5, #7, #13</li>
+</ul>
+
+<h2 id="srshr">SRSHR</h2>
+
+<p>SRSHR:Signed Rounding Shift Right(immediate)。</p>
+
+<p>Scalar variant:</p>
+
+<p><code>SRSHR &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SRSHR &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>srshr v24.8h, v24.8h, #2</li>
+</ul>
 
 ]]></content>
   </entry>
