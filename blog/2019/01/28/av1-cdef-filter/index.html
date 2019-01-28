@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>NEON 编程3——矩阵相乘 - 懒人李冰</title>
+  <title>AV1 解码详解(三)之CDEF - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="矩阵 语法(Algorithm) 前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。 矩阵 本篇文章会分析如何有效的完成4x4矩阵相乘，这种操作在 3D 图形中经常会用到。假设矩阵存放到内存中， &hellip;">
+  <meta name="description" content="CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF process 中。AOM 代码中在 cdef.c 相关的文件中。除此外，还可以参考 The AV1 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">NEON 编程3——矩阵相乘</h1>
+      <h1 class="entry-title">AV1 解码详解(三)之CDEF</h1>
     
     
       <p class="meta">
@@ -91,31 +91,17 @@
 
 
 
-<time class='entry-date' datetime='2019-01-21T06:44:07-08:00'><span class='date'>2019 年 01 月 21 日</span> <span class='time'>6:44 am</span></time>
+<time class='entry-date' datetime='2019-01-28T06:32:04-08:00'><span class='date'>2019 年 01 月 28 日</span> <span class='time'>6:32 am</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">矩阵</a></li>
-  <li><a href="#algorithm" id="markdown-toc-algorithm">语法(Algorithm)</a></li>
-</ul>
-
-<p>前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。</p>
+<div class="entry-content">
+<p>CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF process 中。AOM 代码中在 cdef.c 相关的文件中。除此外，还可以参考 <code>The AV1 CONSTRAINED DIRECTIONAL ENHANCEMENT FILTER</code>论文，本文就是基于上面三个部分分析的结果。</p>
 
 <!--more-->
-
-<h2 id="section">矩阵</h2>
-
-<p>本篇文章会分析如何有效的完成4x4矩阵相乘，这种操作在 3D 图形中经常会用到。假设矩阵存放到内存中，并且是列优先的顺序，该格式在 OpenGL-ES 中使用。</p>
-
-<h2 id="algorithm">语法(Algorithm)</h2>
-
-<p>先详细的检测一下矩阵相乘的操作，通过把计算扩展开，并确定哪些子操作可以使用 NEON 指令实现。</p>
-
-<p><img src="/images/neon_matrix_multiply/neon_matrix_multiply.png" /></p>
 
 </div>
 
@@ -132,12 +118,12 @@
 
 
 
-<time class='entry-date' datetime='2019-01-21T06:44:07-08:00'><span class='date'>2019 年 01 月 21 日</span> <span class='time'>6:44 am</span></time>
+<time class='entry-date' datetime='2019-01-28T06:32:04-08:00'><span class='date'>2019 年 01 月 28 日</span> <span class='time'>6:32 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/hui-bian-xue-xi/'>汇编学习</a>
+    <a class='category' href='/blog/categories/av1/'>av1</a>
   
 </span>
 
@@ -146,7 +132,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/" >Tweet</a>
   
   
   
@@ -155,10 +141,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2019/01/20/neon-dealing-with-leftovers/" title="Previous Post: NEON 编程2——处理多余的数据">&laquo; NEON 编程2——处理多余的数据</a>
+        <a class="basic-alignment left" href="/blog/2019/01/24/neon-of-coding/" title="Previous Post: ARM64 汇编指令总结">&laquo; ARM64 汇编指令总结</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2019/01/24/neon-of-coding/" title="Next Post: ARM64 汇编指令总结">ARM64 汇编指令总结 &raquo;</a>
       
     </p>
   </footer>

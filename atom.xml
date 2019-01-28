@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-01-25T19:26:03-08:00</updated>
+  <updated>2019-01-28T06:58:14-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,15 +14,26 @@
 
   
   <entry>
+    <title type="html"><![CDATA[AV1 解码详解(三)之CDEF]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/"/>
+    <updated>2019-01-28T06:32:04-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter</id>
+    <content type="html"><![CDATA[
+<p>CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF process 中。AOM 代码中在 cdef.c 相关的文件中。除此外，还可以参考 <code>The AV1 CONSTRAINED DIRECTIONAL ENHANCEMENT FILTER</code>论文，本文就是基于上面三个部分分析的结果。</p>
+
+<!--more-->
+
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[ARM64 汇编指令总结]]></title>
     <link href="http://lazybing.github.io/blog/2019/01/24/neon-of-coding/"/>
     <updated>2019-01-24T06:35:54-08:00</updated>
     <id>http://lazybing.github.io/blog/2019/01/24/neon-of-coding</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#sqdmulhvector" id="markdown-toc-sqdmulhvector">SQDMULH(vector)</a></li>
-  <li><a href="#sqdmulhby-element" id="markdown-toc-sqdmulhby-element">SQDMULH(by element)</a></li>
-  <li><a href="#sqrdmulhvector" id="markdown-toc-sqrdmulhvector">SQRDMULH(vector)</a></li>
-  <li><a href="#sqrdmulhby-element" id="markdown-toc-sqrdmulhby-element">SQRDMULH(by element)</a></li>
+  <li><a href="#sqdmulhvectorby-element" id="markdown-toc-sqdmulhvectorby-element">SQDMULH(vector/by element)</a></li>
+  <li><a href="#sqrdmulhvectorby-element" id="markdown-toc-sqrdmulhvectorby-element">SQRDMULH(vector/by element)</a></li>
   <li><a href="#sqrshrun-sqrshrun2" id="markdown-toc-sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</a></li>
   <li><a href="#sqshrun-sqshrun2" id="markdown-toc-sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</a></li>
   <li><a href="#shl" id="markdown-toc-shl">SHL</a></li>
@@ -88,7 +99,7 @@
   </tbody>
 </table>
 
-<h2 id="sqdmulhvector">SQDMULH(vector)</h2>
+<h2 id="sqdmulhvectorby-element">SQDMULH(vector/by element)</h2>
 
 <p>Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
 
@@ -113,8 +124,6 @@
   <li>sqdmulh v0.8h, v0.8h, v30.8h</li>
 </ul>
 
-<h2 id="sqdmulhby-element">SQDMULH(by element)</h2>
-
 <p>Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
 
 <p>Scalar:</p>
@@ -125,7 +134,7 @@
 
 <p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
 
-<h2 id="sqrdmulhvector">SQRDMULH(vector)</h2>
+<h2 id="sqrdmulhvectorby-element">SQRDMULH(vector/by element)</h2>
 
 <p>Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
 
@@ -136,8 +145,6 @@
 <p>Vector:</p>
 
 <p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
-
-<h2 id="sqrdmulhby-element">SQRDMULH(by element)</h2>
 
 <p>Scalar:</p>
 
@@ -3719,141 +3726,6 @@ c. 字节流的结束，由未规定的方式判决。</li>
 <h2 id="valgrind--5">Valgrind 学习参考</h2>
 
 <p><a href="http://valgrind.org/docs/manual/valgrind_manual.pdf">Valgrind_mannual</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Linux常用命令之sed]]></title>
-    <link href="http://lazybing.github.io/blog/2017/10/01/how-to-use-sed/"/>
-    <updated>2017-10-01T08:35:06-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/10/01/how-to-use-sed</id>
-    <content type="html"><![CDATA[
-<p><code>sed</code>是<code>stream editor</code>的简称，它是一种在线编辑器，用于处理一行一行的数据。处理时，首先把待处理的文件内容送到临时缓冲区中，
-称为”模式空间”，接着用<code>sed</code>命令处理缓冲区中的内容，处理完成后，把缓冲区中的内容送往屏幕，接着处理下一行，不断重复，直至文件末尾。</p>
-
-<!--more-->
-
-<p>假设有文本文件<code>text</code>，内容如下：</p>
-
-<blockquote><p>10 tiny toes<br />this is that<br />5 funny 0<br />one two three<br />tree twice<br />new newer<br />NEW<br />newer new<br />NEW new old</p></blockquote>
-
-<p>一. 基本用法：</p>
-
-<ul>
-  <li>将<code>text</code>文本中每行第一个小写字母<code>t</code>替换为大写字母<code>T</code>.</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$cat text | sed 's/t/T/'
-</span><span class="line">$sed 's/t/T/' text</span></code></pre></td></tr></table></div></figure>
-
-<ul>
-  <li>将<code>text</code>文本中每行所有的小写字母<code>t</code>替换为大写字母<code>T</code>.</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$sed 's/t/T/g' text
-</span><span class="line">$sed 's/t/T/g' text &gt; new.txt
-</span><span class="line">$sed -i 's/t/T/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>二、与正则表达式结合</p>
-
-<ul>
-  <li>如果一行中第一个字符是<code>t</code>，就将它替换为<code>T</code>，其他字符不变。</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/^t/T/g' text</span></code></pre></td></tr></table></div></figure>
-
-<ul>
-  <li>如果一行中最后一个字符是<code>t</code>，就将它替换为<code>T</code>，其他字符不变。</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/t$/T/g' text</span></code></pre></td></tr></table></div></figure>
-
-<ul>
-  <li>将所有的数字/小写字母、大写字母、所有的字母替换为<code>*</code>。</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/[0-9]/*/g' text
-</span><span class="line">sed 's/[a-z]/*/g' text
-</span><span class="line">sed 's/[A-Z]/*/g' text
-</span><span class="line">sed 's/[a-zA-Z]/*/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>三、同时替换多个字符串</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/Twice/None/g' text | sed 's/Three/Two/g'
-</span><span class="line">sed 's/Twice/None/g;s/Three/Two/g' text
-</span><span class="line">sed 's/Twice/None/g;s/Three/Two/g;s/funny/tummy/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>四、删除最后一个字符串</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed ‘s/\w*//’ text
-</span><span class="line">sed ‘s/\w*.//’ text
-</span><span class="line">sed ‘s/\w*$//’ text
-</span><span class="line">sed ‘s/\w*$/bob/’ text</span></code></pre></td></tr></table></div></figure>
-
-<p>五、只显示匹配行的结果</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/T/t/g' text
-</span><span class="line">sed -n 's/T/t/g' text
-</span><span class="line">sed -n 's/T/t/pg' text</span></code></pre></td></tr></table></div></figure>
-
-<p>六、忽略大小写的替换</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/that/bob/g' text
-</span><span class="line">sed 's/that/bob/Ig' text</span></code></pre></td></tr></table></div></figure>
-
-<p>七、使用脚本文件,</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed -f mysedscript text</span></code></pre></td></tr></table></div></figure>
-
-<p>其中的<code>mysedscript</code>内容是：</p>
-<blockquote><p>s/T/t/g<br />s/e/E/g<br />s/\w*.//</p></blockquote>
-
-<p>八、只替换完整的一个单词，使用边界符</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/\bnew\b/old/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>九、删除匹配行</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed '/new$/D' text
-</span><span class="line">sed '/^new$/D' text
-</span><span class="line">sed '/\bnew\b/D' text</span></code></pre></td></tr></table></div></figure>
-
-<p>十、 替换文件夹内所有文件内容</p>
-
-<p>如果想要替换某个文件夹下所有文件中的某个字符串，该如何操作呢，此时可以使用<code>sed</code>命令。例如，
-替换<code>example_folder</code>文件夹下所有文件中的字符串<code>orig_str</code>，替换为<code>dst_str</code>，此时可以使用<code>sed</code>命令：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed -i "s/orig_str/dst_str/g" `grep "orig_str" -rl /example_folder`</span></code></pre></td></tr></table></div></figure>
-
 ]]></content>
   </entry>
   
