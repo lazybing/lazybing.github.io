@@ -33,7 +33,7 @@ ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧
 | Opcode2 | 第二个操作数，可以是立即数，寄存器Rm 和寄存器移位方式(Rm, #shift) |
 
 
-## SQDMULH(vector)
+## SQDMULH(vector/by element)
 
 Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&FP 中。
 
@@ -54,7 +54,6 @@ Vector:
 
 * sqdmulh v0.8h, v0.8h, v30.8h 
 
-## SQDMULH(by element)
 
 Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&FP 中。
 
@@ -66,7 +65,7 @@ Vector:
 
 `SQDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<Ts>[<index>]`
 
-## SQRDMULH(vector)
+## SQRDMULH(vector/by element)
 
 Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&FP 中。
 
@@ -78,7 +77,6 @@ Vector:
 
 `SQRDMULH <Vd>.<T>, <Vn>.<T>, <Vm>.<T>`
 
-## SQRDMULH(by element)
 
 Scalar:
 
