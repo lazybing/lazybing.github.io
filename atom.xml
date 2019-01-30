@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-01-28T08:01:08-08:00</updated>
+  <updated>2019-01-30T06:47:52-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,12 +18,28 @@
     <link href="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/"/>
     <updated>2019-01-28T06:32:04-08:00</updated>
     <id>http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter</id>
-    <content type="html"><![CDATA[
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#cdef-" id="markdown-toc-cdef-">CDEF 介绍</a></li>
+  <li><a href="#section" id="markdown-toc-section">方向查找</a></li>
+</ul>
+
 <p>CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF process 中。AOM 代码中在 cdef.c 相关的文件中。除此外，还可以参考 <code>The AV1 CONSTRAINED DIRECTIONAL ENHANCEMENT FILTER</code>论文，本文就是基于上面三个部分分析的结果。</p>
 
 <!--more-->
 
 <p>环路滤波器基于非线性低通滤波器，专为矢量化效率设计的。该滤波器考虑边缘方向和滤波模式，它通过确定每个 block 块的方向，然后自适应的用沿方向的滤波强度进行滤波。增强滤波目的是提高 AOM 的质量，尤其是低复杂性的配置中。</p>
+
+<h2 id="cdef-">CDEF 介绍</h2>
+
+<p>CDEF 的主要目的是过滤掉编码杂音，同时保留图像的详细内容。AV1 中采用的方法是非线性空间滤波器，该滤波器的设计非常适用于矢量化，即可以使用 SIMD 操作，而其他非线性滤波器（如中值滤波器和双边滤波器）并非如此。</p>
+
+<p>CDEF 滤波器的设计基于以下观察：编码图像中杂音的数量通常与量化步长大致成比例，图像详细内容的数量是输入图像的一个属性，保留在量化过的图像中的最小的实际信息量也与量化成一定的比例。对于给定的步长，杂音的幅度要比细节的幅度小很多。</p>
+
+<p>CDEF 首先判断每个块的方向，之后沿着判断的方向自适应的滤波，并沿着判断的方向小幅度旋转 45 度，滤波强度明确表示，对模糊的高度控制。</p>
+
+<p>CDEF 是基于之前提到的两个环路滤波器，结合的滤波器用在了 AV1 Codec 中。</p>
+
+<h2 id="section">方向查找</h2>
 
 ]]></content>
   </entry>
