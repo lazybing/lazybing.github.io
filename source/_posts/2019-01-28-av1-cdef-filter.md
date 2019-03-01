@@ -47,9 +47,27 @@ CDEF 是基于之前提到的两个环路滤波器，结合的滤波器用在了
 
 将上面的两个公式整合后，结果如下：$E_{d}^2 = \sum_{p}x_{p}^2 - \sum_{k}\frac{1}{N_{d,k}} \big(\sum_{p \in P_{d,k}} x_p \big)^2$
 
+我们可以通过计算上面公式中第二部分的最大值来寻找最佳方向 $d_{opt}$, $d_opt = max_d s_d$, 其中 $s_{d} = \sum_{k}\frac{1}{N_{d,k}} \big\(sum_{p \in P_{d,k}} x_p \big)^2$
+
+可以用 840 乘以$S_d$来避免除以$N_{d,k}$,840 是所有$N_{d,k}$的最小公倍数。对于 8bit 数据，数据值为$[-128, 127]$，所有$840S_d$和所有的其他计算都适用于 32位 signed 整数类型。对于更高的bit，如10bit或12bit，在查找方向时，缩放像素到 8bit。
+
+{% img /images/av1_cdef/direction_search.png %}
+
+上图展示了一个针对 8x8 块，寻找方向的例子，寻找的算法如下。为了节省解码器的复杂度，我们假定亮度和色度方向是相关的，因此我们只寻找亮度原件的方向，该方向与色度方向相同。
+
+{% img /images/av1_cdef/algorithm_find_direction.png %}
+
 ## 非线性低通滤波器
 
-CDEF 使用非线性低通滤波器，去除编码杂音的同时不会模糊块的边缘。
+CDEF 使用非线性低通滤波器，去除编码杂音的同时不会模糊块的边缘。AV1 根据特定方向寻找滤波器抽头位置，同时当滤波器运用到块边界时，要防止过度模糊。使用非线性低通滤波器，在滤波像素偏差过大时，就不再对该像素过度强调。
+
+{% img /images/av1_cdef/primary_filter.png %}
+{% img /images/av1_cdef/secondary_filter.png %}
 
 ## 参考文档
+
+1. [AV1 Bitstream and Decoding Process](https://aomediacodec.github.io/av1-spec/av1-spec.pdf)
+2. [An Overview of Core Coding Tools in the AV1 Video Codec](https://jmvalin.ca/papers/AV1_tools.pdf)
+3. [The AV1 Constrained Directional Enhancement Filter](http://www.mirlab.org/conference_papers/international_conference/ICASSP%202018/pdfs/0001193.pdf)
+4. [The AV1 Constrained Directional Enhancement Filter](https://jmvalin.ca/misc_stuff/icassp2018_slides.pdf)
 
