@@ -61,8 +61,22 @@ CDEF 是基于之前提到的两个环路滤波器，结合的滤波器用在了
 
 CDEF 使用非线性低通滤波器，去除编码杂音的同时不会模糊块的边缘。AV1 根据特定方向寻找滤波器抽头位置，同时当滤波器运用到块边界时，要防止过度模糊。使用非线性低通滤波器，在滤波像素偏差过大时，就不再对该像素过度强调。
 
+### 定向滤波器
+
+确认方向是为了统一特定方向上滤波器抽头，来降低振铃，同时不会模糊特定的边缘。但是单纯的定向滤波器有时无法高效的降低振铃效应，因此同时需要对像素数据使用滤波器抽头，该抽头并不是直接沿着主要方向。为了降低模糊块的风险，这些额外的抽头会被更保守的处理。因此，CDEF 定义了 primary taps 和 secondary taps。
+
+primary taps 沿着方向 d，它的系数如上面图 4 所示。对 primary taps，对不同的 strength，会有不同的系数，对于1/3/5的strength，与2/4/6的strength，系数是不同的。secondary tpas 会形成一个十字架，是方向 d 旋转 45° 后得到，系数如图 5。
+
 {% img /images/av1_cdef/primary_filter.png %}
 {% img /images/av1_cdef/secondary_filter.png %}
+
+2-D CDEF 滤波器公式如下：  
+
+$y(i,j) = x(i,j) + round( \sum_{m,n} w_{d,m,n}^{(p)} f(x(m,n) -x(i, j), S^{(p)}, D) + \sum_{m,n} w_{d,m,n}^{(s)} f(x(m,n) -x(i,j), S^{(s)}, D))$  
+
+* $S_{p}$和$S_{s}$是 primary 和 secondary 抽头的 strength。 
+
+每个要滤波的 8x8 块，方向、strength 和 damping 参数是固定的。当处理位置(i, j)处的像素时，滤波器允许使用 x(i+m, j+m)处的像素，该像素可能超出 8x8 块的边界。如果处理像素超出了帧范围，像素会被忽略(f(d, S, D) = 0)。为最大化并行，CDEF 总是作用在输入(post-deblocking)像素 x(i,j)上，这样在滤波其他像素时，不会用的之前已经滤波王城的像素。 
 
 ## 参考文档
 
