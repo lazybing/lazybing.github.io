@@ -9,8 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content=" HEVC SPEC 中RPS HEVC 对于参考帧的管理会有专门的参数集 RPS(Reference Picture Set) 来进行管理。RPS 技术，通过直接在每一帧开始的片头码流中传输 DPB 中各个帧的状态变化。
-">
+  <meta name="description" content="av_register_all 框架 调用关系 源码分析 注册一次 注册 codec 注册复用器 注册解复用器 注册协议 av_register_all()几乎是所有使用 FFMPEG 编程调用的第一个函数。av_register_all()的主要功能是注册所有的 formats 和 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +79,53 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/12/05/av-register-all/">FFMPEG 源码分析：av_register_all</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-12-05T04:45:48-08:00'><span class='date'>2016 年 12 月 05 日</span> <span class='time'>4:45 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#avregisterall-" id="markdown-toc-avregisterall-">av_register_all 框架</a></li>
+  <li><a href="#section" id="markdown-toc-section">调用关系</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">源码分析</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">注册一次</a></li>
+      <li><a href="#codec" id="markdown-toc-codec">注册 codec</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">注册复用器</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">注册解复用器</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">注册协议</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p><code>av_register_all()</code>几乎是所有使用 FFMPEG 编程调用的第一个函数。<code>av_register_all()</code>的主要功能是注册所有的 formats 和 protocols。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/12/05/av-register-all/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -477,52 +523,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/07/20/lib-trmp-source-code-study/">RTMP协议学习（中）：源码分析</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
-  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
-  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
-  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
-  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
-  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
-  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
-  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
-  <li><a href="#download" id="markdown-toc-download">Download</a></li>
-  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
-</ul>
-
-<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/07/20/lib-trmp-source-code-study/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/7">&larr; Older</a>
@@ -538,7 +538,7 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/av1/'>av1 (3)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (4)</a></li>
 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
@@ -558,6 +558,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2019/03/02/loop-restoration/">AV1 解码详解(四)之LOOP RESTORATION(待总结)</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2019/01/28/av1-cdef-filter/">AV1 解码详解(三)之CDEF</a>
       </li>
     
@@ -571,10 +575,6 @@
     
       <li class="post">
         <a href="/blog/2019/01/20/neon-dealing-with-leftovers/">NEON 编程2——处理多余的数据</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/01/19/neon-coding-load-and-store/">NEON 编程1——加载和存储</a>
       </li>
     
   </ul>

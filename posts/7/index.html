@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="1. 几个概念 2.字节序、字节对齐和时间格式 3. RTMP Chunk Stream 3.1 消息格式 3.2 握手(HandShake) 握手序列: C 和 S 格式： 握手框图(HandShake Diagram) 3.3 分块(Chunking) Chunk 格式 Chunk &hellip;">
+  <meta name="description" content="大致流程 InitSocket() RTMP_Init(Struct RTMP) RTMP_ParseURL RTMP_SetupStream fopen RTMP_Connect() RTMP_ConnectStream Download CleanUp:RTMP_Close(&amp; &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,52 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/07/20/lib-trmp-source-code-study/">RTMP协议学习（中）：源码分析</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
+  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
+  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
+  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
+  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
+  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
+  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
+  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
+  <li><a href="#download" id="markdown-toc-download">Download</a></li>
+  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
+</ul>
+
+<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/07/20/lib-trmp-source-code-study/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -538,50 +584,6 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/">FFmpeg 和 SDL 使用教程（一）</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-05-10T16:45:03-07:00'><span class='date'>2016 年 05 月 10 日</span> <span class='time'>4:45 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">介绍</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">打开文件</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">存储数据</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">读取数据</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">清除工作</a></li>
-  <li><a href="#section-5" id="markdown-toc-section-5">程序编译</a></li>
-  <li><a href="#section-6" id="markdown-toc-section-6">注意事项</a></li>
-</ul>
-
-<p><a href="https://ffmpeg.org/">FFmpeg</a> 是制作视频应用或一般工具的非常棒的库。<a href="https://www.libsdl.org/">SDL</a> 通过封装复杂的视音频底层交互工作，降低了视音频的处理难度。</p>
-
-<p>本文就记录一下利用 FFmpeg 和 SDL 制作简单播放器的详细步骤。</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/8">&larr; Older</a>
@@ -597,7 +599,7 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/av1/'>av1 (3)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (4)</a></li>
 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
@@ -617,6 +619,10 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2019/03/02/loop-restoration/">AV1 解码详解(四)之LOOP RESTORATION(待总结)</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2019/01/28/av1-cdef-filter/">AV1 解码详解(三)之CDEF</a>
       </li>
     
@@ -630,10 +636,6 @@ Profile 指出码流中使用了哪些编码工具和算法。</p>
     
       <li class="post">
         <a href="/blog/2019/01/20/neon-dealing-with-leftovers/">NEON 编程2——处理多余的数据</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/01/19/neon-coding-load-and-store/">NEON 编程1——加载和存储</a>
       </li>
     
   </ul>
