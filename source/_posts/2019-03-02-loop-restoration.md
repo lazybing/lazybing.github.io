@@ -13,7 +13,11 @@ LOOP RESTORATION，环内重建滤波器，是一个重要的增强图像质量�
 
 <!--more-->
 
+图像重建是一个比较成熟的领域，它包含了很多专业技术可用，比如 deblocking、deblurring、deringring、debanding、denoising、constrast enhancement、sharpening 和 resolution enhancement。
+
 ## Wiener Filter 维纳滤波器
+
+Degraded 帧的每个像素都
 
 ## Selfguided Filter 自导向投影滤波器
 

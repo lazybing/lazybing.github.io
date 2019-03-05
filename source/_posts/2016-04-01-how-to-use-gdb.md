@@ -129,6 +129,26 @@ layout 用于分割窗口，可以一边查看代码，一边测试。主要有�
 * Ctrl+x,再按2：双窗口模式，显示两个窗口
 * Ctrl+x,再按a：回到传统模式，即退出 layout, 回到执行 layout 之前的调试窗口
 
+### 查看寄存器
+
+查看寄存器的值，很简单，可以使用如下命令：
+
+* info registers, 查看寄存器的情况，除了浮点寄存器。  
+* info all-registers, 查看所有寄存器的情况，包括浮点寄存器。  
+* info registers <regname>, 查看所指定的寄存器的情况。  
+
+同样可以使用 print 命令来访问寄存器的情况，只需要在寄存器名字前加一个`$`符号就可以了，例如`p $eip`。  
+
+### 汇编调试
+
+在做 ARM 汇编时，需要使用 GDB 对汇编语言进行单步调试，但很多时候，没办法直接通过`stepi`或`nexti`进入汇编函数内调试。使用了一个迂回的方法：  
+
+1. 设置断点，在汇编函数名处先设置断点。 break <assmble_func_name>。  
+2. 直接显示汇编代码，layout asm;显示寄存器值，layout regs。  
+3. 单步执行汇编命令`stepi`和`nexti`。
+
+{% img /images/gdb_debug/gdb_assemble.png %}
+
 ### 问题汇总
 
 1. 在工作中经常遇到把编译处的`.o`或`.bin`可执行文件，拿到别的路径下运行、Debug，经常遇到`GDB`找不到`debug src info`的情况，此时可以通过`directory`命令指定寻找的路径。
