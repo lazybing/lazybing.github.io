@@ -78,6 +78,22 @@ $y(i,j) = x(i,j) + round( \sum_{m,n} w_{d,m,n}^{(p)} f(x(m,n) -x(i, j), S^{(p)},
 
 每个要滤波的 8x8 块，方向、strength 和 damping 参数是固定的。当处理位置(i, j)处的像素时，滤波器允许使用 x(i+m, j+m)处的像素，该像素可能超出 8x8 块的边界。如果处理像素超出了帧范围，像素会被忽略(f(d, S, D) = 0)。为最大化并行，CDEF 总是作用在输入(post-deblocking)像素 x(i,j)上，这样在滤波其他像素时，不会用的之前已经滤波王城的像素。 
 
+### 代码实现分析
+
+此处以 DAV1D 工程里的 CDEF 模块作为例子，主要介绍两部分，`cdef_find_dir`和`cdef_filter_block`，并把 10bit 汇编优化完成。完成后，在 pixel2 手机上测试，效率提升大概 30% 左右。  
+
+#### 方向查找实现
+
+DAV1D 工程里，对 CDEF 方向查找，完成了 C 代码实现和对 8bit 码流的汇编优化，对10bit优化并没有完成。  
+
+{% codeblock lang:c cdef_find_dir.c %}
+
+{% endcodeblock %}
+
+#### CDEF 方向滤波
+
+滤波主要由两步完成，
+
 ## 参考文档
 
 1. [AV1 Bitstream and Decoding Process](https://aomediacodec.github.io/av1-spec/av1-spec.pdf)
