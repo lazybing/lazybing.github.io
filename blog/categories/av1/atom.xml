@@ -4,7 +4,7 @@
   <title><![CDATA[分类:av1 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/av1/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-03-05T07:51:30-08:00</updated>
+  <updated>2019-03-17T08:22:39-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -57,9 +57,14 @@
   <li><a href="#section" id="markdown-toc-section">方向查找</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">非线性低通滤波器</a>    <ul>
       <li><a href="#section-2" id="markdown-toc-section-2">定向滤波器</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">代码实现分析</a>        <ul>
+          <li><a href="#section-4" id="markdown-toc-section-4">方向查找实现</a></li>
+          <li><a href="#cdef--1" id="markdown-toc-cdef--1">CDEF 方向滤波</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
-  <li><a href="#section-3" id="markdown-toc-section-3">参考文档</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">参考文档</a></li>
 </ul>
 
 <p>CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF process 中。AOM 代码中在 cdef.c 相关的文件中。除此外，还可以参考 <code>The AV1 CONSTRAINED DIRECTIONAL ENHANCEMENT FILTER</code>论文，本文就是基于上面三个部分分析的结果。</p>
@@ -137,7 +142,28 @@
 
 <p>每个要滤波的 8x8 块，方向、strength 和 damping 参数是固定的。当处理位置(i, j)处的像素时，滤波器允许使用 x(i+m, j+m)处的像素，该像素可能超出 8x8 块的边界。如果处理像素超出了帧范围，像素会被忽略(f(d, S, D) = 0)。为最大化并行，CDEF 总是作用在输入(post-deblocking)像素 x(i,j)上，这样在滤波其他像素时，不会用的之前已经滤波王城的像素。</p>
 
-<h2 id="section-3">参考文档</h2>
+<h3 id="section-3">代码实现分析</h3>
+
+<p>此处以 DAV1D 工程里的 CDEF 模块作为例子，主要介绍两部分，<code>cdef_find_dir</code>和<code>cdef_filter_block</code>，并把 10bit 汇编优化完成。完成后，在 pixel2 手机上测试，效率提升大概 30% 左右。</p>
+
+<h4 id="section-4">方向查找实现</h4>
+
+<p>DAV1D 工程里，对 CDEF 方向查找，完成了 C 代码实现和对 8bit 码流的汇编优化，对10bit优化并没有完成。</p>
+
+<p><figure class='code'><figcaption><span>cdef_find_dir.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h4 id="cdef--1">CDEF 方向滤波</h4>
+
+<p>滤波主要由两步完成，</p>
+
+<h2 id="section-5">参考文档</h2>
 
 <ol>
   <li><a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">AV1 Bitstream and Decoding Process</a></li>
