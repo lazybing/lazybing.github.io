@@ -4,7 +4,7 @@
   <title><![CDATA[分类:汇编学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hui-bian-xue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-03-17T08:22:39-07:00</updated>
+  <updated>2019-04-14T00:31:40-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -400,6 +400,157 @@
 
 <ul>
   <li>srshr v24.8h, v24.8h, #2</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程4——左右移位]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/22/neon-shifting-left-and-right/"/>
+    <updated>2019-01-22T06:44:07-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/22/neon-shifting-left-and-right</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">向量移位</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">移位与插入</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">移位与计算</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">指令修改器</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">可用移位表</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">示例：转换颜色深度</a>    <ul>
+      <li><a href="#section-6" id="markdown-toc-section-6">从 565 到 888</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">从888到565</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-8" id="markdown-toc-section-8">结论</a></li>
+</ul>
+
+<p>本文将介绍 NEON 提供的移位运算，并介绍如何利用移位运算在常用颜色深度之间转换影像数据。本系列前期已发布的文章包括：第一部分：加载与存储，第二部分：余数的处理，第三部分：矩阵乘法。</p>
+
+<!--more-->
+
+<h2 id="section">向量移位</h2>
+
+<p>NEON 上的移位与标量 ARM 编码中可能用到的移位非常相似，即每个向量元素的位数均向左或向右移位，出现在每个元素左侧与右侧的位将被删除；它们不能移位至相连的元素。</p>
+
+<p><img src="/images/neon_shift_left_right/shift_vector.png"></p>
+
+<p>带符号元素的向量上发生的右移位由指令附加的类型指定，并会将符号扩展至每一个元素。这与 ARM 编码中可能用到的算术移位相同。应用到无符号向量的移位不会发生符号扩展。</p>
+
+<h2 id="section-1">移位与插入</h2>
+
+<p>NEON 也支持通过插入产生移位，使两个不同向量的位相结合。例如，左移位与插入（VSLI）可使源向量的每一个元素均向左移位。每个元素右侧新插入的位就是目标向量中的对应为。</p>
+
+<p><img src="/images/neon_shift_left_right/shift_insert.png"></p>
+
+<h2 id="section-2">移位与计算</h2>
+
+<p>最后，NEON 还支持向量元素向右移位，并将结果计入到另一个向量中。这种方法对于先在高精度条件下进行临时计算，然后再将结果与低精度计算器相结合的情况非常有用。</p>
+
+<h2 id="section-3">指令修改器</h2>
+
+<p>每个移位指令都能拥有一个或多个修改器。这些修改器并不改变移位运算本身，而是通过调整输入值与输出值，消除偏差或饱和状态，保持一定的范围。共有五种移位修改器：</p>
+
+<ul>
+  <li>舍位修改器(Rounding)，以 R 前缀表示，可以纠正右移时舍位导致的偏差。</li>
+  <li>窄修改器(Narrow)，以 N 后缀表示，可以让结果中每个元素的位数减半。它代表Q(128位)源和D(64位)目标寄存器。</li>
+  <li>长修改器(Long),以 L 后缀表示，可以让结果中每个元素的位数加倍。它代表D源和Q目标寄存器。饱和修改器(Saturating)，以Q前缀表示，可以在最大和最小可表示范围内设置每个结果元素，前提是结果未超出该范围。向量的位数和符号类型可用于确定饱和范围。</li>
+  <li>无符号饱和修改器(Unsigned Saturationg)，以Q前缀和U后缀表示，与饱和修改器类似，但在进行带符号与无符号输入时，结果将在无符号范围内表示为饱和。</li>
+</ul>
+
+<p>这些修改器的部分组合并未表现出有用的运算，因此 NEON 也没有提供相应指令。例如，饱和右移位（应称为 VQSHR）其实就毫无必要，因为右移位只会让结果变得更小，因而值根本无法超出有效范围。</p>
+
+<h2 id="section-4">可用移位表</h2>
+
+<p>NEON 提供的所有移位指令均在下表中列出。它们根据先前提到的修改器进行排列。如果你还是不太确定修改器各个字母代表的含义，请利用下表选择需要的指令。</p>
+
+<p><img src="/images/neon_shift_left_right/shift_table_avaliable.png"></p>
+
+<h2 id="section-5">示例：转换颜色深度</h2>
+
+<p>颜色深度之间的转换是图形处理中经常需要的运算。通常，输入或输出数据都是 RGB565 16 位颜色格式，但 RGB888 格式的数据处理起来更为方便。对于 NEON 而言尤其如此，因为它无法为 RGB565 这样的数据类型提供本机支持。</p>
+
+<p><img src="/images/neon_shift_left_right/color_format.png"></p>
+
+<p>但是，NEON 仍然可以有效地处理 RGB565 数据，上文中介绍的向量移位便提供了处理方法。</p>
+
+<h3 id="section-6">从 565 到 888</h3>
+
+<p>首先，我们来看如何将 RGB565 转换为 RGB888。假设寄存器 q0 中有 8 个 16 位像素，我们想要在 d2、d3和d4这三个寄存器中将红色、绿色和蓝色分离成 8 位的元素。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">vshr.u8</span>     <span class="no">q1</span><span class="p">,</span> <span class="no">q0</span><span class="p">,</span> <span class="c">#3  @shift red elements right by three bits,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">discarding</span> <span class="no">the</span> <span class="no">green</span> <span class="no">bits</span> <span class="no">at</span> <span class="no">the</span> <span class="no">bottom</span> <span class="no">of</span> <span class="no">the</span> <span class="no">red</span> <span class="mi">8</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">vshrn.i16</span>   <span class="no">d2</span><span class="p">,</span> <span class="no">q1</span><span class="p">,</span> <span class="c">#5  @shift red element right and narrow,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">discarding</span> <span class="no">the</span> <span class="no">blue</span> <span class="no">and</span> <span class="no">green</span> <span class="no">bits.</span>
+</span><span class='line'><span class="nf">vshrn.i16</span>   <span class="no">d3</span><span class="p">,</span> <span class="no">q0</span><span class="p">,</span> <span class="c">#5  @shift green elements right and narrow,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">discarding</span> <span class="no">the</span> <span class="no">blue</span> <span class="no">bits</span> <span class="no">and</span> <span class="no">some</span> <span class="no">red</span> <span class="no">bits</span> <span class="no">due</span> <span class="no">to</span> <span class="no">narrowing.</span>
+</span><span class='line'><span class="nf">vshl.i8</span>     <span class="no">d3</span><span class="p">,</span> <span class="no">d3</span><span class="p">,</span> <span class="c">#2  @shift green elements left, discarding the remaining red bits,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">and</span> <span class="no">placing</span> <span class="no">green</span> <span class="no">bits</span> <span class="no">in</span> <span class="no">the</span> <span class="no">correct</span> <span class="no">place.</span>
+</span><span class='line'><span class="nf">vshl.i16</span>    <span class="no">q0</span><span class="p">,</span> <span class="no">q0</span><span class="p">,</span> <span class="c">#3  @shift blue elements left to most-significant </span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">of</span> <span class="mi">8</span><span class="p">-</span><span class="no">bit</span> <span class="no">color</span> <span class="no">channel.</span>
+</span><span class='line'><span class="nf">vmovn.i16</span>   <span class="no">d4</span><span class="p">,</span> <span class="no">q0</span>      <span class="err">@</span><span class="no">remove</span> <span class="no">remaining</span> <span class="no">red</span> <span class="no">and</span> <span class="no">green</span> <span class="no">bits</span> <span class="no">by</span> <span class="no">narrowing</span> <span class="no">to</span> <span class="mi">8</span> <span class="no">bits</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>每个指令的效果都在上面备注中做了描述，但总而言之，每个通道上执行的运算为：</p>
+
+<ol>
+  <li>利用移位推掉元素任意一端的位数，清除相邻通道的颜色数据。</li>
+  <li>使用第二次移位将颜色数据放置到每个元素最重要的位上，并缩短位数将元素大小从 16 位减至 8 位。</li>
+</ol>
+
+<p>请注意在这个顺序中使用元素大小来确定 8 位和 16 位元素的位置，以进行部分掩码运算。</p>
+
+<h3 id="section-7">从888到565</h3>
+
+<p>现在，我们来看反向运算，即从 RGB888 转换为 RGB565。这里，我们假设 RGB888 数据为上述代码产生的格式；在d0、d1和d2这三个寄存器上，每个寄存器均包含每种颜色的 8 个元素。结果将存储为 q2 格式的 8 个 16 位 RGB565 元素。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">vshll.u8</span>    <span class="no">q2</span><span class="p">,</span> <span class="no">d0</span><span class="p">,</span> <span class="c">#8  @shift red element left to most-significant</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">of</span> <span class="no">wider</span> <span class="mi">16</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">ushll.u8</span>    <span class="no">q3</span><span class="p">,</span> <span class="no">d1</span><span class="p">,</span> <span class="c">#8  @shift green elements left to most-significant</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">fo</span> <span class="no">wider</span> <span class="mi">16</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements</span>
+</span><span class='line'><span class="nf">vsri.16</span>    <span class="no">q2</span><span class="p">,</span> <span class="no">q3</span><span class="p">,</span> <span class="c">#5  @shift green elemnts right and insert into red</span>
+</span><span class='line'>                        <span class="err">@</span> <span class="nf">red</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">vshll.u8</span>    <span class="no">q3</span><span class="p">,</span> <span class="no">d2</span><span class="p">,</span> <span class="c">#8  @shift blue elements left to most-significant</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">of</span> <span class="no">wider</span> <span class="mi">16</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">vsri.16</span>     <span class="no">q2</span><span class="p">,</span> <span class="no">q3</span><span class="p">,</span> <span class="c">#11 @shift blue elements right and insert into</span>
+</span><span class='line'>                        <span class="err">@</span> <span class="nf">red</span> <span class="no">and</span> <span class="no">green</span> <span class="no">elements.</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>同样，每个指令的详细说明在备注中列出，但总而言之，对于每个通道而言：</p>
+
+<ol>
+  <li>将每个元素的长度扩展到 16 位，并将颜色数据移至最重要的位上。</li>
+  <li>使用插入右移位，将每个颜色通道放置到结果寄存器中。</li>
+</ol>
+
+<h2 id="section-8">结论</h2>
+
+<p>NEON 提供的强大的移位指令范围让你能够：</p>
+
+<ul>
+  <li>利用舍入和饱和，通过二次幂快速进行向量的除法和乘法运算。</li>
+  <li>通过移位将一个向量位复制到另一个向量位。</li>
+  <li>在高精度条件下进行临时计算，并在低精度条件下计算结果。</li>
 </ul>
 
 ]]></content>
@@ -892,298 +1043,6 @@
 </ul>
 
 <p>更多关于加载和存取操作的细节，可以参考<a href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0406b/index.html&amp;_ga=2.76337745.535197283.1547875098-60705264.1529324001">Arm Architecture Reference Manual</a>, 关于每条指令所占用的时钟周期数，可以参考<a href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.set.cortexa/index.html&amp;_ga=2.41000550.535197283.1547875098-60705264.1529324001">Technical Reference Manual for each core</a>.</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NEON 技术概述]]></title>
-    <link href="http://lazybing.github.io/blog/2019/01/19/neon-technology-overview/"/>
-    <updated>2019-01-19T00:10:40-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/01/19/neon-technology-overview</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#neon-" id="markdown-toc-neon-">NEON 概述</a></li>
-  <li><a href="#neon" id="markdown-toc-neon">如何使用 NEON</a>    <ul>
-      <li><a href="#neon--1" id="markdown-toc-neon--1">NEON 库</a>        <ul>
-          <li><a href="#arm-" id="markdown-toc-arm-">用于机器学习和计算机视觉的 Arm 计算库</a></li>
-        </ul>
-      </li>
-      <li><a href="#autovectorization" id="markdown-toc-autovectorization">AutoVectorization（自动向量化）</a></li>
-      <li><a href="#compiler-intrinsics-" id="markdown-toc-compiler-intrinsics-">Compiler Intrinsics (编译内联函数)</a></li>
-      <li><a href="#assembly-code" id="markdown-toc-assembly-code">Assembly Code(汇编代码)</a></li>
-    </ul>
-  </li>
-  <li><a href="#section" id="markdown-toc-section">开发工具</a></li>
-  <li><a href="#neon--2" id="markdown-toc-neon--2">NEON 生态系统</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">参考资源:</a></li>
-</ul>
-
-<p>ARM NEON 技术是针对<code>Arm Cortex-A/R52</code>系列处理器的一种高级 SIMD 架构扩展。NEON 技术在 Armv7-A 和 Armv7-R 架构时开始引入，现在同样是 Armv8-A 和 Armv8-R 架构的扩展。</p>
-
-<p>NEON 技术使用场景非常多，例如通过提高音视频编解码速度来提供更好的多媒体体验、加速数字信号处理算法和功能来加速音视频处理的应用、语音和面部识别、计算机视觉和深度学习。</p>
-
-<!--more-->
-
-<p><img src="/images/neon_overview/SIMDArchitecture-20.png"></p>
-
-<h2 id="neon-">NEON 概述</h2>
-
-<p>NEON 技术是一个打包的 SIMD 架构。NEON 寄存器是相同数据类型的向量元素，它可以支持多种数据类型。下表描述了不同架构版本支持的数据类型：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center"> </th>
-      <th style="text-align: center">Armv7-A/R</th>
-      <th style="text-align: center">Armv8-A/R</th>
-      <th style="text-align: center">Armv8-A</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Floating point</td>
-      <td style="text-align: center">32-bit</td>
-      <td style="text-align: center">16-bit*/32-bit</td>
-      <td style="text-align: center">16-bit*/32-bit/64-bit</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Integer</td>
-      <td style="text-align: center">8-bit/16-bit/32-bit</td>
-      <td style="text-align: center">8-bit/16-bit/32-bit/64-bit</td>
-      <td style="text-align: center">8-bit/16-bit/32-bit/64-bit</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>NEON 指令针对向量中的所有通道执行相同的操作，操作的个数会根据不同数据类型而不同。NEON 指令允许下面的类型：</p>
-
-<ul>
-  <li>16x8-bit, 8x16-bit, 4x32-bit, 2x64-bit整形操作</li>
-  <li>8x16-bit*, 4x32-bit, 2x64-bit** 浮点型操作</li>
-</ul>
-
-<p>其中<code>*</code>代表只存在于 Armv8.2-A 架构中，<code>**</code>代表只存在于 Armv8-A/R 架构中。</p>
-
-<p>NEON 技术也能够支持多个指令并行发布。</p>
-
-<h2 id="neon">如何使用 NEON</h2>
-
-<p>NEON 的使用方式有多种，比如使用 NEON 库、编译器的 auto-vectorization 功能、NEON intrinsics（内联函数）、NEON 汇编代码。
-关于 NEON 编程的详细信息可以参考<a href="https://static.docs.arm.com/den0018/a/DEN0018A_neon_programmers_guide_en.pdf?_ga=2.112843328.535197283.1547875098-60705264.1529324001">NEON 编程指南</a>.</p>
-
-<h3 id="neon--1">NEON 库</h3>
-
-<p>利用 NEON 的最简单的方式就是使用已经使用了 NEON 的开源库。</p>
-
-<h4 id="arm-">用于机器学习和计算机视觉的 Arm 计算库</h4>
-
-<p>Arm 计算库的目标是对于图像处理、计算机视觉和机器学习，它包含一些列针对 Arm CPU 和 GPU 架构的低级优化。更多信息可以访问<a href="https://developer.arm.com/technologies/compute-library">compue-library</a>.</p>
-
-<p>Ne10 是一个开源的 C 库，由 arm 公司在 github 上维护，它包含了一组最常用的功能，这些功能都已经为 arm 做了专项优化。Ne10 是一个模块化结构，包含了很多小的库，目前包含的主要功能有：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">Math functions</th>
-      <th style="text-align: center">Signal Processing functions</th>
-      <th style="text-align: center">Image processing functions</th>
-      <th style="text-align: center">Physics functions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">Vector Add</td>
-      <td style="text-align: center">Floating &amp; Fixed Point</td>
-      <td style="text-align: center">Image Resize</td>
-      <td style="text-align: center">Collision Detection</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Matrix-Add</td>
-      <td style="text-align: center">Complex-to-Complex FFT</td>
-      <td style="text-align: center">Image Rotate</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Vector Subtract</td>
-      <td style="text-align: center">Floating &amp; Fixed Point</td>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Vector Subtract From</td>
-      <td style="text-align: center">Real-to-Complex FFT</td>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Matrix Subtract</td>
-      <td style="text-align: center">FIR Filters</td>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center"> </td>
-    </tr>
-  </tbody>
-</table>
-
-<p>libyuv 是一个开源项目库，它包含了 YUV 缩放和转换功能。</p>
-
-<p>skia 库是一个针对 2D 图像的开源库，用作 谷歌 Chrome 和 Chrome OS, Android、Mozilla Firefox 和 Firefox OS 以及其他许多产品的图形引擎。</p>
-
-<h3 id="autovectorization">AutoVectorization（自动向量化）</h3>
-
-<p>auto-vectorization 特性是由 arm 编译器支持的，编译器会自动利用 NEON 功能。支持该特性的编译器有:</p>
-
-<ul>
-  <li>Arm Compiler 5</li>
-  <li>Arm LLVM-based Compiler 6</li>
-  <li>GCC</li>
-</ul>
-
-<p>NEON 编程指南在 arm 编译器使用用户指导部分同样对于 NEON 选项提供了额外的指导。</p>
-
-<h3 id="compiler-intrinsics-">Compiler Intrinsics (编译内联函数)</h3>
-
-<p>使用内联函数，编译器会在编译时将内联函数替换成一条或几条对应的 NEON 指令。内联函数提供的功能与汇编语言差不多，但将寄存器的使用交给了编译器，
-所以开发者可以专注在算法上。它同样可以执行指令调度从而移除指定目标处理器的流水线停顿。内联函数的可维护性比汇编语言更好，支持内联函数的编译器包括 ARM 编译器、GCC 编译器和 LLVM 编译器。</p>
-
-<p>更多关于 Intrinsics 的信息，可以参考<a href="https://developer.arm.com/technologies/neon/intrinsics">Arm NEON Intrinsics Reference document</a>,该参考文档记录了 Armv7 和 Armv8 架构的 NEON Intrinsics 使用方法。示例代码如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;arm_neon.h&gt;</span>
-</span><span class='line'><span class="kt">uint32x4_t</span> <span class="nf">double_elements</span><span class="p">(</span><span class="kt">uint32x4_t</span> <span class="n">input</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="n">vaddq_u32</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="n">input</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></arm_neon.h></p>
-
-<h3 id="assembly-code">Assembly Code(汇编代码)</h3>
-
-<p>为例更高的性能，NEON 汇编代码是最好的方法，只要支持 NEON instructions 的编译器，GNU 编译器(gas) 和 ARM 编译器(armasm) 都支持汇编代码。</p>
-
-<h2 id="section">开发工具</h2>
-
-<p><code>Arm DS-5 Development Studio</code>为基于 Arm 平台提供了用于 C/C++ 软件开发的端到端的工具套件，DS-5 从编程到调试对 NEON 架构提供了全支持。DS-5 调试器提供 NEON 指令的完整调试功能和架构寄存器的可视化。DS-5 调试器支持所有 Arm 架构配置文件和处理器。</p>
-
-<p><img src="/images/neon_overview/DS5.png"></p>
-
-<h2 id="neon--2">NEON 生态系统</h2>
-
-<p>NEON 在如下表格所示的领域内有广泛的使用，其中包含了很多跨平台的开源项目：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">Video Codecs</th>
-      <th style="text-align: center">Audio Codecs</th>
-      <th style="text-align: center">Voice and speech codecs</th>
-      <th style="text-align: center">Audio enhancement algorithms</th>
-      <th style="text-align: center">Computer Vision</th>
-      <th style="text-align: center">Machine and deep leaning</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">VP9 OTT encoder, VP9 Consumer encoder/decoder</td>
-      <td style="text-align: center">MP3 encoder/decoder</td>
-      <td style="text-align: center">G.711</td>
-      <td style="text-align: center">Echo cancellation</td>
-      <td style="text-align: center">Canny Edge detection</td>
-      <td style="text-align: center">On-device object recognition</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">H.264(AVC) encoder/decoder</td>
-      <td style="text-align: center">MPEG-2 layer I&amp;II encoder/decoder</td>
-      <td style="text-align: center">G.722, G.722.1, G.722.2</td>
-      <td style="text-align: center">Noise Reduction</td>
-      <td style="text-align: center">Harris Corner</td>
-      <td style="text-align: center">On-device scene recognition</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">MPEG4 SP/ASP encoder/decoder</td>
-      <td style="text-align: center">MPEG-1 layer III audio encoder</td>
-      <td style="text-align: center">G.723.1</td>
-      <td style="text-align: center">Beam Forming</td>
-      <td style="text-align: center">ORB</td>
-      <td style="text-align: center">Human pose recognition</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">MPEG2 decoder</td>
-      <td style="text-align: center">MPEG-1 layer III audio encoder /decoder</td>
-      <td style="text-align: center">G.726</td>
-      <td style="text-align: center">Comfort Noise</td>
-      <td style="text-align: center">Convolution filter</td>
-      <td style="text-align: center">Defect detection</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">H.263 decoder</td>
-      <td style="text-align: center">HE-AACv1, v2 encoder/decoder</td>
-      <td style="text-align: center">G.727</td>
-      <td style="text-align: center">AudioZoom</td>
-      <td style="text-align: center">Erosion/Dilation</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center">WMA Standart encoder/decoder</td>
-      <td style="text-align: center">G.728</td>
-      <td style="text-align: center">Equalization</td>
-      <td style="text-align: center">Face detection</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center">WMA Pro, WMA Lossless decoder</td>
-      <td style="text-align: center">G.729, G.279A, G.729B</td>
-      <td style="text-align: center">Wind noise reduction</td>
-      <td style="text-align: center">Pedestrian detection</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center">SBC Bluetooth encoder/decoder</td>
-      <td style="text-align: center">G.729AB</td>
-      <td style="text-align: center">Automatic Gain Control</td>
-      <td style="text-align: center">Fast9/Fast12 corner detection</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center"> </td>
-      <td style="text-align: center">OggVorbis encoder/decoder</td>
-      <td style="text-align: center">AMR Narrowband, Wideband, Wideband+</td>
-      <td style="text-align: center">Voice Activity Detection</td>
-      <td style="text-align: center">Object tracking</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center">…</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>有关 NEON 生态系统的更多合作伙伴可以参考 <a href="https://developer.arm.com/technologies/dsp/arm-dsp-ecosystem-partners">DSP Ecosystem Partners page</a>。</p>
-
-<h2 id="section-1">参考资源:</h2>
-
-<ol>
-  <li><a href="https://www.youtube.com/watch?v=ixuDntaSnHI">Taming Armv8 NEON:from theory to benchmark results</a>.</li>
-  <li><a href="https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-1-load-and-stores">Coding for NEON - Part 1: Load and Stores</a>.</li>
-  <li><a href="https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-2-dealing-with-leftovers">Coding for NEON - Part 2: Dealing With Leftovers</a>.</li>
-  <li><a href="https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-3-matrix-multiplication">Coding for NEON - Part 3: Matrix Multiplication</a>.</li>
-</ol>
 
 ]]></content>
   </entry>
