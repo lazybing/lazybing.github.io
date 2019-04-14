@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-04-14T01:31:41-07:00</updated>
+  <updated>2019-04-14T08:25:45-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -559,6 +559,87 @@
 <ul>
   <li>srshr v24.8h, v24.8h, #2</li>
 </ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程5——重排矢量]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector/"/>
+    <updated>2019-01-23T06:35:06-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">介绍</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">开始之前</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">可替换的</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">指令</a>    <ul>
+      <li><a href="#vmov--vswapmove--swap" id="markdown-toc-vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</a></li>
+      <li><a href="#vrevreverse" id="markdown-toc-vrevreverse">VREV:Reverse</a></li>
+      <li><a href="#vextextract" id="markdown-toc-vextextract">VEXT:Extract</a></li>
+      <li><a href="#vrtntranspose" id="markdown-toc-vrtntranspose">VRTN:Transpose</a></li>
+      <li><a href="#vzip--vuzpzip--unzip" id="markdown-toc-vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</a></li>
+      <li><a href="#vtbl-vtbxtable--table-extend" id="markdown-toc-vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">其他</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">结论</a></li>
+</ul>
+
+<p>本文描述了用于重置矢量寄存器数据的NEON指令。</p>
+
+<!--more-->
+
+<h2 id="section">介绍</h2>
+
+<p>当写 NEON 代码时，你或许会发现某些时候，寄存器中的数据格式并不适用于你的算法。可能需要重排矢量中的元素，从而让后续的算术可以。</p>
+
+<p>重新排序操作称为<strong>permutation</strong>，<strong>permutation</strong>指令重置单独像素、选择从单个或多个寄存器来组织一个新的矢量。</p>
+
+<h2 id="section-1">开始之前</h2>
+
+<p>在使用 NEON 提供的<strong>permutation</strong>指令之前，一定要想清楚是否真的需要使用它们。<strong>permutation</strong>指令与 move 指令相似，因为它们通常代表用于准备数据而不是处理数据的 CPU 周期。</p>
+
+<h2 id="section-2">可替换的</h2>
+
+<p>如何避免不必要的<em>permutes</em>？有如下方法选项：</p>
+
+<ul>
+  <li>
+    <p><strong>重排输入数据</strong>.</p>
+  </li>
+  <li>
+    <p><strong>重新设计算法</strong></p>
+  </li>
+  <li>
+    <p><strong>修改上一个处理阶段</strong></p>
+  </li>
+  <li>
+    <p><strong>使用交错负载和存储</strong></p>
+  </li>
+  <li>
+    <p><strong>综合方法</strong></p>
+  </li>
+</ul>
+
+<h2 id="section-3">指令</h2>
+
+<h3 id="vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</h3>
+
+<h3 id="vrevreverse">VREV:Reverse</h3>
+
+<h3 id="vextextract">VEXT:Extract</h3>
+
+<h3 id="vrtntranspose">VRTN:Transpose</h3>
+
+<h3 id="vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</h3>
+
+<h3 id="vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</h3>
+
+<h3 id="section-4">其他</h3>
+
+<h2 id="section-5">结论</h2>
+
+<p>仔细考虑你的代码是否真的需要重置你的数据是明智的。然而，当你的算法需要它时，permute 指令提供了一个高效的方法来使得你的数据存放到正确的格式。</p>
 
 ]]></content>
   </entry>
@@ -3923,86 +4004,6 @@ c. 字节流的结束，由未规定的方式判决。</li>
 </span><span class="line">    <span class="n">nal</span><span class="o">-&gt;</span><span class="n">i_payload</span> <span class="o">=</span> <span class="n">size</span><span class="o">+</span><span class="mi">4</span><span class="p">;</span>
 </span><span class="line">    <span class="n">nal</span><span class="o">-&gt;</span><span class="n">p_payload</span> <span class="o">=</span> <span class="n">orig_dst</span><span class="p">;</span>
 </span><span class="line">    <span class="n">x264_emms</span><span class="p">();</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264 源码解析之参考帧]]></title>
-    <link href="http://lazybing.github.io/blog/2017/10/19/reference-frame/"/>
-    <updated>2017-10-19T07:53:49-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/10/19/reference-frame</id>
-    <content type="html"><![CDATA[
-<p>本篇博客主要记录<code>X264</code>中关于参考帧管理。</p>
-
-<!--more-->
-
-<p><code>X264</code>中的帧可以大致分为以下几类：参考帧(ference frame)、当前编码帧(current frame)、未使用帧(unused frame)等。对帧的管理操作
-的基本操作由两种：从队列中获取帧(<code>x264_frame_pop</code>)、向队列中添加帧(<code>x264_frame_push_unused</code>)。</p>
-
-<p>关于帧队列的管理是通过数组来的，下面先介绍最基本的帧队列的一些基本操作。</p>
-
-<p>首先将<code>frame</code>帧插入到<code>list</code>队列中，实现代码如下：</p>
-
-<figure class="code"><figcaption><span>x264_frame_push </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">x264_frame_push</span><span class="p">(</span><span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span><span class="p">,</span> <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
-</span><span class="line">    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>从<code>list</code>队列中获取<code>frame</code>帧，实现代码如下：</p>
-
-<figure class="code"><figcaption><span>x264_frame_pop </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">x264_frame_t</span> <span class="o">*</span><span class="nf">x264_frame_pop</span><span class="p">(</span> <span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span> <span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="n">assert</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">);</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
-</span><span class="line">    <span class="n">frame</span> <span class="o">=</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
-</span><span class="line">    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">frame</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>当编码帧类型为<code>IDR</code>帧时，需要重置整个参考帧队列，<code>X264</code>中重置参考队列是通过<code>x264_reference_reset</code>函数完成，实现过程即为将<code>reference</code>队列
-所有的参考帧设置为<code>unused</code>队列中的<code>unused</code>帧；实现代码如下：</p>
-
-<figure class="code"><figcaption><span>x264_reference_reset </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">x264_reference_reset</span><span class="p">(</span> <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span> <span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
-</span><span class="line">        <span class="n">x264_frame_push_unused</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">x264_frame_pop</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span> <span class="p">)</span> <span class="p">);</span>
-</span><span class="line">    <span class="n">h</span><span class="o">-&gt;</span><span class="n">fdec</span><span class="o">-&gt;</span><span class="n">i_poc</span> <span class="o">=</span>
-</span><span class="line">    <span class="n">h</span><span class="o">-&gt;</span><span class="n">fenc</span><span class="o">-&gt;</span><span class="n">i_poc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
