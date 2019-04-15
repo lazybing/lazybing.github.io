@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Gprof 是一个 Unix 应用程序性能分析工具。 Profiling 可以使我们看到程序运行时程序的调用关系、函数的消耗时长等。这些信息可以使我们了解程序中那块代码耗时高于预期。 使用 Profiling 主要包括如下三步： 编译链接程序时要使能 profiling 。 执行编译处的可执行文件 &hellip;">
+  <meta name="description" content="Gprof 是一个 Unix 应用程序性能分析工具。 gprof 概述 Profiling 可以使我们看到程序运行时程序的调用关系、函数的消耗时长等。这些信息可以使我们了解程序中那块代码耗时高于预期。 使用 Profiling 主要包括如下三步： 编译链接程序时要使能 profiling 。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -101,6 +101,8 @@
 <div class="entry-content"><p><a href="https://en.wikipedia.org/wiki/Gprof">Gprof</a> 是一个 Unix 应用程序性能分析工具。
 <!--more--></p>
 
+<h2 id="gprof-">gprof 概述</h2>
+
 <p><a href="https://sourceware.org/binutils/docs/gprof/index.html">Profiling</a> 可以使我们看到程序运行时程序的调用关系、函数的消耗时长等。这些信息可以使我们了解程序中那块代码耗时高于预期。</p>
 
 <p>使用 Profiling 主要包括如下三步：</p>
@@ -118,6 +120,8 @@
 </ul>
 
 <p>根据产生的 profile ，可以产生各种不同实行的分析输出。如 The Flat Profile、The Call Graph、The Annotated Source Listing。</p>
+
+<h2 id="gprof--1">gprof 示例代码</h2>
 
 <p>示例分析：</p>
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
@@ -212,6 +216,8 @@
 
 <p>此时生成的分析文件 analysis.txt 中有两种形式的分析数据。</p>
 
+<h3 id="flat-profile-">Flat Profile 示例图</h3>
+
 <p>Flat Profile 如图：</p>
 
 <p><img src="/images/gprof/Flat_profile.png" /></p>
@@ -255,9 +261,52 @@
   </tbody>
 </table>
 
+<h3 id="call-graph-">Call Graph 示例图</h3>
+
 <p>Call Graph 如图：</p>
 
 <p><img src="/images/gprof/Call_graph.png" /></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">标注</th>
+      <th style="text-align: center">释义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">index</td>
+      <td style="text-align: center">每个函数第一次出现时分配一个编号，根据编号可以方便查找函数的具体分析数据</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">%time</td>
+      <td style="text-align: center">函数以及调用子函数所占用的总运行时间的百分比</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">self</td>
+      <td style="text-align: center">函数的总运行时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">children</td>
+      <td style="text-align: center">子函数执行的总时间</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">called</td>
+      <td style="text-align: center">函数被调用的次数，不包括递归调用</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">name</td>
+      <td style="text-align: center">函数名称, name 列中，可查看函数之间的调用关系</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="section">参考资料</h2>
+<ol>
+  <li><a href="https://computing.llnl.gov/tutorials/performance_tools/">Performance Analysis Tools</a></li>
+  <li><a href="https://sourceware.org/binutils/docs/gprof/">GNU gprof</a></li>
+</ol>
 
 </div>
 
