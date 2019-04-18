@@ -4,7 +4,7 @@
   <title><![CDATA[分类:性能优化 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xing-neng-you-hua/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-04-17T08:22:20-07:00</updated>
+  <updated>2019-04-18T08:28:49-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -30,14 +30,176 @@
 
 <p>循环展开从两个方面改变程序的性能：</p>
 
-<ol>
+<ul>
+  <li>分支预测失败减少。</li>
   <li>减少不直接有助于程序结果的操作的数量，如循环索引计算和条件分支。</li>
   <li>提供了一种方法，可以进一步变换代码，减少整个计算中关键路径上的操作数量。</li>
-</ol>
+</ul>
 
 <h2 id="section">示例分析</h2>
 
+<p><figure class='code'><figcaption><span>loop_unrolling.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &amp;lt;sys/time.h&amp;gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">loop_unroll1</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">a</span><span class="p">[</span><span class="mi">1000000</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">loop_unroll2</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">a</span><span class="p">[</span><span class="mi">1000000</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="n">i</span><span class="o">+=</span><span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">loop_unroll3</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">a</span><span class="p">[</span><span class="mi">1000000</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="n">i</span><span class="o">+=</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">timeval</span> <span class="n">time_start</span><span class="p">,</span> <span class="n">time_end</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_start</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">loop_unroll1</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_end</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">used</span> <span class="n">time</span> <span class="n">us_sec</span> <span class="o">%</span><span class="n">ld</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">time_end</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">.</span><span class="n">tv_usec</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_start</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">loop_unroll2</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_end</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">used</span> <span class="n">time</span> <span class="n">us_sec</span> <span class="o">%</span><span class="n">ld</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">time_end</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">.</span><span class="n">tv_usec</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_start</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">loop_unroll3</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_end</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">used</span> <span class="n">time</span> <span class="n">us_sec</span> <span class="o">%</span><span class="n">ld</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">time_end</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">.</span><span class="n">tv_usec</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>运行上面的程序：</p>
+
+<p><code>
+gcc -funroll-loops -pg loop_unrolling.c -o loop_unrolling
+</code></p>
+
+<p>执行三次后，结果如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Executions</th>
+      <th style="text-align: center">loop_unroll1</th>
+      <th style="text-align: center">loop_unroll2</th>
+      <th style="text-align: center">loop_unroll3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">12618</td>
+      <td style="text-align: center">1890</td>
+      <td style="text-align: center">3162</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">7456</td>
+      <td style="text-align: center">1987</td>
+      <td style="text-align: center">1629</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">9868</td>
+      <td style="text-align: center">2446</td>
+      <td style="text-align: center">2388</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>上面的结果可以看出，产开次数为2相对于未展开时，性能有明显提升，但展开次数为4时，性能相对于展开次数为2并没有多少提升。另外，编译器选项<code>-funroll-loops</code>好像并没有起到什么作用。但是如果添加编译选项<code>-O1</code>或<code>-O2/-O3</code>时，编译器会自动优化该函数。</p>
+
+<p>关于展开次数和性能之间的关系，CSAPP 这本书里有介绍一个实验结果，如图所示：</p>
+
+<p><img src="/images/loop_unroll/loop_unrolling.png"></p>
+
+<p>从图中可以看出，当循环展开到6次时的CPE(Cycles Per Element,每元素的周期数)测量值，对于展开2次或3次时观察到的趋势还在继续——循环展开对浮点数运算没有帮助，但对整数加法和乘法，CPE降至1.00.</p>
+
+<p>实验过程中发现，CSAPP中描述的结论与我自己测试的结果有几点需要注意：</p>
+
+<ol>
+  <li>测试中，循环展开对于浮点数的加法和乘法是有效的。</li>
+  <li>编译器选项<code>-funroll-loops</code>并没有起到循环展开的作用。</li>
+  <li>循环展开对于性能的提升确实是都有帮助的。</li>
+</ol>
+
 <h2 id="section-1">总结</h2>
+
+<p>循环展开对于性能的提升是由帮助的，但这种帮助并不是无限的，随着展开次数的增多，性能并不会继续增加，相反，循环展开次数过多，会使得程序代码膨胀、代码可读性降低。另外，编译器优化选项<code>-O1</code>或<code>-O2</code>等，会使得编译器自身会对代码进行优化，此时手动循环展开并不是一个好的方法。再者，受运行环境的影响（我的测试用例都是在Ubuntu虚拟机下完成），其测试结果可能有不同。</p>
 
 <h2 id="section-2">参考资料</h2>
 <ol>
