@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-04-19T10:04:10-07:00</updated>
+  <updated>2019-04-19T21:13:34-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,10 +18,250 @@
     <link href="http://lazybing.github.io/blog/2019/04/19/reducing-procedure-call/"/>
     <updated>2019-04-19T09:59:18-07:00</updated>
     <id>http://lazybing.github.io/blog/2019/04/19/reducing-procedure-call</id>
-    <content type="html"><![CDATA[
-<p>函数调用会带来相当大的开销，而且它会阻碍其他形式的程序优化。单独的较少调用次数可能对性能提升并不明显，但考虑到减少调用后，可以进一步进行其他形式的优化，因此，减少函数调用还是很有必要的。</p>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">简单函数处理</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">函数处理</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">减少调用后续优化</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-3" id="markdown-toc-section-3">总结</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">参考资料</a></li>
+</ul>
+
+<p>函数调用会带来相当大的开销，而且它会阻碍其他形式的程序优化。单独的较少调用次数可能对性能提升并不明显，但考虑到减少调用后，可以进一步进行其他形式的优化，减少函数调用还是很有必要的。</p>
 
 <!--more-->
+
+<h2 id="section">简单函数处理</h2>
+
+<ul>
+  <li>
+    <p>直接将函数展开，写入调用函数处，去掉调用函数。</p>
+  </li>
+  <li>
+    <p>使用<strong>inline</strong>关键字，将经常调用的函数写成内联函数。</p>
+  </li>
+  <li>
+    <p>使用<strong>define</strong>关键字，使得代码在编译时将其展开。</p>
+  </li>
+</ul>
+
+<p>例如，下面的函数调用</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">imin</span><span class="p">(</span><span class="k">const</span> <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">b</span><span class="p">){</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="n">c</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>可以使用上面提到的三种优化方式：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">// method 1</span>
+</span><span class="line"><span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">;</span>
+</span><span class="line"><span class="c1">//method 2</span>
+</span><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">imin</span><span class="p">(</span><span class="k">const</span> <span class="kt">int</span> <span class="n">a</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">b</span><span class="p">){</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="n">c</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+</span><span class="line"><span class="c1">//method 3</span>
+</span><span class="line"><span class="cp">#define IMIN(a, b) return ((a) &lt; (b) ? (a) : (b))</span>
+</span><span class="line"><span class="n">c</span> <span class="o">=</span> <span class="n">IMIN</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section-1">函数处理</h2>
+
+<p>上面的方法针对小函数、频繁调用的情况较试用，当函数较复杂时，我们就不适合直接展开了，那样会显得整个代码特别繁琐；另外如果被调用函数并不是我们自己的代码，就更没办法用上面提到的方法了。此时，就要分析函数的功能，选择替代方案减少调用。举个例子：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span><span class="p">{</span>
+</span><span class="line">    <span class="kt">long</span> <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="n">vec_rec</span><span class="p">,</span> <span class="o">*</span><span class="n">vec_ptr</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">vec_ptr</span> <span class="nf">new_vec</span><span class="p">(</span><span class="kt">long</span> <span class="kt">int</span> <span class="n">len</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">vec_ptr</span> <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">vec_ptr</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">vec_rec</span><span class="p">));</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">result</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="n">result</span><span class="o">-&gt;</span><span class="n">len</span> <span class="o">=</span> <span class="n">len</span><span class="p">;</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class="line">        <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="kt">data_t</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">len</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">data_t</span><span class="p">));</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">data</span><span class="p">){</span>
+</span><span class="line">            <span class="n">free</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">result</span><span class="p">);</span>
+</span><span class="line">            <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="n">result</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class="line">        <span class="n">result</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">get_vec_element</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">int</span> <span class="n">index</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">v</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">)</span>
+</span><span class="line">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">v</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
+</span><span class="line">    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">long</span> <span class="kt">int</span> <span class="nf">vec_length</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">v</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">combine2</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="kt">data_t</span> <span class="n">val</span><span class="p">;</span>
+</span><span class="line">        <span class="n">get_vec_element</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">val</span><span class="p">);</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="o">*</span><span class="n">dest</span> <span class="o">+</span> <span class="n">val</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>上面的<code>combine2</code>函数的 for 循环中会一直调用 <strong>get_vec_element</strong>函数来获取一个元素，通过分析该函数可以看出，它获取的其实是<strong>vec_rec.v-&gt;data</strong>数组的元素，该元素也是随着循环索引<strong>i</strong>来递增的，因此可以把该函数提到<strong>for</strong>循环的外面，减少函数调用，修改后的函数如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">data_t</span> <span class="o">*</span><span class="nf">get_vec_start</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">v</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">combine2_reducing_proc_call</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">get_vec_start</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="o">*</span><span class="n">dest</span> <span class="o">+</span> <span class="n">val</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>分析上面的优化，其实它是破坏了函数的结构的，这种方法会损害函数的模块性和抽象性，上面的例子中，我们是通过分析<code>get_vec_element</code>函数和<code>for</code>循环才确定的减少调用是可用的。</p>
+
+<h3 id="section-2">减少调用后续优化</h3>
+
+<p>上面提到的都是针对减少调用本身来提升性能的，减少调用本身对系统性能的提升非常有限，但减少调用后，可以方便的进行进一步的优化，而进一步的优化可能效果非常显著。例如上面提到的 combine 函数，将调用函数提取到 for 循环外后，可以对整个 for 循环进行 NEON 优化，效率的提升会更加明显。</p>
+
+<p>在做 AV1 效率优化时，也遇到过类似的优化案例：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define add_noise_y(x, y, grain)    \</span>
+</span><span class="line"><span class="cp">    pixel *src = src_row + (y) * stride + (bx + x);  \</span>
+</span><span class="line"><span class="cp">    pixel *dst = dst_row + (y) * stride + (bx + x);  \</span>
+</span><span class="line"><span class="cp">    int noise  = round2(scaling[ *src ] * (grain), data-&gt;scaling_shift); \</span>
+</span><span class="line"><span class="cp">    *dst = iclip(*src + noise, min_value max_value);</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="kt">int</span> <span class="n">grain</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+</span><span class="line">            <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">);</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>未优化前，此段代码在解码过程中，大概耗时 8ms，优化完成后，降低到 7ms，效率提升了 12.5%。提升还是很大的。</p>
+
+<h2 id="section-3">总结</h2>
+
+<h2 id="section-4">参考资料</h2>
 
 ]]></content>
   </entry>
