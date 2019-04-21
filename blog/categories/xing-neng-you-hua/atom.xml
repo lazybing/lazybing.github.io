@@ -4,7 +4,7 @@
   <title><![CDATA[分类:性能优化 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xing-neng-you-hua/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-04-21T02:58:57-07:00</updated>
+  <updated>2019-04-21T10:32:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,7 +18,102 @@
     <link href="http://lazybing.github.io/blog/2019/04/21/locality-of-reference/"/>
     <updated>2019-04-21T02:56:40-07:00</updated>
     <id>http://lazybing.github.io/blog/2019/04/21/locality-of-reference</id>
-    <content type="html"><![CDATA[
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">局部性示例</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">局部性原理</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">存储器层次结构</a></li>
+</ul>
+
+<p>局部性原理是指程序通常倾向于引用邻近于其最近引用过的数据项的数据项，或最近引用过的数据本身。</p>
+
+<!--more-->
+
+<h2 id="section">局部性示例</h2>
+
+<p>先看下面两个对数组访问的示例，</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define ARRAY_ROW_SIZE 1000</span>
+</span><span class='line'><span class="cp">#define ARRAY_COL_SIZE 1000&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">access_array_col</span><span class="p">(</span><span class="kt">int</span> <span class="n">array1</span><span class="p">[</span><span class="n">ARRAY_ROW_SIZE</span><span class="p">][</span><span class="n">ARRAY_COL_SIZE</span><span class="p">])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_ROW_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_COL_SIZE</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">array1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">access_array_row</span><span class="p">(</span><span class="kt">int</span> <span class="n">array1</span><span class="p">[</span><span class="n">ARRAY_ROW_SIZE</span><span class="p">][</span><span class="n">ARRAY_COL_SIZE</span><span class="p">])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_ROW_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_COL_SIZE</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">array1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">used time</th>
+      <th style="text-align: center">1</th>
+      <th style="text-align: center">2</th>
+      <th style="text-align: center">3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">access_array_row</td>
+      <td style="text-align: center">3521</td>
+      <td style="text-align: center">4287</td>
+      <td style="text-align: center">4741</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">access_array_col</td>
+      <td style="text-align: center">12389</td>
+      <td style="text-align: center">10713</td>
+      <td style="text-align: center">11985</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>从上面的例子可以看出，同样是访问一个数组，采用列访问和采用行访问，事件相差非常大，原因就是<code>access_array_row</code>利用局部性原理。</p>
+
+<h2 id="section-1">局部性原理</h2>
+
+<p>局部性主要包括两种形式，时间局部性和空间局部性。</p>
+
+<ul>
+  <li>时间局部性：被引用过一次的存储器位置很可能在不远的将来再被多次引用。</li>
+  <li>空间局部性：如果一个存储器位置被引用了一次，那么程序很可能在不远的将来引用附近的一个存储器位置。</li>
+</ul>
+
+<p>有良好局部性的程序比局部性差的程序运行得更快，计算机系统设计中，局部性原理在硬件和软件中都有应用，硬件层上，采用了<strong>高速缓存存储器</strong>充分利用了局部性原理；软件层上，操作系统用主存来缓存硬盘文件系统。</p>
+
+<h2 id="section-2">存储器层次结构</h2>
+
+<p>局部性原理在存储器中使用特别频繁。</p>
+
+<p><img src="/images/locality/locality.png"></p>
+
 ]]></content>
   </entry>
   
