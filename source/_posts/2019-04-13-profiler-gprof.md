@@ -1,9 +1,9 @@
 ---
 layout: post
-title: "如何使用gprof"
-date: 2016-09-22 09:52:06 -0700
+title: "性能优化之性能分析工具gprof"
+date: 2019-04-13 09:52:06 -0700
 comments: true
-categories: 编程工具
+categories: 性能优化
 ---
 
 [Gprof](https://en.wikipedia.org/wiki/Gprof) 是一个 Unix 应用程序性能分析工具。
