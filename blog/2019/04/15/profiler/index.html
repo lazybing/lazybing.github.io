@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Linux常用命令之sed - 懒人李冰</title>
+  <title>性能优化之分析瓶颈 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="sed是stream editor的简称，它是一种在线编辑器，用于处理一行一行的数据。处理时，首先把待处理的文件内容送到临时缓冲区中，
-称为”模式空间”，接着用sed命令处理缓冲区中的内容，处理完成后，把缓冲区中的内容送往屏幕，接着处理下一行，不断重复，直至文件末尾。 假设有文本文件text， &hellip;">
+  <meta name="description" content="
+对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具来测试程序性能。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2017/10/01/how-to-use-sed/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/04/15/profiler/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +83,7 @@
   
   <header>
     
-      <h1 class="entry-title">Linux常用命令之sed</h1>
+      <h1 class="entry-title">性能优化之分析瓶颈</h1>
     
     
       <p class="meta">
@@ -92,7 +92,7 @@
 
 
 
-<time class='entry-date' datetime='2017-10-01T08:35:06-07:00'><span class='date'>2017 年 10 月 01 日</span> <span class='time'>8:35 am</span></time>
+<time class='entry-date' datetime='2019-04-15T08:08:54-07:00'><span class='date'>2019 年 04 月 15 日</span> <span class='time'>8:08 am</span></time>
         
       </p>
     
@@ -100,131 +100,9 @@
 
 
 <div class="entry-content">
-<p><code>sed</code>是<code>stream editor</code>的简称，它是一种在线编辑器，用于处理一行一行的数据。处理时，首先把待处理的文件内容送到临时缓冲区中，
-称为”模式空间”，接着用<code>sed</code>命令处理缓冲区中的内容，处理完成后，把缓冲区中的内容送往屏幕，接着处理下一行，不断重复，直至文件末尾。</p>
+<p>对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具来测试程序性能。</p>
 
 <!--more-->
-
-<p>假设有文本文件<code>text</code>，内容如下：</p>
-
-<blockquote><p>10 tiny toes<br />this is that<br />5 funny 0<br />one two three<br />tree twice<br />new newer<br />NEW<br />newer new<br />NEW new old</p></blockquote>
-
-<p>一. 基本用法：</p>
-
-<ul>
-  <li>将<code>text</code>文本中每行第一个小写字母<code>t</code>替换为大写字母<code>T</code>.</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$cat text | sed 's/t/T/'
-</span><span class="line">$sed 's/t/T/' text</span></code></pre></td></tr></table></div></figure>
-
-<ul>
-  <li>将<code>text</code>文本中每行所有的小写字母<code>t</code>替换为大写字母<code>T</code>.</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$sed 's/t/T/g' text
-</span><span class="line">$sed 's/t/T/g' text &gt; new.txt
-</span><span class="line">$sed -i 's/t/T/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>二、与正则表达式结合</p>
-
-<ul>
-  <li>如果一行中第一个字符是<code>t</code>，就将它替换为<code>T</code>，其他字符不变。</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/^t/T/g' text</span></code></pre></td></tr></table></div></figure>
-
-<ul>
-  <li>如果一行中最后一个字符是<code>t</code>，就将它替换为<code>T</code>，其他字符不变。</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/t$/T/g' text</span></code></pre></td></tr></table></div></figure>
-
-<ul>
-  <li>将所有的数字/小写字母、大写字母、所有的字母替换为<code>*</code>。</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/[0-9]/*/g' text
-</span><span class="line">sed 's/[a-z]/*/g' text
-</span><span class="line">sed 's/[A-Z]/*/g' text
-</span><span class="line">sed 's/[a-zA-Z]/*/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>三、同时替换多个字符串</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/Twice/None/g' text | sed 's/Three/Two/g'
-</span><span class="line">sed 's/Twice/None/g;s/Three/Two/g' text
-</span><span class="line">sed 's/Twice/None/g;s/Three/Two/g;s/funny/tummy/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>四、删除最后一个字符串</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed ‘s/\w*//’ text
-</span><span class="line">sed ‘s/\w*.//’ text
-</span><span class="line">sed ‘s/\w*$//’ text
-</span><span class="line">sed ‘s/\w*$/bob/’ text</span></code></pre></td></tr></table></div></figure>
-
-<p>五、只显示匹配行的结果</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/T/t/g' text
-</span><span class="line">sed -n 's/T/t/g' text
-</span><span class="line">sed -n 's/T/t/pg' text</span></code></pre></td></tr></table></div></figure>
-
-<p>六、忽略大小写的替换</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/that/bob/g' text
-</span><span class="line">sed 's/that/bob/Ig' text</span></code></pre></td></tr></table></div></figure>
-
-<p>七、使用脚本文件,</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed -f mysedscript text</span></code></pre></td></tr></table></div></figure>
-
-<p>其中的<code>mysedscript</code>内容是：</p>
-<blockquote><p>s/T/t/g<br />s/e/E/g<br />s/\w*.//</p></blockquote>
-
-<p>八、只替换完整的一个单词，使用边界符</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed 's/\bnew\b/old/g' text</span></code></pre></td></tr></table></div></figure>
-
-<p>九、删除匹配行</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed '/new$/D' text
-</span><span class="line">sed '/^new$/D' text
-</span><span class="line">sed '/\bnew\b/D' text</span></code></pre></td></tr></table></div></figure>
-
-<p>十、 替换文件夹内所有文件内容</p>
-
-<p>如果想要替换某个文件夹下所有文件中的某个字符串，该如何操作呢，此时可以使用<code>sed</code>命令。例如，
-替换<code>example_folder</code>文件夹下所有文件中的字符串<code>orig_str</code>，替换为<code>dst_str</code>，此时可以使用<code>sed</code>命令：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">sed -i "s/orig_str/dst_str/g" `grep "orig_str" -rl /example_folder`</span></code></pre></td></tr></table></div></figure>
 
 </div>
 
@@ -241,12 +119,12 @@
 
 
 
-<time class='entry-date' datetime='2017-10-01T08:35:06-07:00'><span class='date'>2017 年 10 月 01 日</span> <span class='time'>8:35 am</span></time>
+<time class='entry-date' datetime='2019-04-15T08:08:54-07:00'><span class='date'>2019 年 04 月 15 日</span> <span class='time'>8:08 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/bian-cheng-gong-ju/'>编程工具</a>
+    <a class='category' href='/blog/categories/xing-neng-you-hua/'>性能优化</a>
   
 </span>
 
@@ -255,7 +133,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/10/01/how-to-use-sed/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/10/01/how-to-use-sed/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/04/15/profiler/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/04/15/profiler/" >Tweet</a>
   
   
   
@@ -264,10 +142,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2017/09/29/coding-tips/" title="Previous Post: 编程小技巧">&laquo; 编程小技巧</a>
+        <a class="basic-alignment left" href="/blog/2019/04/13/profiler-gprof/" title="Previous Post: 性能优化之性能分析工具gprof">&laquo; 性能优化之性能分析工具gprof</a>
       
       
-        <a class="basic-alignment right" href="/blog/2017/10/05/how-to-use-valgrind/" title="Next Post: 系统内存检测工具Valgrind入门">系统内存检测工具Valgrind入门 &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2019/04/17/loop-unroll/" title="Next Post: 性能优化之循环展开">性能优化之循环展开 &raquo;</a>
       
     </p>
   </footer>
