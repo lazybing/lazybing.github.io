@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-04-22T08:20:32-07:00</updated>
+  <updated>2019-04-23T08:53:30-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -2647,16 +2647,20 @@
     <updated>2018-10-15T07:43:02-07:00</updated>
     <id>http://lazybing.github.io/blog/2018/10/15/av1-startup</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#av1-" id="markdown-toc-av1-">AV1 工具介绍</a>    <ul>
+      <li><a href="#section" id="markdown-toc-section">编码块划分</a></li>
+    </ul>
+  </li>
   <li><a href="#aom-" id="markdown-toc-aom-">AOM 工程</a>    <ul>
-      <li><a href="#av1-" id="markdown-toc-av1-">AV1 前期准备</a></li>
-      <li><a href="#section" id="markdown-toc-section">获取源码</a></li>
-      <li><a href="#section-1" id="markdown-toc-section-1">编译</a>        <ul>
+      <li><a href="#av1--1" id="markdown-toc-av1--1">AV1 前期准备</a></li>
+      <li><a href="#section-1" id="markdown-toc-section-1">获取源码</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">编译</a>        <ul>
           <li><a href="#linux-" id="markdown-toc-linux-">Linux 下编译方法</a></li>
           <li><a href="#windows-" id="markdown-toc-windows-">Windows 下编译方法</a></li>
-          <li><a href="#section-2" id="markdown-toc-section-2">交叉编译</a></li>
+          <li><a href="#section-3" id="markdown-toc-section-3">交叉编译</a></li>
         </ul>
       </li>
-      <li><a href="#section-3" id="markdown-toc-section-3">配置选项</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">配置选项</a></li>
       <li><a href="#aom-vs-" id="markdown-toc-aom-vs-">AOM VS 工程</a></li>
     </ul>
   </li>
@@ -2664,18 +2668,114 @@
       <li><a href="#dav1d--1" id="markdown-toc-dav1d--1">DAV1D 下载</a></li>
       <li><a href="#dav1d--2" id="markdown-toc-dav1d--2">DAV1D 工程编译</a></li>
       <li><a href="#dav1d-vs-" id="markdown-toc-dav1d-vs-">DAV1D VS 工程</a></li>
-      <li><a href="#section-4" id="markdown-toc-section-4">参考文档</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">参考文档</a></li>
     </ul>
   </li>
 </ul>
 
-<p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码格式，专为通过网络进行刘传书而设计。学习一个新的视频编解码标准除了看<a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">SPEC</a>,最好的方法是看源码<code>aom</code>。本文主要记录官方工程 AOM 和 DAV1D 两个工程的建立。</p>
+<p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码格式，专为通过网络进行传输而设计。学习一个新的视频编解码标准除了看<a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">SPEC</a>,最好的方法是看源码<code>aom</code>。本文主要记录 AV1 中使用到的技术、官方工程 AOM 和 DAV1D 两个工程的建立。</p>
 
 <!--more-->
 
+<h2 id="av1-">AV1 工具介绍</h2>
+
+<h3 id="section">编码块划分</h3>
+
+<p>尽管编码块的划分是在编码端完成，但作为一个视频压缩中的技术手段，这里也给出简单的描述。</p>
+
+<p>VP9 中使用最大块<code>64x64</code>的块，沿着 4 个方向划分到最小的<code>4x4</code>块，并且对<code>8x8</code>块有额外严格的限制。AV1 不仅扩大了划分方式到 10 个方向，并且增大最大块到<code>128x128</code>，这其中包括了<code>4:1/1:4</code>的矩形划分（该划分方式不存在于 VP9 中）。对于举行划分，无法进行递归的划分。AV1 对于<code>8x8</code>以下的块有更加灵活的划分方式。</p>
+
+<p><img src="http://lazybing.github.io/images/av1_startup/partition_vp9_av1.png" /></p>
+
+<p>注意，图中标记为 R 的，代表还可以继续向下划分。</p>
+
+<p><code>DAV1D</code>中关于块划分和块大小的定义如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">enum</span> <span class="n">BlockPartition</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">PARTITION_NONE</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_H</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_V</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_SPLIT</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_T_TOP_SPLIT</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_T_BOTTOM_SPLIT</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_T_LEFT_SPLIT</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_T_RIGHT_SPLIT</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_H4</span><span class="p">,</span>
+</span><span class="line">    <span class="n">PARTITION_V4</span><span class="p">,</span>
+</span><span class="line">    <span class="n">N_PARTITIONS</span><span class="p">,</span>
+</span><span class="line">    <span class="n">N_SUB8x8_PARTITIONS</span> <span class="o">=</span> <span class="n">PARTITION_T_TOP_SPLIT</span><span class="p">,</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">enum</span> <span class="n">BlockSize</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">BS_128x128</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_128x64</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_64x128</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_64x64</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_64x32</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_64x16</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_32x64</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_32x32</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_32x16</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_32x8</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_16x64</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_16x32</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_16x16</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_16x8</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_16x4</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_8x32</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_8x16</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_8x8</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_8x4</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_4x16</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_4x8</span><span class="p">,</span>
+</span><span class="line">    <span class="n">BS_4x4</span><span class="p">,</span>
+</span><span class="line">    <span class="n">N_BS_SIZES</span><span class="p">,</span>
+</span><span class="line"><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
 <h2 id="aom-">AOM 工程</h2>
 
-<h3 id="av1-">AV1 前期准备</h3>
+<h3 id="av1--1">AV1 前期准备</h3>
 
 <ul>
   <li>安装<code>CMake</code>，版本需求 3.5 以上。</li>
@@ -2685,12 +2785,12 @@
   <li>安装<code>python</code>。</li>
 </ul>
 
-<h3 id="section">获取源码</h3>
+<h3 id="section-1">获取源码</h3>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">$ git clone https://aomedia.googlesource.com/aom</span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-1">编译</h3>
+<h3 id="section-2">编译</h3>
 
 <p><code>AV1</code>采用的配制方法不再是通常的<code>config</code>命令，而是<code>cmake</code>.<code>cmake</code>会生成配置文件和编译文件，大多数系统中，默认的编译文件是<code>Makefile</code>。
 执行<code>cmake</code>会得到如下提示:</p>
@@ -2732,7 +2832,7 @@
 </span><span class="line">$ cmake /path/to/aom -G "Visual Studio 12 2013 Win64" -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0 -DAOM_TARGET_CPU=generic</span></code></pre></td></tr></table></div></figure>
 <p>此时在<code>aom_vs</code>路径下，会生成一个<code>AOM.sln</code>,用<code>VisualStudio 2013</code>打开该文件后，编译运行即可使用<code>VisualStudio</code>调试学习了。</p>
 
-<h4 id="section-2">交叉编译</h4>
+<h4 id="section-3">交叉编译</h4>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -2743,7 +2843,7 @@
 </span><span class="line">$ CFLAGS="-pie -fPIE" LDFLAGS="-pie -fpIE" cmake /path/to/aom -DCROSS=/path/to/cross_build_tool_bin/ -DCMAKE_TOOLCHAIN_FILE=/path/to/tools -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0
 </span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-3">配置选项</h3>
+<h3 id="section-4">配置选项</h3>
 
 <p>上面再编译的过程中，已经提到了很多配置选项，在此举几个例子：</p>
 
@@ -2782,7 +2882,7 @@
 
 <p><img src="http://lazybing.github.io/images/av1_startup/dav1d_vs.png" /></p>
 
-<h3 id="section-4">参考文档</h3>
+<h3 id="section-5">参考文档</h3>
 
 <p><a href="https://aomedia.googlesource.com/aom/+/master/README.md">AV1 Codec Library</a></p>
 
