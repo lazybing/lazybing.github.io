@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content=" 矩阵 算法(Algorithm) 代码 浮点数运算 D and Q 寄存器 回到代码中 定点运算 宏定义： 如果考虑到调度的话 前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。 ">
+  <meta name="description" content="向量移位 移位与插入 移位与计算 指令修改器 可用移位表 示例：转换颜色深度 从 565 到 888 从888到565 结论 本文将介绍 NEON 提供的移位运算，并介绍如何利用移位运算在常用颜色深度之间转换影像数据。本系列前期已发布的文章包括：第一部分：加载与存储，第二部分：余数的处理， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,54 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/01/22/neon-shifting-left-and-right/">NEON 编程4——左右移位</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-01-22T06:44:07-08:00'><span class='date'>2019 年 01 月 22 日</span> <span class='time'>6:44 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">向量移位</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">移位与插入</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">移位与计算</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">指令修改器</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">可用移位表</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">示例：转换颜色深度</a>    <ul>
+      <li><a href="#section-6" id="markdown-toc-section-6">从 565 到 888</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">从888到565</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-8" id="markdown-toc-section-8">结论</a></li>
+</ul>
+
+<p>本文将介绍 NEON 提供的移位运算，并介绍如何利用移位运算在常用颜色深度之间转换影像数据。本系列前期已发布的文章包括：第一部分：加载与存储，第二部分：余数的处理，第三部分：矩阵乘法。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2019/01/22/neon-shifting-left-and-right/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -520,44 +568,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2018/03/25/audio-basic-concept/">音频概念介绍(采样频率、帧率、通道数等)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2018-03-25T08:54:32-07:00'><span class='date'>2018 年 03 月 25 日</span> <span class='time'>8:54 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">音频基础概述</a></li>
-  <li><a href="#pcm-" id="markdown-toc-pcm-">PCM 数据摆放格式</a></li>
-</ul>
-
-<p>最近在给现代汽车做一个从 FFMpeg 中提取各个音频解码器的项目，很多都是音频。因为之前做的大多数都是视频项目，音频知识比较匮乏。限制记录一下。
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2018/03/25/audio-basic-concept/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -579,7 +589,7 @@
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
-<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (5)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (6)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (8)</a></li>
 <li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
 <li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
@@ -592,6 +602,10 @@
 <section>
   <h1>最新文章</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
@@ -607,10 +621,6 @@
     
       <li class="post">
         <a href="/blog/2019/04/15/profiler/">性能优化之分析瓶颈</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/04/13/profiler-gprof/">性能优化之性能分析工具gprof</a>
       </li>
     
   </ul>
