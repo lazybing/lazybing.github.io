@@ -4,7 +4,7 @@
   <title><![CDATA[分类:性能优化 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xing-neng-you-hua/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-04-27T10:57:39-07:00</updated>
+  <updated>2019-04-28T08:53:48-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -30,8 +30,21 @@
 <h2 id="section">预测种类</h2>
 
 <ul>
-  <li>静态预测：最简单的分支预测技术，不依赖于代码执行的动态历史信息。静态预测可以再次细分，有的是总是预测条件跳转不发生，有的假定向后分支将会发生，向前的分支不发生。向后分支是指跳转到的新地址总比当前地址要低。</li>
+  <li>
+    <p>静态预测：最简单的分支预测技术，不依赖于代码执行的动态历史信息。静态预测可以再次细分，有的是总是预测条件跳转不发生，有的假定向后分支将会发生，向前的分支不发生。向后分支是指跳转到的新地址总比当前地址要低。</p>
+  </li>
+  <li>
+    <p>双模特预测器：该预测器是一种有 4 个状态的状态机：强不选择、弱不选择、弱选择、强选择。当一个分支命令被求值，对应的状态机被修改。分支不采纳，则向“强不选择”方向降低状态值；如果分支被采纳，则向“强选择”方向提高状态值。</p>
+  </li>
 </ul>
+
+<p><img src="/images/branch_predictor/saturating_counter-dia.png"></p>
+
+<ul>
+  <li>两级自适应预测器：对于一条分支指令，如果每 2 次执行发生一次条件跳转，或者其他的规则发生模式，那么用上文提到的双模态预测器就很难预测了。如图所示，一种两级自适应预测器可以记住过去 n 次执行指令时的分支情况的历史，可能的 2^n 种历史模式的每一种都有 1 个专用的双模态预测器，用来表示如果刚刚过去的 n 次执行历史是此种情况，那么根据这个双模态预测器预测为跳转还是不跳转。</li>
+</ul>
+
+<p><img src="/images/branch_predictor/Two-level_branch_prediction.png"></p>
 
 <h2 id="section-1">程序示例</h2>
 
@@ -106,6 +119,24 @@
 </span></code></pre></td></tr></table></div></figure>
 </code></pre>
 
+<p>上面的双重 for 循环，如果对数组不排序、或者修改循环体内的条件语句为</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">100000</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">c</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">arraySize</span><span class="p">;</span> <span class="o">++</span><span class="n">c</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">-</span> <span class="mi">128</span><span class="p">)</span><span class="err"> »</span> <span class="mi">31</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">sum</span> <span class="o">+=</span> <span class="o">~</span><span class="n">t</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>三种相同功能的代码，耗时如下所示：</p>
+
 <table>
   <thead>
     <tr>
@@ -120,7 +151,7 @@
     </tr>
     <tr>
       <td style="text-align: center">排序</td>
-      <td style="text-align: center">0.87s</td>
+      <td style="text-align: center">9.87s</td>
     </tr>
     <tr>
       <td style="text-align: center">不分支预测</td>
