@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-04-29T08:47:21-07:00</updated>
+  <updated>2019-04-30T07:21:55-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -2809,25 +2809,26 @@
           <li><a href="#section-7" id="markdown-toc-section-7">帧内拷贝模式</a></li>
         </ul>
       </li>
-      <li><a href="#section-8" id="markdown-toc-section-8">环路滤波和图像后处理</a>        <ul>
+      <li><a href="#section-8" id="markdown-toc-section-8">帧间预测</a></li>
+      <li><a href="#section-9" id="markdown-toc-section-9">环路滤波和图像后处理</a>        <ul>
           <li><a href="#cdef" id="markdown-toc-cdef">约束方向增强滤波(CDEF)</a></li>
-          <li><a href="#section-9" id="markdown-toc-section-9">帧超分辨率重建</a></li>
-          <li><a href="#section-10" id="markdown-toc-section-10">环内重建滤波器</a></li>
-          <li><a href="#section-11" id="markdown-toc-section-11">电影胶片颗粒效果合成器</a></li>
+          <li><a href="#section-10" id="markdown-toc-section-10">帧超分辨率重建</a></li>
+          <li><a href="#section-11" id="markdown-toc-section-11">环内重建滤波器</a></li>
+          <li><a href="#section-12" id="markdown-toc-section-12">电影胶片颗粒效果合成器</a></li>
         </ul>
       </li>
     </ul>
   </li>
   <li><a href="#aom-" id="markdown-toc-aom-">AOM 工程</a>    <ul>
       <li><a href="#av1--1" id="markdown-toc-av1--1">AV1 前期准备</a></li>
-      <li><a href="#section-12" id="markdown-toc-section-12">获取源码</a></li>
-      <li><a href="#section-13" id="markdown-toc-section-13">编译</a>        <ul>
+      <li><a href="#section-13" id="markdown-toc-section-13">获取源码</a></li>
+      <li><a href="#section-14" id="markdown-toc-section-14">编译</a>        <ul>
           <li><a href="#linux-" id="markdown-toc-linux-">Linux 下编译方法</a></li>
           <li><a href="#windows-" id="markdown-toc-windows-">Windows 下编译方法</a></li>
-          <li><a href="#section-14" id="markdown-toc-section-14">交叉编译</a></li>
+          <li><a href="#section-15" id="markdown-toc-section-15">交叉编译</a></li>
         </ul>
       </li>
-      <li><a href="#section-15" id="markdown-toc-section-15">配置选项</a></li>
+      <li><a href="#section-16" id="markdown-toc-section-16">配置选项</a></li>
       <li><a href="#aom-vs-" id="markdown-toc-aom-vs-">AOM VS 工程</a></li>
     </ul>
   </li>
@@ -2835,7 +2836,7 @@
       <li><a href="#dav1d--1" id="markdown-toc-dav1d--1">DAV1D 下载</a></li>
       <li><a href="#dav1d--2" id="markdown-toc-dav1d--2">DAV1D 工程编译</a></li>
       <li><a href="#dav1d-vs-" id="markdown-toc-dav1d-vs-">DAV1D VS 工程</a></li>
-      <li><a href="#section-16" id="markdown-toc-section-16">参考文档</a></li>
+      <li><a href="#section-17" id="markdown-toc-section-17">参考文档</a></li>
     </ul>
   </li>
 </ul>
@@ -2974,7 +2975,11 @@
 
 <p><img src="http://lazybing.github.io/images/av1_startup/intra_block_copy.png" /></p>
 
-<h3 id="section-8">环路滤波和图像后处理</h3>
+<h3 id="section-8">帧间预测</h3>
+
+<p>帧间压缩工具比帧内压缩工具更丰富。AV1 比 VP9 在参考帧的数量和结构上有了进一步的优化，支持 8 个参考帧，并能够使用其中的 7 个参考帧进行预测，而 VP9 只使用了其中三个。AV1 还支持分层结构进行双向预测。</p>
+
+<h3 id="section-9">环路滤波和图像后处理</h3>
 
 <p>AV1 使用了非常多的环内滤波工具作用于解码帧中。最初阶段是去块滤波器（Deblocking Filter），该滤波器与 VP9 中使用的那个有很少的改动。最长滤波器由 VP9 中的 15-taps 减少到 13-tap。其他在 AV1 中使用的滤波器有以下几种: 约束方向增强滤波器(CDEF)、超分辨率重建(Frame Super-resolution)、 环内重建滤波器(Loop Restoration Filters)、电影颗粒胶片效果合成器(Film Grain Synthesis)。</p>
 
@@ -2982,11 +2987,11 @@
 
 <p>约束方向增强滤波器，应用在去块滤波之后，对每一个 8x8 的块估计物体的方向，并沿着物体方向采用增强滤波，它能保留物体边缘的清晰度，提升重建图像的质量。</p>
 
-<h4 id="section-9">帧超分辨率重建</h4>
+<h4 id="section-10">帧超分辨率重建</h4>
 
 <p>帧超分辨率重建，应用在 CDEF 之后，它首先将图像沿着水平方向降采样，只对低分辨率图像进行编码，在解码器升采样把分辨率图像还原为原分辨率。这个方法显著提升了低码率下的编解码的主观观测质量。</p>
 
-<h4 id="section-10">环内重建滤波器</h4>
+<h4 id="section-11">环内重建滤波器</h4>
 
 <p>环内重建滤波器，是另一个重要的增强图像质量的后期处理方法。它包含了两种滤波器。编码器从两者中选择其一。维纳滤波器采用可分离的对称设计。自导向投影滤波器使用两个重建信号的线性组合来近似真实信号。编码器通过比较滤波结果，选择合适的参数，并传输给解码器。</p>
 
@@ -3006,7 +3011,7 @@
 </span><span class="line"><span class="p">};</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<h4 id="section-11">电影胶片颗粒效果合成器</h4>
+<h4 id="section-12">电影胶片颗粒效果合成器</h4>
 
 <p>电影胶片颗粒效果合成器，是针对高质量视频而设计的一个工具。电影胶片的颗粒效果，很难用传统的视频压缩方法保留。AV1 将颗粒效果合成作为后期处理的步骤，对颗粒效果单独处理，它的工作原理是将电影胶片颗粒效果在编码前从原视频中分离出来。分离后的图像进行普通编解码，而颗粒效果在最后与解码后的图像合成为最终的输出视频。</p>
 
@@ -3022,12 +3027,12 @@
   <li>安装<code>python</code>。</li>
 </ul>
 
-<h3 id="section-12">获取源码</h3>
+<h3 id="section-13">获取源码</h3>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 </pre></td><td class="code"><pre><code class=""><span class="line">$ git clone https://aomedia.googlesource.com/aom</span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-13">编译</h3>
+<h3 id="section-14">编译</h3>
 
 <p><code>AV1</code>采用的配制方法不再是通常的<code>config</code>命令，而是<code>cmake</code>.<code>cmake</code>会生成配置文件和编译文件，大多数系统中，默认的编译文件是<code>Makefile</code>。
 执行<code>cmake</code>会得到如下提示:</p>
@@ -3070,7 +3075,7 @@
 
 <p>此时在<code>aom_vs</code>路径下，会生成一个<code>AOM.sln</code>,用<code>VisualStudio 2013</code>打开该文件后，编译运行即可使用<code>VisualStudio</code>调试学习了。</p>
 
-<h4 id="section-14">交叉编译</h4>
+<h4 id="section-15">交叉编译</h4>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -3081,7 +3086,7 @@
 </span><span class="line">$ CFLAGS="-pie -fPIE" LDFLAGS="-pie -fpIE" cmake /path/to/aom -DCROSS=/path/to/cross_build_tool_bin/ -DCMAKE_TOOLCHAIN_FILE=/path/to/tools -DCONFIG_AV1_ENCODER=0 -DCONFIG_LOWBITDEPTH=0
 </span><span class="line">$ make</span></code></pre></td></tr></table></div></figure>
 
-<h3 id="section-15">配置选项</h3>
+<h3 id="section-16">配置选项</h3>
 
 <p>上面再编译的过程中，已经提到了很多配置选项，在此举几个例子：</p>
 
@@ -3120,7 +3125,7 @@
 
 <p><img src="http://lazybing.github.io/images/av1_startup/dav1d_vs.png" /></p>
 
-<h3 id="section-16">参考文档</h3>
+<h3 id="section-17">参考文档</h3>
 
 <p><a href="https://aomedia.googlesource.com/aom/+/master/README.md">AV1 Codec Library</a></p>
 
