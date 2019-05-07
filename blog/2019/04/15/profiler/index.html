@@ -9,8 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="
-对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具来测试程序性能。 ">
+  <meta name="description" content="Callgrind 概述 对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具之 callgrind 来测试程序性能。 在优化 AV1 解码库时，使用 callgrind 和 kcachegrind 来检测程序性能，下面先给出测试结果， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,10 +98,32 @@
   </header>
 
 
-<div class="entry-content">
-<p>对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具来测试程序性能。</p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#callgrind-" id="markdown-toc-callgrind-">Callgrind 概述</a></li>
+</ul>
+
+<p>对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具之 callgrind 来测试程序性能。</p>
 
 <!--more-->
+
+<p>在优化 AV1 解码库时，使用 callgrind 和 kcachegrind 来检测程序性能，下面先给出测试结果，然后用一个小的程序进行逐步分析。</p>
+
+<p><img src="/images/valgrind_callgrind/valgrind_callgrind_dav1d.png" /></p>
+
+<h2 id="callgrind-">Callgrind 概述</h2>
+
+<p>使用该工具，必须在使用 valgrind 命令行时指定工具<code>--tool=callgrind</code>。</p>
+
+<p>callgrind 是一个性能剖析工具，它记录一个程序运行时函数间调用历史。默认状态下，收集到的数据包括执行指令的个数、指令与源码行的对应关系、函数间调用和被调用的关系以及调用次数。除此外，模拟缓存和分支预测可能会产生更多关于应用程序运行的信息。</p>
+
+<p>分析的数据在程序结束时会写到一个文件中。用于显示数据以及剖析互动控制，有如下两个命令 <strong>callgrind_annotate</strong> 和 <strong>callgind_control</strong>。</p>
+
+<ul>
+  <li><strong>callgrind_annotate</strong> 该命令读取 profile 数据，将函数占用时间打印出来，也可以使用图形化工具 Kcachegrind。</li>
+  <li><strong>callgrind_control</strong> 该命令在执行 callgrind 时，使我们可以交互的观察和控制当前运行程序的状态，而不用停止该程序。可以用该命令获取统计信息以及当前堆栈跟踪信息。</li>
+</ul>
+
+<p>(未完待续。。。)</p>
 
 </div>
 
