@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>性能优化之分析瓶颈 - 懒人李冰</title>
+  <title>深入理解计算机系统之优化程序性能 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Callgrind 概述 主要功能 基本使用方法 高级使用方法 生成多个 profile 文件 对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具之 callgrind 来测试程序性能。 在优化 AV1 解码库时，使用 callgrind 和 &hellip;">
+  <meta name="description" content="优化编译器的能力和局限性 表示程序性能 本文主要记录学习完 CSAPP 的优化程序性能章节。程序的优化主要有三种方法：选择合适的算法和数据结构;编写出编译器能够有效优化以转换成高效可执行代码的源代码;将一个任务分成多个部分,使其可以在多核和多处理器的某种组合上并行计算。了解了程序优化的三种方法后 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2019/04/15/profiler/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2015/05/10/csapp-program-optimization/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">性能优化之分析瓶颈</h1>
+      <h1 class="entry-title">深入理解计算机系统之优化程序性能</h1>
     
     
       <p class="meta">
@@ -91,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2019-04-15T08:08:54-07:00'><span class='date'>2019 年 04 月 15 日</span> <span class='time'>8:08 am</span></time>
+<time class='entry-date' datetime='2015-05-10T07:57:12-07:00'><span class='date'>2015 年 05 月 10 日</span> <span class='time'>7:57 am</span></time>
         
       </p>
     
@@ -99,77 +99,67 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#callgrind-" id="markdown-toc-callgrind-">Callgrind 概述</a>    <ul>
-      <li><a href="#section" id="markdown-toc-section">主要功能</a></li>
-      <li><a href="#section-1" id="markdown-toc-section-1">基本使用方法</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-2" id="markdown-toc-section-2">高级使用方法</a>    <ul>
-      <li><a href="#profile-" id="markdown-toc-profile-">生成多个 profile 文件</a></li>
-    </ul>
-  </li>
+  <li><a href="#section" id="markdown-toc-section">优化编译器的能力和局限性</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">表示程序性能</a></li>
 </ul>
 
-<p>对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具之 callgrind 来测试程序性能。</p>
+<p>本文主要记录学习完 CSAPP 的优化程序性能章节。程序的优化主要有三种方法：选择合适的算法和数据结构;编写出编译器能够有效优化以转换成高效可执行代码的源代码;将一个任务分成多个部分,使其可以在多核和多处理器的某种组合上并行计算。了解了程序优化的三种方法后，我们必须思考一个问题，既然程序的优化是无止境的，那么优化在什么点算是最好的平衡的，这里的平衡包括程序开发的时间与效率、代码的可读性与性能。想明白了这两点，就不难理解为什么人们不是把所有的语言都用汇编来编写，以及对于性能好但可读性代码差的代码在公司企业中，有的时候并不推崇了。</p>
 
 <!--more-->
 
-<p>在优化 AV1 解码库时，使用 callgrind 和 kcachegrind 来检测程序性能，下面先给出测试结果，然后用一个小的程序进行逐步分析。</p>
+<h2 id="section">优化编译器的能力和局限性</h2>
 
-<p><img src="/images/valgrind_callgrind/valgrind_callgrind_dav1d.png" /></p>
-
-<h2 id="callgrind-">Callgrind 概述</h2>
-
-<p>使用该工具，必须在使用 valgrind 命令行时指定工具<code>--tool=callgrind</code>。</p>
-
-<p>callgrind 是一个性能剖析工具，它记录一个程序运行时函数间调用历史。默认状态下，收集到的数据包括执行指令的个数、指令与源码行的对应关系、函数间调用和被调用的关系以及调用次数。除此外，模拟缓存和分支预测可能会产生更多关于应用程序运行的信息。</p>
-
-<p>分析的数据在程序结束时会写到一个文件中。用于显示数据以及剖析互动控制，有如下两个命令 <strong>callgrind_annotate</strong> 和 <strong>callgind_control</strong>。</p>
-
-<ul>
-  <li><strong>callgrind_annotate</strong> 该命令读取 profile 数据，将函数占用时间打印出来，也可以使用图形化工具 Kcachegrind。</li>
-  <li><strong>callgrind_control</strong> 该命令在执行 callgrind 时，使我们可以交互的观察和控制当前运行程序的状态，而不用停止该程序。可以用该命令获取统计信息以及当前堆栈跟踪信息。</li>
-</ul>
-
-<h3 id="section">主要功能</h3>
-
-<p><strong>cachegrind</strong> 主要是收集 flat profile 数据：数据读取和 cache 命中率等事件发生的次数直接归因于它们发生的函数。这种归因机制称为自我归因或独占归因。</p>
-
-<p><strong>callgrind</strong> 通过跨越函数调用边界的成本将 cachegrind 的功能进行扩展。如果函数 <strong>foo</strong> 调用 <strong>bar</strong>,从 <strong>bar</strong> 返回的消耗算到 <strong>foo</strong> 消耗里。当作为一只整体应用到程序中时，这就构建成了一个所谓的包容性成本的图片，即，每个函数的消耗包括它直接调用或间接调用的函数的消耗。</p>
-
-<p>比如，main 函数的包容性消耗应该接近整个程序消耗的 100%。因为在调用 main 函数前，还会有其他初始的运行时间，因此最终的消耗只是接近 100%。</p>
-
-<p>同调用图一起，可以清晰的看到从 main 开始的整个调用链，调用链上会清晰的给出程序主要消耗在什么地方。函数调用对剖析函数也是非常有用的，优化的机会一般取决于更改调用者的代码，尤其是降低调用次数。</p>
-
-<p>callgrind 的 cache 模拟是基于 cachegrind 基础之上的。接下来的描述都是在 cachegrind 的特性基础之上进行的。</p>
-
-<p>callgrind 的主要功能是依据它运行平台的指令集，检测函数调用和返回，它能很好地运行在 x86 和 amd64 平台上，但不幸的是在 ARM、PowerPC 或 MIPS平台上运行的并不好，因为这些平台上没有明确的调用和返回指令。</p>
-
-<h3 id="section-1">基本使用方法</h3>
-
-<p>和 cachegrind 一样，必须在编译时添加<code>-g</code>选项来获取调试信息，并且要将优化选项打开。启动剖析程序，只需执行如下命令：</p>
+<p>以 GCC 编译器为例，可以使用多个优化级别<code>-O1/-O2/-O3</code>等，但编译器的优化也是有限的，它只对确定性的可以优化的代码才会优化，对于不确定性的部分，编译器不会对其优化。看如下两段代码：</p>
 
 <figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">valgrind --tool=callgrind [callgrind options] your-program [program options]</span></code></pre></td></tr></table></div></figure>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">twiddle1</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">xp</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">yp</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="o">*</span><span class="n">xp</span> <span class="o">+=</span> <span class="o">*</span><span class="n">yp</span><span class="p">;</span>
+</span><span class="line">    <span class="o">*</span><span class="n">xp</span> <span class="o">+=</span> <span class="o">*</span><span class="n">yp</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">twiddle2</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">xp</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">yp</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="o">*</span><span class="n">xp</span> <span class="o">+=</span><span class="mi">2</span> <span class="o">*</span> <span class="o">*</span><span class="n">yp</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>程序运行过程中，想要观察执行情况，只需要执行如下命令<code>callgrind_control -b</code>。</p>
+<p>上面的代码中<code>twiddle1</code>的功能是，将 yp 指针指向地址的值加到 xp 指针指向地址的值，执行两次。<code>twiddle2</code>的功能是将 yp 指针指向地址的值得两倍加到 xp 指针指向地址的值。看起来两个的功能是一样的。但当 xp 和 yp 指向同一个存储器位置时，两个程序结果不在相同，因此编译器不会优化它。这就是一个典型的“妨碍优化因素”，称为<strong>存储器别名使用</strong>。</p>
 
-<p>程序运行完成后，会生成一个名为<code>callgrind.out.&lt;pid&gt;</code>的文件，其中 pid 就是程序的线程 ID。该文件就包含了程序执行过程中各个函数的调用情况以及指令读取(<strong>Instruction Read(Ir)</strong>)情况。</p>
+<p>再来看另外一段程序:</p>
 
-<p>想要从 profile 数据文件中生成函数的总结，使用<code>callgrind_annotate [options] callgrind.out.&lt;pid&gt;</code>。该命令与 cachegrind 中的<code>cg_annotate</code>类似，函数会按照消耗排序。callgrind 的额外的重要的特性是如下两个选项：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">f</span><span class="p">();</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">fun1</span><span class="p">(){</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">f</span><span class="p">()</span> <span class="o">+</span> <span class="n">f</span><span class="p">()</span> <span class="o">+</span> <span class="n">f</span><span class="p">()</span> <span class="o">+</span> <span class="n">f</span><span class="p">();</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">fun2</span><span class="p">(){</span>
+</span><span class="line">    <span class="k">return</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">f</span><span class="p">();</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<ul>
-  <li><code>--inclusive=yes</code>:使用该选项后，会使用并显示包容性消耗的函数排序，而不是独立性消耗的排序。</li>
-  <li><code>--tree=both</code>:</li>
-</ul>
+<p>上面的两个函数在编译器看来也不相同，这就是妨碍优化的第二个因素：函数调用。思考，当函数 f() 存在对全局变量的修改时，因此编译器不能优化。</p>
 
-<h2 id="section-2">高级使用方法</h2>
-
-<h3 id="profile-">生成多个 profile 文件</h3>
-
-<p>有些时候，我们对完成程序运行的特性并不关心，而只是关注其中很小的一部分，比如执行某个算法。如果有多个算好或一个算法有不同的输入数据，一个单独程序运行的不同部分的 profile 数据是非常有用的。profile 数据文件有如下形式的名字<code>callgrind.out.pid.part-threadID</code>。</p>
-
-<p>(未完待续。。。)</p>
+<h2 id="section-1">表示程序性能</h2>
 
 </div>
 
@@ -186,12 +176,12 @@
 
 
 
-<time class='entry-date' datetime='2019-04-15T08:08:54-07:00'><span class='date'>2019 年 04 月 15 日</span> <span class='time'>8:08 am</span></time>
+<time class='entry-date' datetime='2015-05-10T07:57:12-07:00'><span class='date'>2015 年 05 月 10 日</span> <span class='time'>7:57 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/xing-neng-you-hua/'>性能优化</a>
+    <a class='category' href='/blog/categories/du-shu-bi-ji/'>读书笔记</a>
   
 </span>
 
@@ -200,7 +190,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/04/15/profiler/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/04/15/profiler/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2015/05/10/csapp-program-optimization/" data-via="" data-counturl="http://lazybing.github.io/blog/2015/05/10/csapp-program-optimization/" >Tweet</a>
   
   
   
@@ -209,10 +199,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2019/04/13/profiler-gprof/" title="Previous Post: 性能优化之性能分析工具gprof">&laquo; 性能优化之性能分析工具gprof</a>
+        <a class="basic-alignment left" href="/blog/2015/05/01/create-github-blog-using-octopress/" title="Previous Post: 使用Octopress 搭建个人博客">&laquo; 使用Octopress 搭建个人博客</a>
       
       
-        <a class="basic-alignment right" href="/blog/2019/04/17/loop-unroll/" title="Next Post: 性能优化之循环展开">性能优化之循环展开 &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2015/09/04/the-hierarchical-of-coding-structure/" title="Next Post: HM源码分析（一）：HEVC编码结构">HM源码分析（一）：HEVC编码结构 &raquo;</a>
       
     </p>
   </footer>
