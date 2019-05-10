@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="优化编译器的能力和局限性 表示程序性能 本文主要记录学习完 CSAPP 的优化程序性能章节。程序的优化主要有三种方法：选择合适的算法和数据结构;编写出编译器能够有效优化以转换成高效可执行代码的源代码;将一个任务分成多个部分,使其可以在多核和多处理器的某种组合上并行计算。了解了程序优化的三种方法后 &hellip;">
+  <meta name="description" content="优化编译器的能力和局限性 表示程序性能 程序示例 本文主要记录学习完 CSAPP 的优化程序性能章节。程序的优化主要有三种方法：选择合适的算法和数据结构;编写出编译器能够有效优化以转换成高效可执行代码的源代码;将一个任务分成多个部分,使其可以在多核和多处理器的某种组合上并行计算。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2015/05/10/csapp-program-optimization/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/05/10/csapp-program-optimization/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -91,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2015-05-10T07:57:12-07:00'><span class='date'>2015 年 05 月 10 日</span> <span class='time'>7:57 am</span></time>
+<time class='entry-date' datetime='2018-05-10T07:57:12-07:00'><span class='date'>2018 年 05 月 10 日</span> <span class='time'>7:57 am</span></time>
         
       </p>
     
@@ -101,6 +101,7 @@
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">优化编译器的能力和局限性</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">表示程序性能</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">程序示例</a></li>
 </ul>
 
 <p>本文主要记录学习完 CSAPP 的优化程序性能章节。程序的优化主要有三种方法：选择合适的算法和数据结构;编写出编译器能够有效优化以转换成高效可执行代码的源代码;将一个任务分成多个部分,使其可以在多核和多处理器的某种组合上并行计算。了解了程序优化的三种方法后，我们必须思考一个问题，既然程序的优化是无止境的，那么优化在什么点算是最好的平衡的，这里的平衡包括程序开发的时间与效率、代码的可读性与性能。想明白了这两点，就不难理解为什么人们不是把所有的语言都用汇编来编写，以及对于性能好但可读性代码差的代码在公司企业中，有的时候并不推崇了。</p>
@@ -161,6 +162,29 @@
 
 <h2 id="section-1">表示程序性能</h2>
 
+<p>为表示程序性能，我们引入<strong>每元素的周期数(Cycles Per Element, CPE)</strong>的概念，使用时钟周期来表示度量标准比用事件表示有用的多，因为时钟周期表示的是执行了多少条指令，而程序运行了多少时间，可能与机器的频率有关。</p>
+
+<h2 id="section-2">程序示例</h2>
+
+<figure class="code"><figcaption><span>vec.h </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">// Create abstract data type for vector</span>
+</span><span class="line">
+</span><span class="line"><span class="k">typedef</span> <span class="kt">int</span> <span class="kt">data_t</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">typedef</span> <span class="k">struct</span><span class="p">{</span>
+</span><span class="line">    <span class="kt">long</span> <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="n">vec_rec</span><span class="p">,</span> <span class="o">*</span><span class="n">vec_ptr</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
@@ -176,7 +200,7 @@
 
 
 
-<time class='entry-date' datetime='2015-05-10T07:57:12-07:00'><span class='date'>2015 年 05 月 10 日</span> <span class='time'>7:57 am</span></time>
+<time class='entry-date' datetime='2018-05-10T07:57:12-07:00'><span class='date'>2018 年 05 月 10 日</span> <span class='time'>7:57 am</span></time>
       
 
 <span class="categories">
@@ -190,7 +214,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2015/05/10/csapp-program-optimization/" data-via="" data-counturl="http://lazybing.github.io/blog/2015/05/10/csapp-program-optimization/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/05/10/csapp-program-optimization/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/05/10/csapp-program-optimization/" >Tweet</a>
   
   
   
@@ -199,10 +223,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2015/05/01/create-github-blog-using-octopress/" title="Previous Post: 使用Octopress 搭建个人博客">&laquo; 使用Octopress 搭建个人博客</a>
+        <a class="basic-alignment left" href="/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/" title="Previous Post: 如何从FFMpeg中提取CODEC(以TTA Decoder为例)">&laquo; 如何从FFMpeg中提取CODEC(以TTA Decoder为例)</a>
       
       
-        <a class="basic-alignment right" href="/blog/2015/09/04/the-hierarchical-of-coding-structure/" title="Next Post: HM源码分析（一）：HEVC编码结构">HM源码分析（一）：HEVC编码结构 &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2018/08/22/memory-alignment/" title="Next Post: 如何理解内存对齐">如何理解内存对齐 &raquo;</a>
       
     </p>
   </footer>
