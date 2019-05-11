@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-05-10T09:36:47-07:00</updated>
+  <updated>2019-05-11T08:48:45-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -760,7 +760,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[性能优化之分析瓶颈]]></title>
+    <title type="html"><![CDATA[性能优化之vallgrind之callgrind分析瓶颈]]></title>
     <link href="http://lazybing.github.io/blog/2019/04/15/profiler/"/>
     <updated>2019-04-15T08:08:54-07:00</updated>
     <id>http://lazybing.github.io/blog/2019/04/15/profiler</id>
@@ -772,6 +772,7 @@
   </li>
   <li><a href="#section-2" id="markdown-toc-section-2">高级使用方法</a>    <ul>
       <li><a href="#profile-" id="markdown-toc-profile-">生成多个 profile 文件</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">限制收集事件的范围</a></li>
     </ul>
   </li>
 </ul>
@@ -834,6 +835,20 @@
 <h3 id="profile-">生成多个 profile 文件</h3>
 
 <p>有些时候，我们对完成程序运行的特性并不关心，而只是关注其中很小的一部分，比如执行某个算法。如果有多个算好或一个算法有不同的输入数据，一个单独程序运行的不同部分的 profile 数据是非常有用的。profile 数据文件有如下形式的名字<code>callgrind.out.pid.part-threadID</code>。</p>
+
+<p>dump 多个 profile 文件的方法和形式有多种，举例如下：</p>
+
+<ul>
+  <li><strong>Dump on program termination</strong>, 该方法就是标准的方法，不需要额外的做任何操作。</li>
+  <li><strong>Spontaneous,interactive dumping</strong>，使用<code>callgrind_control -d [hint [PID/Name]]</code>来使得 profile 信息的dump带有 PID 或 Name。hint 是可以随意指定的字符串用于区分 profile dump 文件。dump 结束前，控制程序不会停止。注意，为例检测 dump 命令，应用程序必须处于运行态。如果你使用的是<code>Kcachegrind</code>，想要查看 profile 信息，可以使用工具栏按钮<strong>Force dump</strong>，就会发起一个 dump 请求。</li>
+  <li><strong>Periodic dumping after execution of a apecified number of basic blocks</strong>，使用<code>--dump-every-bb=count</code>选项。</li>
+  <li><strong>Dumping at enter/leave of specified functions</strong>。使用<code>--dump-before=function</code>和<code>--dump-after=function</code>选项。想要在进入某个函数前清零计数器，使用<code>--zero-before=function</code>选项。针对不同的函数，可以多次使用该选项。而且函数名可以使用如下形式<code>--dump-before='foo*'</code>，它会为每个函数名的开头为 foo 的函数生成 dump 文件。</li>
+  <li><strong>Program controlled dumping</strong>。在需要 dump profile 发送的代码中插入<code>CALLGRIND_DUMP_STATS</code>。使用<code>CALLGRIND_ZERO_STATS</code>清零 profile 计数器。</li>
+</ul>
+
+<p>如果你正运行一个多线程应用程序，在命令行使用<code>--separate-threads=yes</code>选项，每个线程都会生成单独的 profile 文件。因此上面的最后两种方法只会生成当前运行线程生成的 dump 文件，其他方法，则会为每个线程生成多个dump文件。</p>
+
+<h3 id="section-3">限制收集事件的范围</h3>
 
 <p>(未完待续。。。)</p>
 
