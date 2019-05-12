@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-05-11T09:11:56-07:00</updated>
+  <updated>2019-05-12T03:49:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -777,6 +777,9 @@
   </li>
   <li><a href="#callgrind--1" id="markdown-toc-callgrind--1">Callgrind 命令行选项</a>    <ul>
       <li><a href="#dump-" id="markdown-toc-dump-">dump 生成选项</a></li>
+      <li><a href="#activity-" id="markdown-toc-activity-">activity 选项</a></li>
+      <li><a href="#data-collection-" id="markdown-toc-data-collection-">data collection 选项</a></li>
+      <li><a href="#cost-entity-separations-" id="markdown-toc-cost-entity-separations-">cost entity separations 选项</a></li>
     </ul>
   </li>
 </ul>
@@ -860,7 +863,38 @@
 
 <ul>
   <li><code>--callgrind-out-file=&lt;file&gt;</code>选项影响 profile 数据文件的名称和格式，该选择指定 profile 数据写到 file 中而不是默认的输出文件<code>callgrind.out.&lt;pid&gt;</code>文件。</li>
+  <li><code>--dump-line=&lt;no|yes&gt; [default:yes]</code>,该选项指定事件计数应该以源码行执行。这对于编译时带有调试信息的源码。</li>
+  <li><code>--dump-instr=&lt;no|ys&gt; [default:no]</code>, 该选项指定事件计数应该以指令执行。这允许汇编。当前结果可以通过 KCachegrind 显示。</li>
+  <li><code>--compress-strings=&lt;no|yes&gt; [default:yes]</code>，该选项会影响 profile 数据的输出格式。它指定文件和函数名是否用数字区分。他会压缩文件，但使得更加难以读取。</li>
+  <li><code>--compress-pos=&lt;no|yes&gt; [default:yes]</code>，该选项会影响 profile 数据的输出格式。它指定数字位置是绝对值还是相对值。</li>
+  <li><code>--combine-dumps=&lt;no|yes&gt; [default:no]</code>, 不推荐，使能该选项后，多个 profile 数据会追加到同一个输出文件。</li>
 </ul>
+
+<h3 id="activity-">activity 选项</h3>
+
+<p>这类选项指定与事件计数相关的行为什么时候发生。对于交互控制，使用 callgrind_control 控制。</p>
+
+<ul>
+  <li><code>--dump-every-bb=&lt;count&gt; [default:0, never]</code>，Dump profile data every count basic blocks。</li>
+  <li><code>--dump-before=&lt;function&gt;</code>，进入函数前 dump。</li>
+  <li><code>--zero-before=&lt;function&gt;</code>, 进入函数前清零所有消耗统计。</li>
+  <li><code>--dump-after=&lt;function&gt;</code>, 推出函数时 dump。</li>
+</ul>
+
+<h3 id="data-collection-">data collection 选项</h3>
+
+<p>此类选项指定何时将事件聚合到事件计数中。</p>
+
+<ul>
+  <li><code>--instr-atstart=&lt;yes|no&gt; [default:yes]</code>，</li>
+  <li><code>--collect-atstart=&lt;yes|no&gt; [default:yes]</code>,</li>
+  <li><code>--toggle-collect=&lt;fucntion&gt;</code>,</li>
+  <li><code>--collect-jumps=&lt;no|yes&gt; [default:no]</code></li>
+  <li><code>--collect-systime=&lt;no|yes&gt; [default:no]</code>, 该选项指定系统调用的信息是否要被收集。</li>
+  <li><code>--collect-bus=&lt;no|yes&gt; [default:no]</code>, 该选项指定全局总线事件的数量是否被收集。</li>
+</ul>
+
+<h3 id="cost-entity-separations-">cost entity separations 选项</h3>
 
 <p>(未完待续。。。)</p>
 
