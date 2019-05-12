@@ -4,7 +4,7 @@
   <title><![CDATA[分类:性能优化 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/xing-neng-you-hua/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-05-12T06:00:46-07:00</updated>
+  <updated>2019-05-12T09:15:45-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -783,8 +783,12 @@ while B do S; &lt;==&gt; while B ^ wp(S, B) do begin S;S end; while B do S;
       <li><a href="#activity-" id="markdown-toc-activity-">activity 选项</a></li>
       <li><a href="#data-collection-" id="markdown-toc-data-collection-">data collection 选项</a></li>
       <li><a href="#cost-entity-separations-" id="markdown-toc-cost-entity-separations-">cost entity separations 选项</a></li>
+      <li><a href="#simulation-" id="markdown-toc-simulation-">simulation 选项</a></li>
+      <li><a href="#cache-simulation-" id="markdown-toc-cache-simulation-">cache simulation 选项</a></li>
     </ul>
   </li>
+  <li><a href="#callgrindannotate-" id="markdown-toc-callgrindannotate-">callgrind_annotate 命令行选项</a></li>
+  <li><a href="#callgrindcontrol-" id="markdown-toc-callgrindcontrol-">callgrind_control 命令行选项</a></li>
 </ul>
 
 <p>对程序进行性能优化的前提是知道程序性能瓶颈在哪里。本文记录 vallgrind 工具之 callgrind 来测试程序性能。</p>
@@ -899,6 +903,26 @@ valgrind --tool=callgrind [callgrind options] your-program [program options]
 </ul>
 
 <h3 id="cost-entity-separations-">cost entity separations 选项</h3>
+
+<h3 id="simulation-">simulation 选项</h3>
+
+<ul>
+  <li><code>--cache-sim=&lt;yes|no&gt; [default:no]</code>,该选项指定是否做高速缓存模拟。默认情况下，只有指令读访问才会被计数(<strong>Ir</strong>)。如果启动高速缓存模拟，会有更多的事件被计数：指令读取的高速缓存命中率(<strong>I1mr/ILmr</strong>)，数据读取访问(<strong>Dr</strong>)以及相关的数据读取缓存miss(<strong>D1mr/DLmr</strong>),写数据访问(<strong>Dw</strong>)以及相关的cache misses(<strong>D1mw/DLmw</strong>)。</li>
+  <li><code>--branch-sim=&lt;yes|no&gt;[default:no]</code>,该选项指定是否做分支预测模拟。使能该选项后，会有更多的事件计数被启动：执行分支预测的数量以及相关的分支miss(<strong>Bc/Bcm</strong>)，执行的间接跳跃和相关的跳转地址预测的miss(<strong>Bi/Bim</strong>)。</li>
+</ul>
+
+<h3 id="cache-simulation-">cache simulation 选项</h3>
+
+<ul>
+  <li><code>--simulate-wb=&lt;yes|no&gt; [default:no]</code>，该选项指定是否对写块行为进行模拟。</li>
+  <li><code>--simulate-hwpref=&lt;yes|no&gt; [default:no]</code>，该选项指定是否对硬件预取器的模拟。</li>
+  <li><code>--cacheuse=&lt;yes|no&gt;[default:no]</code>,该选择指定是否对高速缓存行的使用进行收集。</li>
+  <li><code>--I1=&lt;size&gt;,&lt;associativity&gt;,&lt;line size&gt;</code>或<code>--D1=&lt;size&gt;,&lt;associativity&gt;,&lt;line size&gt;</code>或<code>--LL=&lt;size&gt;,&lt;associativity&gt;,&lt;line size&gt;</code>。</li>
+</ul>
+
+<h2 id="callgrindannotate-">callgrind_annotate 命令行选项</h2>
+
+<h2 id="callgrindcontrol-">callgrind_control 命令行选项</h2>
 
 <p>(未完待续。。。)</p>
 
