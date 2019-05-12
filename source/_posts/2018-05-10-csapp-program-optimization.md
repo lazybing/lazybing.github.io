@@ -54,7 +54,15 @@ int fun2(){
 
 ## 程序示例
 
+以如下程序为示例，记录几种通用的优化方法：
+
 {% codeblock lang:c vec.h %}
+#ifndef VEC_H
+#define VEC_H
+
+#define IDENT 0
+#define OP +
+
 // Create abstract data type for vector
 
 typedef int data_t;
@@ -63,5 +71,195 @@ typedef struct{
     long int len;
     data_t *data;
 }vec_rec, *vec_ptr;
+#endif
 {% endcodeblock %}
+
+{% codeblock lang:c vec.c %}
+// Create vector of specified length
+vec_ptr new_vec(long int len)
+{
+    //Allocate header structure
+    vec_ptr result = (vec_ptr)malloc(vec_rec);
+    if(!result)
+        return NULL;    //Could not allocate storage
+    result->len = len;
+
+    //Allocate array
+    if(len > 0){
+        data_t *data = (data_t *)calloc(len, sizeof(data_t));
+        if(!data){
+            free((void *)result);
+            return NULL;    //could not allocate storage
+        }
+        result->data = data;
+    }else{
+        result->data = NULL;
+    }
+
+    return result;
+}
+
+//Retrieve vector element and store at dest.
+//Return 0 (out of bounds) or 1 (successful)
+int get_vec_element(vec_ptr v, long int index, data_t *dest)
+{
+    if(index < 0 || index >= v->len)
+        return 0;
+    *dest = v->data[index];
+    return 1;
+}
+
+//Return length of vector
+long int vec_length(vec_ptr v)
+{
+    return v->len;
+}
+
+//Implementation with maximum use of data abstraction
+void combine1(vec_ptr v, data_t *dest)
+{
+    long int i;
+
+    *dest = IDENT;
+    for(i = 0; i < vec_length(v); i++){
+        data_t val;
+        get_vec_element(v, i, &val);
+        *dest = *dest OP val;
+    }
+}
+{% endcodeblock %}
+
+### 消除循环的低效率
+
+观察上面的 **combine1** 函数，可以看出在 for 循环的测试条件中，每次都要执行 **vec_length**，但这个函数每次执行结果都一样，可以提到测试条件外面，修改代码如下： 
+{% codeblock lang:c %}
+//move call to vec_length out of loop
+void combine2(vec_ptr v, data_t *dest)
+{
+    long int i;
+    long int length = vec_length(v);
+
+    *dest = IDENT;
+    for(i = 0; i < length; i++){
+        data_t val;
+        get_vec_element(v, i, &val);
+        *dest = *dest OP val;
+    }
+}
+{% endcodeblock %}
+
+### 减少调用过程
+
+函数调用会带来巨大的时间开销，再来看上面的**combine2**函数中，每次循环都会调用**get_vec_element**函数，而且这个函数的返回值 val 都是随着 i 的递增而在内存中连续存放，因此可以将该函数从循环中拿出。
+
+{% codeblock lang:c %}
+data_t *get_vec_start(vec_ptr v)
+{
+    return v->data;
+}
+//direct access to vector data
+void combine3(vec_ptr v, data_t *dest)
+{
+    long int i;
+    long int length = vec_length(v);
+    data_t *data = get_vec_start(v);
+
+    *dest = IDENT;
+    for(i = 0; i < length; i++){
+        *dest = *dest OP data[i];
+    }
+}
+{% endcodeblock %}
+
+### 消除不必要的存储器引用
+
+观察上面的函数，在每次 for 循环中，都会有两次的读取内存(*dest 和 data[i])的操作，一次写内存(*dest)的操作。每次读写内存都会耗时，因此可以使用临时变量，从而使每次循环只有一次读即可。
+
+
+{% codeblock lang:c %}
+//Accumulate result in local variable
+void combine4(vec_ptr v, data_t *dest)
+{
+    long int i;
+    long int length = vec_length(v);
+    data_t *data = get_vec_start(v);
+    data_t acc = IDENT;
+
+    for(i = 0; i < length; i++){
+        acc = acc OP data[i];
+    }
+    *dest = acc;
+}
+{% endcodeblock %}
+
+### 循环展开
+
+循环展开是一种程序变换，通过增加每次迭代计算的元素的数量，减少循环的迭代次数。它能够从两方面改善程序的性能：首先，它减少了不直接有助于程序结果的操作的数量。其次，它提供一些方法，可以进一步变换代码，减少整个计算中关键路径上的操作数量。
+
+
+{% codeblock lang:c %}
+//Unroll loop by 2
+void combine4(vec_ptr v, data_t *dest)
+{
+    long int i;
+    long int length = vec_length(v);
+    long int limit = length - 1;
+    data_t *data = get_vec_start(v);
+    data_t acc = IDENT;
+
+    //Combine 2 elements at a time
+    for(i = 0; i < length; i+=2){
+        acc = acc OP data[i] OP data[i+1];
+    }
+
+    // Finish any remaining elements
+    for(; i < length ; i++){
+        acc = acc OP data[i];
+    }
+
+    *dest = acc;
+}
+{% endcodeblock %}
+
+### 提高并行性
+
+两次循环展开，并且使用两路并行，该方法利用了功能单元的流水线能力
+
+{% codeblock lang:c %}
+//Unroll loop by 2, 2-way parallelism
+void combine6(vec_ptr v, data_t *dest)
+{
+    long int i;
+    long int length = vec_length(v);
+    long int limit = length - 1;
+    data_t *data = get_vec_start(v);
+    data_t acc0 = IDENT;
+    data_t acc1 = IDENT;
+
+    //combine 2 elements at a time
+    for(i = 0; i < limit; i+=2){
+        acc0 = acc0 OP data[i];
+        acc1 = acc1 OP data[i + 1];
+    }
+    
+    //Finish any remaining elements
+    for(; i < length; i++){
+        acc0 = acc0 OP data[i];
+    }
+    *dest = acc0 OP acc1;
+}
+{% endcodeblock %}
+
+还有其他的方法，比如重新组合结合上面**combine5**中的运算，即将
+```
+acc = (acc OP data[i]) OP data[i + 1]
+```
+合并成如下实现
+```
+acc = acc OP (data[i] OP data[i + 1])
+```
+
+或者使用 SIMD 指令提高更高的并行性。
+
+
 
