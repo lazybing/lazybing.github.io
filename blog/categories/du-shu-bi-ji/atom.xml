@@ -4,7 +4,7 @@
   <title><![CDATA[分类:读书笔记 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/du-shu-bi-ji/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-05-12T03:49:10-07:00</updated>
+  <updated>2019-05-12T06:00:46-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -22,6 +22,14 @@
   <li><a href="#section" id="markdown-toc-section">优化编译器的能力和局限性</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">表示程序性能</a></li>
   <li><a href="#section-2" id="markdown-toc-section-2">程序示例</a></li>
+  <li><a href="#define-ident-0" id="markdown-toc-define-ident-0">define IDENT 0</a>    <ul>
+      <li><a href="#section-3" id="markdown-toc-section-3">消除循环的低效率</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">减少调用过程</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">消除不必要的存储器引用</a></li>
+      <li><a href="#section-6" id="markdown-toc-section-6">循环展开</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">提高并行性</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>本文主要记录学习完 CSAPP 的优化程序性能章节。程序的优化主要有三种方法：选择合适的算法和数据结构;编写出编译器能够有效优化以转换成高效可执行代码的源代码;将一个任务分成多个部分,使其可以在多核和多处理器的某种组合上并行计算。了解了程序优化的三种方法后，我们必须思考一个问题，既然程序的优化是无止境的，那么优化在什么点算是最好的平衡的，这里的平衡包括程序开发的时间与效率、代码的可读性与性能。想明白了这两点，就不难理解为什么人们不是把所有的语言都用汇编来编写，以及对于性能好但可读性代码差的代码在公司企业中，有的时候并不推崇了。</p>
@@ -86,6 +94,8 @@
 
 <h2 id="section-2">程序示例</h2>
 
+<p>以如下程序为示例，记录几种通用的优化方法：</p>
+
 <p><figure class='code'><figcaption><span>vec.h </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -95,7 +105,20 @@
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Create abstract data type for vector&lt;/p&gt;</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#ifndef VEC_H</span>
+</span><span class='line'><span class="cp">#define VEC_H&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-ident-0&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">IDENT</span> <span class="mi">0</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">OP</span> <span class="o">+&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">// Create abstract data type for vector&lt;/p&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">typedef</span> <span class="kt">int</span> <span class="kt">data_t</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 </span><span class='line'>
@@ -103,7 +126,319 @@
 </span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
 </span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
 </span><span class='line'><span class="p">}</span><span class="n">vec_rec</span><span class="p">,</span> <span class="o">*</span><span class="n">vec_ptr</span><span class="p">;</span>
+</span><span class='line'><span class="cp">#endif</span>
 </span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><figcaption><span>vec.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Create vector of specified length</span>
+</span><span class='line'><span class="n">vec_ptr</span> <span class="nf">new_vec</span><span class="p">(</span><span class="kt">long</span> <span class="kt">int</span> <span class="n">len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">//Allocate header structure</span>
+</span><span class='line'>    <span class="n">vec_ptr</span> <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">vec_ptr</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">vec_rec</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">result</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>    <span class="c1">//Could not allocate storage</span>
+</span><span class='line'>    <span class="n">result</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span> <span class="o">=</span> <span class="n">len</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">//Allocate array</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">len</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="kt">data_t</span> <span class="o">*</span><span class="p">)</span><span class="n">calloc</span><span class="p">(</span><span class="n">len</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">data_t</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">data</span><span class="p">){</span>
+</span><span class='line'>        <span class="n">free</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">result</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>    <span class="c1">//could not allocate storage</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">result</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class='line'>    <span class="n">result</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">result</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Retrieve vector element and store at dest.</span>
+</span><span class='line'><span class="c1">//Return 0 (out of bounds) or 1 (successful)</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">get_vec_element</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">int</span> <span class="n">index</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Return length of vector</span>
+</span><span class='line'><span class="kt">long</span> <span class="kt">int</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">//Implementation with maximum use of data abstraction</span>
+</span><span class='line'><span class="kt">void</span> <span class="n">combine1</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="n">val</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">get_vec_element</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">val</span><span class="p">);</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="o">*</span><span class="n">dest</span> <span class="n">OP</span> <span class="n">val</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="section-3">消除循环的低效率</h3>
+
+<p>观察上面的 <strong>combine1</strong> 函数，可以看出在 for 循环的测试条件中，每次都要执行 <strong>vec_length</strong>，但这个函数每次执行结果都一样，可以提到测试条件外面，修改代码如下： 
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//move call to vec_length out of loop</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">combine2</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="n">val</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">get_vec_element</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">val</span><span class="p">);</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="o">*</span><span class="n">dest</span> <span class="n">OP</span> <span class="n">val</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="section-4">减少调用过程</h3>
+
+<p>函数调用会带来巨大的时间开销，再来看上面的<strong>combine2</strong>函数中，每次循环都会调用<strong>get_vec_element</strong>函数，而且这个函数的返回值 val 都是随着 i 的递增而在内存中连续存放，因此可以将该函数从循环中拿出。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">data_t</span> <span class="o">*</span><span class="nf">get_vec_start</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="c1">//direct access to vector data</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">combine3</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">get_vec_start</span><span class="p">(</span><span class="n">v</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="o">*</span><span class="n">dest</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="section-5">消除不必要的存储器引用</h3>
+
+<p>观察上面的函数，在每次 for 循环中，都会有两次的读取内存(<em>dest 和 data[i])的操作，一次写内存(</em>dest)的操作。每次读写内存都会耗时，因此可以使用临时变量，从而使每次循环只有一次读即可。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Accumulate result in local variable</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">combine4</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">get_vec_start</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">acc</span> <span class="o">=</span> <span class="n">acc</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">acc</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="section-6">循环展开</h3>
+
+<p>循环展开是一种程序变换，通过增加每次迭代计算的元素的数量，减少循环的迭代次数。它能够从两方面改善程序的性能：首先，它减少了不直接有助于程序结果的操作的数量。其次，它提供一些方法，可以进一步变换代码，减少整个计算中关键路径上的操作数量。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Unroll loop by 2</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">combine4</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">limit</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">get_vec_start</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">//Combine 2 elements at a time</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">+=</span><span class="mi">2</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">acc</span> <span class="o">=</span> <span class="n">acc</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Finish any remaining elements</span>
+</span><span class='line'><span class="k">for</span><span class="p">(;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span> <span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">acc</span> <span class="o">=</span> <span class="n">acc</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">acc</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="section-7">提高并行性</h3>
+
+<p>两次循环展开，并且使用两路并行，该方法利用了功能单元的流水线能力</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//Unroll loop by 2, 2-way parallelism</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">combine6</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">limit</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">get_vec_start</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="n">acc0</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="n">acc1</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1">//combine 2 elements at a time</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">limit</span><span class="p">;</span> <span class="n">i</span><span class="o">+=</span><span class="mi">2</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">acc0</span> <span class="o">=</span> <span class="n">acc0</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">acc1</span> <span class="o">=</span> <span class="n">acc1</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Finish any remaining elements</span>
+</span><span class='line'><span class="k">for</span><span class="p">(;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">acc0</span> <span class="o">=</span> <span class="n">acc0</span> <span class="n">OP</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">acc0</span> <span class="n">OP</span> <span class="n">acc1</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>还有其他的方法，比如重新组合结合上面<strong>combine5</strong>中的运算，即将
+<code>
+acc = (acc OP data[i]) OP data[i + 1]
+</code>
+合并成如下实现
+<code>
+acc = acc OP (data[i] OP data[i + 1])
+</code></p>
+
+<p>或者使用 SIMD 指令提高更高的并行性。</p>
 
 ]]></content>
   </entry>
