@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder - 懒人李冰</title>
+  <title>性能优化之性能分析工具perf - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="avcodec_find_decoder和avcodec_find_encoder 主要是查找 FFmpeg 的解码器和编码器。 avcodec_find_decoder 和 avcodec_find_encoder 主要是利用 AVCodecID 来查找编解码器。
-其实质是遍历AVCodec &hellip;">
+  <meta name="description" content="本文主要记录性能优化工具 perf 的方法技巧。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/06/av-find-encdec/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/05/17/perf/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">FFMPEG 源码分析：avcodec_find_decoder和avcodec_find_encoder</h1>
+      <h1 class="entry-title">性能优化之性能分析工具perf</h1>
     
     
       <p class="meta">
@@ -92,99 +91,16 @@
 
 
 
-<time class='entry-date' datetime='2016-12-06T06:18:07-08:00'><span class='date'>2016 年 12 月 06 日</span> <span class='time'>6:18 am</span></time>
+<time class='entry-date' datetime='2019-05-17T08:43:15-07:00'><span class='date'>2019 年 05 月 17 日</span> <span class='time'>8:43 am</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p><code>avcodec_find_decoder</code>和<code>avcodec_find_encoder</code> 主要是查找 FFmpeg 的解码器和编码器。<br />
-<!--more--></p>
+<div class="entry-content"><p>本文主要记录性能优化工具 perf 的方法技巧。</p>
 
-<p>avcodec_find_decoder 和 avcodec_find_encoder 主要是利用 AVCodecID 来查找编解码器。<br />
-其实质是遍历AVCodec 链表并且获得符合AVCodecID的元素。</p>
-
-<p>avcodec_find_decoder 定义如下：</p>
-
-<figure class="code"><figcaption><span>avcodec_find_decoder </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">AVCodec</span> <span class="o">*</span><span class="nf">avcodec_find_decoder</span><span class="p">(</span><span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">find_encdec</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>由定义可以看出，该函数利用 AVCodecID 查找 AVCodec，并将找到的 AVCodec 返回。
-<code>find_encdec</code>定义如下：</p>
-
-<figure class="code"><figcaption><span>find_encdec </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="nf">find_encdec</span><span class="p">(</span><span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">id</span><span class="p">,</span> <span class="kt">int</span> <span class="n">encoder</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="n">experimental</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class="line">    <span class="n">p</span> <span class="o">=</span> <span class="n">first_avcodec</span><span class="p">;</span>
-</span><span class="line">    <span class="n">id</span><span class="o">=</span> <span class="n">remap_deprecated_codec_id</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
-</span><span class="line">    <span class="k">while</span> <span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="k">if</span> <span class="p">((</span><span class="n">encoder</span> <span class="o">?</span> <span class="n">av_codec_is_encoder</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">:</span> <span class="n">av_codec_is_decoder</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">&amp;&amp;</span>
-</span><span class="line">            <span class="n">p</span><span class="o">-&gt;</span><span class="n">id</span> <span class="o">==</span> <span class="n">id</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">capabilities</span> <span class="o">&amp;</span> <span class="n">AV_CODEC_CAP_EXPERIMENTAL</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">experimental</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">                <span class="n">experimental</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span>
-</span><span class="line">            <span class="p">}</span> <span class="k">else</span>
-</span><span class="line">                <span class="k">return</span> <span class="n">p</span><span class="p">;</span>
-</span><span class="line">        <span class="p">}</span>
-</span><span class="line">        <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">experimental</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>其中<code>av_codec_is_decoder</code>定义如下：</p>
-
-<figure class="code"><figcaption><span>av_codec_is_decoder </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">av_codec_is_decoder</span><span class="p">(</span><span class="k">const</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">codec</span> <span class="o">&amp;&amp;</span> <span class="n">codec</span><span class="o">-&gt;</span><span class="n">decode</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p><code>av_codec_is_encoder</code>定义如下：</p>
-
-<figure class="code"><figcaption><span>av_codec_is_decoder </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="nf">av_codec_is_encoder</span><span class="p">(</span><span class="k">const</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">codec</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">codec</span><span class="o">-&gt;</span><span class="n">encode_sub</span> <span class="o">||</span> <span class="n">codec</span><span class="o">-&gt;</span><span class="n">encode2</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>查找编解码器除了上述的<code>avcodec_find_decoder</code>和<code>avcodec_find_encoder</code>外，还可以利用编解码器名字来查找函数为：avcodec_find_encoder_by_name 和 avcodec_find_decoder_by_name，在此不再赘述。</p>
+<!--more-->
 
 </div>
 
@@ -201,12 +117,12 @@
 
 
 
-<time class='entry-date' datetime='2016-12-06T06:18:07-08:00'><span class='date'>2016 年 12 月 06 日</span> <span class='time'>6:18 am</span></time>
+<time class='entry-date' datetime='2019-05-17T08:43:15-07:00'><span class='date'>2019 年 05 月 17 日</span> <span class='time'>8:43 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
+    <a class='category' href='/blog/categories/xing-neng-you-hua/'>性能优化</a>
   
 </span>
 
@@ -215,7 +131,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/06/av-find-encdec/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/06/av-find-encdec/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/05/17/perf/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/05/17/perf/" >Tweet</a>
   
   
   
@@ -224,10 +140,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/12/05/avcodec-register-all/" title="Previous Post: FFMPEG 源码分析：avcodec_register_all">&laquo; FFMPEG 源码分析：avcodec_register_all</a>
+        <a class="basic-alignment left" href="/blog/2019/04/26/branch-predictor/" title="Previous Post: 性能优化之分支预测">&laquo; 性能优化之分支预测</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2016/12/07/avio-open2/" title="Next Post: FFMPEG源码分析：avio_open2">FFMPEG源码分析：avio_open2 &raquo;</a>
       
     </p>
   </footer>
