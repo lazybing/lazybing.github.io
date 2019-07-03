@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-07-03T07:43:09-07:00</updated>
+  <updated>2019-07-03T08:59:50-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1186,6 +1186,7 @@
     <updated>2019-03-02T18:02:55-08:00</updated>
     <id>http://lazybing.github.io/blog/2019/03/02/loop-restoration</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#switchable-restoration-framework" id="markdown-toc-switchable-restoration-framework">switchable restoration framework(可切换的恢复框架)</a></li>
   <li><a href="#wiener-filter-" id="markdown-toc-wiener-filter-">Wiener Filter 维纳滤波器</a></li>
   <li><a href="#selfguided-filter-" id="markdown-toc-selfguided-filter-">Selfguided Filter 自导向投影滤波器</a></li>
   <li><a href="#section" id="markdown-toc-section">参考文档</a></li>
@@ -1196,6 +1197,25 @@
 <!--more-->
 
 <p>图像重建是一个比较成熟的领域，它包含了很多专业技术可用，比如 deblocking、deblurring、deringring、debanding、denoising、constrast enhancement、sharpening 和 resolution enhancement。</p>
+
+<h2 id="switchable-restoration-framework">switchable restoration framework(可切换的恢复框架)</h2>
+
+<p>在<code>AV1</code>中实现的 restoration 工具是可切换的恢复框架，该框架中 restoration 工具在每个 tile 之间切换。restoration 的 tile size 是可选的，包括<code>256x256</code>、<code>128x128</code>、<code>64x64</code>。通常情况下，对高分辨率的源，选择更大的 tile size。
+对每一帧和每个组件(Y/CbCr)，<code>frame_restoration_type</code>符号会被发送。对于 Y 组件，符号有如下几个值：</p>
+
+<ul>
+  <li>RESTORE_NOEN: 不恢复帧。</li>
+  <li>RESTORE_WIENER: 帧中的每个 tile 可能不恢复或者使用 wiener 滤波。</li>
+  <li>RESTORE_SGRPROJ：帧中的每个 tile 可能不恢复或者使用 self-guided 滤波。</li>
+  <li>RESTORE_DOMTXFMRF: 帧中的每个 tile 可能不恢复或者使用 Domain Transform Recursive 滤波。</li>
+  <li>RESTORE_SWITCHABLE: 帧中的每个 tile 可能不恢复或者使用任何支持的滤波工具。</li>
+</ul>
+
+<p>对 chroma components 来说，只有上面的前三个滤波。</p>
+
+<p>根据每个 component 的帧恢复类型，对每个 tile 会有额外的信息来表示实际的恢复类型，如有需要，可能也会有额外的信息。编码器会根据使用的 restoration 来对合适的 RD。解码器只是将受到的信息解码出来并用到滤波器上。</p>
+
+<p>注意：除了 domain transform filter外，其他的滤波器在解码器至少需要 3 行未滤波的像素。此外，解码器操作足够简单，对硬件非常友好。也正因为这个原因，AV1 解码器中删除了 Domain Transform filter。</p>
 
 <h2 id="wiener-filter-">Wiener Filter 维纳滤波器</h2>
 
