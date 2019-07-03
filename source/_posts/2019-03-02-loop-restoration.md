@@ -15,6 +15,23 @@ LOOP RESTORATION，环内重建滤波器，是一个重要的增强图像质量�
 
 图像重建是一个比较成熟的领域，它包含了很多专业技术可用，比如 deblocking、deblurring、deringring、debanding、denoising、constrast enhancement、sharpening 和 resolution enhancement。
 
+## switchable restoration framework(可切换的恢复框架)
+
+在`AV1`中实现的 restoration 工具是可切换的恢复框架，该框架中 restoration 工具在每个 tile 之间切换。restoration 的 tile size 是可选的，包括`256x256`、`128x128`、`64x64`。通常情况下，对高分辨率的源，选择更大的 tile size。
+对每一帧和每个组件(Y/CbCr)，`frame_restoration_type`符号会被发送。对于 Y 组件，符号有如下几个值：
+
+* RESTORE_NOEN: 不恢复帧。
+* RESTORE_WIENER: 帧中的每个 tile 可能不恢复或者使用 wiener 滤波。
+* RESTORE_SGRPROJ：帧中的每个 tile 可能不恢复或者使用 self-guided 滤波。
+* RESTORE_DOMTXFMRF: 帧中的每个 tile 可能不恢复或者使用 Domain Transform Recursive 滤波。
+* RESTORE_SWITCHABLE: 帧中的每个 tile 可能不恢复或者使用任何支持的滤波工具。
+
+对 chroma components 来说，只有上面的前三个滤波。
+
+根据每个 component 的帧恢复类型，对每个 tile 会有额外的信息来表示实际的恢复类型，如有需要，可能也会有额外的信息。编码器会根据使用的 restoration 来对合适的 RD。解码器只是将受到的信息解码出来并用到滤波器上。
+
+注意：除了 domain transform filter外，其他的滤波器在解码器至少需要 3 行未滤波的像素。此外，解码器操作足够简单，对硬件非常友好。也正因为这个原因，AV1 解码器中删除了 Domain Transform filter。
+
 ## Wiener Filter 维纳滤波器
 
 Degraded 帧的每个像素都经过维纳滤波，维纳滤波的系数存在码流中。因为归一化和对称性，对于垂直和水平滤波器，只需要从编码端传递三个参数。编码器决定使用的滤波抽头(filter tap),解码端只是简单的使用从码流中获取的滤波抽头。
