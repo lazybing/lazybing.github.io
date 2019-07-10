@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文主要记录性能优化工具 perf 的方法技巧。 ">
+  <meta name="description" content="AV1 使用了非常多的环路滤波器工具应用于解码帧。环路滤波的第一个阶段是去块滤波器(Deblocking Filter)。该滤波器与 VP9 中使用的滤波器基本相同，只是做了很小的改动————最长滤波从 VP9 的 15 抽头降成了 13 抽头。除了去块滤波器，AV1 还采用了CDEF 滤波器、 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,43 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-07-10T07:07:33-07:00'><span class='date'>2019 年 07 月 10 日</span> <span class='time'>7:07 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>AV1 使用了非常多的环路滤波器工具应用于解码帧。环路滤波的第一个阶段是去块滤波器(Deblocking Filter)。该滤波器与 VP9 中使用的滤波器基本相同，只是做了很小的改动————最长滤波从 VP9 的 15 抽头降成了 13 抽头。除了去块滤波器，AV1 还采用了CDEF 滤波器、Loop Restoration 滤波器、Film Grain 滤波器。<br />
+去块滤波器是视频编解码中的重要组成部分，其核心作用在于消除编码过程中产生的图像块效应。图像中的块效应产生原因主要是以宏块为基本单元的编码结构而产生。在编码中，每个宏块的子块都会按照既定分割方式进行预测、变换和量化编码。在这个过程中可能导致块效应的因素有以下几个：</p>
+
+<ul>
+  <li>由于变换和量化编码的运算精度误差导致边界出现不连续。</li>
+  <li>由于码率设置较低，量化强度较大，或者相邻宏块的量化参数不一致导致重建图像的细节部分产生差异。</li>
+  <li>由于运动补偿时的参考块位置与当前块位置关系不一致导致重建像素的内容实际上缺乏相关性。</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -374,7 +411,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2019/03/02/loop-restoration/">AV1 解码详解(四)之LOOP RESTORATION</a></h1>
+      <h1 class="entry-title"><a href="/blog/2019/03/02/loop-restoration/">AV1(DAV1D) 解码详解(四)之LOOP RESTORATION</a></h1>
     
     
       <p class="meta">
@@ -415,7 +452,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2019/01/28/av1-cdef-filter/">AV1 解码详解(三)之CDEF</a></h1>
+      <h1 class="entry-title"><a href="/blog/2019/01/28/av1-cdef-filter/">AV1(DAV1D) 解码详解(三)之CDEF</a></h1>
     
     
       <p class="meta">
@@ -459,59 +496,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2019/01/24/neon-of-coding/">ARM64 汇编指令总结</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2019-01-24T06:35:54-08:00'><span class='date'>2019 年 01 月 24 日</span> <span class='time'>6:35 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#sqdmulhvectorby-element" id="markdown-toc-sqdmulhvectorby-element">SQDMULH(vector/by element)</a></li>
-  <li><a href="#sqrdmulhvectorby-element" id="markdown-toc-sqrdmulhvectorby-element">SQRDMULH(vector/by element)</a></li>
-  <li><a href="#sqrshrun-sqrshrun2" id="markdown-toc-sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</a></li>
-  <li><a href="#sqshrun-sqshrun2" id="markdown-toc-sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</a></li>
-  <li><a href="#shl" id="markdown-toc-shl">SHL</a></li>
-  <li><a href="#shll-shll2" id="markdown-toc-shll-shll2">SHLL, SHLL2</a></li>
-  <li><a href="#sshll-sshll2" id="markdown-toc-sshll-sshll2">SSHLL, SSHLL2</a></li>
-  <li><a href="#ushll-ushll2" id="markdown-toc-ushll-ushll2">USHLL, USHLL2</a></li>
-  <li><a href="#trn1--trn2" id="markdown-toc-trn1--trn2">TRN1 &amp; TRN2</a></li>
-  <li><a href="#sxtl-sxtl2" id="markdown-toc-sxtl-sxtl2">SXTL, SXTL2</a></li>
-  <li><a href="#uxtl-uxtl2" id="markdown-toc-uxtl-uxtl2">UXTL, UXTL2</a></li>
-  <li><a href="#ext" id="markdown-toc-ext">EXT</a></li>
-  <li><a href="#bfm-ubfm-sbfmbitfield-move" id="markdown-toc-bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</a></li>
-  <li><a href="#srshr" id="markdown-toc-srshr">SRSHR</a></li>
-</ul>
-
-<p>ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。</p>
-
-<p>ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2019/01/24/neon-of-coding/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -525,7 +509,7 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/av1/'>av1 (4)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
@@ -546,6 +530,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
@@ -559,10 +547,6 @@
     
       <li class="post">
         <a href="/blog/2019/04/19/reducing-procedure-call/">性能优化之减少调用</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/04/17/loop-unroll/">性能优化之循环展开</a>
       </li>
     
   </ul>
