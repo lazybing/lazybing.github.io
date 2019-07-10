@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AV1 解码详解(三)之CDEF"
+title: "AV1(DAV1D) 解码详解(三)之CDEF"
 date: 2019-01-28 06:32:04 -0800
 comments: true
 categories: av1

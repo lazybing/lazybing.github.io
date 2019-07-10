@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AV1 解码详解(四)之LOOP RESTORATION"
+title: "AV1(DAV1D) 解码详解(四)之LOOP RESTORATION"
 date: 2019-03-02 18:02:55 -0800
 comments: true
 categories: av1
