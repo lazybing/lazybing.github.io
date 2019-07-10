@@ -4,7 +4,7 @@
   <title><![CDATA[分类:av1 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/av1/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-07-03T08:59:50-07:00</updated>
+  <updated>2019-07-10T05:59:28-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -213,7 +213,9 @@
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#film-grain-" id="markdown-toc-film-grain-">Film Grain 简介</a></li>
   <li><a href="#film-grain--1" id="markdown-toc-film-grain--1">Film Grain 流程</a></li>
-  <li><a href="#section" id="markdown-toc-section">参考文档</a></li>
+  <li><a href="#section" id="markdown-toc-section">源码分析及优化</a></li>
+  <li><a href="#define-addnoiseyx-y-grain----" id="markdown-toc-define-addnoiseyx-y-grain----">define add_noise_y(x, y, grain)    \</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">参考文档</a></li>
 </ul>
 
 <p><code>Film Grain</code>在电视和电影内容中广泛存在，它经常是创作内容的一部分，在编码过程中需要保留下来，因为<code>film grain</code>的随机性，导致很难用传统的压缩算法进行压缩。</p>
@@ -240,7 +242,111 @@
   <li>add_noise_to_block。它会根据上面生成的<code>grain block</code>叠加到重建帧上。</li>
 </ul>
 
-<h1 id="section">参考文档</h1>
+<h1 id="section">源码分析及优化</h1>
+<p>以解码器 DAV1D 中 Film Grain 的源码分析。首先看 Y 方向上的主要代码</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// samples from the correct block of a grain LUT, while taking into account the</span>
+</span><span class='line'><span class="c1">// offsets provided by the offsets cache</span>
+</span><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="n">entry</span> <span class="nf">sample_lut</span><span class="p">(</span><span class="n">entry</span> <span class="n">grain_lut</span><span class="p">[</span><span class="n">GRAIN_HEIGHT</span><span class="p">][</span><span class="n">GRAIN_WIDTH</span><span class="p">],</span>
+</span><span class='line'>                               <span class="kt">int</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="kt">int</span> <span class="n">subx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">suby</span><span class="p">,</span>
+</span><span class='line'>                               <span class="kt">int</span> <span class="n">bx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">by</span><span class="p">,</span> <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="n">randval</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">bx</span><span class="p">][</span><span class="n">by</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="n">offx</span>    <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span><span class="err"> »</span> <span class="n">subx</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="n">randval</span><span class="err"> »</span> <span class="mi">4</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="n">offy</span>    <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span><span class="err"> »</span> <span class="n">suby</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="n">randval</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mh">0xF</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">grain_lut</span><span class="p">[</span><span class="n">offy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">BLOCK_SIZE</span><span class="err"> »</span> <span class="n">suby</span><span class="p">)</span> <span class="o">*</span> <span class="n">by</span><span class="p">]</span>
+</span><span class='line'>                    <span class="p">[</span><span class="n">offx</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BLOCK_SIZE</span><span class="err"> »</span> <span class="n">subx</span><span class="p">)</span> <span class="o">*</span> <span class="n">bx</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-addnoiseyx-y-grain----&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">)</span>    <span class="err">\</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">pixel</span> <span class="o">*</span><span class="n">src</span> <span class="o">=</span> <span class="n">src_row</span> <span class="o">+</span> <span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">bx</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span><span class="p">));</span> \
+</span><span class='line'><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span> <span class="o">=</span> <span class="n">dst_row</span> <span class="o">+</span> <span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">bx</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span><span class="p">));</span> \
+</span><span class='line'><span class="kt">int</span> <span class="n">noise</span> <span class="o">=</span> <span class="n">round2</span><span class="p">(</span><span class="n">scaling</span><span class="p">[</span><span class="o">*</span><span class="n">src</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">grain</span><span class="p">),</span> <span class="n">data</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">scaling_shift</span><span class="p">);</span> \
+</span><span class='line'><span class="o">*</span><span class="n">dst</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">(</span><span class="o">*</span><span class="n">src</span> <span class="o">+</span> <span class="n">noise</span><span class="p">,</span> <span class="n">min_value</span><span class="p">,</span> <span class="n">max_value</span><span class="p">);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Non-overlapped image region(straightforward)</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">grain</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>上面的代码主要包含两部分，一. 从 grain_lut 中获取 grain，二. 通过获取的 grain 值，执行 add_noise_y。分析代码，如果想要利用 NEON 进行汇编优化，
+存在一个问题，就是无法连续的从 grain_lut 中连续的获取值，因此直接按照源码的流程，无法进行 NEON 优化。考虑到硬件的 cache 原理，可以先将
+所有的 grain 值提前提取出来放到数组中，之后在进行 add_noise_y 时，就可以连续的获取 grain 值了。从程序上看，该方法没有任何作用，因为执行的代码
+是相同的，但硬件是有cache的，因此，可以提升性能。也为后面的 NEON 提供了遍历。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define add_noise_y(x, y, grain)    \</span>
+</span><span class='line'><span class="cp">    pixel &lt;em&gt;src = src_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
+</span><span class='line'><span class="cp">    pixel *dst = dst_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
+</span><span class='line'><span class="cp">    int noise = round2(scaling[&lt;/em&gt;src] * (grain), data-&amp;gt;scaling_shift); \</span>
+</span><span class='line'><span class="cp">    &lt;em&gt;dst = iclip(&lt;/em&gt;src + noise, min_value, max_value);&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">grain</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="p">(</span><span class="n">bh</span> <span class="o">-</span> <span class="n">ystart</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">bw</span> <span class="o">-</span> <span class="n">xstart</span><span class="p">));</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">grain</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Non-overlapped image region(straightforward)</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>上面代码优化前，解码 960x540 的分辨率率的视频，该模块耗时 8ms,C 代码优化完后，该模块耗时 7ms。在此基础上，进行 NEON 优化，该模块耗时 5ms。</p>
+
+<h1 id="section-1">参考文档</h1>
 
 <ol>
   <li><a href="https://aomediacodec.github.io/av1-spec/">AV1 Bitstream &amp; Decoding Process</a></li>
