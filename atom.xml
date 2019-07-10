@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-07-10T16:00:27-07:00</updated>
+  <updated>2019-07-10T16:23:11-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -20,7 +20,8 @@
     <id>http://lazybing.github.io/blog/2019/07/10/deblock-filter</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">介绍</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">参考资料</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">源码分析及优化</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">参考资料</a></li>
 </ul>
 
 <p>AV1 使用了非常多的环路滤波器工具应用于解码帧。环路滤波的第一个阶段是去块滤波器(Deblocking Filter)。</p>
@@ -48,7 +49,54 @@
   <li>滤波器的应用：做完前面两个工作可以决定边界强度以及判断是否真的为人造边界，这个工作主要对人造边界对应的边界强度选择该应用的滤波器。</li>
 </ol>
 
-<h3 id="section-1">参考资料</h3>
+<h3 id="section-1">源码分析及优化</h3>
+
+<p>首先看 DAV1D 中，关于去块滤波的 C 实现函数：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">loop_filter_h_sb128y_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                                    <span class="k">const</span> <span class="kt">uint32_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">vmast</span><span class="p">,</span>
+</span><span class="line">                                    <span class="k">const</span> <span class="kt">uint8_t</span> <span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">)[</span><span class="mi">4</span><span class="p">],</span> <span class="kt">ptrdiff_t</span> <span class="n">b4_stride</span><span class="p">,</span>
+</span><span class="line">                                    <span class="k">const</span> <span class="n">AvFilterLUT</span> <span class="o">*</span><span class="n">lut</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">h</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">unsigned</span> <span class="n">vm</span> <span class="o">=</span> <span class="n">vmask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">|</span> <span class="n">vmask</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">|</span> <span class="n">vmask</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">vm</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">         <span class="n">y</span> <span class="o">&lt;&lt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dst</span> <span class="o">+=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">),</span> <span class="n">l</span> <span class="o">+=</span> <span class="n">b4_stride</span><span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="k">if</span> <span class="p">(</span><span class="n">vm</span> <span class="o">&amp;</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">L</span> <span class="o">=</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">?</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">:</span> <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
+</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">L</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">H</span> <span class="o">=</span> <span class="n">L</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">E</span> <span class="o">=</span> <span class="n">lut</span><span class="o">-&gt;</span><span class="n">e</span><span class="p">[</span><span class="n">L</span><span class="p">],</span> <span class="n">I</span> <span class="o">=</span> <span class="n">lut</span><span class="o">-&gt;</span><span class="n">i</span><span class="p">[</span><span class="n">L</span><span class="p">];</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">vmask</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">y</span><span class="p">)</span> <span class="o">?</span> <span class="mi">2</span> <span class="o">:</span> <span class="o">!!</span><span class="p">(</span><span class="n">vmask</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">y</span><span class="p">);</span>
+</span><span class="line">            <span class="n">loop_filter</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span> <span class="o">&lt;&lt;</span> <span class="n">idx</span><span class="p">);</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>上面只是给出 Y 分量上的 水平滤波函数，从上面给出的 C 实现看，要实现 NEON 优化，并不简单，但如果再看它的汇编优化，简直太聪明了，在 DAV1D 发布0.3版本时，官方就称，仅仅去块滤波这一个模块，解码 8bit 流时，解码效率提升7%~34%之高。
+后来我自己实现 10bit NEON 优化时，因为寄存器个数的限制（10bit，一个128位寄存器只能存放8个像素;而8bit，一个128位寄存器可存放16个像素），简码效率也有至少5%的提升。当时仿照 8bit 实现时，感慨汇编的技巧使用，惊为天人！</p>
+
+<h3 id="section-2">参考资料</h3>
 
 <ol>
   <li><a href="https://zh.wikipedia.org/wiki/%E5%8E%BB%E5%8D%80%E5%A1%8A%E6%BF%BE%E6%B3%A2%E5%99%A8">去块滤波器</a></li>
