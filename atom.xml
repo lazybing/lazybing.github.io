@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-07-10T16:23:11-07:00</updated>
+  <updated>2019-07-11T09:09:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,40 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Doxygen和graphviz使用]]></title>
+    <link href="http://lazybing.github.io/blog/2019/07/11/doxygen-graphviz/"/>
+    <updated>2019-07-11T06:24:57-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/07/11/doxygen-graphviz</id>
+    <content type="html"><![CDATA[<p><code>Doxygen</code>可以从一套归档源文件开始，生成HTML格式的在线浏览器，<code>Graphviz</code>是一个图形化可视化软件。Doxygen 使用 Graphviz 生成各种图形，如类的继承关系图、合作图，头文件包含关系图等。</p>
+
+<!--more-->
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">EXTRACT_ALL</th>
+      <th style="text-align: center">输出所有的函数，但 private 和 static 函数不属于其管制</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">EXTRACT_PRIVATE</td>
+      <td style="text-align: center">输出 private 函数</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">EXTRACT_STATIC</td>
+      <td style="text-align: center">输出 static 函数，同时还有几个 EXTRACT，相应查看文档即可</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">HAVE_DOT</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER]]></title>
@@ -3580,208 +3614,6 @@
 <p><a href="https://aomedia.googlesource.com/aom/+/master/README.md">AV1 Codec Library</a></p>
 
 <p><strong><em>欢迎添加微信交流</em></strong></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Linux下C语言调用静态库和动态库简介]]></title>
-    <link href="http://lazybing.github.io/blog/2018/09/18/linux-c-static-dynamic-library/"/>
-    <updated>2018-09-18T21:27:55-07:00</updated>
-    <id>http://lazybing.github.io/blog/2018/09/18/linux-c-static-dynamic-library</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">动态库和静态库简述</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">静态库使用示例</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">动态库使用示例</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">动态库和静态库整合</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">参考文档</a></li>
-</ul>
-
-<p>最近工作中遇到要把第三方静态库整合到自己的动态开里的问题，在此记录并整理一些关于静态库和动态库的知识，并用特定的例子。</p>
-
-<!--more-->
-
-<h3 id="section">动态库和静态库简述</h3>
-
-<p>动态库和静态库本质上是一种可执行代码的二进制形式，它们可以被操作系统载入内存执行。两者的主要区别是，静态库是在编译过程中被载入可执行程序的，体积较大；动态库是在可执行程序在运行时被载入内存的，在编译过程中仅仅使用简单的引用，体积较小。</p>
-
-<p>给出示例代码如下：</p>
-
-<figure class="code"><figcaption><span>sayhello.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class="line"><span class="cp">#include &quot;sayhello.h&quot;</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="nf">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Hello World</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<figure class="code"><figcaption><span>sayhello.h </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#ifndef _SAYHELLO_H_</span>
-</span><span class="line"><span class="cp">#define _SAYHELLO_H_</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="nf">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line"><span class="cp">#endif</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="section-1">静态库使用示例</h3>
-
-<p>编译静态库：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$ gcc -Wall -O2 -fPIC -I./ -c -o sayhello.o sayhello.c
-</span><span class="line">$ ar crv libsayhello.a sayhello.o</span></code></pre></td></tr></table></div></figure>
-
-<p><code>ar</code>命令会生成<code>libsayhello.a</code>的静态库。该命令的参数如下：</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">参数</th>
-      <th style="text-align: center">意义</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">-r</td>
-      <td style="text-align: center">将objectfile 文件插入静态库尾或替换静态库中同名文件</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">-x</td>
-      <td style="text-align: center">从静态库文件中抽取文件objfile</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">-t</td>
-      <td style="text-align: center">打印静态库的成员文件列表</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">-d</td>
-      <td style="text-align: center">从静态库中删除文件objfile</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">-s</td>
-      <td style="text-align: center">重置静态库文件索引</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">-v</td>
-      <td style="text-align: center">创建文件冗余信息</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">-c</td>
-      <td style="text-align: center">创建静态库文件</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>生成了静态库后，可以在可执行文件中调用静态库内的函数,示例代码：</p>
-
-<figure class="code"><figcaption><span>lang: test_hello_stactic.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class="line"><span class="k">extern</span> <span class="kt">void</span> <span class="nf">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">helloworld</span><span class="p">();</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>编译命令:</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$ gcc test_hello_stactic.c -o test_hello_sta ./libsayhello.a</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="section-2">动态库使用示例</h3>
-
-<p>编译动态库：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">$ gcc -O2 -fPIC -shared sayhello.c -o libsayhello.so
-</span><span class="line">或
-</span><span class="line">$ gcc -O2 -fPIC -c sayhello.c
-</span><span class="line">$ gcc -shared -o libsayhello.so sayhello.o</span></code></pre></td></tr></table></div></figure>
-
-<p>其中</p>
-
-<ul>
-  <li>fPIC:产生与位置无关码，全部使用相对地址</li>
-  <li>shared:生成动态库</li>
-</ul>
-
-<p>调用动态库的示例代码：</p>
-
-<figure class="code"><figcaption><span>lang: test_hello_shared.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class="line"><span class="cp">#include &lt;dlfcn.h&gt;</span>
-</span><span class="line">
-</span><span class="line"><span class="cp">#define LIB &quot;./libsayhello.so&quot;</span>
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">void</span> <span class="o">*</span><span class="n">dl</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="n">LIB</span><span class="p">,</span> <span class="n">RTLD_LAZY</span><span class="p">);</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="n">dl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Error:faile to load libary.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)()</span> <span class="o">=</span> <span class="n">dlsym</span><span class="p">(</span><span class="n">dl</span><span class="p">,</span> <span class="s">&quot;helloworld&quot;</span><span class="p">);</span>
-</span><span class="line">    <span class="n">func</span><span class="p">();</span>
-</span><span class="line">    <span class="n">dlclose</span><span class="p">(</span><span class="n">dl</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="section-3">动态库和静态库整合</h3>
-
-<h3 id="section-4">参考文档</h3>
-
-<ol>
-  <li><a href="http://answerywj.com/2016/10/10/Linux%E4%B8%8BC%E8%B0%83%E7%94%A8%E9%9D%99%E6%80%81%E5%BA%93%E5%92%8C%E5%8A%A8%E6%80%81%E5%BA%93/">Linux下C调用静态库和动态库</a></li>
-  <li><a href="https://liam0205.me/2017/04/03/not-to-link-libstdc-statically-and-why/">为什么不能再动态库里静态链接</a></li>
-</ol>
 
 ]]></content>
   </entry>

@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-07-10T16:23:11-07:00</updated>
+  <updated>2019-07-11T09:09:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,40 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Doxygen和graphviz使用]]></title>
+    <link href="http://lazybing.github.io/blog/2019/07/11/doxygen-graphviz/"/>
+    <updated>2019-07-11T06:24:57-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/07/11/doxygen-graphviz</id>
+    <content type="html"><![CDATA[<p><code>Doxygen</code>可以从一套归档源文件开始，生成HTML格式的在线浏览器，<code>Graphviz</code>是一个图形化可视化软件。Doxygen 使用 Graphviz 生成各种图形，如类的继承关系图、合作图，头文件包含关系图等。</p>
+
+<!--more-->
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">EXTRACT_ALL</th>
+      <th style="text-align: center">输出所有的函数，但 private 和 static 函数不属于其管制</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">EXTRACT_PRIVATE</td>
+      <td style="text-align: center">输出 private 函数</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">EXTRACT_STATIC</td>
+      <td style="text-align: center">输出 static 函数，同时还有几个 EXTRACT，相应查看文档即可</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">HAVE_DOT</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Linux下C语言调用静态库和动态库简介]]></title>
@@ -865,374 +899,6 @@ Frame rate:31.250 fps
 </span></code></pre></td></tr></table></div></figure></p>
 
 <h1 id="loading-the-elf-file">Loading the ELF File</h1>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[编程小技巧]]></title>
-    <link href="http://lazybing.github.io/blog/2017/09/29/coding-tips/"/>
-    <updated>2017-09-29T13:35:57-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/09/29/coding-tips</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">获取文件路径后缀名</a>    <ul>
-      <li><a href="#c-" id="markdown-toc-c-">C 语言实现</a></li>
-      <li><a href="#c--1" id="markdown-toc-c--1">C++ 语言实现</a></li>
-      <li><a href="#shell-" id="markdown-toc-shell-">Shell 脚本实现</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-1" id="markdown-toc-section-1">调试信息分级打印</a></li>
-  <li><a href="#define-logdefault-2" id="markdown-toc-define-logdefault-2">define LOG_DEFAULT 2</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">分析特定格式的文件</a></li>
-      <li><a href="#fopen-" id="markdown-toc-fopen-">fopen 函数个数限制</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">函数声明</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p>本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
-工作中遇到某个问题时，自然而然能想到的解决方法，通常是一些比较通用的小技巧。</p>
-
-<!--more-->
-
-<h2 id="section">获取文件路径后缀名</h2>
-
-<p>工作中经常遇到对一批视频文件进行统一处理的情况，有时会根据文件名的不同后缀名进行不同的处理操作。此时就需要首先获取文件的后缀名，
-之后再根据后缀名的不同进行相应的操作。</p>
-
-<h3 id="c-">C 语言实现</h3>
-
-<p>实现思路：获取文件字符串的最后一个字符，依次向前寻找<code>.</code>，<code>.</code>后面即为后缀名。</p>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">get_filename_extension</span><span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">ext</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span> <span class="n">filename</span> <span class="p">);</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="o">*</span><span class="n">ext</span> <span class="o">!=</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ext</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'>        <span class="n">ext</span><span class="err">–</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">ext</span> <span class="o">+=</span> <span class="o">*</span><span class="n">ext</span> <span class="o">==</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">ext</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="c--1">C++ 语言实现</h3>
-
-<p>实现思路：首先将文件或路径名转换为一个<code>string</code>类，使用它的成员函数<code>rfind</code>找到最后一个<code>.</code>的位置，最后使用<code>substr</code>成员函数返回<code>.</code>后的所有内容，即得后缀名。</p>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="k">using</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">;</span>
-</span><span class='line'><span class="n">string</span> <span class="n">getFileExt</span><span class="p">(</span><span class="k">const</span> <span class="n">string</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">s</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">string</span><span class="o">::</span><span class="n">npos</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="err">“”</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="shell-">Shell 脚本实现</h3>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/sh</span>
-</span><span class='line'><span class="nv">fullfilename</span><span class="o">=</span><span class="nv">$1</span>
-</span><span class='line'><span class="nv">filename</span><span class="o">=</span><span class="k">$(</span>basename “<span class="nv">$fullfilename</span>”<span class="k">)</span>
-</span><span class='line'><span class="nv">fname</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">%.&lt;em&gt;</span><span class="k">}</span>”
-</span><span class='line'><span class="nv">ext</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">##&lt;/em&gt;.</span><span class="k">}</span>”&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;echo “Input File:<span class="nv">$fullfilename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Path:<span class="nv">$filename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Extension:<span class="nv">$fname</span>”
-</span><span class='line'><span class="nb">echo</span> “File Extension without Name:<span class="nv">$ext</span>”
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-1">调试信息分级打印</h2>
-
-<p>在工作中，经常遇到需要将调试信息分级打印的情况。比如在码流播放中可能默认要打印出码流的宽高、码流的 CODEC 类型等基本信息，可以定义此类信息级别为<code>LOG_INFO</code>级别；
-码流播放时，可能会出现错误，此类信息级别为<code>LOG_ERROR</code>等。</p>
-
-<p>实现思路：将需要打印的信息级别与默认打印信息级别进行比较，级别高时，将信息打印出来；级别低时，不打印信息。</p>
-
-<p><figure class='code'><figcaption><span>log_level </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-logdefault-2&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LOG_DEFAULT</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">LOG_NONE</span>    <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="cp">#define LOG_ERROR   0</span>
-</span><span class='line'><span class="cp">#define LOG_WARNING 1</span>
-</span><span class='line'><span class="cp">#define LOG_INFO    2</span>
-</span><span class='line'><span class="cp">#define LOG_DEBUG   3&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">Printf</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="kt">va_list</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="kt">char</span> <span class="o">*</span><span class="n">psz_prefix</span><span class="p">;</span>
-</span><span class='line'>   <span class="k">switch</span><span class="p">(</span><span class="n">i_level</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_ERROR</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">error</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_WARNING</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">warning</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_INFO</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">info</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_DEBUG</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">debug</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">brengak</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">default</span><span class="o">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">unknown</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>   <span class="n">vfprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i_level</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">LOG_DEFAULT</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">va_list</span> <span class="n">arg</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">va_start</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">Printf</span><span class="p">(</span><span class="n">i_level</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">va_end</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-2">分析特定格式的文件</h2>
-
-<p>工作中在验证芯片的<code>vdec</code>模块是否正常工作时，需要大量的跑一些码流，这些码流通常会放到一个<code>filelist</code>中，因为需要测试的项不同，此时就可以
-通过按照一定的格式并列存放这些码流，例如根据不同的<code>codec</code>、测试比较<code>YUV</code>或<code>CRC</code>，是要连续测试，还是要中途停止方便<code>Debug</code>问题，我们可以按照如下格式对<code>filelist</code>进行定义：</p>
-
-<p><code>
-Codec_Type  Compare_Type Test_Type Bitstream_Full_Path
-</code></p>
-
-<p>对于上面这种<code>filelist</code>，可以通过<code>fscanf</code>来逐个的获取特定的字符串，并通过<code>feof</code>来判断文件文件是否读取完毕， 之后使用<code>strcmp</code>来与特定的字符串进行匹配。例如，有如下的一个<code>filelist.txt</code>：</p>
-
-<p><code>
-HEVC Compare_CRC Debug F:\FFmpeg\hevc_bitstream1.bin
-H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
-</code></p>
-
-<p>分析<code>filelist.txt</code>示例代码：</p>
-
-<p><figure class='code'><figcaption><span>parse_filelist </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">char</span> <span class="n">Codec_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Compare_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Release_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Bitstream_Path</span><span class="p">[</span><span class="mi">200</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">filelist</span><span class="p">.</span><span class="n">txt</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">open</span> <span class="n">file</span> <span class="n">fail</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">pFile</span><span class="p">))</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fscanf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="err">“</span><span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">,</span> <span class="n">Compare_Type</span><span class="p">,</span> <span class="n">Release_Type</span><span class="p">,</span> <span class="n">Bitstream_Path</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">HEVC</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">H264</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">H264</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>注意上面表示出来了通过<code>strcmp</code>来判断<code>Codec_Type</code>的类型，后面的<code>Compare_Type</code>可以用同样的方法来给出。</p>
-
-<p>在使用过程中，人们并不会特别在意字母的大小写，但要表达的意思通常是一样的，比如<code>HEVC</code><code>hevc</code><code>Hevc</code>通过都是一样的，如果此时还用<code>strcmp</code>来判断，会出错，为此，我们提出了<code>strcasecmp</code>的使用方法，来避免大小写带来的问题，这也算是编写类似代码的一个小技巧。</p>
-
-<h2 id="fopen-">fopen 函数个数限制</h2>
-
-<p>严格来讲，这个并不是编程的一些小的技巧，而是自己在工作中遇到的一个小问题，最近在每晚上跑测试时，经常遇到一晚上跑完 503 个测试后，程序就会崩溃掉，给出的提示信息是”Open File Fail”,起初是通过观察<code>errno</code>的类型来<code>Debug</code>出错的原因，最后定位到问题是，
-对每个文件都打开了两次，而关闭只有一次，导致文件描述符的个数爆掉了。这个问题的原因是在不同的系统中，都会有对文件描述符的最大个数有一定的限制。</p>
-
-<p>在&lt;UNIX环境高级编程:文件I/O&gt;中有这样的解释：</p>
-
-<blockquote>
-  <p>当读或写一个文件时，使用<code>open</code>返回的文件描述符标识该文件，将其作为参数传送给<code>read</code>或<code>write</code>。文件描述符的变化范围是<code>0~OPEN_MAX</code>。</p>
-</blockquote>
-
-<p>关于文件描述符的最大个数问题，从<code>stackoverflow</code>上找到了以下几个问题的回复，可参考：</p>
-
-<p><a href="https://stackoverflow.com/questions/870173/is-there-a-limit-on-number-of-open-files-in-windows">1.Is there a limit on number of open files in Windows</a><br />
-<a href="https://stackoverflow.com/questions/17931583/maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux">2.maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux</a><br />
-<a href="https://stackoverflow.com/questions/3184345/fopen-problem-too-many-open-files">3.fopen-problem-too-many-open-files</a></p>
-
-<p>关于<code>fopen</code>的使用，通常会判断返回值是否<code>NULL</code>来判断是否打开成功，其实除此之外，还可以继续监测出错的类型<code>errno</code>，并用<code>strerror()</code>函数直接显示出错的具体原因。技巧如下：</p>
-
-<p><figure class='code'><figcaption><span>fopen_tips </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;error.h&gt;&lt;/error.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="n">file_full_path</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Open</span> <span class="n">File</span> <span class="nl">Fail</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-3">函数声明</h2>
-
-<p>函数定义是指对函数功能的确立，包括指定函数名、函数值类型、形参类型、函数体等，它是一个完整的、独立的函数单位。</p>
-
-<p>函数声明的作用则是把函数的名字、函数类型以及形参类型、个数和顺序通知编译系统，以便在调用函数时系统按此进行对照检查。</p>
-
-<p>注意，C 语言环境下，如果函数不进行声明就使用，可能会产生错误，因为默认将返回值作为 int 类型来处理，所以，最好是在使用之前对函数进行声明。</p>
-
-<p>这个错误之前搞了我好久……囧，例子如下。</p>
-
-<p><figure class='code'><figcaption><span>float_int.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdint.h&gt;&lt;/stdint.h&gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">float</span> <span class="n">mid</span><span class="p">(</span><span class="kt">float</span> <span class="n">a</span><span class="p">,</span> <span class="kt">float</span> <span class="n">b</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p><figure class='code'><figcaption><span>main.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="o">%</span><span class="n">f</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">mid</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">));</span>
-</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>编译上面的两个函数<code>gcc main.c float_int.c</code>, 之后运行它，输出时 0.00000.</p>
-
-<p>错误的原因是没有函数声明，默认认为函数返回值类型为 int.</p>
 
 ]]></content>
   </entry>
