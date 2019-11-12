@@ -5,14 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>FFMPEG 源码分析：av_read_frame - 懒人李冰</title>
+  <title>分类:av - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="函数声明 函数调用关系 源码分析 av_read_frame函数的作用是返回文件中保存的数据。它会文件中保存的数据分成不同的帧，
-每次调用都会返回一帧。注意，该函数不会忽略帧与帧之间无效数据(非帧数据)，目的是给解码器
-最多的信息用于解码。 函数声明 1
-int av_read_frame( &hellip;">
+  <meta name="description" content="Category: av">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -21,7 +18,7 @@ int av_read_frame( &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/12/15/av_read_frame/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/categories/av/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -81,106 +78,35 @@ int av_read_frame( &hellip;">
   <div id="main">
     <div id="content">
       <div>
-<article class="hentry" role="article">
+<article role="article">
   
   <header>
-    
-      <h1 class="entry-title">FFMPEG 源码分析：av_read_frame</h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-12-15T06:18:07-08:00'><span class='date'>2016 年 12 月 15 日</span> <span class='time'>6:18 am</span></time>
-        
-      </p>
+    <h1 class="entry-title">分类:av</h1>
     
   </header>
+  
+  <div id="blog-archives" class="category">
 
 
-<div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">函数声明</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">函数调用关系</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">源码分析</a></li>
-</ul>
 
-<p><code>av_read_frame</code>函数的作用是返回文件中保存的数据。它会文件中保存的数据分成不同的帧，
-每次调用都会返回一帧。注意，该函数不会忽略帧与帧之间无效数据(非帧数据)，目的是给解码器
-最多的信息用于解码。</p>
+  
+  <h2>2019</h2>
 
-<!--more-->
+<article>
+  
+<h1><a href="/blog/2019/11/12/intra-chrom-from-luma/">AV1(DAV1D) 解码详解(六)之帧内编码 Chrom_From_Luma</a></h1>
+<time datetime="2019-11-12T14:00:19-08:00" pubdate><span class='month'>11 月</span> <span class='day'>12 日</span> <span class='year'>2019</span></time>
 
-<h2 id="section">函数声明</h2>
+<footer>
+  <span class="categories"> 分类 <a class='category' href='/blog/categories/av/'>av</a></span>
+</footer>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">int av_read_frame(AVFormatContext *s, AVPacket *pkt);</span></code></pre></td></tr></table></div></figure>
 
-<p>如果<code>pkt-&gt;buf</code>是 NULL,包直到下一次调用<code>av_read_frame</code>或<code>avformat_close_input</code>时都是有效的。
-不需要时，包必须通过<code>av_free_packet</code>释放。对于视频，<code>packet</code>只包含一帧；对于音频，如果每帧有固定大小(如 PCM 或 ADPCM 数据)，
-<code>packet</code>可以包含多个音频帧（必须是整数帧）,如果音频帧大小可变(如MPEG 音频)，它只能包含一帧数据。</p>
-
-<p><code>pkt-&gt;pts</code><code>pkt-&gt;dts</code><code>pkt-&gt;duration</code>都是以<code>AVStream.time_base_units</code>为单位的。
-如果视频格式里包含 B 帧，<code>pkt-&gt;pts</code>可以是<code>AV_NOPTS_VALUE</code>,因此如果不解压缩数据，最好
-查看<code>pkt-&gt;dts</code>。</p>
-
-<p>如果函数返回0，正确；小于0，则为到文件尾或出错。</p>
-
-<h2 id="section-1">函数调用关系</h2>
-
-<p><img src="/images/av_read_frame/av_read_frame.png" /></p>
-
-<h2 id="section-2">源码分析</h2>
-
-<p><code>av_read_frame</code>函数会判断在未解码缓存中是否有数据，如果有数据则调用<code>read_from_packet_buffer</code>。</p>
+</article>
 
 </div>
 
-
-  <footer>
-    <p class="meta">
-      
   
-
-<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
-
-      
-
-
-
-
-<time class='entry-date' datetime='2016-12-15T06:18:07-08:00'><span class='date'>2016 年 12 月 15 日</span> <span class='time'>6:18 am</span></time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
-  
-</span>
-
-
-    </p>
-    
-      <div class="sharing">
-  
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/12/15/av_read_frame/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/12/15/av_read_frame/" >Tweet</a>
-  
-  
-  
-</div>
-
-    
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2016/12/10/avcodec-open2/" title="Previous Post: FFMPEG 源码分析：avcodec_open2">&laquo; FFMPEG 源码分析：avcodec_open2</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2016/12/20/avcodec_decode_video/" title="Next Post: FFMPEG 源码分析：avcodec_decode_video2">FFMPEG 源码分析：avcodec_decode_video2 &raquo;</a>
-      
-    </p>
-  </footer>
 </article>
 
 </div>
