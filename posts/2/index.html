@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="CDEF 介绍 方向查找 非线性低通滤波器 定向滤波器 代码实现分析 方向查找实现 CDEF 方向滤波 参考文档 CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF &hellip;">
+  <meta name="description" content="switchable restoration framework(可切换的恢复框架) Wiener Filter 维纳滤波器 Selfguided Filter 自导向投影滤波器 参考文档 LOOP RESTORATION，环内重建滤波器，是一个重要的增强图像质量处理方法。它包含了两种滤波器， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,47 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/03/02/loop-restoration/">AV1(DAV1D) 解码详解(四)之LOOP RESTORATION</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-03-02T18:02:55-08:00'><span class='date'>2019 年 03 月 02 日</span> <span class='time'>6:02 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#switchable-restoration-framework" id="markdown-toc-switchable-restoration-framework">switchable restoration framework(可切换的恢复框架)</a></li>
+  <li><a href="#wiener-filter-" id="markdown-toc-wiener-filter-">Wiener Filter 维纳滤波器</a></li>
+  <li><a href="#selfguided-filter-" id="markdown-toc-selfguided-filter-">Selfguided Filter 自导向投影滤波器</a></li>
+  <li><a href="#section" id="markdown-toc-section">参考文档</a></li>
+</ul>
+
+<p>LOOP RESTORATION，环内重建滤波器，是一个重要的增强图像质量处理方法。它包含了两种滤波器，编码器会从两者中选择其一。Wiener Filter(维纳滤波器)采用可分离的对称设计。SelfGuided(自导向投影滤波器)使用两个重建信号的线性组合来近似真实信号。编码器通过比较滤波结果，选择合适的参数，并传输给解码器。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2019/03/02/loop-restoration/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -535,93 +576,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2018/10/15/av1-startup/">AV1(DAV1D) 解码详解(一)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2018-10-15T07:43:02-07:00'><span class='date'>2018 年 10 月 15 日</span> <span class='time'>7:43 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#av1-" id="markdown-toc-av1-">AV1 工具介绍</a>    <ul>
-      <li><a href="#section" id="markdown-toc-section">编码块划分</a></li>
-      <li><a href="#section-1" id="markdown-toc-section-1">帧内预测</a>        <ul>
-          <li><a href="#section-2" id="markdown-toc-section-2">更多的方向预测模式</a></li>
-          <li><a href="#section-3" id="markdown-toc-section-3">非定向平滑帧内预测器</a></li>
-          <li><a href="#section-4" id="markdown-toc-section-4">基于递归滤波的帧内预测器</a></li>
-          <li><a href="#section-5" id="markdown-toc-section-5">从亮度值预测色度值</a></li>
-          <li><a href="#section-6" id="markdown-toc-section-6">调色板模式</a></li>
-          <li><a href="#section-7" id="markdown-toc-section-7">帧内拷贝模式</a></li>
-        </ul>
-      </li>
-      <li><a href="#section-8" id="markdown-toc-section-8">帧间预测</a>        <ul>
-          <li><a href="#section-9" id="markdown-toc-section-9">扩充参考帧</a></li>
-          <li><a href="#section-10" id="markdown-toc-section-10">高级合成预测</a></li>
-        </ul>
-      </li>
-      <li><a href="#section-11" id="markdown-toc-section-11">转换编码</a>        <ul>
-          <li><a href="#section-12" id="markdown-toc-section-12">转换块划分</a></li>
-          <li><a href="#section-13" id="markdown-toc-section-13">扩展转换内核</a></li>
-        </ul>
-      </li>
-      <li><a href="#section-14" id="markdown-toc-section-14">环路滤波和图像后处理</a>        <ul>
-          <li><a href="#cdef" id="markdown-toc-cdef">约束方向增强滤波(CDEF)</a></li>
-          <li><a href="#section-15" id="markdown-toc-section-15">帧超分辨率重建</a></li>
-          <li><a href="#section-16" id="markdown-toc-section-16">环内重建滤波器</a></li>
-          <li><a href="#section-17" id="markdown-toc-section-17">电影胶片颗粒效果合成器</a></li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-  <li><a href="#aom-" id="markdown-toc-aom-">AOM 工程</a>    <ul>
-      <li><a href="#av1--1" id="markdown-toc-av1--1">AV1 前期准备</a></li>
-      <li><a href="#section-18" id="markdown-toc-section-18">获取源码</a></li>
-      <li><a href="#section-19" id="markdown-toc-section-19">编译</a>        <ul>
-          <li><a href="#linux-" id="markdown-toc-linux-">Linux 下编译方法</a></li>
-          <li><a href="#windows-" id="markdown-toc-windows-">Windows 下编译方法</a></li>
-          <li><a href="#section-20" id="markdown-toc-section-20">交叉编译</a></li>
-        </ul>
-      </li>
-      <li><a href="#section-21" id="markdown-toc-section-21">配置选项</a></li>
-      <li><a href="#aom-vs-" id="markdown-toc-aom-vs-">AOM VS 工程</a></li>
-    </ul>
-  </li>
-  <li><a href="#dav1d-" id="markdown-toc-dav1d-">DAV1D 工程</a>    <ul>
-      <li><a href="#dav1d--1" id="markdown-toc-dav1d--1">DAV1D 下载</a></li>
-      <li><a href="#dav1d--2" id="markdown-toc-dav1d--2">DAV1D 工程编译</a></li>
-      <li><a href="#dav1d-vs-" id="markdown-toc-dav1d-vs-">DAV1D VS 工程</a></li>
-      <li><a href="#section-22" id="markdown-toc-section-22">参考文档</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p><a href="https://en.wikipedia.org/wiki/AV1">AV1</a>作为一个开放、免专利的视频编码格式，专为通过网络进行传输而设计。学习一个新的视频编解码标准除了看<a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">SPEC</a>,最好的方法是看源码<code>aom</code>。本文主要记录 AV1 中使用到的技术、官方工程 AOM 和 DAV1D 两个工程的建立。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2018/10/15/av1-startup/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/3">&larr; Older</a>
@@ -658,6 +612,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2019/11/12/intra-chrom-from-luma/">Intra_chrom_from_luma</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
       </li>
     
@@ -671,10 +629,6 @@
     
       <li class="post">
         <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
       </li>
     
   </ul>
