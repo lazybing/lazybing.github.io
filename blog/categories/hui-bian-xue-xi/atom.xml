@@ -4,7 +4,7 @@
   <title><![CDATA[分类:汇编学习 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hui-bian-xue-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-06-24T08:16:39-07:00</updated>
+  <updated>2019-07-11T09:09:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,18 +14,978 @@
 
   
   <entry>
-    <title type="html"><![CDATA[汇编语言实现hello World]]></title>
-    <link href="http://lazybing.github.io/blog/2018/01/11/assemble-hello-world/"/>
-    <updated>2018-01-11T21:29:27-08:00</updated>
-    <id>http://lazybing.github.io/blog/2018/01/11/assemble-hello-world</id>
+    <title type="html"><![CDATA[ARM64 汇编指令总结]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/24/neon-of-coding/"/>
+    <updated>2019-01-24T06:35:54-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/24/neon-of-coding</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#write-our-string-to-stdout" id="markdown-toc-write-our-string-to-stdout">write our string to stdout</a></li>
-  <li><a href="#and-exit" id="markdown-toc-and-exit">and exit</a></li>
+  <li><a href="#sqdmulhvectorby-element" id="markdown-toc-sqdmulhvectorby-element">SQDMULH(vector/by element)</a></li>
+  <li><a href="#sqrdmulhvectorby-element" id="markdown-toc-sqrdmulhvectorby-element">SQRDMULH(vector/by element)</a></li>
+  <li><a href="#sqrshrun-sqrshrun2" id="markdown-toc-sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</a></li>
+  <li><a href="#sqshrun-sqshrun2" id="markdown-toc-sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</a></li>
+  <li><a href="#shl" id="markdown-toc-shl">SHL</a></li>
+  <li><a href="#shll-shll2" id="markdown-toc-shll-shll2">SHLL, SHLL2</a></li>
+  <li><a href="#sshll-sshll2" id="markdown-toc-sshll-sshll2">SSHLL, SSHLL2</a></li>
+  <li><a href="#ushll-ushll2" id="markdown-toc-ushll-ushll2">USHLL, USHLL2</a></li>
+  <li><a href="#trn1--trn2" id="markdown-toc-trn1--trn2">TRN1 &amp; TRN2</a></li>
+  <li><a href="#sxtl-sxtl2" id="markdown-toc-sxtl-sxtl2">SXTL, SXTL2</a></li>
+  <li><a href="#uxtl-uxtl2" id="markdown-toc-uxtl-uxtl2">UXTL, UXTL2</a></li>
+  <li><a href="#ext" id="markdown-toc-ext">EXT</a></li>
+  <li><a href="#bfm-ubfm-sbfmbitfield-move" id="markdown-toc-bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</a></li>
+  <li><a href="#srshr" id="markdown-toc-srshr">SRSHR</a></li>
 </ul>
 
-<p>接下来的工作可能要用到汇编语言。</p>
+<p>ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。</p>
+
+<p>ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
 
 <!--more-->
+
+<p>指令格式：</p>
+
+<p><code>&lt;Opcode&gt;[&lt;Cond&gt;]&lt;S&gt; &lt;Rd&gt;, &lt;Rn&gt; [.&lt;Opcode2&gt;]</code></p>
+
+<ul>
+  <li>其中尖括号的选项是必须的，花括号是可选的。</li>
+  <li>A32 : Rd==&gt;{R0-R14}</li>
+  <li>A64 : Rd==&gt;Xt==&gt;{X0-X30}</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">标识符</th>
+      <th style="text-align: center">备注</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Opcode</td>
+      <td style="text-align: center">操作码，也就是助记符，说明指令需要执行的操作类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Cond</td>
+      <td style="text-align: center">指令执行条件码，在编码中占4bit, 0b000-0b1110</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">S</td>
+      <td style="text-align: center">条件码设置项，决定本次指令是否影响 PSTATE 寄存器响应状态位值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Rd/Xt</td>
+      <td style="text-align: center">目标寄存器，A32 指令可以选择 R0-R14，T32指令大部分只能选择R0-R7,A64指令可以选择X0-X30 或 W0-W30</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Rn/Xn</td>
+      <td style="text-align: center">第一个操作数的寄存器，和 Rd 一样，不同指令有不同要求</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Opcode2</td>
+      <td style="text-align: center">第二个操作数，可以是立即数，寄存器Rm 和寄存器移位方式(Rm, #shift)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="sqdmulhvectorby-element">SQDMULH(vector/by element)</h2>
+
+<p>Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+
+<p>Scalar:</p>
+
+<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;T&gt;</code>:4H/8H/2S/4S 中的一个</li>
+</ul>
+
+<p>示例</p>
+
+<ul>
+  <li>sqdmulh v0.8h, v0.8h, v30.8h</li>
+</ul>
+
+<p>Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+
+<p>Scalar:</p>
+
+<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<h2 id="sqrdmulhvectorby-element">SQRDMULH(vector/by element)</h2>
+
+<p>Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+
+<p>Scalar:</p>
+
+<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<p>Scalar:</p>
+
+<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<h2 id="sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</h2>
+
+<p>Signed saturating Rounded Shift Right Unsigned Narrow(immediate).</p>
+
+<p>Scalar:</p>
+
+<p><code>SQRSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun v0.8b, v1.8h, #5</li>
+</ul>
+
+<p>Vector:</p>
+
+<p><code>SQRSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
+</ul>
+
+<h2 id="sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</h2>
+
+<p>Signed saturating Shift Right Unsigned Narror(immediate).</p>
+
+<p>Scalar:</p>
+
+<p><code>SQSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
+</ul>
+
+<h2 id="shl">SHL</h2>
+
+<p>Shift Left(immediate)。</p>
+
+<p>Scalar:</p>
+
+<p><code>SHL &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SHL &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+</ul>
+
+<h2 id="shll-shll2">SHLL, SHLL2</h2>
+
+<p>Shift Left Long(by element size)。</p>
+
+<p>Vector:</p>
+
+<p><code>SHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li>
+    <p><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</p>
+  </li>
+  <li>shll  v28.8h, v30.8b,  #8</li>
+  <li>shll2 v29.8h, v30.16b, #8</li>
+</ul>
+
+<h2 id="sshll-sshll2">SSHLL, SSHLL2</h2>
+
+<p>Signed Shift Left Long(immediate)。</p>
+
+<p><code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+</ul>
+
+<h2 id="ushll-ushll2">USHLL, USHLL2</h2>
+
+<p>Unsigned Shift Left Long(immediate)。</p>
+
+<p><code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+</ul>
+
+<h2 id="trn1--trn2">TRN1 &amp; TRN2</h2>
+
+<p>TRN1:转置向量 Transpose vector(primary), 该指令从零开始读取两个源寄存器 SIMD&amp;FP 的相应偶数向量元素，并将每个结果放到向量的连续元素，并将向量写到目的寄存器中。第一个源寄存器中的向量元素被放到目的寄存器的偶数元素位置，第二个源寄存器中的向量元素放到目的寄存器的奇数元素位置。</p>
+
+<p>Advanced SIMD variant</p>
+
+<p><code>TRN1 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>trn1 v4.2d, v4.2d, v5.2d</li>
+</ul>
+
+<p>TRN2:转置向量 Transpose vectors(secondary)。该指令读取两个源寄存器 SIMD&amp;FP 的相应奇数向量元素，并将每个结果放到向量的连续元素，并将向量写到目的寄存器中。第一个源寄存器中的向量元素被放到目的寄存器的偶数元素位置，第二个源寄存器中的向量元素放到目的寄存器的奇数元素位置。</p>
+
+<p>Advanced SIMD variant</p>
+
+<p><code>TRN2 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>T</code>:8B/16B/4H/8H/2S/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>trn2 v7.2s, v5.2s, v7.2s</li>
+</ul>
+
+<p><img src="/images/neon_coding/trn.png"></p>
+
+<h2 id="sxtl-sxtl2">SXTL, SXTL2</h2>
+
+<p>SXTL:Signed extend Long,该指令</p>
+
+<p>Vector:</p>
+
+<p><code>SXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>sxtl v0.8h, v0.8b</li>
+</ul>
+
+<h2 id="uxtl-uxtl2">UXTL, UXTL2</h2>
+
+<p>UXTL:Unsigned extend Long.</p>
+
+<p>Vector:</p>
+
+<p><code>UXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>uxtl v4.8h, v4.8b</li>
+</ul>
+
+<h2 id="ext">EXT</h2>
+
+<p>EXT:Extract vector from pair of vectors.</p>
+
+<p>Advanced SIMD variant</p>
+
+<p><code>EXT &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;, #&lt;index&gt;</code></p>
+
+<p><img src="/images/neon_coding/ext.png"></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>ext v5.16b, v4.16b, v4.16b, #2</li>
+</ul>
+
+<h2 id="bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</h2>
+
+<p>BFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>BFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>BFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>SBFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>SBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>SBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>UBFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>UBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>UBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>ubfm w9, w5, #7, #13</li>
+</ul>
+
+<h2 id="srshr">SRSHR</h2>
+
+<p>SRSHR:Signed Rounding Shift Right(immediate)。</p>
+
+<p>Scalar variant:</p>
+
+<p><code>SRSHR &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SRSHR &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>srshr v24.8h, v24.8h, #2</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程5——重排矢量]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector/"/>
+    <updated>2019-01-23T06:35:06-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">介绍</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">开始之前</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">可替换的</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">指令</a>    <ul>
+      <li><a href="#vmov--vswapmove--swap" id="markdown-toc-vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</a></li>
+      <li><a href="#vrevreverse" id="markdown-toc-vrevreverse">VREV:Reverse</a></li>
+      <li><a href="#vextextract" id="markdown-toc-vextextract">VEXT:Extract</a></li>
+      <li><a href="#vrtntranspose" id="markdown-toc-vrtntranspose">VRTN:Transpose</a></li>
+      <li><a href="#vzip--vuzpzip--unzip" id="markdown-toc-vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</a></li>
+      <li><a href="#vtbl-vtbxtable--table-extend" id="markdown-toc-vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">其他</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">结论</a></li>
+</ul>
+
+<p>本文描述了用于重置矢量寄存器数据的NEON指令。</p>
+
+<!--more-->
+
+<h2 id="section">介绍</h2>
+
+<p>当写 NEON 代码时，你或许会发现某些时候，寄存器中的数据格式并不适用于你的算法。可能需要重排矢量中的元素，从而让后续的算术可以。</p>
+
+<p>重新排序操作称为<strong>permutation</strong>，<strong>permutation</strong>指令重置单独像素、选择从单个或多个寄存器来组织一个新的矢量。</p>
+
+<h2 id="section-1">开始之前</h2>
+
+<p>在使用 NEON 提供的<strong>permutation</strong>指令之前，一定要想清楚是否真的需要使用它们。<strong>permutation</strong>指令与 move 指令相似，因为它们通常代表用于准备数据而不是处理数据的 CPU 周期。</p>
+
+<h2 id="section-2">可替换的</h2>
+
+<p>如何避免不必要的<em>permutes</em>？有如下方法选项：</p>
+
+<ul>
+  <li>
+    <p><strong>重排输入数据</strong>.</p>
+  </li>
+  <li>
+    <p><strong>重新设计算法</strong></p>
+  </li>
+  <li>
+    <p><strong>修改上一个处理阶段</strong></p>
+  </li>
+  <li>
+    <p><strong>使用交错负载和存储</strong></p>
+  </li>
+  <li>
+    <p><strong>综合方法</strong></p>
+  </li>
+</ul>
+
+<h2 id="section-3">指令</h2>
+
+<h3 id="vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</h3>
+
+<h3 id="vrevreverse">VREV:Reverse</h3>
+
+<h3 id="vextextract">VEXT:Extract</h3>
+
+<h3 id="vrtntranspose">VRTN:Transpose</h3>
+
+<h3 id="vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</h3>
+
+<h3 id="vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</h3>
+
+<h3 id="section-4">其他</h3>
+
+<h2 id="section-5">结论</h2>
+
+<p>仔细考虑你的代码是否真的需要重置你的数据是明智的。然而，当你的算法需要它时，permute 指令提供了一个高效的方法来使得你的数据存放到正确的格式。</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程4——左右移位]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/22/neon-shifting-left-and-right/"/>
+    <updated>2019-01-22T06:44:07-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/22/neon-shifting-left-and-right</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">向量移位</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">移位与插入</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">移位与计算</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">指令修改器</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">可用移位表</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">示例：转换颜色深度</a>    <ul>
+      <li><a href="#section-6" id="markdown-toc-section-6">从 565 到 888</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">从888到565</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-8" id="markdown-toc-section-8">结论</a></li>
+</ul>
+
+<p>本文将介绍 NEON 提供的移位运算，并介绍如何利用移位运算在常用颜色深度之间转换影像数据。本系列前期已发布的文章包括：第一部分：加载与存储，第二部分：余数的处理，第三部分：矩阵乘法。</p>
+
+<!--more-->
+
+<h2 id="section">向量移位</h2>
+
+<p>NEON 上的移位与标量 ARM 编码中可能用到的移位非常相似，即每个向量元素的位数均向左或向右移位，出现在每个元素左侧与右侧的位将被删除；它们不能移位至相连的元素。</p>
+
+<p><img src="/images/neon_shift_left_right/shift_vector.png"></p>
+
+<p>带符号元素的向量上发生的右移位由指令附加的类型指定，并会将符号扩展至每一个元素。这与 ARM 编码中可能用到的算术移位相同。应用到无符号向量的移位不会发生符号扩展。</p>
+
+<h2 id="section-1">移位与插入</h2>
+
+<p>NEON 也支持通过插入产生移位，使两个不同向量的位相结合。例如，左移位与插入（VSLI）可使源向量的每一个元素均向左移位。每个元素右侧新插入的位就是目标向量中的对应为。</p>
+
+<p><img src="/images/neon_shift_left_right/shift_insert.png"></p>
+
+<h2 id="section-2">移位与计算</h2>
+
+<p>最后，NEON 还支持向量元素向右移位，并将结果计入到另一个向量中。这种方法对于先在高精度条件下进行临时计算，然后再将结果与低精度计算器相结合的情况非常有用。</p>
+
+<h2 id="section-3">指令修改器</h2>
+
+<p>每个移位指令都能拥有一个或多个修改器。这些修改器并不改变移位运算本身，而是通过调整输入值与输出值，消除偏差或饱和状态，保持一定的范围。共有五种移位修改器：</p>
+
+<ul>
+  <li>舍位修改器(Rounding)，以 R 前缀表示，可以纠正右移时舍位导致的偏差。</li>
+  <li>窄修改器(Narrow)，以 N 后缀表示，可以让结果中每个元素的位数减半。它代表Q(128位)源和D(64位)目标寄存器。</li>
+  <li>长修改器(Long),以 L 后缀表示，可以让结果中每个元素的位数加倍。它代表D源和Q目标寄存器。饱和修改器(Saturating)，以Q前缀表示，可以在最大和最小可表示范围内设置每个结果元素，前提是结果未超出该范围。向量的位数和符号类型可用于确定饱和范围。</li>
+  <li>无符号饱和修改器(Unsigned Saturationg)，以Q前缀和U后缀表示，与饱和修改器类似，但在进行带符号与无符号输入时，结果将在无符号范围内表示为饱和。</li>
+</ul>
+
+<p>这些修改器的部分组合并未表现出有用的运算，因此 NEON 也没有提供相应指令。例如，饱和右移位（应称为 VQSHR）其实就毫无必要，因为右移位只会让结果变得更小，因而值根本无法超出有效范围。</p>
+
+<h2 id="section-4">可用移位表</h2>
+
+<p>NEON 提供的所有移位指令均在下表中列出。它们根据先前提到的修改器进行排列。如果你还是不太确定修改器各个字母代表的含义，请利用下表选择需要的指令。</p>
+
+<p><img src="/images/neon_shift_left_right/shift_table_avaliable.png"></p>
+
+<h2 id="section-5">示例：转换颜色深度</h2>
+
+<p>颜色深度之间的转换是图形处理中经常需要的运算。通常，输入或输出数据都是 RGB565 16 位颜色格式，但 RGB888 格式的数据处理起来更为方便。对于 NEON 而言尤其如此，因为它无法为 RGB565 这样的数据类型提供本机支持。</p>
+
+<p><img src="/images/neon_shift_left_right/color_format.png"></p>
+
+<p>但是，NEON 仍然可以有效地处理 RGB565 数据，上文中介绍的向量移位便提供了处理方法。</p>
+
+<h3 id="section-6">从 565 到 888</h3>
+
+<p>首先，我们来看如何将 RGB565 转换为 RGB888。假设寄存器 q0 中有 8 个 16 位像素，我们想要在 d2、d3和d4这三个寄存器中将红色、绿色和蓝色分离成 8 位的元素。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">vshr.u8</span>     <span class="no">q1</span><span class="p">,</span> <span class="no">q0</span><span class="p">,</span> <span class="c">#3  @shift red elements right by three bits,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">discarding</span> <span class="no">the</span> <span class="no">green</span> <span class="no">bits</span> <span class="no">at</span> <span class="no">the</span> <span class="no">bottom</span> <span class="no">of</span> <span class="no">the</span> <span class="no">red</span> <span class="mi">8</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">vshrn.i16</span>   <span class="no">d2</span><span class="p">,</span> <span class="no">q1</span><span class="p">,</span> <span class="c">#5  @shift red element right and narrow,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">discarding</span> <span class="no">the</span> <span class="no">blue</span> <span class="no">and</span> <span class="no">green</span> <span class="no">bits.</span>
+</span><span class='line'><span class="nf">vshrn.i16</span>   <span class="no">d3</span><span class="p">,</span> <span class="no">q0</span><span class="p">,</span> <span class="c">#5  @shift green elements right and narrow,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">discarding</span> <span class="no">the</span> <span class="no">blue</span> <span class="no">bits</span> <span class="no">and</span> <span class="no">some</span> <span class="no">red</span> <span class="no">bits</span> <span class="no">due</span> <span class="no">to</span> <span class="no">narrowing.</span>
+</span><span class='line'><span class="nf">vshl.i8</span>     <span class="no">d3</span><span class="p">,</span> <span class="no">d3</span><span class="p">,</span> <span class="c">#2  @shift green elements left, discarding the remaining red bits,</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">and</span> <span class="no">placing</span> <span class="no">green</span> <span class="no">bits</span> <span class="no">in</span> <span class="no">the</span> <span class="no">correct</span> <span class="no">place.</span>
+</span><span class='line'><span class="nf">vshl.i16</span>    <span class="no">q0</span><span class="p">,</span> <span class="no">q0</span><span class="p">,</span> <span class="c">#3  @shift blue elements left to most-significant </span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">of</span> <span class="mi">8</span><span class="p">-</span><span class="no">bit</span> <span class="no">color</span> <span class="no">channel.</span>
+</span><span class='line'><span class="nf">vmovn.i16</span>   <span class="no">d4</span><span class="p">,</span> <span class="no">q0</span>      <span class="err">@</span><span class="no">remove</span> <span class="no">remaining</span> <span class="no">red</span> <span class="no">and</span> <span class="no">green</span> <span class="no">bits</span> <span class="no">by</span> <span class="no">narrowing</span> <span class="no">to</span> <span class="mi">8</span> <span class="no">bits</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>每个指令的效果都在上面备注中做了描述，但总而言之，每个通道上执行的运算为：</p>
+
+<ol>
+  <li>利用移位推掉元素任意一端的位数，清除相邻通道的颜色数据。</li>
+  <li>使用第二次移位将颜色数据放置到每个元素最重要的位上，并缩短位数将元素大小从 16 位减至 8 位。</li>
+</ol>
+
+<p>请注意在这个顺序中使用元素大小来确定 8 位和 16 位元素的位置，以进行部分掩码运算。</p>
+
+<h3 id="section-7">从888到565</h3>
+
+<p>现在，我们来看反向运算，即从 RGB888 转换为 RGB565。这里，我们假设 RGB888 数据为上述代码产生的格式；在d0、d1和d2这三个寄存器上，每个寄存器均包含每种颜色的 8 个元素。结果将存储为 q2 格式的 8 个 16 位 RGB565 元素。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">vshll.u8</span>    <span class="no">q2</span><span class="p">,</span> <span class="no">d0</span><span class="p">,</span> <span class="c">#8  @shift red element left to most-significant</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">of</span> <span class="no">wider</span> <span class="mi">16</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">ushll.u8</span>    <span class="no">q3</span><span class="p">,</span> <span class="no">d1</span><span class="p">,</span> <span class="c">#8  @shift green elements left to most-significant</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">fo</span> <span class="no">wider</span> <span class="mi">16</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements</span>
+</span><span class='line'><span class="nf">vsri.16</span>    <span class="no">q2</span><span class="p">,</span> <span class="no">q3</span><span class="p">,</span> <span class="c">#5  @shift green elemnts right and insert into red</span>
+</span><span class='line'>                        <span class="err">@</span> <span class="nf">red</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">vshll.u8</span>    <span class="no">q3</span><span class="p">,</span> <span class="no">d2</span><span class="p">,</span> <span class="c">#8  @shift blue elements left to most-significant</span>
+</span><span class='line'>                        <span class="err">@</span><span class="nf">bits</span> <span class="no">of</span> <span class="no">wider</span> <span class="mi">16</span><span class="p">-</span><span class="no">bit</span> <span class="no">elements.</span>
+</span><span class='line'><span class="nf">vsri.16</span>     <span class="no">q2</span><span class="p">,</span> <span class="no">q3</span><span class="p">,</span> <span class="c">#11 @shift blue elements right and insert into</span>
+</span><span class='line'>                        <span class="err">@</span> <span class="nf">red</span> <span class="no">and</span> <span class="no">green</span> <span class="no">elements.</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>同样，每个指令的详细说明在备注中列出，但总而言之，对于每个通道而言：</p>
+
+<ol>
+  <li>将每个元素的长度扩展到 16 位，并将颜色数据移至最重要的位上。</li>
+  <li>使用插入右移位，将每个颜色通道放置到结果寄存器中。</li>
+</ol>
+
+<h2 id="section-8">结论</h2>
+
+<p>NEON 提供的强大的移位指令范围让你能够：</p>
+
+<ul>
+  <li>利用舍入和饱和，通过二次幂快速进行向量的除法和乘法运算。</li>
+  <li>通过移位将一个向量位复制到另一个向量位。</li>
+  <li>在高精度条件下进行临时计算，并在低精度条件下计算结果。</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程3——矩阵相乘]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/"/>
+    <updated>2019-01-21T06:44:07-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">矩阵</a></li>
+  <li><a href="#algorithm" id="markdown-toc-algorithm">算法(Algorithm)</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">代码</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">浮点数运算</a></li>
+      <li><a href="#d-and-q-" id="markdown-toc-d-and-q-">D and Q 寄存器</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">回到代码中</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-4" id="markdown-toc-section-4">定点运算</a>    <ul>
+      <li><a href="#section-5" id="markdown-toc-section-5">宏定义：</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-6" id="markdown-toc-section-6">如果考虑到调度的话</a></li>
+</ul>
+
+<p>前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。</p>
+
+<!--more-->
+
+<h2 id="section">矩阵</h2>
+
+<p>本篇文章会分析如何有效的完成4x4矩阵相乘，这种操作在 3D 图形中经常会用到。假设矩阵存放到内存中，并且是列优先的顺序，该格式在 OpenGL-ES 中使用。</p>
+
+<h2 id="algorithm">算法(Algorithm)</h2>
+
+<p>先详细的检测一下矩阵相乘的操作，通过把计算扩展开，并确定哪些子操作可以使用 NEON 指令实现。</p>
+
+<p><img src="/images/neon_matrix_multiply/neon_matrix_multiply.png"></p>
+
+<p>在上图中，我们将第一个矩阵的每一列(红色标记)乘以在第二个矩阵中对应的数值(蓝色标记)，然后将结果加起来，得到结果中的一个列的数值。这个操作将被重复四次。</p>
+
+<p><img src="/images/neon_matrix_multiply/vector_by_scalar_multiply.png"></p>
+
+<p>如果每个列都是在 NEON 寄存器中的一个向量，我们能够用 vector-by-scalar multiplication 指令来计算每个列。即上图中显示的指令。我们可以用同样指令的累计版本来将结果都加起来组成每一列的结果。</p>
+
+<p>当我们处理第一个矩阵的列，产生结果中的一列时，读取和写入数据到或者从内存中都是一个线性操作，不需要交错读取及存储指令。</p>
+
+<h2 id="section-1">代码</h2>
+
+<h3 id="section-2">浮点数运算</h3>
+
+<p>首先，我们先关注乘以单精度浮点数矩阵的实现。</p>
+
+<p>从内存中加载矩阵到 NEON 寄存器，该矩阵是使用列顺序进行存储，所以存储的列都是线性的存储在内存中。一个列能够用 VLD1 指令加载到 NEON 寄存器，用 VST1 写入到内存。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d16-d19</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
+</span><span class='line'><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d20-d23</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
+</span><span class='line'><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d0-d3</span><span class="err">}</span><span class="p">,</span>   <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
+</span><span class='line'><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d4-d7</span><span class="err">}</span><span class="p">,</span>   <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>NEON 有 32 个 64 位寄存器，我们可以从矩阵中加载所有的数据到寄存器，并且还有剩余的寄存器可以用来作为累加用。这里 d16 到 d23 保存第一个矩阵中的 16 个数据，而 d0 到 d7 保存第二个矩阵中的 16 个数据。</p>
+
+<h3 id="d-and-q-">D and Q 寄存器</h3>
+
+<p>大部分 NEON 指令能够用一下两种方式使用寄存器组：</p>
+
+<ul>
+  <li>32 个双字寄存器， 64bits 大小，从 d0 到 d31。</li>
+  <li>16 个四字寄存器， 128bits 大小，从 q0 到 q15。</li>
+</ul>
+
+<p><img src="/images/neon_matrix_multiply/neon_register.png"></p>
+
+<p>这些寄存器用别名表示，因此，在 Q 寄存器，以及在相对应的两个 D 寄存器中，数据都是一样的。例如，q0 可被分为 d0 及 d1，数据可以在两种模式下进行访问。在 C 中，这种方式类似于 union。</p>
+
+<p>对于浮点数矩阵乘法的例子，我们频繁的使用 Q 寄存器，因为我们处理 4 个 32-bit 浮点数的列，这将对应于一个 128 位的 Q 寄存器。</p>
+
+<h3 id="section-3">回到代码中</h3>
+
+<p>应用 NEON 乘法指令，我们能够计算矩阵相乘的一个列。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">vmul.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>  <span class="err">@</span><span class="no">multiply</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">0</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">0</span>
+</span><span class='line'><span class="nf">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>  <span class="err">@</span><span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">1</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">1</span>
+</span><span class='line'><span class="nf">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q10</span><span class="p">,</span> <span class="no">d1</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span> <span class="err">@</span><span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">2</span>
+</span><span class='line'><span class="nf">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q11</span><span class="p">,</span> <span class="no">d1</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span> <span class="err">@</span><span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">3</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>第一个指令实现了在矩阵乘法分解图中的操作，x0、x1、x2 和 x3（在 q8 寄存器中）分别乘以 y0（d0 的第 0 个数据），结果保存在 q12。接下来的指令用于处理第一个矩阵中的其他列，乘以第二个矩阵第一列中对应的元素。结果将会累加到 q12，来构成最终结果的第一列。</p>
+
+<p>需要注意的是，乘法指令中的标量是 D 寄存器，尽管q0[3]的数据与d1[1]相同，但是这里使用d1[1]更加说得过去，并且 GNU 汇编器并不支持这种格式。因此，我们不得不使用 D 寄存器。</p>
+
+<p>宏：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="na">.macro</span> <span class="no">mul_col_f32</span> <span class="no">res_q</span><span class="p">,</span> <span class="no">col0_d</span><span class="p">,</span> <span class="no">col1_d</span>
+</span><span class='line'>    <span class="nf">vmul.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="err">\</span><span class="no">col0_d</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>      <span class="err">@</span> <span class="no">multiply</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">0</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">vmla.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="err">\</span><span class="no">col0_d</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>      <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">1</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="nf">vmla.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q10</span><span class="p">,</span> <span class="err">\</span><span class="no">col1_d</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>  <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="nf">vmla.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q11</span><span class="p">,</span> <span class="err">\</span><span class="no">col1_d</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>  <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">3</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">3</span>
+</span><span class='line'><span class="na">.endm</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>4x4 浮点矩阵相乘可以被这样实现：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d16-d19</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d20-d23</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d0-d3</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>              <span class="err">@</span> <span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d4-d7</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>              <span class="err">@</span> <span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span><span class="err">&lt;/</span><span class="no">p</span><span class="err">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;</span><span class="nf">pre</span><span class="err">&gt;&lt;</span><span class="no">code</span><span class="err">&gt;</span><span class="no">mul_col_f32</span> <span class="no">q12</span><span class="p">,</span> <span class="no">d0</span><span class="p">,</span> <span class="no">d1</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">0</span>
+</span><span class='line'><span class="nf">mul_col_f32</span> <span class="no">q13</span><span class="p">,</span> <span class="no">d2</span><span class="p">,</span> <span class="no">d3</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">1</span>
+</span><span class='line'><span class="nf">mul_col_f32</span> <span class="no">q14</span><span class="p">,</span> <span class="no">d4</span><span class="p">,</span> <span class="no">d5</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">2</span>
+</span><span class='line'><span class="nf">mul_col_f32</span> <span class="no">q15</span><span class="p">,</span> <span class="no">d6</span><span class="p">,</span> <span class="no">d7</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">3</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">vst1.32</span>  <span class="err">{</span><span class="no">d24-d27</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">store</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">result</span>
+</span><span class='line'><span class="nf">vst1.32</span>  <span class="err">{</span><span class="no">d28-d31</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">store</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">result</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h2 id="section-4">定点运算</h2>
+
+<p>使用定点数运算通常比浮点数更快，因为它占用更小的内存带来读取及写入数值，并且整数的乘法通常来说更快。然而，在使用定点数运算时，当需要保证程序要求的计算精度时，你必须仔细选择表示方法来避免溢出或者饱和。</p>
+
+<p>使用定点数进行矩阵乘法与浮点数非常类似。在这个例子中个，我们使用 Q1.14 定点数格式，但是操作上与其他格式类似，可能只需要最终左移的位数。</p>
+
+<h3 id="section-5">宏定义：</h3>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="na">.macro</span> <span class="no">mul_col_s16</span> <span class="no">res_d</span><span class="p">,</span> <span class="no">col_d</span>
+</span><span class='line'>    <span class="nf">vmull.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d16</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">0</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">vmlal.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d17</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">1</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="nf">vmlal.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d18</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">2</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="nf">vmlal.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d19</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">3</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">3</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">3</span>
+</span><span class='line'>    <span class="nf">vqrshrn.s32</span> <span class="err">\</span><span class="no">res_d</span><span class="p">,</span> <span class="no">q12</span><span class="p">,</span> <span class="c">#14            @ shift right and narrow accumulator into</span>
+</span><span class='line'>                                            <span class="err">@</span>  <span class="nf">Q1.14</span> <span class="no">fixed</span> <span class="no">point</span> <span class="no">format</span><span class="p">,</span> <span class="no">with</span> <span class="no">saturation</span>
+</span><span class='line'><span class="na">.endm</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>与浮点数版本的宏进行对比，你将会发现：</p>
+
+<ul>
+  <li>数值是16位而不是32为，我们可以使用D寄存器保存4个输入。</li>
+  <li>两个16位数的相乘结果是一个32位数，我们使用VMULL及VMLAL，因为它们将保存结果至Q寄存器，使用两倍于数据的大小来保存所有的位数。</li>
+  <li>最后的结果为16位，但是累加器是32位的。我们通过VQRSHRN获取16位结果，一个向量，饱和计算，四舍五入，右移窄运算。这将把所有正确的值加起来到各自的数据，右移并饱和计算到新的更窄的数据大小。</li>
+</ul>
+
+<p>32位数到16位数的减少对内存访问有所影响。数据会被加载和存储使用更少的指令，代码如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'> <span class="nf">vld1.16</span>  <span class="err">{</span><span class="no">d16-d19</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]</span>       <span class="err">@</span> <span class="no">load</span> <span class="no">sixteen</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
+</span><span class='line'> <span class="nf">vld1.16</span>  <span class="err">{</span><span class="no">d0-d3</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]</span>         <span class="err">@</span> <span class="no">load</span> <span class="no">sixteen</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span><span class="err">&lt;/</span><span class="no">p</span><span class="err">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;</span><span class="nf">p</span><span class="err">&gt;</span><span class="no">mul_col_s16</span> <span class="no">d4</span><span class="p">,</span> <span class="no">d0</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">0</span>
+</span><span class='line'> <span class="nf">mul_col_s16</span> <span class="no">d5</span><span class="p">,</span> <span class="no">d1</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">1</span>
+</span><span class='line'> <span class="nf">mul_col_s16</span> <span class="no">d6</span><span class="p">,</span> <span class="no">d2</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">2</span>
+</span><span class='line'> <span class="nf">mul_col_s16</span> <span class="no">d7</span><span class="p">,</span> <span class="no">d3</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">3</span><span class="err">&lt;/</span><span class="no">p</span><span class="err">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;</span><span class="nf">p</span><span class="err">&gt;</span><span class="no">vst1.16</span>  <span class="err">{</span><span class="no">d4-d7</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>         <span class="err">@</span> <span class="no">store</span> <span class="no">sixteen</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">result</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h2 id="section-6">如果考虑到调度的话</h2>
+
+<p>我们会在以后的文章中讨论调度的细节，现在的话，可以看看在代码中查看改进指令调度的影响。</p>
+
+<p>在宏中，临近的乘法指令写入到相同的寄存器，使得NEON流水线在开始下个指令执行时必须等待每个乘法完成。</p>
+
+<p>如果我们把这些指令移出宏然后重新安排顺序，我们能够分离出那些依赖于其他指令的部分，这部分指令能够在其他指令在后台完成时也被执行。 
+在这个实例中，我们重组代码来分离累加寄存器的使用。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>    <span class="nf">vmul.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col0</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col0</span> <span class="no">elt0</span><span class="p">)</span>
+</span><span class='line'>    <span class="nf">vmul.f32</span>    <span class="no">q13</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d2</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col1</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col1</span> <span class="no">elt0</span><span class="p">)</span>
+</span><span class='line'>    <span class="nf">vmul.f32</span>    <span class="no">q14</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d4</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col2</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col2</span> <span class="no">elt0</span><span class="p">)</span>
+</span><span class='line'>    <span class="nf">vmul.f32</span>    <span class="no">q15</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d6</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col3</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col3</span> <span class="no">elt0</span><span class="p">)</span><span class="err">&lt;/</span><span class="no">p</span><span class="err">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;</span><span class="nf">pre</span><span class="err">&gt;&lt;</span><span class="no">code</span><span class="err">&gt;</span><span class="no">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col0</span> <span class="err">+=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col1</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col0</span> <span class="no">elt1</span><span class="p">)</span>
+</span><span class='line'><span class="nf">vmla.f32</span>    <span class="no">q13</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="no">d2</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col1</span> <span class="err">+=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col1</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col1</span> <span class="no">elt1</span><span class="p">)</span>
+</span><span class='line'><span class="na">...</span>
+</span><span class='line'><span class="na">...</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程2——处理多余的数据]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/20/neon-dealing-with-leftovers/"/>
+    <updated>2019-01-20T00:56:44-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/20/neon-dealing-with-leftovers</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#fixing-up" id="markdown-toc-fixing-up">修复数据(Fixing Up)</a>    <ul>
+      <li><a href="#larger-arrays" id="markdown-toc-larger-arrays">Larger Arrays</a>        <ul>
+          <li><a href="#notes" id="markdown-toc-notes">Notes</a></li>
+          <li><a href="#code-fragment" id="markdown-toc-code-fragment">Code Fragment</a></li>
+        </ul>
+      </li>
+      <li><a href="#overlapping" id="markdown-toc-overlapping">Overlapping</a>        <ul>
+          <li><a href="#notes-1" id="markdown-toc-notes-1">Notes</a></li>
+          <li><a href="#code-fragment-1" id="markdown-toc-code-fragment-1">Code Fragment</a></li>
+        </ul>
+      </li>
+      <li><a href="#single-elements" id="markdown-toc-single-elements">Single Elements</a>        <ul>
+          <li><a href="#notes-2" id="markdown-toc-notes-2">Notes</a></li>
+        </ul>
+      </li>
+      <li><a href="#further-considerations" id="markdown-toc-further-considerations">Further Considerations</a>        <ul>
+          <li><a href="#beginning-or-end" id="markdown-toc-beginning-or-end">Beginning or End</a></li>
+          <li><a href="#alignment" id="markdown-toc-alignment">Alignment</a></li>
+          <li><a href="#using-arm-to-fix-up" id="markdown-toc-using-arm-to-fix-up">Using Arm to Fix Up</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>上一篇关于NEON 加载和存储的文章中，在NEON 处理单元（寄存器）和内存之间进行数据传输。这篇文章中，我们会处理经常遇到的问题：输入数据并不对齐，也就是输入数据的长度并不是向量长度的整数倍。我们需要在数组开始或结束的位置处理剩余的元素。使用 NEON 哪种方式最有效呢？</p>
+
+<!--more-->
+
+<p>使用 NEON 处理数据时，通常处理的数据向量的长度从 4 个元素到 16 个元素。通常情况下，你会发现数据的实际长度并不是切好等于寄存器向量长度的倍数，你必须单独处理剩余的元素。</p>
+
+<p>例如，你想要使用 NEON 每次加载、处理、存储 8 个元素，但你的数组有 21 个元素的长度。前面 2 组能够正常处理，但对第 3 个，还剩下 5 个元素没有处理。你要怎么做呢？</p>
+
+<h2 id="fixing-up">修复数据(Fixing Up)</h2>
+
+<p>有三种方法来处理剩余的数据，三种方法的需求、性能和代码大小都不相同，分别是<code>Larger Arrays</code>、<code>Overlapping</code>、<code>Single Elements</code>，第一种方法效率最高。</p>
+
+<h3 id="larger-arrays">Larger Arrays</h3>
+
+<p>如何可以改变处理数组的大小，使用填充元素增加数组的长度到下一个向量大小的倍数，就可以读写超出数据本身的边界而不会影响相邻的存储。下面的例子中，增加元素到 24 个元素是的第三组可以很好地完成而不会有数据损坏。</p>
+
+<p><img src="/images/neon_deal_leftovers/larger_array.png"></p>
+
+<h4 id="notes">Notes</h4>
+
+<ul>
+  <li>分配更大的数组会消耗更大的内存。</li>
+  <li>新的填充数据需要在初始化时给定一个值，该值不能够影响最后的计算结果。例如，如果是求和，填充数据就只能填充为 0.如果是要找到数组里面的最小值，可以设置填充数据为可以获取的最大值。</li>
+  <li>某些情况下，没办法给定一个填充数据一个初始值，不影响最终结果，比如查找数据的范围时。</li>
+</ul>
+
+<h4 id="code-fragment">Code Fragment</h4>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>@ r0 = input array pointer
+</span><span class='line'>@ r1 = output array pointer
+</span><span class='line'>@ r2 = length of data in array&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@ We can assume that the array length is greater than zero, is an integer
+</span><span class='line'>@ number of vectors, and is greater than or equal to the length of data
+</span><span class='line'>@ in the array.&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>add r2, r2, #7      @ add (vector length - 1) to the data length
+</span><span class='line'>lsr r2, r2, #3      @ divide the length of the array by the length
+</span><span class='line'>                    @ of a vector, 8, to find the number of
+</span><span class='line'>                    @ vectors of data to be processed loop:
+</span><span class='line'>subs r2, r2, #1     @ decrement the loop counter, and set flags
+</span><span class='line'>vld1.8 {d0}, [r0]!  @ load eight elements from the array pointed to
+</span><span class='line'>                    @ by r0 into d0, and update r0 to point to the next vector
+</span><span class='line'>...
+</span><span class='line'>...                 @ process the input in d0
+</span><span class='line'>...
+</span><span class='line'>vst1.8 {d0}, [r1]!  @ write eight elements to the output array, and 
+</span><span class='line'>                    @ update r1 to point to next vector
+</span><span class='line'>bne loop            @ if r2 is not equal to 0, loop</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="overlapping">Overlapping</h3>
+
+<p>如果操作合适，剩余元素可以使用重叠的方法来处理。这会对数组中的某些元素进行两次处理。</p>
+
+<p>示例中，第一组处理元素从0-7，第二组处理元素从5-12，第三组处理元素是13-20。注意，第5-7个元素，在第一次和第二次处理的向量中有重合，它们处理了两次。</p>
+
+<p><img src="/images/neon_deal_leftovers/neon_overlapping.png"></p>
+
+<h4 id="notes-1">Notes</h4>
+
+<ul>
+  <li>Overlapping 方法只有当输入数据的操作应用不会受操作次数的改变而改变时才能使用；例如，如果想要找到最大值可以使用该方法，而求和操作就不能使用该方法，因为 overlapping 会计算元素两次。</li>
+  <li>数组中的元素数量至少能够填充一个完整的向量。</li>
+</ul>
+
+<h4 id="code-fragment-1">Code Fragment</h4>
 
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -58,37 +1018,186 @@
 <span class='line-number'>29</span>
 <span class='line-number'>30</span>
 <span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>.data                   # section declaration
-</span><span class='line'>msg:
-</span><span class='line'>    .ascii  “Hello, world!\n”   # our dear string
-</span><span class='line'>    len = . - msg               # length of our dear string&lt;/p>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>@ r0 = input array pointer
+</span><span class='line'>@ r1 = output array pointer
+</span><span class='line'>@ r2 = length of data in array&lt;/p>
 </span><span class='line'>
-</span><span class='line'>&lt;p>.text                           # section declaration&lt;/p>
+</span><span class='line'>&lt;p>@ We can assume that the operation is idempotent, and the array is greater
+</span><span class='line'>@ than or equal to one vector long.&lt;/p>
 </span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>                        # we must export the entry point to the ELF linker or
-</span><span class='line'>.global _start          # loader. They conventionally recognize _start as their 
-</span><span class='line'>                        # entry point. Use ld -e foo to override the default.
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;p>_start:&lt;/p>
-</span><span class='line'>
-</span><span class='line'>&lt;h1 id="write-our-string-to-stdout">write our string to stdout&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>movl $len, %edx        # third argument:message length
-</span><span class='line'>movl $msg, %ecx        # second argument:pointer to message to write
-</span><span class='line'>movl $1, %ebx          # first argument:file handle(stdout) 
-</span><span class='line'>movl $4, %eax          # system call number (sys_write)
-</span><span class='line'>int  $0x80             # call kernel
-</span><span class='line'>&lt;/code>&lt;/pre>
-</span><span class='line'>
-</span><span class='line'>&lt;h1 id="and-exit">and exit&lt;/h1>
-</span><span class='line'>
-</span><span class='line'>&lt;pre>&lt;code>movl $0, %ebx           # first argument:exit code
-</span><span class='line'>movl $1, %eax           # system call number (sys_exit)
-</span><span class='line'>int  $0x80              # call kernel
+</span><span class='line'>&lt;pre>&lt;code>ands r3, r2, #7     @ calculate number of elements left over after
+</span><span class='line'>                    @ processing complete vectors using
+</span><span class='line'>                    @ data length &amp; (vector length - 1)
+</span><span class='line'>beq loopsetup       @ if the result of the ands is zero, the length
+</span><span class='line'>                    @ of the data is an integer number of vectors,
+</span><span class='line'>                    @ so there is no overlap, and processing can begin at the loop
+</span><span class='line'>                    @ handle the first vector separately
+</span><span class='line'>vld1.8 {d0}, [r0], r3   @ load the first eight elements from the array,
+</span><span class='line'>                        @ and update the pointer by the number of elements left over
+</span><span class='line'>...
+</span><span class='line'>...                     @ process the input in d0
+</span><span class='line'>...
+</span><span class='line'>vst1.8  {d0}, [r1], r3  @ wirte eight elements to the output array, and
+</span><span class='line'>                        @ update the pointer
+</span><span class='line'>                        @ now, set up the vector processing loop  loopsetup:
+</span><span class='line'> lsr  r2, r2, #3      @ divide the length of the array by the length
+</span><span class='line'>                         @  of a vector, 8, to find the number of
+</span><span class='line'>                         @  vectors of data to be processed
+</span><span class='line'> 
+</span><span class='line'>                         @ the loop can now be executed as normal. the
+</span><span class='line'>                         @  first few elements of the first vector will
+</span><span class='line'>                         @  overlap with some of those processed above  loop:
+</span><span class='line'> subs    r2, r2, #1      @ decrement the loop counter, and set flags
+</span><span class='line'> vld1.8  {d0}, [r0]!  @ load eight elements from the array, and update
+</span><span class='line'>                         @  the pointer
+</span><span class='line'> ...
+</span><span class='line'> ...                  @ process the input in d0
+</span><span class='line'> ...
+</span><span class='line'> 
+</span><span class='line'> vst1.8  {d0}, [r1]!  @ write eight elements to the output array, and
+</span><span class='line'>                         @  update the pointer
+</span><span class='line'> bne  loop            @ if r2 is not equal to 0, loop
 </span><span class='line'>&lt;/code>&lt;/pre>
 </span><span class='line'>
 </span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="single-elements">Single Elements</h3>
+
+<p>NEON 提供的加载和存储指令可以对向量中的某个元素进行操作。使用这个操作，可以加载向量的单个元素，在上面执行操作，并把元素写会内存。</p>
+
+<p>示例中的问题是，前面两组数据能够正常执行(0-7元素、8-15元素)。第三组需要处理剩余的 5 个元素，它们是单独的循环中处理的，每次都执行加载、处理和存储元素。</p>
+
+<p><img src="/images/neon_deal_leftovers/neon_single_element.png"></p>
+
+<h4 id="notes-2">Notes</h4>
+
+<ul>
+  <li>该方法比上面提到的方法要效率低，因为每个元素都单独执行加载、处理和存储。</li>
+  <li>处理剩余的元素需要两个循环——一个是向量、另一个是单个元素，这回增加函数中的代码量</li>
+</ul>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>@ r0 = input array pointer
+</span><span class='line'> @ r1 = output array pointer
+</span><span class='line'> @ r2 = length of data in array&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code> lsrs    r3, r2, #3      @ calculate the number of complete vectors to be
+</span><span class='line'>                         @  processed and set flags
+</span><span class='line'> beq  singlesetup  @ if there are zero complete vectors, branch to
+</span><span class='line'>                         @  the single element handling code
+</span><span class='line'> 
+</span><span class='line'>                         @ process vector loop  vectors:
+</span><span class='line'> subs    r3, r3, #1      @ decrement the loop counter, and set flags
+</span><span class='line'> vld1.8  {d0}, [r0]!  @ load eight elements from the array and update
+</span><span class='line'>                         @  the pointer
+</span><span class='line'> ...
+</span><span class='line'> ...                  @ process the input in d0
+</span><span class='line'> ...
+</span><span class='line'> 
+</span><span class='line'> vst1.8  {d0}, [r1]!  @ write eight elements to the output array, and
+</span><span class='line'>                         @  update the pointer
+</span><span class='line'> bne  vectors      @ if r3 is not equal to zero, loop
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>singlesetup:
+</span><span class='line'>     ands    r3, r2, #7      @ calculate the number of single elements to process
+</span><span class='line'>     beq  exit            @ if the number of single elements is zero, branch
+</span><span class='line'>                             @  to exit&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>                         @ process single element loop  singles:
+</span><span class='line'> subs    r3, r3, #1      @ decrement the loop counter, and set flags
+</span><span class='line'> vld1.8  {d0[0]}, [r0]!  @ load single element into d0, and update the
+</span><span class='line'>                         @  pointer
+</span><span class='line'> ...
+</span><span class='line'> ...                  @ process the input in d0[0]
+</span><span class='line'> ...
+</span><span class='line'> 
+</span><span class='line'> vst1.8  {d0[0]}, [r1]!  @ write the single element to the output array,
+</span><span class='line'>                         @  and update the pointer
+</span><span class='line'> bne  singles      @ if r3 is not equal to zero, loop
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>exit:&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="further-considerations">Further Considerations</h3>
+
+<h4 id="beginning-or-end">Beginning or End</h4>
+
+<p>Overlapping 和 single element 技术可以应用到处理数组的开始或结束位置。如何应用程序更适合处理结束端，上面的代码可以很容易的改成处理末端的元素。</p>
+
+<h4 id="alignment">Alignment</h4>
+
+<p>加载和存储地址应该与高速缓存线对齐，这样会使得内存访问更加高效。</p>
+
+<p>对于 Cortex-A8，至少要 16 字节对齐，如果在输入或输出数组的开始位置没有对齐，就必须在数组的开始和结束位置处理元素。</p>
+
+<p>当对齐内存来加速时，记得使用加载和存储指令时加上<code>:64</code>或<code>:128</code>或<code>:256</code>。</p>
+
+<h4 id="using-arm-to-fix-up">Using Arm to Fix Up</h4>
+
+<p>在使用<code>single elements</code>方法时，你可以使用 Arm 指令来对每个元素进行单独处理。然而，同时使用 Arm 指令和 NEON 指令来存储相同的内存会降低效率，因为通过 Arm 管道来写必须在 NEON 管道写完后才能进行。</p>
+
+<p>一般情况下，应该避免同时使用 Arm 和 NEON 代码写到相同的内存区域，尤其是同一个高速缓存区域。</p>
+
 ]]></content>
   </entry>
   

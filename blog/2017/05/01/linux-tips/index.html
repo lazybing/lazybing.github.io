@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。 快速搜索命令 Linux 使用大部分是在命令行下进行的，某些命令是前面使用到的，此时我们不想重新完整的输入命令，而是想根据命令中的某些关键字搜索到该命令，然后直接执行。 &hellip;">
+  <meta name="description" content="快速搜索命令 命令行快捷键 清理虚拟机vmdk文件大小 获取磁盘空间下最大的 5 个文件 清空终端内容快捷键 到其他目录运行一个命令，然后自动返回当前工作目录 其他技巧 Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。 快速搜索命令 Linux &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -98,7 +98,19 @@
   </header>
 
 
-<div class="entry-content"><p>Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。</p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">快速搜索命令</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">命令行快捷键</a></li>
+  <li><a href="#vmdk" id="markdown-toc-vmdk">清理虚拟机vmdk文件大小</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">获取磁盘空间下最大的 5 个文件</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">清空终端内容快捷键</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">到其他目录运行一个命令，然后自动返回当前工作目录</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">其他技巧</a></li>
+</ul>
+
+<p>Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。</p>
+
+<!--more-->
 
 <h2 id="section">快速搜索命令</h2>
 
@@ -120,7 +132,41 @@
 
 <p><img src="/images/linux_tips/linuxcommandshortcut.png" /></p>
 
-<h2 id="section-2">其他技巧</h2>
+<h2 id="vmdk">清理虚拟机vmdk文件大小</h2>
+
+<p>MacOS 虚拟机在使用过程中，占用空间越来越大，分配的40G竟然有点卡了，找了好多办法都没成功，最后还是通过<code>VMVare Tools</code>工具瘦身成功的，节省了接近 15G 的空间。方法很简单，只需要一条命令即可：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">sudo  /Library/Application\ Support/VMware\ Tools/vmware-tools-cli disk shrink  /</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section-2">获取磁盘空间下最大的 5 个文件</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line"># du -hsx * | sort -rh | head -5</span></code></pre></td></tr></table></div></figure>
+
+<p>命令和选项解释：</p>
+
+<ul>
+  <li>du —— 估计文件的空间使用情况</li>
+  <li>-hsx —— 更易读的格式(-h)，汇总输出(-s)，跳过其他文件系统的文件(-x)</li>
+  <li>sort —— 对文本文件按行排序</li>
+  <li>-rh —— 将比较的结果逆序输出(-r)</li>
+  <li>head —— 输出文件的头几行</li>
+</ul>
+
+<h2 id="section-3">清空终端内容快捷键</h2>
+
+<p>通常情况下，清空终端内容，一般会使用<strong>clear</strong>命令，除此命令外，还可以使用快捷键<code>Ctrl+l</code>。如果养成使用<code>Ctrl+l</code>快捷键的习惯，会节省大量时间。</p>
+
+<h2 id="section-4">到其他目录运行一个命令，然后自动返回当前工作目录</h2>
+
+<p>之前遇到需要到其他目录运行一个命令后，自动返回当前工作目录，我通常的做法是<code>cd</code>到目标目录，执行命令，<code>cd -</code>返回当前目录。除此之外，还有个更快捷的命令，就是用圆括号包含其执行的命令。如</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$:(cd ../../  &amp;&amp; ls -l)</span></code></pre></td></tr></table></div></figure>
+<p>上面的命令效果是，1. 往前回退两个目录。2. 执行<code>ls -l</code>命令。3. 返回当前目录。</p>
+
+<h2 id="section-5">其他技巧</h2>
 
 </div>
 
@@ -160,7 +206,7 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2017/01/01/ffmpeg-sdk-learning/" title="Previous Post: FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放以及添加水印">&laquo; FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放以及添加水印</a>
+        <a class="basic-alignment left" href="/blog/2017/01/01/ffmpeg-sdk-learning/" title="Previous Post: FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放">&laquo; FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放</a>
       
       
         <a class="basic-alignment right" href="/blog/2017/06/09/x264-download-install-and-use/" title="Next Post: x264 下载、安装和使用">x264 下载、安装和使用 &raquo;</a>
@@ -176,16 +222,18 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
-<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
@@ -195,23 +243,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
       </li>
     
   </ul>
@@ -331,7 +379,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2018 - 李冰 -
+  Copyright &copy; 2019 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

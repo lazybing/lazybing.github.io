@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="获取文件路径后缀名 C 语言实现 C++ 语言实现 Shell 脚本实现 调试信息分级打印 分析特定格式的文件 fopen 函数个数限制 本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
+  <meta name="description" content="获取文件路径后缀名 C 语言实现 C++ 语言实现 Shell 脚本实现 调试信息分级打印 分析特定格式的文件 fopen 函数个数限制 函数声明 本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
 工作中遇到某个问题时， &hellip;">
   
 
@@ -109,6 +109,7 @@
   <li><a href="#section-1" id="markdown-toc-section-1">调试信息分级打印</a></li>
   <li><a href="#section-2" id="markdown-toc-section-2">分析特定格式的文件</a></li>
   <li><a href="#fopen-" id="markdown-toc-fopen-">fopen 函数个数限制</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">函数声明</a></li>
 </ul>
 
 <p>本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
@@ -394,6 +395,58 @@
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+<h2 id="section-3">函数声明</h2>
+
+<p>函数定义是指对函数功能的确立，包括指定函数名、函数值类型、形参类型、函数体等，它是一个完整的、独立的函数单位。</p>
+
+<p>函数声明的作用则是把函数的名字、函数类型以及形参类型、个数和顺序通知编译系统，以便在调用函数时系统按此进行对照检查。</p>
+
+<p>注意，C 语言环境下，如果函数不进行声明就使用，可能会产生错误，因为默认将返回值作为 int 类型来处理，所以，最好是在使用之前对函数进行声明。</p>
+
+<p>这个错误之前搞了我好久……囧，例子如下。</p>
+
+<figure class="code"><figcaption><span>float_int.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;stdint.h&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">float</span> <span class="nf">mid</span><span class="p">(</span><span class="kt">float</span> <span class="n">a</span><span class="p">,</span> <span class="kt">float</span> <span class="n">b</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><figcaption><span>main.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">mid</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">));</span>
+</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>编译上面的两个函数<code>gcc main.c float_int.c</code>, 之后运行它，输出时 0.00000.</p>
+
+<p>错误的原因是没有函数声明，默认认为函数返回值类型为 int.</p>
+
 </div>
 
 
@@ -435,7 +488,7 @@
         <a class="basic-alignment left" href="/blog/2017/09/12/video-coding/" title="Previous Post: 视频编解码算法之编码">&laquo; 视频编解码算法之编码</a>
       
       
-        <a class="basic-alignment right" href="/blog/2017/10/11/x264-slicetype-decide/" title="Next Post: x264 源码解析之判断帧类型">x264 源码解析之判断帧类型 &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2017/10/01/how-to-use-sed/" title="Next Post: Linux常用命令之sed">Linux常用命令之sed &raquo;</a>
       
     </p>
   </footer>
@@ -448,16 +501,18 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
-<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
@@ -467,23 +522,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
       </li>
     
   </ul>
@@ -603,7 +658,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2018 - 李冰 -
+  Copyright &copy; 2019 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

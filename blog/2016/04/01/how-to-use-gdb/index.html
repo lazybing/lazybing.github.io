@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="前期准备 启动GDB方法 设置运行参数 查看源码 断点break 使用 运行程序 查看运行时数据 查看内存数据 分割窗口 问题汇总 参考文献 GDB, The GNU Project debugger, allows you to see what is going on inside &hellip;">
+  <meta name="description" content="前期准备 启动GDB方法 设置运行参数 查看源码 断点break 使用 运行程序 查看运行时数据 查看内存数据 分割窗口 查看寄存器 汇编调试 问题汇总 参考文献 GDB, The GNU Project debugger, allows you to see what is going on &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -108,8 +108,10 @@
   <li><a href="#section-4" id="markdown-toc-section-4">查看运行时数据</a></li>
   <li><a href="#section-5" id="markdown-toc-section-5">查看内存数据</a></li>
   <li><a href="#section-6" id="markdown-toc-section-6">分割窗口</a></li>
-  <li><a href="#section-7" id="markdown-toc-section-7">问题汇总</a></li>
-  <li><a href="#section-8" id="markdown-toc-section-8">参考文献</a></li>
+  <li><a href="#section-7" id="markdown-toc-section-7">查看寄存器</a></li>
+  <li><a href="#section-8" id="markdown-toc-section-8">汇编调试</a></li>
+  <li><a href="#section-9" id="markdown-toc-section-9">问题汇总</a></li>
+  <li><a href="#section-10" id="markdown-toc-section-10">参考文献</a></li>
 </ul>
 
 <p><a href="https://www.gnu.org/software/gdb/">GDB</a>, The GNU Project debugger, allows you to see what is going on inside another program while it executes – or what another program was doing at the moment it crashed.</p>
@@ -179,6 +181,16 @@ show args 命令可以查看设置好的运行参数。</p>
 </pre></td><td class="code"><pre><code class=""><span class="line">info break    //查看所有 break 的信息
 </span><span class="line">info break n //查看 n 断点号的信息</span></code></pre></td></tr></table></div></figure>
 
+<p>条件断点，就是在上述设置断点的同时，指定断点的进入条件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">break 10 if index == 3</span></code></pre></td></tr></table></div></figure>
+
+<p>忽略前面的某个断点</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">ignore 2 5 //忽略断点2 的前面 5 次，到第 6 次才停止</span></code></pre></td></tr></table></div></figure>
+
 <h3 id="section-3">运行程序</h3>
 
 <p>运行程序如下</p>
@@ -238,13 +250,37 @@ show args 命令可以查看设置好的运行参数。</p>
   <li>Ctrl+x,再按a：回到传统模式，即退出 layout, 回到执行 layout 之前的调试窗口</li>
 </ul>
 
-<h3 id="section-7">问题汇总</h3>
+<h3 id="section-7">查看寄存器</h3>
+
+<p>查看寄存器的值，很简单，可以使用如下命令：</p>
+
+<ul>
+  <li>info registers, 查看寄存器的情况，除了浮点寄存器。</li>
+  <li>info all-registers, 查看所有寄存器的情况，包括浮点寄存器。</li>
+  <li>info registers <regname>, 查看所指定的寄存器的情况。</regname></li>
+</ul>
+
+<p>同样可以使用 print 命令来访问寄存器的情况，只需要在寄存器名字前加一个<code>$</code>符号就可以了，例如<code>p $eip</code>。</p>
+
+<h3 id="section-8">汇编调试</h3>
+
+<p>在做 ARM 汇编时，需要使用 GDB 对汇编语言进行单步调试，但很多时候，没办法直接通过<code>stepi</code>或<code>nexti</code>进入汇编函数内调试。使用了一个迂回的方法：</p>
+
+<ol>
+  <li>设置断点，在汇编函数名处先设置断点。 break <assmble_func_name>。</assmble_func_name></li>
+  <li>直接显示汇编代码，layout asm;显示寄存器值，layout regs。</li>
+  <li>单步执行汇编命令<code>stepi</code>和<code>nexti</code>。</li>
+</ol>
+
+<p><img src="/images/gdb_debug/gdb_assemble.png" /></p>
+
+<h3 id="section-9">问题汇总</h3>
 
 <ol>
   <li>在工作中经常遇到把编译处的<code>.o</code>或<code>.bin</code>可执行文件，拿到别的路径下运行、Debug，经常遇到<code>GDB</code>找不到<code>debug src info</code>的情况，此时可以通过<code>directory</code>命令指定寻找的路径。</li>
 </ol>
 
-<h3 id="section-8">参考文献</h3>
+<h3 id="section-10">参考文献</h3>
 
 <ol>
   <li><a href="http://www.tutorialspoint.com/gnu_debugger/index.htm">GNU Debugger Tutorial</a></li>
@@ -312,16 +348,18 @@ show args 命令可以查看设置好的运行参数。</p>
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
-<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
@@ -331,23 +369,23 @@ show args 命令可以查看设置好的运行参数。</p>
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
       </li>
     
   </ul>
@@ -467,7 +505,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2018 - 李冰 -
+  Copyright &copy; 2019 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

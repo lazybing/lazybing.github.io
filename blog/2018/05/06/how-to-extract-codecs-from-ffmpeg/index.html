@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>如何从FFMpeg中提取CODEC(以TTA Decoder为例) - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="TTA 简介 FFMpeg 中 TTA Decoder 提取 TTA Decoder 中可能遇到的问题 提取 TTA Decoder 实现 FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">如何从FFMpeg中提取CODEC(以TTA Decoder为例)</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2018-05-06T07:55:35-07:00'><span class='date'>2018 年 05 月 06 日</span> <span class='time'>7:55 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#tta-" id="markdown-toc-tta-">TTA 简介</a></li>
+  <li><a href="#ffmpeg--tta-decoder" id="markdown-toc-ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</a></li>
+  <li><a href="#tta-decoder-" id="markdown-toc-tta-decoder-">提取 TTA Decoder 中可能遇到的问题</a></li>
+  <li><a href="#tta-decoder--1" id="markdown-toc-tta-decoder--1">提取 TTA Decoder 实现</a></li>
+</ul>
+
+<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA Decoder 为例，介绍如何同 FFMpeg 中提取 CODEC。</p>
+
+<!--more-->
+
+<h2 id="tta-">TTA 简介</h2>
+
+<p>TTA(The True Audio Codec) 是免费、简单、实时无损视频压缩。基于 Adaptive Prognostic Filters, TTA 同其他同类的开源项目有强竞争力。</p>
+
+<h2 id="ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</h2>
+
+<p>FFMpeg 中关于 TTA Decoder 的部分在<code>libavcodec/tta.c</code>中定义:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">AVCodec ff_tta_decoder = {
+</span><span class="line">    .name           = "tta",
+</span><span class="line">    .long_name      = NULL_IF_CONFIG_SMALL("TTA (True Audio)"),
+</span><span class="line">    .type           = AVMEDIA_TYPE_AUDIO,
+</span><span class="line">    .id             = AV_CODEC_ID_TTA,
+</span><span class="line">    .priv_data_size = sizeof(TTAContext),
+</span><span class="line">    .init           = tta_decode_init,
+</span><span class="line">    .close          = tta_decode_close,
+</span><span class="line">    .decode         = tta_decode_frame,
+</span><span class="line">    .init_thread_copy = ONLY_IF_THREADS_ENABLED(init_thread_copy),
+</span><span class="line">    .capabilities     = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_FRAME_THREADS,
+</span><span class="line">    .priv_class       = &amp;tta_decoder_class,
+</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
+
+<p>从 TTA AVCodec 的定义可以看出，Decoder 的主要函数只有三个<code>tta_decode_init</code>、<code>tta_decode_frame</code>、<code>tta_decode_close</code>三部分。其中 init 部分主要是解析 TTA Header 信息，decode 部分是真正解码部分，close 主要是释放内存。</p>
+
+<p>不管是硬件解码还是软件解码，Decoder 部分一般都包含六部分：解码器初始化、解码器释放、设置压缩数据给解码器、从解码器获取解码后的数据、设置参数给解码器、从解码器获取参数信息。因此我们可以按照上面的思路，将 FFMpeg 中的这几个函数拆分成相应的函数。</p>
+
+<h2 id="tta-decoder-">提取 TTA Decoder 中可能遇到的问题</h2>
+
+<h2 id="tta-decoder--1">提取 TTA Decoder 实现</h2>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2018-05-06T07:55:35-07:00'><span class='date'>2018 年 05 月 06 日</span> <span class='time'>7:55 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2018/03/25/audio-basic-concept/" title="Previous Post: 音频概念介绍(采样频率、帧率、通道数等)">&laquo; 音频概念介绍(采样频率、帧率、通道数等)</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2018/05/10/csapp-program-optimization/" title="Next Post: 深入理解计算机系统之优化程序性能">深入理解计算机系统之优化程序性能 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2019 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

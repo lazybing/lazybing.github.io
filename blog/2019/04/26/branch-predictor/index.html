@@ -1,0 +1,515 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>性能优化之分支预测 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="预测种类 程序示例 分支预测是在分支指令执行结束之前猜测哪一路分支将会被执行，以提高处理器的指令流水线的性能。使用分支预测器的目的，在于改善指令管线化的流程。 预测种类 静态预测：最简单的分支预测技术，不依赖于代码执行的动态历史信息。静态预测可以再次细分，有的是总是预测条件跳转不发生， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/04/26/branch-predictor/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">性能优化之分支预测</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-04-26T08:58:32-07:00'><span class='date'>2019 年 04 月 26 日</span> <span class='time'>8:58 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">预测种类</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">程序示例</a></li>
+</ul>
+
+<p>分支预测是在分支指令执行结束之前猜测哪一路分支将会被执行，以提高处理器的指令流水线的性能。使用分支预测器的目的，在于改善指令管线化的流程。</p>
+
+<!--more-->
+
+<h2 id="section">预测种类</h2>
+
+<ul>
+  <li>
+    <p>静态预测：最简单的分支预测技术，不依赖于代码执行的动态历史信息。静态预测可以再次细分，有的是总是预测条件跳转不发生，有的假定向后分支将会发生，向前的分支不发生。向后分支是指跳转到的新地址总比当前地址要低。</p>
+  </li>
+  <li>
+    <p>双模特预测器：该预测器是一种有 4 个状态的状态机：强不选择、弱不选择、弱选择、强选择。当一个分支命令被求值，对应的状态机被修改。分支不采纳，则向“强不选择”方向降低状态值；如果分支被采纳，则向“强选择”方向提高状态值。</p>
+  </li>
+</ul>
+
+<p><img src="/images/branch_predictor/saturating_counter-dia.png" /></p>
+
+<ul>
+  <li>两级自适应预测器：对于一条分支指令，如果每 2 次执行发生一次条件跳转，或者其他的规则发生模式，那么用上文提到的双模态预测器就很难预测了。如图所示，一种两级自适应预测器可以记住过去 n 次执行指令时的分支情况的历史，可能的 2^n 种历史模式的每一种都有 1 个专用的双模态预测器，用来表示如果刚刚过去的 n 次执行历史是此种情况，那么根据这个双模态预测器预测为跳转还是不跳转。</li>
+</ul>
+
+<p><img src="/images/branch_predictor/Two-level_branch_prediction.png" /></p>
+
+<h2 id="section-1">程序示例</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;vector&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;chrono&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;cstdlib&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;algorithm&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;iostream&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">using</span> <span class="n">namespace</span> <span class="n">std</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">unsigned</span> <span class="n">arraySize</span> <span class="o">=</span> <span class="mi">32768</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">data</span><span class="p">[</span><span class="n">arraySize</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="n">arraySize</span><span class="p">;</span> <span class="o">++</span><span class="n">c</span><span class="p">){</span>
+</span><span class="line">        <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">256</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">std</span><span class="o">::</span><span class="n">sort</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">data</span> <span class="o">+</span> <span class="n">arraySize</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">auto</span> <span class="n">start</span> <span class="o">=</span> <span class="n">chrono</span><span class="o">::</span><span class="n">system_clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span>
+</span><span class="line">    <span class="kt">long</span> <span class="kt">long</span> <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100000</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="n">arraySize</span><span class="p">;</span> <span class="o">++</span><span class="n">c</span><span class="p">){</span>
+</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">128</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">               <span class="n">sum</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">];</span>
+</span><span class="line">            <span class="p">}</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">auto</span> <span class="n">end</span> <span class="o">=</span> <span class="n">chrono</span><span class="o">::</span><span class="n">system_clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">auto</span> <span class="n">duration</span> <span class="o">=</span> <span class="n">chrono</span><span class="o">::</span><span class="n">duration_cast</span><span class="o">&lt;</span><span class="n">chrono</span><span class="o">::</span><span class="n">microseconds</span><span class="o">&gt;</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">double</span> <span class="n">elapsed</span> <span class="o">=</span> <span class="kt">double</span><span class="p">(</span><span class="n">duration</span><span class="p">.</span><span class="n">count</span><span class="p">())</span><span class="o">*</span><span class="n">chrono</span><span class="o">::</span><span class="n">microseconds</span><span class="o">::</span><span class="n">period</span><span class="o">::</span><span class="n">num</span><span class="o">/</span><span class="n">chrono</span><span class="o">::</span><span class="n">microseconds</span><span class="o">::</span><span class="n">period</span><span class="o">::</span><span class="n">den</span><span class="p">;</span>
+</span><span class="line">    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;const total &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">elapsed</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; sec&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span><span class="line">    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;sum = &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">sum</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>上面的双重 for 循环，如果对数组不排序、或者修改循环体内的条件语句为</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100000</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="n">arraySize</span><span class="p">;</span> <span class="o">++</span><span class="n">c</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">-</span> <span class="mi">128</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">31</span><span class="p">;</span>
+</span><span class="line">        <span class="n">sum</span> <span class="o">+=</span> <span class="o">~</span><span class="n">t</span> <span class="o">&amp;</span> <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">];</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>三种相同功能的代码，耗时如下所示：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">代码结构</th>
+      <th style="text-align: center">耗时</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">不排序</td>
+      <td style="text-align: center">26.27s</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">排序</td>
+      <td style="text-align: center">9.87s</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">不分支预测</td>
+      <td style="text-align: center">10.97s</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2019-04-26T08:58:32-07:00'><span class='date'>2019 年 04 月 26 日</span> <span class='time'>8:58 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/xing-neng-you-hua/'>性能优化</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/04/26/branch-predictor/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/04/26/branch-predictor/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2019/04/21/locality-of-reference/" title="Previous Post: 性能优化之利用局部性原理">&laquo; 性能优化之利用局部性原理</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2019/05/17/perf/" title="Next Post: 性能优化之性能分析工具perf">性能优化之性能分析工具perf &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2019 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

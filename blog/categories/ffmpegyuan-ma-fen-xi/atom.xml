@@ -4,7 +4,7 @@
   <title><![CDATA[分类:ffmpeg源码分析 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-06-24T08:16:39-07:00</updated>
+  <updated>2019-07-11T09:09:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,7 +14,57 @@
 
   
   <entry>
-    <title type="html"><![CDATA[FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放以及添加水印]]></title>
+    <title type="html"><![CDATA[如何从FFMpeg中提取CODEC(以TTA Decoder为例)]]></title>
+    <link href="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/"/>
+    <updated>2018-05-06T07:55:35-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#tta-" id="markdown-toc-tta-">TTA 简介</a></li>
+  <li><a href="#ffmpeg--tta-decoder" id="markdown-toc-ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</a></li>
+  <li><a href="#tta-decoder-" id="markdown-toc-tta-decoder-">提取 TTA Decoder 中可能遇到的问题</a></li>
+  <li><a href="#tta-decoder--1" id="markdown-toc-tta-decoder--1">提取 TTA Decoder 实现</a></li>
+</ul>
+
+<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA Decoder 为例，介绍如何同 FFMpeg 中提取 CODEC。</p>
+
+<!--more-->
+
+<h2 id="tta-">TTA 简介</h2>
+
+<p>TTA(The True Audio Codec) 是免费、简单、实时无损视频压缩。基于 Adaptive Prognostic Filters, TTA 同其他同类的开源项目有强竞争力。</p>
+
+<h2 id="ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</h2>
+
+<p>FFMpeg 中关于 TTA Decoder 的部分在<code>libavcodec/tta.c</code>中定义:</p>
+
+<p><code>
+AVCodec ff_tta_decoder = {
+    .name           = "tta",
+    .long_name      = NULL_IF_CONFIG_SMALL("TTA (True Audio)"),
+    .type           = AVMEDIA_TYPE_AUDIO,
+    .id             = AV_CODEC_ID_TTA,
+    .priv_data_size = sizeof(TTAContext),
+    .init           = tta_decode_init,
+    .close          = tta_decode_close,
+    .decode         = tta_decode_frame,
+    .init_thread_copy = ONLY_IF_THREADS_ENABLED(init_thread_copy),
+    .capabilities     = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_FRAME_THREADS,
+    .priv_class       = &amp;tta_decoder_class,
+};
+</code></p>
+
+<p>从 TTA AVCodec 的定义可以看出，Decoder 的主要函数只有三个<code>tta_decode_init</code>、<code>tta_decode_frame</code>、<code>tta_decode_close</code>三部分。其中 init 部分主要是解析 TTA Header 信息，decode 部分是真正解码部分，close 主要是释放内存。</p>
+
+<p>不管是硬件解码还是软件解码，Decoder 部分一般都包含六部分：解码器初始化、解码器释放、设置压缩数据给解码器、从解码器获取解码后的数据、设置参数给解码器、从解码器获取参数信息。因此我们可以按照上面的思路，将 FFMpeg 中的这几个函数拆分成相应的函数。</p>
+
+<h2 id="tta-decoder-">提取 TTA Decoder 中可能遇到的问题</h2>
+
+<h2 id="tta-decoder--1">提取 TTA Decoder 实现</h2>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FFMpeg 实现视频编码、解码、封装、解封装、转码、缩放]]></title>
     <link href="http://lazybing.github.io/blog/2017/01/01/ffmpeg-sdk-learning/"/>
     <updated>2017-01-01T07:17:10-08:00</updated>
     <id>http://lazybing.github.io/blog/2017/01/01/ffmpeg-sdk-learning</id>
@@ -25,13 +75,14 @@
   <li><a href="#ffmpeg--3" id="markdown-toc-ffmpeg--3">FFMpeg 解封装实现</a></li>
   <li><a href="#ffmpeg--4" id="markdown-toc-ffmpeg--4">FFMpeg 转码的实现</a></li>
   <li><a href="#ffmpeg--5" id="markdown-toc-ffmpeg--5">FFMpeg 视频缩放实现</a></li>
-  <li><a href="#ffmpeg--6" id="markdown-toc-ffmpeg--6">FFMpeg 添加水印实现</a></li>
 </ul>
 
-<p><a href="&quot;https://ffmpeg.org/&quot;">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理，本文主要利用 FFMpeg 官方提供的 SDK 实现音视频最简单的几个实例：编码、解码、封装、解封装、转码、缩放以及添加水印。<br />
+<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理，本文主要利用 FFMpeg 官方提供的 SDK 实现音视频最简单的几个实例：编码、解码、封装、解封装、转码、缩放以及添加水印。</p>
+
 <!--more-->
-接下来会由发现问题－＞分析问题－＞解决问题－＞实现方案，循序渐进的完成。<br />
-参考代码：<a href="&quot;https://github.com/lazybing/ffmpeg-study-recording&quot;">ｌａｚｙｂｉｎｇ</a></p>
+<p>接下来会由发现问题－＞分析问题－＞解决问题－＞实现方案，循序渐进的完成。</p>
+
+<p>参考代码:<a href="https://github.com/lazybing/ffmpeg-study-recording">ffmpeg_sdk</a></p>
 
 <h2 id="ffmpeg-">FFMpeg 编码实现</h2>
 
@@ -1178,7 +1229,12 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
   <li>flags:指定了使用何种算法和选项进行缩放</li>
 </ul>
 
-<h2 id="ffmpeg--6">FFMpeg 添加水印实现</h2>
+<p>编译时用<code>make examples</code>后生成 scaling_video 可执行文件。命令行如下：</p>
+
+<p><code>
+$ /scaling_video 001_bit_rv8_64P_352x288.yuv hd1080
+</code>
+注意，输入时 YUV 数据，输出时 RGB 数据，会根据后面的 size 生成不同分辨率的数据。</p>
 
 ]]></content>
   </entry>
@@ -1513,200 +1569,6 @@ int av_read_frame(AVFormatContext *s, AVPacket *pkt);
 <h2 id="section-2">源码分析</h2>
 
 <p><code>av_read_frame</code>函数会判断在未解码缓存中是否有数据，如果有数据则调用<code>read_from_packet_buffer</code>。</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[FFMPEG 源码分析：avcodec_open2]]></title>
-    <link href="http://lazybing.github.io/blog/2016/12/10/avcodec-open2/"/>
-    <updated>2016-12-10T06:18:07-08:00</updated>
-    <id>http://lazybing.github.io/blog/2016/12/10/avcodec-open2</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">函数声明</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">函数使用示例</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">函数源码分析</a></li>
-</ul>
-
-<p><code>avcodec_open2</code>函数实现的功能为利用给定的<code>AVCodec</code>结构初始化<code>AVCodecContext</code>结构。</p>
-
-<!--more-->
-
-<h2 id="section">函数声明</h2>
-
-<p><code>avcodec_open2</code>的声明如下:</p>
-
-<p><code>
-int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
-</code></p>
-
-<p>函数参数说明：</p>
-
-<ul>
-  <li>avctx:需要初始化的context.</li>
-  <li>codec:</li>
-  <li>options:</li>
-  <li>返回值：如果返回0，正确。失败则返回负数。</li>
-</ul>
-
-<p>该函数利用给定的<code>AVCodec</code>结构初始化<code>AVCodecContext</code>结构，在使用该函数之前，<code>AVCodecContext</code>
-必须已经用<code>avcodec_alloc_context3()</code>函数分配出来。</p>
-
-<p><code>AVCodec</code>结构在使用该函数之前，由<code>avcodec_find_decoder_by_name</code><code>avcodec_find_encoder_by_name</code>
-<code>avcodec_find_decoder</code>或<code>avcodec_find_encoder</code>提前得到。</p>
-
-<p>注意，在正式解码之前(比如使用<code>avcodec_decode_video2()</code>之前)，必须调用<code>avcodec_open2</code>函数。</p>
-
-<h2 id="section-1">函数使用示例</h2>
-
-<p>示例代码如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">avcodec_register_all</span><span class="p">();</span>
-</span><span class='line'><span class="n">av_dict_set</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">opt</span><span class="p">,</span> <span class="err">“</span><span class="n">b</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="mf">2.5</span><span class="n">M</span><span class="err">”</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
-</span><span class='line'><span class="n">codec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">AV_CODEC_ID_H264</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">codec</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">context</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-2">函数源码分析</h2>
-
-<p><code>avcodec_open2</code>的逻辑非常简单，首先是进行一些参数检测、之后调动<code>AVCodec</code>的init函数。大概步骤如下：</p>
-
-<ul>
-  <li>各种函数参数检测。</li>
-  <li>各种结构体分配内存。</li>
-  <li>将输入的<code>AVDictionary</code>形式的选项设置到<code>AVCodecContext</code>。</li>
-  <li>其他一些零散的查，检查输入参数是否符合编码器的要求。</li>
-  <li>调用<code>AVCodec</code>的init函数初始化具体的解码器。</li>
-</ul>
-
-<p>此处重点分析调用<code>AVCodec</code>的init函数处。 以 HEVC 解码器为例。</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">AVCodec</span> <span class="n">ff_hevc_decoder</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">name</span>                  <span class="o">=</span> <span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">long_name</span>             <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="err">“</span><span class="n">HEVC</span> <span class="p">(</span><span class="n">High</span> <span class="n">Efficiency</span> <span class="n">Video</span> <span class="n">Coding</span><span class="p">)</span><span class="err">”</span><span class="p">),</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">type</span>                  <span class="o">=</span> <span class="n">AVMEDIA_TYPE_VIDEO</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">id</span>                    <span class="o">=</span> <span class="n">AV_CODEC_ID_HEVC</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">priv_data_size</span>        <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">HEVCContext</span><span class="p">),</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">priv_class</span>            <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">hevc_decoder_class</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">init</span>                  <span class="o">=</span> <span class="n">hevc_decode_init</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">close</span>                 <span class="o">=</span> <span class="n">hevc_decode_free</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">decode</span>                <span class="o">=</span> <span class="n">hevc_decode_frame</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">flush</span>                 <span class="o">=</span> <span class="n">hevc_decode_flush</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">update_thread_context</span> <span class="o">=</span> <span class="n">hevc_update_thread_context</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">init_thread_copy</span>      <span class="o">=</span> <span class="n">hevc_init_thread_copy</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">capabilities</span>          <span class="o">=</span> <span class="n">AV_CODEC_CAP_DR1</span> <span class="o">|</span> <span class="n">AV_CODEC_CAP_DELAY</span> <span class="o">|</span>
-</span><span class='line'>                             <span class="n">AV_CODEC_CAP_SLICE_THREADS</span> <span class="o">|</span> <span class="n">AV_CODEC_CAP_FRAME_THREADS</span><span class="p">,</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">profiles</span>              <span class="o">=</span> <span class="n">NULL_IF_CONFIG_SMALL</span><span class="p">(</span><span class="n">profiles</span><span class="p">),</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>其中 init 函数定义如下：</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="n">av_cold</span> <span class="kt">int</span> <span class="nf">hevc_decode_init</span><span class="p">(</span><span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">avctx</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">HEVCContext</span> <span class="o">*</span><span class="n">s</span> <span class="o">=</span> <span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">priv_data</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">ff_init_cabac_states</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">internal</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">allocate_progress</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">ret</span> <span class="o">=</span> <span class="n">hevc_init_context</span><span class="p">(</span><span class="n">avctx</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">enable_parallel_tiles</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">picture_struct</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">active_thread_type</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">FF_THREAD_SLICE</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">threads_number</span> <span class="o">=</span> <span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">thread_count</span><span class="p">;</span>
-</span><span class='line'><span class="k">else</span>
-</span><span class='line'>    <span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">threads_number</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">extradata_size</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">extradata</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">ret</span> <span class="o">=</span> <span class="n">hevc_decode_extradata</span><span class="p">(</span><span class="n">s</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">hevc_decode_free</span><span class="p">(</span><span class="n">avctx</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span><span class="p">((</span><span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">active_thread_type</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">FF_THREAD_FRAME</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">avctx</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">thread_count</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">threads_type</span> <span class="o">=</span> <span class="n">FF_THREAD_FRAME</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>        <span class="n">s</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">threads_type</span> <span class="o">=</span> <span class="n">FF_THREAD_SLICE</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-</code></pre>
 
 ]]></content>
   </entry>

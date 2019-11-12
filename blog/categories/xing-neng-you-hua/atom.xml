@@ -1,0 +1,789 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[分类:性能优化 | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/xing-neng-you-hua/atom.xml" rel="self"/>
+  <link href="http://lazybing.github.io/"/>
+  <updated>2019-07-11T09:09:10-07:00</updated>
+  <id>http://lazybing.github.io/</id>
+  <author>
+    <name><![CDATA[李冰]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[性能优化之性能分析工具perf]]></title>
+    <link href="http://lazybing.github.io/blog/2019/05/17/perf/"/>
+    <updated>2019-05-17T08:43:15-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/05/17/perf</id>
+    <content type="html"><![CDATA[<p>本文主要记录性能优化工具 perf 的方法技巧。</p>
+
+<!--more-->
+
+<p><strong>perf</strong>有些子命令：</p>
+
+<ul>
+  <li>stat: 测试单个程序的事件总数。</li>
+  <li>top:类似top命令，动态显示最耗时的函数。</li>
+  <li>record:测试并保存单个程序的抽样数据。</li>
+  <li>report:分析由 perf record 命令生成的文件，可以生成 flat 或 graph profile   文件。</li>
+  <li>annotate:annotate源文件或汇编。</li>
+  <li>sched:调度程序操作和延迟的追踪和测量。</li>
+  <li>list:列出可能的事件。</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[性能优化之分支预测]]></title>
+    <link href="http://lazybing.github.io/blog/2019/04/26/branch-predictor/"/>
+    <updated>2019-04-26T08:58:32-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/04/26/branch-predictor</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">预测种类</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">程序示例</a></li>
+</ul>
+
+<p>分支预测是在分支指令执行结束之前猜测哪一路分支将会被执行，以提高处理器的指令流水线的性能。使用分支预测器的目的，在于改善指令管线化的流程。</p>
+
+<!--more-->
+
+<h2 id="section">预测种类</h2>
+
+<ul>
+  <li>
+    <p>静态预测：最简单的分支预测技术，不依赖于代码执行的动态历史信息。静态预测可以再次细分，有的是总是预测条件跳转不发生，有的假定向后分支将会发生，向前的分支不发生。向后分支是指跳转到的新地址总比当前地址要低。</p>
+  </li>
+  <li>
+    <p>双模特预测器：该预测器是一种有 4 个状态的状态机：强不选择、弱不选择、弱选择、强选择。当一个分支命令被求值，对应的状态机被修改。分支不采纳，则向“强不选择”方向降低状态值；如果分支被采纳，则向“强选择”方向提高状态值。</p>
+  </li>
+</ul>
+
+<p><img src="/images/branch_predictor/saturating_counter-dia.png"></p>
+
+<ul>
+  <li>两级自适应预测器：对于一条分支指令，如果每 2 次执行发生一次条件跳转，或者其他的规则发生模式，那么用上文提到的双模态预测器就很难预测了。如图所示，一种两级自适应预测器可以记住过去 n 次执行指令时的分支情况的历史，可能的 2^n 种历史模式的每一种都有 1 个专用的双模态预测器，用来表示如果刚刚过去的 n 次执行历史是此种情况，那么根据这个双模态预测器预测为跳转还是不跳转。</li>
+</ul>
+
+<p><img src="/images/branch_predictor/Two-level_branch_prediction.png"></p>
+
+<h2 id="section-1">程序示例</h2>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;vector&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;chrono&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;cstdlib&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;algorithm&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;iostream&gt;&lt;/iostream&gt;&lt;/algorithm&gt;&lt;/cstdlib&gt;&lt;/chrono&gt;&lt;/vector&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">using</span> <span class="n">namespace</span> <span class="n">std</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">unsigned</span> <span class="n">arraySize</span> <span class="o">=</span> <span class="mi">32768</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">data</span><span class="p">[</span><span class="n">arraySize</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">for</span><span class="p">(</span><span class="kt">unsigned</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">c</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">arraySize</span><span class="p">;</span> <span class="o">++</span><span class="n">c</span><span class="p">){</span>
+</span><span class='line'>    <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">256</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">std</span><span class="o">::</span><span class="n">sort</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">data</span> <span class="o">+</span> <span class="n">arraySize</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">auto</span> <span class="n">start</span> <span class="o">=</span> <span class="n">chrono</span><span class="o">::</span><span class="n">system_clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span>
+</span><span class='line'><span class="kt">long</span> <span class="kt">long</span> <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">100000</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">c</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">arraySize</span><span class="p">;</span> <span class="o">++</span><span class="n">c</span><span class="p">){</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">128</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>           <span class="n">sum</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">auto</span> <span class="n">end</span> <span class="o">=</span> <span class="n">chrono</span><span class="o">::</span><span class="n">system_clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">auto</span> <span class="n">duration</span> <span class="o">=</span> <span class="n">chrono</span><span class="o">::</span><span class="n">duration_cast</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">chrono</span><span class="o">::</span><span class="n">microseconds</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">);</span>
+</span><span class='line'><span class="kt">double</span> <span class="n">elapsed</span> <span class="o">=</span> <span class="kt">double</span><span class="p">(</span><span class="n">duration</span><span class="p">.</span><span class="n">count</span><span class="p">())</span><span class="o">*</span><span class="n">chrono</span><span class="o">::</span><span class="n">microseconds</span><span class="o">::</span><span class="n">period</span><span class="o">::</span><span class="n">num</span><span class="o">/</span><span class="n">chrono</span><span class="o">::</span><span class="n">microseconds</span><span class="o">::</span><span class="n">period</span><span class="o">::</span><span class="n">den</span><span class="p">;</span>
+</span><span class='line'><span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="s">&quot;const total &quot;</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">elapsed</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="s">&quot; sec&quot;</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span><span class='line'><span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="s">&quot;sum = &quot;</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">sum</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>上面的双重 for 循环，如果对数组不排序、或者修改循环体内的条件语句为</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">100000</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">c</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">arraySize</span><span class="p">;</span> <span class="o">++</span><span class="n">c</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">-</span> <span class="mi">128</span><span class="p">)</span><span class="err"> »</span> <span class="mi">31</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">sum</span> <span class="o">+=</span> <span class="o">~</span><span class="n">t</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">data</span><span class="p">[</span><span class="n">c</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>三种相同功能的代码，耗时如下所示：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">代码结构</th>
+      <th style="text-align: center">耗时</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">不排序</td>
+      <td style="text-align: center">26.27s</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">排序</td>
+      <td style="text-align: center">9.87s</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">不分支预测</td>
+      <td style="text-align: center">10.97s</td>
+    </tr>
+  </tbody>
+</table>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[性能优化之利用局部性原理]]></title>
+    <link href="http://lazybing.github.io/blog/2019/04/21/locality-of-reference/"/>
+    <updated>2019-04-21T02:56:40-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/04/21/locality-of-reference</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">局部性示例</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">局部性原理</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">存储器层次结构</a></li>
+</ul>
+
+<p>局部性原理是指程序通常倾向于引用邻近于其最近引用过的数据项的数据项，或最近引用过的数据本身。</p>
+
+<!--more-->
+
+<h2 id="section">局部性示例</h2>
+
+<p>先看下面两个对数组访问的示例，</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define ARRAY_ROW_SIZE 1000</span>
+</span><span class='line'><span class="cp">#define ARRAY_COL_SIZE 1000&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">access_array_col</span><span class="p">(</span><span class="kt">int</span> <span class="n">array1</span><span class="p">[</span><span class="n">ARRAY_ROW_SIZE</span><span class="p">][</span><span class="n">ARRAY_COL_SIZE</span><span class="p">])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_ROW_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_COL_SIZE</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">array1</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">access_array_row</span><span class="p">(</span><span class="kt">int</span> <span class="n">array1</span><span class="p">[</span><span class="n">ARRAY_ROW_SIZE</span><span class="p">][</span><span class="n">ARRAY_COL_SIZE</span><span class="p">])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_ROW_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">ARRAY_COL_SIZE</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">array1</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">used time</th>
+      <th style="text-align: center">1</th>
+      <th style="text-align: center">2</th>
+      <th style="text-align: center">3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">access_array_row</td>
+      <td style="text-align: center">3521</td>
+      <td style="text-align: center">4287</td>
+      <td style="text-align: center">4741</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">access_array_col</td>
+      <td style="text-align: center">12389</td>
+      <td style="text-align: center">10713</td>
+      <td style="text-align: center">11985</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>从上面的例子可以看出，同样是访问一个数组，采用列访问和采用行访问，事件相差非常大，原因就是<code>access_array_row</code>利用局部性原理。</p>
+
+<h2 id="section-1">局部性原理</h2>
+
+<p>局部性主要包括两种形式，时间局部性和空间局部性。</p>
+
+<ul>
+  <li>时间局部性：被引用过一次的存储器位置很可能在不远的将来再被多次引用。</li>
+  <li>空间局部性：如果一个存储器位置被引用了一次，那么程序很可能在不远的将来引用附近的一个存储器位置。</li>
+</ul>
+
+<p>有良好局部性的程序比局部性差的程序运行得更快，计算机系统设计中，局部性原理在硬件和软件中都有应用，硬件层上，采用了<strong>高速缓存存储器</strong>充分利用了局部性原理；软件层上，操作系统用主存来缓存硬盘文件系统。</p>
+
+<h2 id="section-2">存储器层次结构</h2>
+
+<p>局部性原理在存储器中使用特别频繁。</p>
+
+<p><img src="/images/locality/locality.png"></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[性能优化之减少调用]]></title>
+    <link href="http://lazybing.github.io/blog/2019/04/19/reducing-procedure-call/"/>
+    <updated>2019-04-19T09:59:18-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/04/19/reducing-procedure-call</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">简单函数处理</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">函数处理</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">减少调用后续优化</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-3" id="markdown-toc-section-3">总结</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">参考资料</a></li>
+</ul>
+
+<p>函数调用会带来相当大的开销，而且它会阻碍其他形式的程序优化。单独的较少调用次数可能对性能提升并不明显，但考虑到减少调用后，可以进一步进行其他形式的优化，减少函数调用还是很有必要的。</p>
+
+<!--more-->
+
+<h2 id="section">简单函数处理</h2>
+
+<ul>
+  <li>
+    <p>直接将函数展开，写入调用函数处，去掉调用函数。</p>
+  </li>
+  <li>
+    <p>使用<strong>inline</strong>关键字，将经常调用的函数写成内联函数。</p>
+  </li>
+  <li>
+    <p>使用<strong>define</strong>关键字，使得代码在编译时将其展开。</p>
+  </li>
+</ul>
+
+<p>例如，下面的函数调用</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">imin</span><span class="p">(</span><span class="k">const</span> <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">b</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">a</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">c</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>可以使用上面提到的三种优化方式：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// method 1</span>
+</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'><span class="c1">//method 2</span>
+</span><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">imin</span><span class="p">(</span><span class="k">const</span> <span class="kt">int</span> <span class="n">a</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">b</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">a</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+</span><span class='line'><span class="c1">//method 3</span>
+</span><span class='line'><span class="cp">#define IMIN(a, b) return ((a) &amp;lt; (b) ? (a) : (b))</span>
+</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="n">IMIN</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h2 id="section-1">函数处理</h2>
+
+<p>上面的方法针对小函数、频繁调用的情况较试用，当函数较复杂时，我们就不适合直接展开了，那样会显得整个代码特别繁琐；另外如果被调用函数并不是我们自己的代码，就更没办法用上面提到的方法了。此时，就要分析函数的功能，选择替代方案减少调用。举个例子：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="n">vec_rec</span><span class="p">,</span> <span class="o">*</span><span class="n">vec_ptr</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">vec_ptr</span> <span class="n">new_vec</span><span class="p">(</span><span class="kt">long</span> <span class="kt">int</span> <span class="n">len</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">vec_ptr</span> <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">vec_ptr</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">vec_rec</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">result</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">result</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span> <span class="o">=</span> <span class="n">len</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">len</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">){</span>
+</span><span class='line'>        <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="kt">data_t</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">len</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">data_t</span><span class="p">));</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">data</span><span class="p">){</span>
+</span><span class='line'>            <span class="n">free</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">result</span><span class="p">);</span>
+</span><span class='line'>            <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">result</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class='line'>        <span class="n">result</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">get_vec_element</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">int</span> <span class="n">index</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">index</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">index</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">long</span> <span class="kt">int</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">len</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">combine2</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="n">val</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">get_vec_element</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">val</span><span class="p">);</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="o">*</span><span class="n">dest</span> <span class="o">+</span> <span class="n">val</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>上面的<code>combine2</code>函数的 for 循环中会一直调用 <strong>get_vec_element</strong>函数来获取一个元素，通过分析该函数可以看出，它获取的其实是<strong>vec_rec.v-&gt;data</strong>数组的元素，该元素也是随着循环索引<strong>i</strong>来递增的，因此可以把该函数提到<strong>for</strong>循环的外面，减少函数调用，修改后的函数如下：<br />
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">data_t</span> <span class="o">*</span><span class="nf">get_vec_start</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">v</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">data</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">combine2_reducing_proc_call</span><span class="p">(</span><span class="n">vec_ptr</span> <span class="n">v</span><span class="p">,</span> <span class="kt">data_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="n">vec_length</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">data_t</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">get_vec_start</span><span class="p">(</span><span class="n">v</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;*</span><span class="n">dest</span> <span class="o">=</span> <span class="n">IDENT</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="o">*</span><span class="n">dest</span> <span class="o">=</span> <span class="o">*</span><span class="n">dest</span> <span class="o">+</span> <span class="n">val</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>分析上面的优化，其实它是破坏了函数的结构的，这种方法会损害函数的模块性和抽象性，上面的例子中，我们是通过分析<code>get_vec_element</code>函数和<code>for</code>循环才确定的减少调用是可用的。</p>
+
+<h3 id="section-2">减少调用后续优化</h3>
+
+<p>上面提到的都是针对减少调用本身来提升性能的，减少调用本身对系统性能的提升非常有限，但减少调用后，可以方便的进行进一步的优化，而进一步的优化可能效果非常显著。例如上面提到的 combine 函数，将调用函数提取到 for 循环外后，可以对整个 for 循环进行 NEON 优化，效率的提升会更加明显。</p>
+
+<p>在做 AV1 效率优化时，也遇到过类似的优化案例：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define add_noise_y(x, y, grain)    \</span>
+</span><span class='line'><span class="cp">    pixel &lt;em&gt;src = src_row + (y) * stride + (bx + x);  \</span>
+</span><span class='line'><span class="cp">    pixel *dst = dst_row + (y) * stride + (bx + x);  \</span>
+</span><span class='line'><span class="cp">    int noise  = round2(scaling[ *src ] * (grain), data-&amp;gt;scaling_shift); \</span>
+</span><span class='line'><span class="cp">    *dst = iclip(&lt;/em&gt;src + noise, min_value max_value);&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">grain</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>未优化前，此段代码在解码过程中，大概耗时 8ms，优化完成后，降低到 7ms，效率提升了 12.5%。提升还是很大的。</p>
+
+<h2 id="section-3">总结</h2>
+
+<h2 id="section-4">参考资料</h2>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[性能优化之循环展开]]></title>
+    <link href="http://lazybing.github.io/blog/2019/04/17/loop-unroll/"/>
+    <updated>2019-04-17T07:36:49-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/04/17/loop-unroll</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">示例分析</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">循环展开扩展</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">结论总结</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">参考资料</a></li>
+</ul>
+
+<p>循环展开是通过增加每次迭代计算的元素的数量，减少循环的迭代次数。循环展开只能针对整形加法和乘法的性能改进。</p>
+
+<!--more-->
+
+<p>循环展开从两个方面改变程序的性能：</p>
+
+<ul>
+  <li>分支预测失败减少。</li>
+  <li>减少不直接有助于程序结果的操作的数量，如循环索引计算和条件分支。</li>
+  <li>提供了一种方法，可以进一步变换代码，减少整个计算中关键路径上的操作数量。</li>
+</ul>
+
+<h2 id="section">示例分析</h2>
+
+<p><figure class='code'><figcaption><span>loop_unrolling.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
+</span><span class='line'><span class="cp">#include &amp;lt;sys/time.h&amp;gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">loop_unroll1</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">a</span><span class="p">[</span><span class="mi">1000000</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">loop_unroll2</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">a</span><span class="p">[</span><span class="mi">1000000</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="n">i</span><span class="o">+=</span><span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">loop_unroll3</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">a</span><span class="p">[</span><span class="mi">1000000</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="n">i</span><span class="o">+=</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">timeval</span> <span class="n">time_start</span><span class="p">,</span> <span class="n">time_end</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_start</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">loop_unroll1</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_end</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">used</span> <span class="n">time</span> <span class="n">us_sec</span> <span class="o">%</span><span class="n">ld</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">time_end</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">.</span><span class="n">tv_usec</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_start</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">loop_unroll2</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_end</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">used</span> <span class="n">time</span> <span class="n">us_sec</span> <span class="o">%</span><span class="n">ld</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">time_end</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">.</span><span class="n">tv_usec</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_start</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">loop_unroll3</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">gettimeofday</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">time_end</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">used</span> <span class="n">time</span> <span class="n">us_sec</span> <span class="o">%</span><span class="n">ld</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">time_end</span><span class="p">.</span><span class="n">tv_usec</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">.</span><span class="n">tv_usec</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<p>运行上面的程序：</p>
+
+<p><code>
+gcc -funroll-loops -pg loop_unrolling.c -o loop_unrolling
+</code></p>
+
+<p>执行三次后，结果如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Executions</th>
+      <th style="text-align: center">loop_unroll1</th>
+      <th style="text-align: center">loop_unroll2</th>
+      <th style="text-align: center">loop_unroll3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">12618</td>
+      <td style="text-align: center">1890</td>
+      <td style="text-align: center">3162</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">7456</td>
+      <td style="text-align: center">1987</td>
+      <td style="text-align: center">1629</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">9868</td>
+      <td style="text-align: center">2446</td>
+      <td style="text-align: center">2388</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>上面的结果可以看出，产开次数为2相对于未展开时，性能有明显提升，但展开次数为4时，性能相对于展开次数为2并没有多少提升。另外，编译器选项<code>-funroll-loops</code>好像并没有起到什么作用。但是如果添加编译选项<code>-O1</code>或<code>-O2/-O3</code>时，编译器会自动优化该函数。</p>
+
+<p>关于展开次数和性能之间的关系，CSAPP 这本书里有介绍一个实验结果，如图所示：</p>
+
+<p><img src="/images/loop_unroll/loop_unrolling.png"></p>
+
+<p>从图中可以看出，当循环展开到6次时的CPE(Cycles Per Element,每元素的周期数)测量值，对于展开2次或3次时观察到的趋势还在继续——循环展开对浮点数运算没有帮助，但对整数加法和乘法，CPE降至1.00.</p>
+
+<p>实验过程中发现，CSAPP中描述的结论与我自己测试的结果有几点需要注意：</p>
+
+<ol>
+  <li>测试中，循环展开对于浮点数的加法和乘法是有效的。</li>
+  <li>编译器选项<code>-funroll-loops</code>并没有起到循环展开的作用。</li>
+  <li>循环展开对于性能的提升确实是都有帮助的。</li>
+</ol>
+
+<h2 id="section-1">循环展开扩展</h2>
+
+<p>循环展开的本质是降低循环开销、增加并行运行的可能性。网上找到的大部分讲解循环展开的都是针对<strong>for</strong>循环的，既然是循环展开，那么对于<strong>while</strong>循环，理论上也是适用的，最后找到了<a href="http://www2.cs.uh.edu/~jhuang/JCH/JC/loop.pdf">Generalized Loop-Unrolling</a>。关于<strong>while</strong>循环展开的方法，可以用下面的描述语言表示：</p>
+
+<p><code>
+while B do S; &lt;==&gt; while B ^ wp(S, B) do begin S;S end; while B do S;
+</code>
+按照论文的讲解，手动写了两个替换的等价循环</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">q</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span> <span class="p">(</span><span class="n">a</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">b</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">q</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">q</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="k">while</span> <span class="p">(</span><span class="n">a</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span><span class="n">b</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">a</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">b</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">q</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">q</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>遗憾的是，运行后，两者的时间并没有太大的差别，有时第二段代码方法甚至更慢。猜测可能原因有两点：现代编译器对此类优化方法已经完成的很好；不同运行环境运行效果不同；所以，循环展开这类方法，最好是实际操作运行看结果，理论与实际可能有出入。</p>
+
+<h2 id="section-2">结论总结</h2>
+
+<p>循环展开对于性能的提升是由帮助的，但这种帮助并不是无限的，随着展开次数的增多，性能并不会继续增加，相反，循环展开次数过多，会使得程序代码膨胀、代码可读性降低。另外，编译器优化选项<code>-O1</code>或<code>-O2</code>等，会使得编译器自身会对代码进行优化，此时手动循环展开并不是一个好的方法。再者，受运行环境的影响（我的测试用例都是在Ubuntu虚拟机下完成），其测试结果可能有不同。</p>
+
+<h2 id="section-3">参考资料</h2>
+<ol>
+  <li><a href="https://zh.wikipedia.org/wiki/%E5%BE%AA%E7%8E%AF%E5%B1%95%E5%BC%80">循环展开</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Loop_unrolling">Loop Unrolling</a></li>
+  <li><a href="http://www2.cs.uh.edu/~jhuang/JCH/JC/loop.pdf">Generalized Loop-Unrolling: a Method for Program Speed-Up</a></li>
+  <li><a href="https://zhuanlan.zhihu.com/p/37582101">C++性能榨汁机之循环展开</a></li>
+  <li><a href="https://github.com/shihyu/CSAPP2e/blob/master/Computer%20Systems%20-%20A%20Programmer's%20Perspective%20(2nd).pdf">Computer Systems - A Programmer’s Perspective</a></li>
+</ol>
+]]></content>
+  </entry>
+  
+</feed>

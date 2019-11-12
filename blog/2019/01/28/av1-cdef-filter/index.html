@@ -1,0 +1,488 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>AV1(DAV1D) 解码详解(三)之CDEF - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="CDEF 介绍 方向查找 非线性低通滤波器 定向滤波器 代码实现分析 方向查找实现 CDEF 方向滤波 参考文档 CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">AV1(DAV1D) 解码详解(三)之CDEF</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-01-28T06:32:04-08:00'><span class='date'>2019 年 01 月 28 日</span> <span class='time'>6:32 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#cdef-" id="markdown-toc-cdef-">CDEF 介绍</a></li>
+  <li><a href="#section" id="markdown-toc-section">方向查找</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">非线性低通滤波器</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">定向滤波器</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">代码实现分析</a>        <ul>
+          <li><a href="#section-4" id="markdown-toc-section-4">方向查找实现</a></li>
+          <li><a href="#cdef--1" id="markdown-toc-cdef--1">CDEF 方向滤波</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">参考文档</a></li>
+</ul>
+
+<p>CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF process 中。AOM 代码中在 cdef.c 相关的文件中。除此外，还可以参考 <code>The AV1 CONSTRAINED DIRECTIONAL ENHANCEMENT FILTER</code>论文，本文就是基于上面三个部分分析的结果。</p>
+
+<!--more-->
+
+<p>环路滤波器基于非线性低通滤波器，专为矢量化效率设计的。该滤波器考虑边缘方向和滤波模式，它通过确定每个 block 块的方向，然后自适应的用沿方向的滤波强度进行滤波。增强滤波目的是提高 AOM 的质量，尤其是低复杂性的配置中。</p>
+
+<h2 id="cdef-">CDEF 介绍</h2>
+
+<p>CDEF 的主要目的是过滤掉编码杂音，同时保留图像的详细内容。AV1 中采用的方法是非线性空间滤波器，该滤波器的设计非常适用于矢量化，即可以使用 SIMD 操作，而其他非线性滤波器（如中值滤波器和双边滤波器）并非如此。</p>
+
+<p>CDEF 滤波器的设计基于以下观察：编码图像中杂音的数量通常与量化步长大致成比例，图像详细内容的数量是输入图像的一个属性，保留在量化过的图像中的最小的实际信息量也与量化成一定的比例。对于给定的步长，杂音的幅度要比细节的幅度小很多。</p>
+
+<p>CDEF 首先判断每个块的方向，之后沿着判断的方向自适应的滤波，并沿着判断的方向小幅度旋转 45 度，滤波强度明确表示，对模糊的高度控制。</p>
+
+<p>CDEF 是基于之前提到的两个环路滤波器，结合的滤波器用在了 AV1 Codec 中。</p>
+
+<p>从 SPEC 中的7.15 节可以看出，CDEF 可以理解为，输入为重建像素的当前帧数组，输出为包含了 Deringed 像素的数组 CDEF 帧。CDEF 的作用就是在侦测到的块方向上执行 DEringing， 码流中 CDEF 参数存放到每个64x64块(luma像素)中。可以将 CDEF 模块大致分为3步：</p>
+
+<ul>
+  <li>CDEF Block 处理</li>
+  <li>CDEF Direction 处理</li>
+  <li>CDEF Filter 处理</li>
+</ul>
+
+<h2 id="section">方向查找</h2>
+
+<p>方块滤波后，方向查找就作用在重建像素上。因为重建像素对解码器是可获取的，因此滤波方向不需要特定的给出。查找作用在 8x8 块上，当应用到量化过后的图像时，该大小对于充分处理非直接边缘已经足够小，而对可靠地估计出方向又已经足够大了,有一个固定方向作用在8x8区域上，使得矢量化滤波更容易。</p>
+
+<p><img src="/images/av1_cdef/av1_cdef_find_dir.png" /></p>
+
+<p>对每个方向d，每行k的平均像素是: $ u_{d,k} = \frac{1}{N_{d,k}} \sum_{p \in P_{d,k}} x_p$ 其中：</p>
+
+<ul>
+  <li>$x_p$ 是像素$p$的值</li>
+  <li>$P_{d,k}$是在方向$d$上第$k$行的一组像素值</li>
+  <li>$N_{d,k}$是相对$P_{d,k}$对应的基数，如$N_{1,0}=2, N_{1,4}=8$</li>
+</ul>
+
+<p><code>SSD</code>的计算公式如下：$E_{d}^2 = \sum_{k} \big[\sum_{p \in P_{d,k}} \big( x_{p} - u_{d,k}\big)^2 \big]$</p>
+
+<p>将上面的两个公式整合后，结果如下：$E_{d}^2 = \sum_{p}x_{p}^2 - \sum_{k}\frac{1}{N_{d,k}} \big(\sum_{p \in P_{d,k}} x_p \big)^2$</p>
+
+<p>我们可以通过计算上面公式中第二部分的最大值来寻找最佳方向 $d_{opt}$, $d_opt = max_d s_d$, 其中 $s_{d} = \sum_{k}\frac{1}{N_{d,k}} \big(sum_{p \in P_{d,k}} x_p \big)^2$</p>
+
+<p>可以用 840 乘以$S_d$来避免除以$N_{d,k}$,840 是所有$N_{d,k}$的最小公倍数。对于 8bit 数据，数据值为$[-128, 127]$，所有$840S_d$和所有的其他计算都适用于 32位 signed 整数类型。对于更高的bit，如10bit或12bit，在查找方向时，缩放像素到 8bit。</p>
+
+<p><img src="/images/av1_cdef/direction_search.png" /></p>
+
+<p>上图展示了一个针对 8x8 块，寻找方向的例子，寻找的算法如下。为了节省解码器的复杂度，我们假定亮度和色度方向是相关的，因此我们只寻找亮度原件的方向，该方向与色度方向相同。</p>
+
+<p><img src="/images/av1_cdef/algorithm_find_direction.png" /></p>
+
+<h2 id="section-1">非线性低通滤波器</h2>
+
+<p>CDEF 使用非线性低通滤波器，去除编码杂音的同时不会模糊块的边缘。AV1 根据特定方向寻找滤波器抽头位置，同时当滤波器运用到块边界时，要防止过度模糊。使用非线性低通滤波器，在滤波像素偏差过大时，就不再对该像素过度强调。</p>
+
+<h3 id="section-2">定向滤波器</h3>
+
+<p>确认方向是为了统一特定方向上滤波器抽头，来降低振铃，同时不会模糊特定的边缘。但是单纯的定向滤波器有时无法高效的降低振铃效应，因此同时需要对像素数据使用滤波器抽头，该抽头并不是直接沿着主要方向。为了降低模糊块的风险，这些额外的抽头会被更保守的处理。因此，CDEF 定义了 primary taps 和 secondary taps。</p>
+
+<p>primary taps 沿着方向 d，它的系数如上面图 4 所示。对 primary taps，对不同的 strength，会有不同的系数，对于1/3/5的strength，与2/4/6的strength，系数是不同的。secondary tpas 会形成一个十字架，是方向 d 旋转 45° 后得到，系数如图 5。</p>
+
+<p><img src="/images/av1_cdef/primary_filter.png" />
+<img src="/images/av1_cdef/secondary_filter.png" /></p>
+
+<p>2-D CDEF 滤波器公式如下：</p>
+
+<p>$y(i,j) = x(i,j) + round( \sum_{m,n} w_{d,m,n}^{(p)} f(x(m,n) -x(i, j), S^{(p)}, D) + \sum_{m,n} w_{d,m,n}^{(s)} f(x(m,n) -x(i,j), S^{(s)}, D))$</p>
+
+<ul>
+  <li>$S_{p}$和$S_{s}$是 primary 和 secondary 抽头的 strength。</li>
+</ul>
+
+<p>每个要滤波的 8x8 块，方向、strength 和 damping 参数是固定的。当处理位置(i, j)处的像素时，滤波器允许使用 x(i+m, j+m)处的像素，该像素可能超出 8x8 块的边界。如果处理像素超出了帧范围，像素会被忽略(f(d, S, D) = 0)。为最大化并行，CDEF 总是作用在输入(post-deblocking)像素 x(i,j)上，这样在滤波其他像素时，不会用的之前已经滤波王城的像素。</p>
+
+<h3 id="section-3">代码实现分析</h3>
+
+<p>此处以 DAV1D 工程里的 CDEF 模块作为例子，主要介绍两部分，<code>cdef_find_dir</code>和<code>cdef_filter_block</code>，并把 10bit 汇编优化完成。完成后，在 pixel2 手机上测试，效率提升大概 30% 左右。</p>
+
+<h4 id="section-4">方向查找实现</h4>
+
+<p>DAV1D 工程里，对 CDEF 方向查找，完成了 C 代码实现和对 8bit 码流的汇编优化，对10bit优化并没有完成。</p>
+
+<figure class="code"><figcaption><span>cdef_find_dir.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line">
+</span></code></pre></td></tr></table></div></figure>
+
+<h4 id="cdef--1">CDEF 方向滤波</h4>
+
+<p>滤波主要由两步完成，</p>
+
+<h2 id="section-5">参考文档</h2>
+
+<ol>
+  <li><a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">AV1 Bitstream and Decoding Process</a></li>
+  <li><a href="https://jmvalin.ca/papers/AV1_tools.pdf">An Overview of Core Coding Tools in the AV1 Video Codec</a></li>
+  <li><a href="http://www.mirlab.org/conference_papers/international_conference/ICASSP%202018/pdfs/0001193.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
+  <li><a href="https://jmvalin.ca/misc_stuff/icassp2018_slides.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2019-01-28T06:32:04-08:00'><span class='date'>2019 年 01 月 28 日</span> <span class='time'>6:32 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/av1/'>av1</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2019/01/24/neon-of-coding/" title="Previous Post: ARM64 汇编指令总结">&laquo; ARM64 汇编指令总结</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2019/03/02/loop-restoration/" title="Next Post: AV1(DAV1D) 解码详解(四)之LOOP RESTORATION">AV1(DAV1D) 解码详解(四)之LOOP RESTORATION &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2019 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

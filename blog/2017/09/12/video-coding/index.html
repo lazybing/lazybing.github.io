@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Exp-Golomb 哥伦布编码 CAVLC 基于上下文自适应的可变长编码 CABAC 基于上下文的自适应二进制算术熵编码 参考文献 本文记录H.264编解码器使用到的编码算法，包括Exp-Golomb(哥伦布编码)、CAVLC(基于上下文自适应的可变长编码)、CABAC( &hellip;">
+  <meta name="description" content="Exp-Golomb 哥伦布编码 CAVLC 基于上下文自适应的可变长编码 CAVLC 的基本原理 CAVLC 的上下文模型 CAVLC 的编码过程 CAVLC 编码示例 CABAC 基于上下文的自适应二进制算术熵编码 参考文献 本文记录H.264编解码器使用到的编码算法，包括Exp- &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -100,7 +100,13 @@
 
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#exp-golomb-" id="markdown-toc-exp-golomb-">Exp-Golomb 哥伦布编码</a></li>
-  <li><a href="#cavlc-" id="markdown-toc-cavlc-">CAVLC 基于上下文自适应的可变长编码</a></li>
+  <li><a href="#cavlc-" id="markdown-toc-cavlc-">CAVLC 基于上下文自适应的可变长编码</a>    <ul>
+      <li><a href="#cavlc--1" id="markdown-toc-cavlc--1">CAVLC 的基本原理</a></li>
+      <li><a href="#cavlc--2" id="markdown-toc-cavlc--2">CAVLC 的上下文模型</a></li>
+      <li><a href="#cavlc--3" id="markdown-toc-cavlc--3">CAVLC 的编码过程</a></li>
+      <li><a href="#cavlc--4" id="markdown-toc-cavlc--4">CAVLC 编码示例</a></li>
+    </ul>
+  </li>
   <li><a href="#cabac-" id="markdown-toc-cabac-">CABAC 基于上下文的自适应二进制算术熵编码</a></li>
   <li><a href="#section" id="markdown-toc-section">参考文献</a></li>
 </ul>
@@ -121,6 +127,294 @@
 <h2 id="exp-golomb-">Exp-Golomb 哥伦布编码</h2>
 
 <h2 id="cavlc-">CAVLC 基于上下文自适应的可变长编码</h2>
+
+<h3 id="cavlc--1">CAVLC 的基本原理</h3>
+
+<p>熵编码是无损压缩编码方法，它生成的码流可以经解码无失真地恢复出原数据。在<code>H.264</code>中的<code>CAVLC</code>（基于上下文自适应的可变长编码）中，通过
+根据已编码句法元素的情况动态调整编码中使用的码表，取得了极高的压缩比。</p>
+
+<p><code>CAVLC</code>用于亮度和色度残差数据的编码。残差经过变换量化后的数据表现出如下特性：<code>4*4</code>块数据经过预测、变换、量化后，非零系数主要集中在
+低频部分，而高频系数大部分是零；量化后的数据经过<code>zig-zag</code>扫描，DC 系数附近的非零系数值较大，而高频位置上的非零系数值大部分是+1和-1;
+相邻的<code>4*4</code>块的非零系数的数目是相关的。<code>CAVLC</code>充分利用残差经过整数变换、量化后数据的特性进行压缩，进一步减少数据中的冗余信息，为<code>H.264</code>卓越的编码效率奠定了基础。</p>
+
+<h3 id="cavlc--2">CAVLC 的上下文模型</h3>
+
+<p>利用相邻已编码符号所提供的相关性，为索要编码的符号选择合适的上下文模型。利用合适的上下文模型，就可以大大降低符号间的冗余度。在<code>CAVLC</code>中上下文模型的选择主要体现在两个方面，非零系数
+编码所需表格的选择以及拖尾系数后缀长度的更新。</p>
+
+<h3 id="cavlc--3">CAVLC 的编码过程</h3>
+
+<ul>
+  <li>编码非零系数的数目(TotalCoeffs)以及拖尾系数的数目(TrailingOnes)</li>
+</ul>
+
+<p>非零系数数目的范围是从 0 到 16，拖尾细数数目的范围是从 0 到 3.如果+1/-1的个数大于 3 个，只有最后 3 个被视为脱位系数，其余的被视为普通的非零系数。
+对非零系数数目和拖尾系数数目的编码是通过查表的方式，共有 4 个变长表格和 1 个定长表格可供选择。对非零系数数目和拖尾细数数目的编码是通过查表的方式，
+共有 4 个变长表格和 1 个定长表格可供选择。其中的定长表格的码字是 6 个比特长，高 4 位表示非零系数的个数(TotalCoeffs)，最低两位表示拖尾系数的个数(TrailingOnes)。</p>
+
+<p>表格的选择是根据变量NC（Number Current,当前块值）的值来选择的，在求变量 NC 值得过程中，体现了基于上下文的思想。除了色度的直流系数外，其他系数类型的 NC 值是根据当前
+块左边<code>4*4</code>块的非零细数数目(NA)和当前块上面<code>4*4</code>块的非零系数数目(NB)求得的。当输入的系数是色度的直流系数时，NC=-1。求 NC 的过程见表6.10，X 表示与当前快同属于一个片并可用。
+选择非零系数数目和拖尾细数数目的编码表格的过程见表。</p>
+
+<p>计算 NC 的值</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">上面的块(NB)</th>
+      <th style="text-align: center">左边的块(NA)</th>
+      <th style="text-align: center">NC</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center">(NA+NB)/2</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">NA</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">X</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">NB</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">0</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>选择非零系数数目和拖尾系数数目的编码表格</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">NC</th>
+      <th style="text-align: center">表格</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0&lt;=NC&lt;2</td>
+      <td style="text-align: center">变长表格1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2&lt;=NC&lt;4</td>
+      <td style="text-align: center">变长表格2</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">5&lt;=NC&lt;8</td>
+      <td style="text-align: center">变长表格3</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">NC=-1</td>
+      <td style="text-align: center">变长表格4</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">NC&gt;=8</td>
+      <td style="text-align: center">定长表格</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>编码每个拖尾系数的符号</li>
+</ul>
+
+<p>对于每个拖尾系数(+1/-1)只需要指明其符号，其符号用一个比特表示(0 表示+, 1 表示-)。编码的顺序是按照反向扫描的顺序，从高频数据开始。</p>
+
+<ul>
+  <li>编码除了拖尾系数之外的非零系数的副值(Levels)</li>
+</ul>
+
+<p>非零系数的幅值(Levels)的组成分为两个部分，前缀(level_prefix)和后缀(level_suffix)。<code>levelSuffixsSize</code>和<code>suffixLength</code>是编码过程
+中需要使用的两个变量。后缀是长度为<code>LevelSuffixsSize</code>位的无符号整数。通常情况下变量<code>levelSuffixsSize</code>的值等于变量<code>suffixLenght</code>的值，有两种情况例外：<br />
+1. 当前缀等于 14 时，<code>suffixLength</code>等于 0, <code>levelSuffixsSize</code>等于 4.<br />
+2. 当前缀等于 15 时，<code>levelSuffixsSize</code>等于 12.</p>
+
+<p>变量<code>suffixLength</code>是基于上下文模式自适应更新的，<code>suffixLength</code>的更新与当前的<code>suffixLength</code>的值以及已经解码好的非零系数的值(Level)有关。<code>suffixLength</code>数值
+的初始化以及更新过程如下所示：<br />
+1. 普通情况下suffixLength 初始化为0，但是当块中有多余10个非零系数并且其中拖尾系数的数目少于3个，suffixLength初始化为1.
+2. 编码在最高频率位置上的非零系数。
+3. 如果当前已经解码好的非零系数值大于预先定义好的阈值，变量suffixLength加1.</p>
+
+<p>决定是否要将变量 suffixLength 的值加一的阈值如下表，第一个阈值是0，表示在第一个非零系数被编码后，suffixLength 的值总是增加 1.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">当前suffixLength</th>
+      <th style="text-align: center">阈值</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">0</td>
+      <td style="text-align: center">0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">3</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">6</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">12</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">24</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">5</td>
+      <td style="text-align: center">48</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">6</td>
+      <td style="text-align: center">N/A</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>编码最后一个非零系数前零的数目(TotalZeros)</li>
+</ul>
+
+<p><code>TotalZeros</code>指的是在最后一个非零系数前零的数目，此非零系数指的是按照正向扫描的最后一个非零系数。例如：已知一串系数<code>00503000100-10000</code>，最后一个非零系数是-1,
+<code>TotalZeros</code>的值等于2+3+1+2=8。因为非零系数数目(TotalCoeffs)是已知，这就决定了<code>TotalZeros</code>可能的最大值。</p>
+
+<ul>
+  <li>编码每个非零系数前零的个数(RunBefore)</li>
+</ul>
+
+<p>每个非零系数前零的个数(RunBefore)是按照反序来进行编码的，从最高频的非零系数开始。<code>RunBefore</code>在以下两种情况下是不需要编码的：<br />
+1. 最后一个非零系数(在低频位置上)前零的个数。<br />
+2. 如果没有剩余的零需要编码时，没有必要再进行 RunBefre 的编码。</p>
+
+<p>在<code>CAVLC</code>中，对每个非零系数前零的个数的编码时依赖于<code>ZerosLeft</code>的值，<code>ZerosLeft</code>表示当前非零系数左边的所有零的个数，<code>ZerosLeft</code>的初始值
+等于<code>TotalZeros</code>，在每个非零系数的<code>RunBefore</code>值编码后进行更新。用这种编码方法，有助于进一步压缩编码的比特数目。例如：如果当前<code>ZerosLft</code>等于 1， 就是
+只剩下一个零没有编码，下一个非零系数前零的数目只可能是0或1，编码只需要一个比特。</p>
+
+<h3 id="cavlc--4">CAVLC 编码示例</h3>
+
+<p>假设有一个<code>4x4</code>块数据：</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>0</td>
+      <td>-1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>2</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li><code>zig-zag</code>数据重排序：<code>0,0,5,3,2,-1,0,0,0,1...</code></li>
+  <li>非零系数的数目(TotalCoeffs) = 5</li>
+  <li>拖尾系数的数目(TrailingOnes) = 2</li>
+  <li>最后一个非零系数前零的数目(Total_zeros) = 5</li>
+  <li>变量NC = 3</li>
+</ul>
+
+<p>编码过程：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">元素</th>
+      <th style="text-align: center">数值</th>
+      <th style="text-align: center">编码</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Coeff_token</td>
+      <td style="text-align: center">TotalCoeffs=5,TraillingOnew=2</td>
+      <td style="text-align: center">0000101</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Trailing_onews_sign_flag</td>
+      <td style="text-align: center">+</td>
+      <td style="text-align: center">1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Trailing_onews_sign_flag</td>
+      <td style="text-align: center">-</td>
+      <td style="text-align: center">0</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Level(1)</td>
+      <td style="text-align: center">2(suffixLength=0)</td>
+      <td style="text-align: center">001(前缀)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Level(0)</td>
+      <td style="text-align: center">3(suffixLength=1)</td>
+      <td style="text-align: center">001(前缀)0(后缀)</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Total_zeros</td>
+      <td style="text-align: center">5</td>
+      <td style="text-align: center">101</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Run_before(4)</td>
+      <td style="text-align: center">Zreoleft=5,run_before=3</td>
+      <td style="text-align: center">010</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Run_before(3)</td>
+      <td style="text-align: center">Zreoleft=2,run_before=0</td>
+      <td style="text-align: center">1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Run_before(2)</td>
+      <td style="text-align: center">Zreoleft=2,run_before=0</td>
+      <td style="text-align: center">1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Run_before(1)</td>
+      <td style="text-align: center">Zreoleft=2,run_before=0</td>
+      <td style="text-align: center">1</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Run_before(0)</td>
+      <td style="text-align: center">Zreoleft=2,run_before=2</td>
+      <td style="text-align: center">最后一个系数不需要编码</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code>CAVLC</code>编码输出的码流：<code>0000101100010010101010111</code></p>
 
 <h2 id="cabac-">CABAC 基于上下文的自适应二进制算术熵编码</h2>
 
@@ -189,16 +483,18 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
-<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
@@ -208,23 +504,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
       </li>
     
   </ul>
@@ -344,7 +640,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2018 - 李冰 -
+  Copyright &copy; 2019 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

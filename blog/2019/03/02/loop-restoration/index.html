@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>AV1(DAV1D) 解码详解(四)之LOOP RESTORATION - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="switchable restoration framework(可切换的恢复框架) Wiener Filter 维纳滤波器 Selfguided Filter 自导向投影滤波器 参考文档 LOOP RESTORATION，环内重建滤波器，是一个重要的增强图像质量处理方法。它包含了两种滤波器， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/03/02/loop-restoration/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">AV1(DAV1D) 解码详解(四)之LOOP RESTORATION</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-03-02T18:02:55-08:00'><span class='date'>2019 年 03 月 02 日</span> <span class='time'>6:02 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#switchable-restoration-framework" id="markdown-toc-switchable-restoration-framework">switchable restoration framework(可切换的恢复框架)</a></li>
+  <li><a href="#wiener-filter-" id="markdown-toc-wiener-filter-">Wiener Filter 维纳滤波器</a></li>
+  <li><a href="#selfguided-filter-" id="markdown-toc-selfguided-filter-">Selfguided Filter 自导向投影滤波器</a></li>
+  <li><a href="#section" id="markdown-toc-section">参考文档</a></li>
+</ul>
+
+<p>LOOP RESTORATION，环内重建滤波器，是一个重要的增强图像质量处理方法。它包含了两种滤波器，编码器会从两者中选择其一。Wiener Filter(维纳滤波器)采用可分离的对称设计。SelfGuided(自导向投影滤波器)使用两个重建信号的线性组合来近似真实信号。编码器通过比较滤波结果，选择合适的参数，并传输给解码器。</p>
+
+<!--more-->
+
+<p>图像重建是一个比较成熟的领域，它包含了很多专业技术可用，比如 deblocking、deblurring、deringring、debanding、denoising、constrast enhancement、sharpening 和 resolution enhancement。</p>
+
+<h2 id="switchable-restoration-framework">switchable restoration framework(可切换的恢复框架)</h2>
+
+<p>在<code>AV1</code>中实现的 restoration 工具是可切换的恢复框架，该框架中 restoration 工具在每个 tile 之间切换。restoration 的 tile size 是可选的，包括<code>256x256</code>、<code>128x128</code>、<code>64x64</code>。通常情况下，对高分辨率的源，选择更大的 tile size。
+对每一帧和每个组件(Y/CbCr)，<code>frame_restoration_type</code>符号会被发送。对于 Y 组件，符号有如下几个值：</p>
+
+<ul>
+  <li>RESTORE_NOEN: 不恢复帧。</li>
+  <li>RESTORE_WIENER: 帧中的每个 tile 可能不恢复或者使用 wiener 滤波。</li>
+  <li>RESTORE_SGRPROJ：帧中的每个 tile 可能不恢复或者使用 self-guided 滤波。</li>
+  <li>RESTORE_DOMTXFMRF: 帧中的每个 tile 可能不恢复或者使用 Domain Transform Recursive 滤波。</li>
+  <li>RESTORE_SWITCHABLE: 帧中的每个 tile 可能不恢复或者使用任何支持的滤波工具。</li>
+</ul>
+
+<p>对 chroma components 来说，只有上面的前三个滤波。</p>
+
+<p>根据每个 component 的帧恢复类型，对每个 tile 会有额外的信息来表示实际的恢复类型，如有需要，可能也会有额外的信息。编码器会根据使用的 restoration 来对合适的 RD。解码器只是将受到的信息解码出来并用到滤波器上。</p>
+
+<p>注意：除了 domain transform filter外，其他的滤波器在解码器至少需要 3 行未滤波的像素。此外，解码器操作足够简单，对硬件非常友好。也正因为这个原因，AV1 解码器中删除了 Domain Transform filter。</p>
+
+<h2 id="wiener-filter-">Wiener Filter 维纳滤波器</h2>
+
+<p>Degraded 帧的每个像素都经过维纳滤波，维纳滤波的系数存在码流中。因为归一化和对称性，对于垂直和水平滤波器，只需要从编码端传递三个参数。编码器决定使用的滤波抽头(filter tap),解码端只是简单的使用从码流中获取的滤波抽头。</p>
+
+<p>分析<code>DAV1D</code>解码中，维纳滤波主要分为三步：</p>
+
+<ul>
+  <li>填充数据(padding)，此步骤主要目的是为后面的滤波做准备，将后面用到的像素汇集到一起。因为此步骤并没有改变一些像素的值，只是为了后面的滤波更加方便，所以该步骤在优化时，可以去掉，直接进行滤波，这样就少了一步数据拷贝，可以提升解码效率，在它的 ARM 汇编的实现中，就是这样做的。</li>
+  <li>水平滤波。该步通过水平滤波，将上面的填充数据滤波到另外一个临时数组中，水平滤波后的数据时为下一步的垂直滤波做数据准备的。</li>
+  <li>垂直滤波。该步通过垂直滤波，将水平滤波结束的数据重新放回最初原始数据的位置，从而完成对像素的整个维纳滤波。</li>
+</ul>
+
+<p><img src="/images/av1_lr/wiener_filter.png" /></p>
+
+<h2 id="selfguided-filter-">Selfguided Filter 自导向投影滤波器</h2>
+
+<h2 id="section">参考文档</h2>
+
+<ol>
+  <li><a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">AV1 Bitstream and Decoding Process</a></li>
+  <li><a href="https://jmvalin.ca/papers/AV1_tools.pdf">An Overview of Core Coding Tools in the AV1 Video Codec</a></li>
+  <li><a href="https://static1.squarespace.com/static/56ac12221f40397fbfd21993/t/59cf3d9a2278e777855714bb/1506753947391/0000265.pdf">A SWITCHABLE LOOP-RESTORATION WITH SIDE-INFORMATION FRAMEWORK FOR THE EMERGING AV1 VIDEO CODEC</a></li>
+</ol>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2019-03-02T18:02:55-08:00'><span class='date'>2019 年 03 月 02 日</span> <span class='time'>6:02 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/av1/'>av1</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/03/02/loop-restoration/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/03/02/loop-restoration/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2019/01/28/av1-cdef-filter/" title="Previous Post: AV1(DAV1D) 解码详解(三)之CDEF">&laquo; AV1(DAV1D) 解码详解(三)之CDEF</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2019/04/13/profiler-gprof/" title="Next Post: 性能优化之性能分析工具gprof">性能优化之性能分析工具gprof &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2019 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

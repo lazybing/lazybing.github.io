@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>如何理解内存对齐 - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="数据对齐会影响到计算机访问内存以及占用内存的空间大小。 对齐要求 填充 结构体的对齐和填充 结构体成员重排 可读性与缓存局部性 代码测试示例 参考文档 对齐要求 在X86或ARM处理器中，基本 C 数据类型通常并不存储于内存中的随机字节地址。实际情况是，除char外，
+所有其他类型都有对齐要求： &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/08/22/memory-alignment/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">如何理解内存对齐</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2018-08-22T08:23:49-07:00'><span class='date'>2018 年 08 月 22 日</span> <span class='time'>8:23 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>数据对齐会影响到计算机访问内存以及占用内存的空间大小。</p>
+
+<!--more-->
+
+<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">对齐要求</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">填充</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">结构体的对齐和填充</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">结构体成员重排</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">可读性与缓存局部性</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">代码测试示例</a></li>
+  <li><a href="#section-6" id="markdown-toc-section-6">参考文档</a></li>
+</ul>
+
+<h3 id="section">对齐要求</h3>
+
+<p>在<code>X86</code>或<code>ARM</code>处理器中，基本 C 数据类型通常并不存储于内存中的随机字节地址。实际情况是，除<code>char</code>外，
+所有其他类型都有对齐要求：<code>char</code>可起始于任意字节地址，2 字节的 short 必须从偶数字节地址开始，4 字节<code>int</code>或<code>float</code>必须
+从能被 4 整除的地址开始，8 比特的<code>long</code>和<code>double</code>必须从能被 4 整除的地址开始，8 比特的<code>long</code>和<code>double</code>必须从
+能被 8 整除的地址开始。无论<code>signed(有符号)</code>还是<code>unsigned(无符号)</code>都不受影响。</p>
+
+<p>简言之，<code>X86</code>和<code>ARM</code>的基本 C 类型是<code>自对齐(self-aligned)</code>的。关于指针，无论 32 位还是 64 位也都是自对齐的。</p>
+
+<p>自对齐可令访问速度更快，因为它有利于生成单指令(single-instruction)存取这些类型的数据。另一方面，如若没有对齐约束，可能
+最终不得不通过两个或更多指令访问跨越机器字边界的数据。字符数据是种特殊情况，因其始终处在单一机器字中，所以无论存取何处的字符数据，
+开销都是一致的。这也就是它不需要对齐的原因。</p>
+
+<h3 id="section-1">填充</h3>
+
+<p>假设我们有如下一段 C 代码：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int function(void)
+</span><span class="line">{
+</span><span class="line">    char *pchar;
+</span><span class="line">    char ch;
+</span><span class="line">    int idx;
+</span><span class="line">    ...
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<p>这里的占用字节空间如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">char *pchar;    //4 or 8 bytes
+</span><span class="line">char ch;        //1 byte
+</span><span class="line">char pad[3];    //3 bytes, 3 个字节的空间被浪费掉了
+</span><span class="line">int idx;        //4 bytes
+</span><span class="line">...</span></code></pre></td></tr></table></div></figure>
+
+<p>如果 <code>x </code>为 2 字节 short：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">char *p;
+</span><span class="line">char c;
+</span><span class="line">short x;</span></code></pre></td></tr></table></div></figure>
+
+<p>时间分布为:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">char *p;    //4 or 8 bytes
+</span><span class="line">char c;     //1 byte
+</span><span class="line">char pad[1];    //1 byte, 1 字节的空间被浪费掉了
+</span><span class="line">short x;        //2 bytes</span></code></pre></td></tr></table></div></figure>
+
+<p>更多示例，请参照最后给出的程序示例。</p>
+
+<h3 id="section-2">结构体的对齐和填充</h3>
+
+<p>通常情况下，结构体实例以其最宽的标量成员为基准进行对齐。编译器之所以如此，是因为此乃确保所有成员自对齐，实现快速访问最简便的方法。</p>
+
+<p>思考如下的结构体：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">struct foo1{
+</span><span class="line">    char *p;
+</span><span class="line">    char c;
+</span><span class="line">    long x;
+</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
+
+<p>64 位系统中，任何<code>struct foo1</code>的实例都采用 8 字节对齐，其内存分布如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">struct foo1{
+</span><span class="line">    char *p;    //8 bytes
+</span><span class="line">    char c;     //1 byte
+</span><span class="line">    char pad[7];    // 7 bytes
+</span><span class="line">    long x;         // 8 bytes
+</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
+<p>更多示例，请参照最后给出的程序示例。</p>
+
+<h3 id="section-3">结构体成员重排</h3>
+
+<p>理解了结构体成员的对齐后，可以看到，最简单的节省内存的方式，是按对齐递减重新对结构体成员排序。即让所有指针对齐成员排在最前面，因为
+在 64 为系统中它们占用 8 字节；然后是 4 字节的 int；再然后是 2 字节的 short，最后是字符。</p>
+
+<p>以简单的链表结构为例：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">struct foo7{
+</span><span class="line">    char c;
+</span><span class="line">    struct foo7 *p;
+</span><span class="line">    short x;
+</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
+<p><code>sizeof(foo7)</code>占用 24 字节。如果按照长度重排，可以得到:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">struct foo8{
+</span><span class="line">    struct foo8 *p;
+</span><span class="line">    short x;
+</span><span class="line">    char c;
+</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
+
+<p>重新打包后，空间降低为 16 字节。</p>
+
+<h3 id="section-4">可读性与缓存局部性</h3>
+
+<p>笨拙地、机械地重排结构体可能有损可读性。最好重排成员：将语义相关的数据放在一起，形成连贯的组。最理想的情况是，结构体的设计应与程序的设计相通。</p>
+
+<h3 id="section-5">代码测试示例</h3>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+<span class="line-number">63</span>
+<span class="line-number">64</span>
+<span class="line-number">65</span>
+<span class="line-number">66</span>
+<span class="line-number">67</span>
+<span class="line-number">68</span>
+<span class="line-number">69</span>
+<span class="line-number">70</span>
+<span class="line-number">71</span>
+<span class="line-number">72</span>
+<span class="line-number">73</span>
+<span class="line-number">74</span>
+<span class="line-number">75</span>
+<span class="line-number">76</span>
+<span class="line-number">77</span>
+<span class="line-number">78</span>
+<span class="line-number">79</span>
+<span class="line-number">80</span>
+<span class="line-number">81</span>
+<span class="line-number">82</span>
+<span class="line-number">83</span>
+<span class="line-number">84</span>
+<span class="line-number">85</span>
+<span class="line-number">86</span>
+<span class="line-number">87</span>
+<span class="line-number">88</span>
+<span class="line-number">89</span>
+<span class="line-number">90</span>
+<span class="line-number">91</span>
+<span class="line-number">92</span>
+<span class="line-number">93</span>
+<span class="line-number">94</span>
+<span class="line-number">95</span>
+<span class="line-number">96</span>
+<span class="line-number">97</span>
+<span class="line-number">98</span>
+<span class="line-number">99</span>
+<span class="line-number">100</span>
+<span class="line-number">101</span>
+<span class="line-number">102</span>
+<span class="line-number">103</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;stdbool.h&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo1</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">long</span> <span class="n">x</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo2</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>      <span class="cm">/* 1 byte */</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">pad</span><span class="p">[</span><span class="mi">7</span><span class="p">];</span> <span class="cm">/* 7 bytes */</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>     <span class="cm">/* 8 bytes */</span>
+</span><span class="line">    <span class="kt">long</span> <span class="n">x</span><span class="p">;</span>      <span class="cm">/* 8 bytes */</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo3</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>     <span class="cm">/* 8 bytes */</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>      <span class="cm">/* 1 byte */</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo4</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">short</span> <span class="n">s</span><span class="p">;</span>     <span class="cm">/* 2 bytes */</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>      <span class="cm">/* 1 byte */</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo5</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">foo5_inner</span> <span class="p">{</span>
+</span><span class="line">        <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class="line">        <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span> <span class="n">inner</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo6</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">short</span> <span class="n">s</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">flip</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">nybble</span><span class="p">:</span><span class="mi">4</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">septet</span><span class="p">:</span><span class="mi">7</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo7</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">bigfield</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">littlefield</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo8</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">bigfield1</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">littlefield1</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">bigfield2</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">littlefield2</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo9</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">bigfield1</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">bigfield2</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">littlefield1</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="nl">littlefield2</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo10</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">foo10</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo11</span> <span class="p">{</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">foo11</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="k">struct</span> <span class="n">foo12</span> <span class="p">{</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">foo12_inner</span> <span class="p">{</span>
+</span><span class="line">        <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class="line">        <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span> <span class="n">inner</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class="line"><span class="p">};</span>
+</span><span class="line">
+</span><span class="line"><span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(char *)        = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(long)          = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">long</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(int)           = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(short)         = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">short</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(char)          = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(float)         = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(double)        = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo1)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo1</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo2)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo2</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo3)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo3</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo4)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo4</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo5)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo5</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo6)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo6</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo7)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo7</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo8)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo8</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo9)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo9</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo10)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo10</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo11)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo11</span><span class="p">));</span>
+</span><span class="line">    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;sizeof(struct foo12)   = %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo12</span><span class="p">));</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-6">参考文档</h3>
+
+<ol>
+  <li><a href="https://github.com/ludx/The-Lost-Art-of-C-Structure-Packing">The Lost Art Of C Structure Packing</a></li>
+  <li><a href="https://wr.informatik.uni-hamburg.de/_media/teaching/wintersemester_2013_2014/epc-14-haase-svenhendrik-alignmentinc-paper.pdf">Memory Alignment</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Data_structure_alignment">Data Structure Alignment</a></li>
+</ol>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2018-08-22T08:23:49-07:00'><span class='date'>2018 年 08 月 22 日</span> <span class='time'>8:23 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/zong-jie-ji-lei/'>总结积累</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/08/22/memory-alignment/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/08/22/memory-alignment/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2018/05/10/csapp-program-optimization/" title="Previous Post: 深入理解计算机系统之优化程序性能">&laquo; 深入理解计算机系统之优化程序性能</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2018/09/18/linux-c-static-dynamic-library/" title="Next Post: Linux下C语言调用静态库和动态库简介">Linux下C语言调用静态库和动态库简介 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2019 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

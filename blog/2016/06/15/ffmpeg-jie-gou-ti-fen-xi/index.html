@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="AVPacket结构体解析 AVFrame结构体解析 AVCodec结构体解析 AVCodecContext结构体解析 AVStream结构体解析 FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中， &hellip;">
+  <meta name="description" content="AVPacket结构体解析 AVFrame结构体解析 AVCodec结构体解析 AVCodecContext结构体解析 AVStream结构体解析 AVFormatContext 结构体解析 AVIOContext 结构体解析 参考文章 FFMpeg 作为音视频领域的开源工具， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -104,6 +104,9 @@
   <li><a href="#avcodec" id="markdown-toc-avcodec">AVCodec结构体解析</a></li>
   <li><a href="#avcodeccontext" id="markdown-toc-avcodeccontext">AVCodecContext结构体解析</a></li>
   <li><a href="#avstream" id="markdown-toc-avstream">AVStream结构体解析</a></li>
+  <li><a href="#avformatcontext-" id="markdown-toc-avformatcontext-">AVFormatContext 结构体解析</a></li>
+  <li><a href="#aviocontext-" id="markdown-toc-aviocontext-">AVIOContext 结构体解析</a></li>
+  <li><a href="#section" id="markdown-toc-section">参考文章</a></li>
 </ul>
 
 <p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中，经常使用到的结构体的含义以及使用场景。
@@ -433,8 +436,152 @@
 
 <h2 id="avcodeccontext">AVCodecContext结构体解析</h2>
 
+<p>AVCodecContext 可能是最复杂的结构体了。因为结构体内的变量非常多，不可能一一分析，而且有的变量是编码时候用到、有的是解码时候用到，此处只对几个常用的变量做简要的记录。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVCodecContext</span><span class="p">{</span>
+</span><span class="line">	<span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">log_level_offset</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVMediaType</span> <span class="n">codec_type</span><span class="p">;</span>
+</span><span class="line">	<span class="k">const</span> <span class="k">struct</span> <span class="n">AVCodec</span> <span class="o">*</span><span class="n">codec</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVCodecID</span>     <span class="n">codec_id</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">codec_tag</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class="line">	<span class="k">struct</span> <span class="n">AVCodecInternal</span> <span class="o">*</span><span class="n">internal</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">bit_rate</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">bit_rate_tolerance</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">global_quality</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">compression_level</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">flags2</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">uint8_t</span> <span class="o">*</span><span class="n">extradata</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">extradata_size</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">time_base</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">ticks_per_frame</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">delay</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">coded_width</span><span class="p">,</span> <span class="n">coded_height</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">gop_size</span><span class="p">;</span>
+</span><span class="line">	<span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="n">pix_fmt</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">draw_horiz_band</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="n">AVFrame</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">int</span> <span class="n">offset</span><span class="p">[</span><span class="n">AV_NUM_DATA_POINTERS</span><span class="p">],</span>
+</span><span class="line">                            <span class="kt">int</span> <span class="n">y</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">	<span class="k">enum</span> <span class="nf">AVPixelFormat</span> <span class="p">(</span><span class="o">*</span><span class="n">get_format</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVCodecContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="k">const</span> <span class="k">enum</span> <span class="n">AVPixelFormat</span> <span class="o">*</span> <span class="n">fmt</span><span class="p">);</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">max_b_frames</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">b_quant_factor</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">b_frame_strategy</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">b_quant_offset</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">has_b_frames</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">mpeg_quant</span><span class="p">;</span> 		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">i_quant_factor</span><span class="p">;</span> 	<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">i_quant_offset</span><span class="p">;</span> 	<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">lumi_masking</span><span class="p">;</span>		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">temporal_cplx_masking</span><span class="p">;</span> <span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">spatial_cplx_masking</span><span class="p">;</span>  <span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">p_masking</span><span class="p">;</span>		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">float</span> <span class="n">dark_masking</span><span class="p">;</span>		<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">slice_count</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">prediction_method</span><span class="p">;</span>	<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="o">*</span><span class="n">slice_offset</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVRational</span> <span class="n">sample_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">me_cmp</span><span class="p">;</span>				<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">me_sub_cmp</span><span class="p">;</span>			<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">mb_cmp</span><span class="p">;</span>				<span class="cm">/*decoding: unused*/</span>
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line"><span class="p">}</span><span class="n">AVCodecContext</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>AVMediaType codec_type:编解码器的类型，如音频、视频、字幕。</li>
+  <li>AVCdec *codec:采用的解码器 AVCodec。</li>
+  <li>bit_rate: 平均比特率。</li>
+  <li>int width, height: 视频的宽高。</li>
+  <li>int refs: 运动估计参考帧的个数。</li>
+  <li>int sample_rate: 采样率。</li>
+  <li>int channels: 声道数。</li>
+</ul>
+
+<p>AVCodecContext 使用 avcodec_alloc_context3 分配，该函数除了分配 AVCodecContext 外，还会初始化默认的字段。分配的内存必须通过 avcodec_free_context 释放。</p>
+
+<p>上面提到的几个结构体 AVCodec/AVCodecContext，联合使用，通常是如下形式：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">avcodec_register_all</span><span class="p">();</span>
+</span><span class="line"><span class="p">...</span>
+</span><span class="line"><span class="n">codec</span> <span class="o">=</span> <span class="n">avcodec_find_decoder</span><span class="p">(</span><span class="n">AV_CODEC_ID_H264</span><span class="p">);</span>
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">codec</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="n">context</span> <span class="o">=</span> <span class="n">avcodec_alloc_context3</span><span class="p">(</span><span class="n">codec</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span><span class="p">(</span><span class="n">avcodec_open2</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">codec</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
 <h2 id="avstream">AVStream结构体解析</h2>
+
 <p>AVStream用于存储一个视频流、音频流的结构体。</p>
+
 <figure class="code"><figcaption><span>AVStream </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
 <span class="line-number">2</span>
@@ -462,6 +609,45 @@
 <span class="line-number">24</span>
 <span class="line-number">25</span>
 <span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+<span class="line-number">63</span>
+<span class="line-number">64</span>
+<span class="line-number">65</span>
 </pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVStream</span><span class="p">{</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">index</span><span class="p">;</span>	<span class="c1">//stream index in AVFormatContext</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">id</span><span class="p">;</span>
@@ -487,13 +673,295 @@
 </span><span class="line">    <span class="kt">int</span> <span class="n">last_IP_duration</span><span class="p">;</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">probe_packets</span><span class="p">;</span>
 </span><span class="line">	<span class="kt">int</span> <span class="n">codec_info_nb_frames</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* av_read_frame() support */</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVStreamParseType</span> <span class="n">need_parsing</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">AVCodecParserContext</span> <span class="o">*</span><span class="n">parser</span><span class="p">;</span>
+</span><span class="line">    <span class="k">struct</span> <span class="n">AVPacketList</span> <span class="o">*</span><span class="n">last_in_packet_buffer</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVProbeData</span> <span class="n">probe_data</span><span class="p">;</span>
+</span><span class="line">	<span class="cp">#define MAX_REORDER_DELAY 16</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pts_buffer</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">AVIndexEntry</span> <span class="o">*</span><span class="n">index_entries</span><span class="p">;</span> <span class="cm">/**&lt; Only used if the format does not</span>
+</span><span class="line"><span class="cm">                                    support seeking natively. */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_index_entries</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">index_entries_allocated_size</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVRational</span> <span class="n">r_frame_rate</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">stream_identifier</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">interleaver_chunk_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">interleaver_chunk_duration</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">request_probe</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">skip_to_keyframe</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">skip_samples</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">start_skip_samples</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">first_discard_sample</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">last_discard_sample</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">nb_decoded_frames</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">mux_ts_offset</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pts_wrap_reference</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">pts_wrap_behavior</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">update_initial_durations_done</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pts_reorder_error</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">pts_reorder_error_count</span><span class="p">[</span><span class="n">MAX_REORDER_DELAY</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">last_dts_for_order_check</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">dts_ordered</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="n">dts_misordered</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">inject_global_side_data</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">recommended_encoder_configuration</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVRational</span> <span class="n">display_aspect_ratio</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">struct</span> <span class="n">FFFrac</span> <span class="o">*</span><span class="n">priv_pts</span><span class="p">;</span>
 </span><span class="line"><span class="p">}</span><span class="n">AVStream</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 <ul>
   <li>index:标识该视频流、音频流，是 AVFormatContext 中的流索引。</li>
-  <li>id：</li>
+  <li>AVCodecContext *codec:指向该视频、音频流的内容。</li>
+  <li>AVRational time_base:通过该值可以把 PTS/DTS 转化为真正的时间。</li>
+  <li>int64_t duration:该视频、音频流长度。</li>
+  <li>AVDictionary *metadata: 元数据信息。</li>
+  <li>AVRational avg_frame_rate: 帧率。</li>
 </ul>
+
+<h2 id="avformatcontext-">AVFormatContext 结构体解析</h2>
+
+<p>AVFormatContext 是包含码流参数比较多的结构体，
+它是 FFmpeg 解封装(flv、mp4、rmvb、avi)功能的结构体。
+一般使用 avformat_alloc_context() 来创建该结构体,使用 avformat_free_context 释放该结构体。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+<span class="line-number">63</span>
+<span class="line-number">64</span>
+<span class="line-number">65</span>
+<span class="line-number">66</span>
+<span class="line-number">67</span>
+<span class="line-number">68</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVFormatContext</span> <span class="p">{</span>
+</span><span class="line">	<span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class="line">	<span class="k">struct</span> <span class="n">AVInputFormat</span> <span class="o">*</span><span class="n">iformat</span><span class="p">;</span>
+</span><span class="line">	<span class="k">struct</span> <span class="n">AVOutputFormat</span> <span class="o">*</span><span class="n">oformat</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">void</span> <span class="o">*</span><span class="n">priv_data</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVIOContext</span> <span class="o">*</span><span class="n">pb</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">ctx_flags</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">nb_streams</span><span class="p">;</span>
+</span><span class="line">	<span class="n">AVStream</span> <span class="o">**</span><span class="n">streams</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">char</span> <span class="n">filename</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">start_time</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int64_t</span> <span class="n">duration</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">int</span> <span class="n">bit_rate</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">packet_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">max_delay</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">keylen</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">nb_programs</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVProgram</span> <span class="o">**</span><span class="n">programs</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">video_codec_id</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">audio_codec_id</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">subtitle_codec_id</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">max_index_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">max_picture_buffer</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">nb_chapters</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVChapter</span> <span class="o">**</span><span class="n">chapters</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVDictionary</span> <span class="o">*</span><span class="n">metadata</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">start_time_realtime</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">fps_probe_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">error_recognition</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVIOInterruptCB</span> <span class="n">interrupt_callback</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">max_interleave_delta</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">strict_std_compliance</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">event_flags</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">max_ts_probe</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">avoid_negative_ts</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">ts_id</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">audio_preload</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">max_chunk_duration</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">max_chunk_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">use_wallclock_as_timestamps</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">avio_flags</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVDurationEstimationMethod</span> <span class="n">duration_estimation_method</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">skip_initial_bytes</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">correct_ts_overflow</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">seek2any</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">probe_score</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">format_probesize</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">codec_whitelist</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">char</span> <span class="o">*</span><span class="n">format_whitelist</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVFormatInternal</span> <span class="o">*</span><span class="n">internal</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">io_repositioned</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">video_codec</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">audio_codec</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">subtitle_codec</span><span class="p">;</span>
+</span><span class="line">    <span class="n">AVCodec</span> <span class="o">*</span><span class="n">data_codec</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">metadata_header_padding</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">;</span>
+</span><span class="line">    <span class="n">av_format_control_message</span> <span class="n">control_message_cb</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">output_ts_offset</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">dump_separator</span><span class="p">;</span>
+</span><span class="line">    <span class="k">enum</span> <span class="n">AVCodecID</span> <span class="n">data_codec_id</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">open_cb</span><span class="p">)(</span><span class="k">struct</span> <span class="n">AVFormatContext</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="n">AVIOContext</span> <span class="o">**</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="k">const</span> <span class="n">AVIOInterruptCB</span> <span class="o">*</span><span class="n">int_cb</span><span class="p">,</span> <span class="n">AVDictionary</span> <span class="o">**</span><span class="n">options</span><span class="p">);</span>	
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>struct AVInputFormat *iformat; 输入数据的封装格式，由<code>avformat_open_input</code>设置，仅仅在<code>Demuxing</code>使用。</li>
+  <li>struct AVOutputFormat *oformat; 输出数据的封装格式，必须由使用者在<code>avformat_write_header</code>前设置，由<code>Muxing</code>使用。</li>
+  <li>priv_data，在<code>muxing</code>中，由<code>avformat_write_header</code>设置；在<code>demuxing</code>中，由<code>avformat_open_input</code>设置。</li>
+  <li>AVIOContext *pb;输入数据的缓存。如果<code>iformat/oformat.flags</code>设置为<code>AVFMT_NOFILE</code>的话，该字段不需要设置。对于<code>Demuxing</code>
+,需要在<code>avformat_open_input</code>前设置，或由<code>avformat_open_input</code>设置；对于<code>Muxing</code>,在<code>avformat_write_header</code>前设置。</li>
+  <li>ctx_flags,码流的信息，表明码流属性的的信号。由<code>libavformat</code>设置，例如<code>AVFMTCTX_NOHEADER</code>。</li>
+  <li>nb_streams 指<code>AVFormatContext.streams</code>的数量，必须由<code>avformat_new_stream</code>设置，不能由其他代码改动。</li>
+  <li>AVStream **streams;文件中所有码流的列表，新的码流创建使用<code>avformat_new_stream</code>函数。<code>Demuxing</code>中，码流由<code>avformat_open_input</code>创建。
+如果<code>AVFMTCTX_NOHEADER</code>被设置，新的码流可以出现在<code>av_read_frame</code>中。<code>Muxing</code>中，码流在<code>avformat_write_header</code>之前由用户创建。它的释放是由<code>avformat_free_context</code>完成的。</li>
+  <li>filename,输入或输出的文件名，<code>Demuxing</code>中由<code>avformat_open_input</code>设置，<code>Muxing</code>中在使用<code>avformat_write_header</code>前由调用者设置。</li>
+  <li>int64_t duration;码流的时长。</li>
+  <li>bit_rate,比特率。</li>
+  <li>enum AVCodecID video_codec_id;</li>
+  <li>AVDictionary *metadata; 元数据，适用于整个文件。</li>
+</ul>
+
+<h2 id="aviocontext-">AVIOContext 结构体解析</h2>
+
+<p>AVIOContext 是 FFMpeg 管理输入输出数据的结构体。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AVIOContext</span><span class="p">{</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">AVClass</span> <span class="o">*</span><span class="n">av_class</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>  <span class="cm">/**&lt; Start of the buffer. */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">buffer_size</span><span class="p">;</span>        <span class="cm">/**&lt; Maximum buffer size */</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buf_ptr</span><span class="p">;</span> <span class="cm">/**&lt; Current position in the buffer */</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buf_end</span><span class="p">;</span> <span class="cm">/**&lt; End of the data */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">read_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">write_packet</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">int</span> <span class="n">buf_size</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">*</span><span class="n">seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int64_t</span> <span class="n">offset</span><span class="p">,</span> <span class="kt">int</span> <span class="n">whence</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">pos</span><span class="p">;</span>            <span class="cm">/**&lt; position in the file of the current buffer */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">must_flush</span><span class="p">;</span>         <span class="cm">/**&lt; true if the next seek should flush */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">eof_reached</span><span class="p">;</span>        <span class="cm">/**&lt; true if eof reached */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">write_flag</span><span class="p">;</span>         <span class="cm">/**&lt; true if open for writing */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">max_packet_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">checksum_ptr</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="nf">long</span> <span class="p">(</span><span class="o">*</span><span class="n">update_checksum</span><span class="p">)(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">checksum</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">error</span><span class="p">;</span>              <span class="cm">/**&lt; contains the error code or 0 if no error happened */</span>
+</span><span class="line">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">read_pause</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pause</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="p">(</span><span class="o">*</span><span class="n">read_seek</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">opaque</span><span class="p">,</span> <span class="kt">int</span> <span class="n">stream_index</span><span class="p">,</span>
+</span><span class="line">                         <span class="kt">int64_t</span> <span class="n">timestamp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">seekable</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">maxsize</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">direct</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">bytes_read</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">seek_count</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">writeout_count</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">orig_buffer_size</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">short_seek_threshold</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<ul>
+  <li>unsigned char *buffer:缓存开始位置。</li>
+  <li>int buffer_size:缓存大小。</li>
+  <li>unsigned char *buf_ptr:当前指针读取到的位置。</li>
+  <li>unsigned char *buf_end:缓存结束的位置。</li>
+</ul>
+
+<h2 id="section">参考文章</h2>
+<p>1.<a href="http://blog.csdn.net/leixiaohua1020/article/details/14214577">FFMPEG结构体分析：AVFrame</a><br />
+2.<a href="http://www.jianshu.com/p/18fa498eb19e">FFMPEG结构体分析：AVFrame</a><br />
+3.<a href="http://blog.csdn.net/shaqoneal/article/details/16959671"> FFMPeg代码分析：AVFrame结构体及其相关的函数</a></p>
 </div>
 
 
@@ -548,16 +1016,18 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
-<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
@@ -567,23 +1037,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
       </li>
     
   </ul>
@@ -703,7 +1173,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2018 - 李冰 -
+  Copyright &copy; 2019 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

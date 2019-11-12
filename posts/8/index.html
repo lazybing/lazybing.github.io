@@ -9,8 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="
-">
+  <meta name="description" content="FLV 视频标准格式标准 FLV Header FLV File Body FLV tags Audio tags Audio Data AACAUDIODATA Video tags Video Data AVCVIDEOPACKET Data tags onMetaData FFmpeg &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -86,7 +85,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2015/09/10/intra-prediction-coding/">HM 源码分析之帧内编码(二):帧内预测的实现</a></h1>
+      <h1 class="entry-title"><a href="/blog/2016/07/24/flv-parse/">媒体文件格式分析之FLV</a></h1>
     
     
       <p class="meta">
@@ -95,36 +94,7 @@
 
 
 
-<time class='entry-date' datetime='2015-09-10T07:29:40-07:00'><span class='date'>2015 年 09 月 10 日</span> <span class='time'>7:29 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content">
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/09/07/intra-prcture-prediction/">HM源码分析之帧内编码（一）：帧内编码的原理</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-09-07T20:42:26-07:00'><span class='date'>2015 年 09 月 07 日</span> <span class='time'>8:42 pm</span></time>
+<time class='entry-date' datetime='2016-07-24T00:22:21-07:00'><span class='date'>2016 年 07 月 24 日</span> <span class='time'>12:22 am</span></time>
         
       </p>
     
@@ -132,28 +102,37 @@
 
 
   <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">预测编码的原理</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">帧内预测的模式</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">亮度模式的编码</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">色度模式的编码</a></li>
+  <li><a href="#flv-" id="markdown-toc-flv-">FLV 视频标准格式标准</a>    <ul>
+      <li><a href="#flv-header" id="markdown-toc-flv-header">FLV Header</a></li>
+      <li><a href="#flv-file-body" id="markdown-toc-flv-file-body">FLV File Body</a>        <ul>
+          <li><a href="#flv-tags" id="markdown-toc-flv-tags">FLV tags</a>            <ul>
+              <li><a href="#audio-tags" id="markdown-toc-audio-tags">Audio tags</a>                <ul>
+                  <li><a href="#audio-data" id="markdown-toc-audio-data">Audio Data</a></li>
+                  <li><a href="#aacaudiodata" id="markdown-toc-aacaudiodata">AACAUDIODATA</a></li>
+                </ul>
+              </li>
+              <li><a href="#video-tags" id="markdown-toc-video-tags">Video tags</a>                <ul>
+                  <li><a href="#video-data" id="markdown-toc-video-data">Video Data</a></li>
+                  <li><a href="#avcvideopacket" id="markdown-toc-avcvideopacket">AVCVIDEOPACKET</a></li>
+                </ul>
+              </li>
+              <li><a href="#data-tags" id="markdown-toc-data-tags">Data tags</a></li>
+              <li><a href="#onmetadata" id="markdown-toc-onmetadata">onMetaData</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
     </ul>
   </li>
-  <li><a href="#section-4" id="markdown-toc-section-4">帧内预测的过程</a>    <ul>
-      <li><a href="#section-5" id="markdown-toc-section-5">相邻参考像素的获取</a></li>
-      <li><a href="#section-6" id="markdown-toc-section-6">参考像素的滤波</a></li>
-      <li><a href="#section-7" id="markdown-toc-section-7">预测像素的计算</a></li>
-    </ul>
-  </li>
+  <li><a href="#ffmpeg-flv-demuxer" id="markdown-toc-ffmpeg-flv-demuxer">FFmpeg FLV Demuxer源码分析</a></li>
 </ul>
 
-<p>预测编码(Prediction Coding)是指利用已编码的一个或几个样本值，根据某种模型或方法，对
-当前的样本值进行预测，并对样本真实值和预测值之间的差值进行编码。</p>
-
+<p><a href="https://en.wikipedia.org/wiki/Flash_Video">FLV</a> 是 FLASH VIDEO 的简称，FLV 流媒体是随着Flash MX 的推出发展而来的视频格式。FLV 一般由文件头(FLV header) 和文件体(FLV body) 组成。其中文件体(FLV body)由一些列tag组成，tag又可分成三类:audio/video/script，分别代表音频流、视频流、脚本流(关键字或文件信息之类)。
 </div>
   
   
     <footer>
-      <a rel="full-article" href="/blog/2015/09/07/intra-prcture-prediction/">阅读全文;</a>
+      <a rel="full-article" href="/blog/2016/07/24/flv-parse/">阅读全文;</a>
     </footer>
   
 
@@ -165,7 +144,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2015/09/04/the-hierarchical-of-coding-structure/">HM源码分析（一）：HEVC编码结构</a></h1>
+      <h1 class="entry-title"><a href="/blog/2016/07/20/lib-trmp-source-code-study/">RTMP协议学习（中）：源码分析</a></h1>
     
     
       <p class="meta">
@@ -174,7 +153,7 @@
 
 
 
-<time class='entry-date' datetime='2015-09-04T09:57:17-07:00'><span class='date'>2015 年 09 月 04 日</span> <span class='time'>9:57 am</span></time>
+<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
         
       </p>
     
@@ -182,23 +161,24 @@
 
 
   <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">编码分层处理架构</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">码流的语法架构</a>    <ul>
-      <li><a href="#vps-syntax-" id="markdown-toc-vps-syntax-">VPS syntax 分析</a></li>
-      <li><a href="#sps-syntax-" id="markdown-toc-sps-syntax-">SPS syntax 分析</a></li>
-      <li><a href="#pps-syntax-" id="markdown-toc-pps-syntax-">PPS syntax 分析</a></li>
-      <li><a href="#sei-syntax-" id="markdown-toc-sei-syntax-">SEI syntax 分析</a></li>
-      <li><a href="#profile-tier-and-level-syntax-" id="markdown-toc-profile-tier-and-level-syntax-">Profile Tier And Level syntax 分析</a></li>
-    </ul>
-  </li>
+  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
+  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
+  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
+  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
+  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
+  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
+  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
+  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
+  <li><a href="#download" id="markdown-toc-download">Download</a></li>
+  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
 </ul>
 
-<p>本文主要记录了 HEVC 的编码时的分层处理架构和编码完成后码流的语法结构两个方面的学习。
+<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
 </div>
   
   
     <footer>
-      <a rel="full-article" href="/blog/2015/09/04/the-hierarchical-of-coding-structure/">阅读全文;</a>
+      <a rel="full-article" href="/blog/2016/07/20/lib-trmp-source-code-study/">阅读全文;</a>
     </footer>
   
 
@@ -210,7 +190,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2015/07/01/how-to-boot-up-system/">UBoot 源码分析</a></h1>
+      <h1 class="entry-title"><a href="/blog/2016/07/17/rtmp-protocol-standard/">RTMP 协议学习（上）: 协议规范</a></h1>
     
     
       <p class="meta">
@@ -219,19 +199,65 @@
 
 
 
-<time class='entry-date' datetime='2015-07-01T07:48:51-07:00'><span class='date'>2015 年 07 月 01 日</span> <span class='time'>7:48 am</span></time>
+<time class='entry-date' datetime='2016-07-17T08:17:38-07:00'><span class='date'>2016 年 07 月 17 日</span> <span class='time'>8:17 am</span></time>
         
       </p>
     
   </header>
 
 
-  <div class="entry-content"><p>公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">1. 几个概念</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">2.字节序、字节对齐和时间格式</a></li>
+  <li><a href="#rtmp-chunk-stream" id="markdown-toc-rtmp-chunk-stream">3. RTMP Chunk Stream</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">3.1 消息格式</a></li>
+      <li><a href="#handshake" id="markdown-toc-handshake">3.2 握手(HandShake)</a>        <ul>
+          <li><a href="#section-3" id="markdown-toc-section-3">握手序列:</a></li>
+          <li><a href="#c--s-" id="markdown-toc-c--s-">C 和 S 格式：</a></li>
+          <li><a href="#handshake-diagram" id="markdown-toc-handshake-diagram">握手框图(HandShake Diagram)</a></li>
+        </ul>
+      </li>
+      <li><a href="#chunking" id="markdown-toc-chunking">3.3 分块(Chunking)</a>        <ul>
+          <li><a href="#chunk-" id="markdown-toc-chunk-">Chunk 格式</a>            <ul>
+              <li><a href="#chunk-basic-header" id="markdown-toc-chunk-basic-header">Chunk Basic Header</a></li>
+              <li><a href="#chunk-message-header" id="markdown-toc-chunk-message-header">Chunk Message Header</a></li>
+              <li><a href="#extended-timestamp" id="markdown-toc-extended-timestamp">Extended Timestamp</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><a href="#protocol-control-message" id="markdown-toc-protocol-control-message">3.4 协议控制消息(Protocol Control Message)</a>        <ul>
+          <li><a href="#set-chunk-size-1" id="markdown-toc-set-chunk-size-1">设置块大小1(Set Chunk Size 1)</a></li>
+          <li><a href="#acknowledgement-3" id="markdown-toc-acknowledgement-3">确认消息3(Acknowledgement 3)</a></li>
+          <li><a href="#window-acknowledgement-size-5" id="markdown-toc-window-acknowledgement-size-5">视窗大小确认5(Window Acknowledgement Size 5)</a></li>
+          <li><a href="#set-peer-bandwidth-6" id="markdown-toc-set-peer-bandwidth-6">设置对等带宽6(Set Peer BandWidth 6)</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#rtmprtmp-message-formats" id="markdown-toc-rtmprtmp-message-formats">4. RTMP消息格式(RTMP Message Formats)</a>    <ul>
+      <li><a href="#rtmprtmp-message-format" id="markdown-toc-rtmprtmp-message-format">4.1 RTMP消息格式(RTMP Message Format)</a>        <ul>
+          <li><a href="#message-header" id="markdown-toc-message-header">消息头部(Message Header)</a></li>
+          <li><a href="#message-payload" id="markdown-toc-message-payload">消息负载(Message Payload)</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-4" id="markdown-toc-section-4">4.2 使用控制消息(4)</a></li>
+    </ul>
+  </li>
+  <li><a href="#rtmprtmp-command-message" id="markdown-toc-rtmprtmp-command-message">5. RTMP指令消息(RTMP Command Message)</a>    <ul>
+      <li><a href="#types-of-message" id="markdown-toc-types-of-message">5.1 消息类型(Types of Message)</a></li>
+      <li><a href="#types-of-commands" id="markdown-toc-types-of-commands">5.2 指令类型(Types of Commands)</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">6. 参考文献</a></li>
+</ul>
+
+<p><a href="https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol">RTMP</a>(Real Time Messaging Protocol) 即实时消息传输协议，它是 Adobe 公司开发的，并且提供了官方的<a href="https://www.adobe.com/devnet/rtmp.html">文档</a>。Adobe 公司提供的RTMP协议是基于可靠传输协议(如TCP)，提供双向的信息多元化服务,其目的是在两个通信节点间传输带有时间信息的音视频并发流。其实现会针对不同的消息种类分配不同的优先级，当传输能力有限时，这就会影响流传输的排队顺序。
 </div>
   
   
     <footer>
-      <a rel="full-article" href="/blog/2015/07/01/how-to-boot-up-system/">阅读全文;</a>
+      <a rel="full-article" href="/blog/2016/07/17/rtmp-protocol-standard/">阅读全文;</a>
     </footer>
   
 
@@ -243,7 +269,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2015/05/01/create-github-blog-using-octopress/">使用Octopress 搭建个人博客</a></h1>
+      <h1 class="entry-title"><a href="/blog/2016/07/07/how-to-use-vim/">将vim打造成IDE</a></h1>
     
     
       <p class="meta">
@@ -252,7 +278,7 @@
 
 
 
-<time class='entry-date' datetime='2015-05-01T19:47:37-07:00'><span class='date'>2015 年 05 月 01 日</span> <span class='time'>7:47 pm</span></time>
+<time class='entry-date' datetime='2016-07-07T08:17:10-07:00'><span class='date'>2016 年 07 月 07 日</span> <span class='time'>8:17 am</span></time>
         
       </p>
     
@@ -260,30 +286,315 @@
 
 
   <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#octorpess" id="markdown-toc-octorpess">安装octorpess</a></li>
-  <li><a href="#octopress" id="markdown-toc-octopress">部署octopress</a></li>
-  <li><a href="#section" id="markdown-toc-section">发布新帖</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">基本配置</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">主题修改</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">添加图片</a></li>
-  <li><a href="#section-4" id="markdown-toc-section-4">添加视频</a></li>
-  <li><a href="#section-5" id="markdown-toc-section-5">添加文章目录</a></li>
-  <li><a href="#section-6" id="markdown-toc-section-6">添加表格</a></li>
-  <li><a href="#mac" id="markdown-toc-mac">多台Mac上同时使用</a>    <ul>
-      <li><a href="#mac-ssh-key--github-" id="markdown-toc-mac-ssh-key--github-">在新的Mac上创建 ssh key 并添加到 github 中。</a></li>
-      <li><a href="#section-7" id="markdown-toc-section-7">配置环境。</a></li>
-      <li><a href="#section-8" id="markdown-toc-section-8">使用技巧</a></li>
+  <li><a href="#mac-osx--gvim" id="markdown-toc-mac-osx--gvim">Mac OSX 下安装 gvim</a></li>
+  <li><a href="#section" id="markdown-toc-section">基本设置</a></li>
+  <li><a href="#vim-" id="markdown-toc-vim-">vim 对单个字符的操作</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">删除某个字符</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">替换某个字符</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">移动到某个字符</a></li>
     </ul>
   </li>
-  <li><a href="#octopresslatex" id="markdown-toc-octopresslatex">octopress中添加Latex支持</a></li>
+  <li><a href="#vim--1" id="markdown-toc-vim--1">vim 对单字的操作</a>    <ul>
+      <li><a href="#section-4" id="markdown-toc-section-4">删除某个单字</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">修改某个单字</a></li>
+      <li><a href="#section-6" id="markdown-toc-section-6">移动到某个单字</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--2" id="markdown-toc-vim--2">vim 对整行的操作</a>    <ul>
+      <li><a href="#section-7" id="markdown-toc-section-7">移动到行首或行尾</a></li>
+      <li><a href="#section-8" id="markdown-toc-section-8">移动到指定行</a></li>
+      <li><a href="#section-9" id="markdown-toc-section-9">使用标签记录并跳转到某行</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--3" id="markdown-toc-vim--3">vim 对单个文件的浏览</a>    <ul>
+      <li><a href="#vim--4" id="markdown-toc-vim--4">vim 滚动屏幕命令</a></li>
+      <li><a href="#vim--5" id="markdown-toc-vim--5">vim 切分窗口</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--6" id="markdown-toc-vim--6">vim 替换文本</a></li>
+  <li><a href="#vim--7" id="markdown-toc-vim--7">vim 对多个文件的操作</a>    <ul>
+      <li><a href="#section-10" id="markdown-toc-section-10">工程文件浏览</a></li>
+      <li><a href="#section-11" id="markdown-toc-section-11">多文档编辑</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--8" id="markdown-toc-vim--8">vim 寄存器</a></li>
+  <li><a href="#vim--9" id="markdown-toc-vim--9">vim 分屏功能</a></li>
+  <li><a href="#vim--10" id="markdown-toc-vim--10">vim 插件安装</a>    <ul>
+      <li><a href="#vundle-" id="markdown-toc-vundle-">vundle 插件管理插件</a></li>
+      <li><a href="#solarizedmolokaiphd-" id="markdown-toc-solarizedmolokaiphd-">solarized/molokai/phd 主题风格插件</a></li>
+      <li><a href="#powerline-" id="markdown-toc-powerline-">Powerline 状态栏插件</a></li>
+      <li><a href="#vim-cpp-enhanced-highlight-" id="markdown-toc-vim-cpp-enhanced-highlight-">vim-cpp-enhanced-highlight 代码高亮插件</a></li>
+      <li><a href="#nerd-commenter-" id="markdown-toc-nerd-commenter-">NERD Commenter 快速开发注释</a></li>
+      <li><a href="#youcompleteme-" id="markdown-toc-youcompleteme-">YouCompleteMe 智能补全插件</a></li>
+      <li><a href="#vim-fswitch" id="markdown-toc-vim-fswitch">vim-fswitch(接口与实现快速切换)插件</a></li>
+      <li><a href="#vim-protodef" id="markdown-toc-vim-protodef">vim-protodef(接口快速生成实现)插件</a></li>
+      <li><a href="#nerdtree-" id="markdown-toc-nerdtree-">nerdtree 工程文件浏览插件</a></li>
+      <li><a href="#minibufexplorer-" id="markdown-toc-minibufexplorer-">MiniBufExplorer 多文档编辑插件</a></li>
+    </ul>
+  </li>
+  <li><a href="#vim--11" id="markdown-toc-vim--11">vim 浏览代码</a></li>
 </ul>
 
-<p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
+<p><code>Vim</code> 是一个学习成本比较高的编辑器。本文主要记录对于编辑浏览代码时，如何配置<code>vim</code>才能更高效的编辑、浏览代码。</p>
+
 </div>
   
   
     <footer>
-      <a rel="full-article" href="/blog/2015/05/01/create-github-blog-using-octopress/">阅读全文;</a>
+      <a rel="full-article" href="/blog/2016/07/07/how-to-use-vim/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/06/27/profiles-tiers-levels/">HEVC SPEC学习之Profiles-Tiers-Levels</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-06-27T07:52:00-07:00'><span class='date'>2016 年 06 月 27 日</span> <span class='time'>7:52 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
+  <li><a href="#hevc-spec--profile-tier-level-" id="markdown-toc-hevc-spec--profile-tier-level-">HEVC SPEC 中 Profile Tier Level 语法</a></li>
+  <li><a href="#hm--profile-tier-level-" id="markdown-toc-hm--profile-tier-level-">HM 中 Profile Tier Level 实现</a></li>
+</ul>
+
+<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
+
+<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
+Profile 指出码流中使用了哪些编码工具和算法。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/06/27/profiles-tiers-levels/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/06/19/ffmpeg-basics/">FFmpeg 使用</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-06-19T09:59:26-07:00'><span class='date'>2016 年 06 月 19 日</span> <span class='time'>9:59 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#bit-rate-frame-rate--file-size" id="markdown-toc-bit-rate-frame-rate--file-size">Bit Rate, Frame Rate 和 File Size</a></li>
+  <li><a href="#resizing-and-scaling-video" id="markdown-toc-resizing-and-scaling-video">Resizing and Scaling Video</a></li>
+  <li><a href="#cropping-video" id="markdown-toc-cropping-video">Cropping Video</a></li>
+  <li><a href="#padding-video" id="markdown-toc-padding-video">Padding Video</a></li>
+  <li><a href="#filpping-and-rotating-video" id="markdown-toc-filpping-and-rotating-video">Filpping and Rotating Video</a></li>
+  <li><a href="#blur-sharpen-adn-other-denoising" id="markdown-toc-blur-sharpen-adn-other-denoising">Blur Sharpen adn Other Denoising</a></li>
+  <li><a href="#overlay---picture-in-picture" id="markdown-toc-overlay---picture-in-picture">Overlay - Picture in Picture</a></li>
+  <li><a href="#adding-text-on-video" id="markdown-toc-adding-text-on-video">Adding Text on Video</a></li>
+  <li><a href="#conversion-between-formats" id="markdown-toc-conversion-between-formats">Conversion Between Formats</a></li>
+</ul>
+
+<p>FFmpeg Basics —Multimedia handling with a fast audio and video encoder 是 FFmpeg 官网提供的一本对 FFmpeg 使用的介绍手册。本文就是对读此手册时的简单记录。方便了解 FFmpeg 的作用。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/06/19/ffmpeg-basics/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi/">FFmpeg 常用结构体解析</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-06-15T17:56:18-07:00'><span class='date'>2016 年 06 月 15 日</span> <span class='time'>5:56 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#avpacket" id="markdown-toc-avpacket">AVPacket结构体解析</a></li>
+  <li><a href="#avframe" id="markdown-toc-avframe">AVFrame结构体解析</a></li>
+  <li><a href="#avcodec" id="markdown-toc-avcodec">AVCodec结构体解析</a></li>
+  <li><a href="#avcodeccontext" id="markdown-toc-avcodeccontext">AVCodecContext结构体解析</a></li>
+  <li><a href="#avstream" id="markdown-toc-avstream">AVStream结构体解析</a></li>
+  <li><a href="#avformatcontext-" id="markdown-toc-avformatcontext-">AVFormatContext 结构体解析</a></li>
+  <li><a href="#aviocontext-" id="markdown-toc-aviocontext-">AVIOContext 结构体解析</a></li>
+  <li><a href="#section" id="markdown-toc-section">参考文章</a></li>
+</ul>
+
+<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。本文详细记录使用 FFMpeg 开发过程中，经常使用到的结构体的含义以及使用场景。
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/06/15/ffmpeg-jie-gou-ti-fen-xi/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/05/23/the-data-layout/">YUV 数据分析</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-05-23T09:23:07-07:00'><span class='date'>2016 年 05 月 23 日</span> <span class='time'>9:23 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/05/23/the-data-layout/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial4/">FFmpeg 和 SDL 使用教程（四）</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-05-10T18:22:59-07:00'><span class='date'>2016 年 05 月 10 日</span> <span class='time'>6:22 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">概述</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">简化代码</a></li>
+  <li><a href="#our-first-thread" id="markdown-toc-our-first-thread">Our First Thread</a></li>
+  <li><a href="#getting-the-framevideothread" id="markdown-toc-getting-the-framevideothread">Getting the Frame:video_thread</a></li>
+  <li><a href="#queueing-the-frame" id="markdown-toc-queueing-the-frame">Queueing the Frame</a></li>
+  <li><a href="#displaying-the-video" id="markdown-toc-displaying-the-video">Displaying the Video</a></li>
+</ul>
+
+<p>本节主要对前面几节的代码进行一下重构。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial4/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial3/">FFmpeg 和 SDL 使用教程（三）</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-05-10T17:22:59-07:00'><span class='date'>2016 年 05 月 10 日</span> <span class='time'>5:22 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">音频</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">创建音频</a></li>
+  <li><a href="#queues" id="markdown-toc-queues">Queues</a></li>
+  <li><a href="#in-case-of-fire" id="markdown-toc-in-case-of-fire">In Case of Fire</a></li>
+  <li><a href="#feeding-packets" id="markdown-toc-feeding-packets">Feeding Packets</a></li>
+  <li><a href="#fetching-packets" id="markdown-toc-fetching-packets">Fetching Packets</a></li>
+  <li><a href="#finally-decoding-the-audio" id="markdown-toc-finally-decoding-the-audio">Finally Decoding the Audio</a></li>
+</ul>
+
+<p>接下来继续实现播放器的另一个功能：音频播放。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/05/10/an-ffmpeg-and-sdl-tutorial3/">阅读全文;</a>
     </footer>
   
 
@@ -291,6 +602,8 @@
     </article>
   
   <div class="pagination">
+    
+      <a class="prev" href="/posts/9">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -303,16 +616,18 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (19)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
-<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (6)</a></li>
-<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (1)</a></li>
-<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (6)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
 <li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
-<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (2)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
 <li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
 
                   </ul>
@@ -322,23 +637,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2018/03/21/elf-format-tutorial/">ELF格式分析手册</a>
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2018/01/11/assemble-hello-world/">汇编语言实现hello World</a>
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/12/25/x264-macroblock-encode/">X264 源码解析之x264_macroblock_encode函数</a>
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/13/x264-macroblock-analyse/">X264 源码解析之x264_macroblock_analyse函数</a>
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2017/11/12/bitstream-init/">X264源码解析之x264_bitstream_init函数</a>
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
       </li>
     
   </ul>
@@ -457,7 +772,7 @@ $(document).ready(function(){
 </p>
 
 <p>
-  Copyright &copy; 2018 - 李冰 -
+  Copyright &copy; 2019 - 李冰 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>

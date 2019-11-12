@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2018-06-24T08:16:39-07:00</updated>
+  <updated>2019-07-11T09:09:10-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,651 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Doxygen和graphviz使用]]></title>
+    <link href="http://lazybing.github.io/blog/2019/07/11/doxygen-graphviz/"/>
+    <updated>2019-07-11T06:24:57-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/07/11/doxygen-graphviz</id>
+    <content type="html"><![CDATA[<p><code>Doxygen</code>可以从一套归档源文件开始，生成HTML格式的在线浏览器，<code>Graphviz</code>是一个图形化可视化软件。Doxygen 使用 Graphviz 生成各种图形，如类的继承关系图、合作图，头文件包含关系图等。</p>
+
+<!--more-->
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">EXTRACT_ALL</th>
+      <th style="text-align: center">输出所有的函数，但 private 和 static 函数不属于其管制</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">EXTRACT_PRIVATE</td>
+      <td style="text-align: center">输出 private 函数</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">EXTRACT_STATIC</td>
+      <td style="text-align: center">输出 static 函数，同时还有几个 EXTRACT，相应查看文档即可</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">HAVE_DOT</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Linux下C语言调用静态库和动态库简介]]></title>
+    <link href="http://lazybing.github.io/blog/2018/09/18/linux-c-static-dynamic-library/"/>
+    <updated>2018-09-18T21:27:55-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/09/18/linux-c-static-dynamic-library</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">动态库和静态库简述</a></li>
+  <li><a href="#endif" id="markdown-toc-endif">endif</a>    <ul>
+      <li><a href="#section-1" id="markdown-toc-section-1">静态库使用示例</a></li>
+      <li><a href="#section-2" id="markdown-toc-section-2">动态库使用示例</a></li>
+    </ul>
+  </li>
+  <li><a href="#define-lib-libsayhelloso" id="markdown-toc-define-lib-libsayhelloso">define LIB “./libsayhello.so”</a>    <ul>
+      <li><a href="#section-3" id="markdown-toc-section-3">动态库和静态库整合</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">参考文档</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>最近工作中遇到要把第三方静态库整合到自己的动态开里的问题，在此记录并整理一些关于静态库和动态库的知识，并用特定的例子。</p>
+
+<!--more-->
+
+<h3 id="section">动态库和静态库简述</h3>
+
+<p>动态库和静态库本质上是一种可执行代码的二进制形式，它们可以被操作系统载入内存执行。两者的主要区别是，静态库是在编译过程中被载入可执行程序的，体积较大；动态库是在可执行程序在运行时被载入内存的，在编译过程中仅仅使用简单的引用，体积较小。</p>
+
+<p>给出示例代码如下：</p>
+
+<p><figure class='code'><figcaption><span>sayhello.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &quot;sayhello.h&quot;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Hello</span> <span class="n">World</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p><figure class='code'><figcaption><span>sayhello.h </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#ifndef &lt;em&gt;SAYHELLO_H&lt;/em&gt;</span>
+</span><span class='line'><span class="cp">#define &lt;em&gt;SAYHELLO_H&lt;/em&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;endif&quot;</span><span class="o">&gt;</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="section-1">静态库使用示例</h3>
+
+<p>编译静态库：</p>
+
+<p><code>
+$ gcc -Wall -O2 -fPIC -I./ -c -o sayhello.o sayhello.c
+$ ar crv libsayhello.a sayhello.o
+</code></p>
+
+<p><code>ar</code>命令会生成<code>libsayhello.a</code>的静态库。该命令的参数如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">参数</th>
+      <th style="text-align: center">意义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">-r</td>
+      <td style="text-align: center">将objectfile 文件插入静态库尾或替换静态库中同名文件</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-x</td>
+      <td style="text-align: center">从静态库文件中抽取文件objfile</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-t</td>
+      <td style="text-align: center">打印静态库的成员文件列表</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-d</td>
+      <td style="text-align: center">从静态库中删除文件objfile</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-s</td>
+      <td style="text-align: center">重置静态库文件索引</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-v</td>
+      <td style="text-align: center">创建文件冗余信息</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">-c</td>
+      <td style="text-align: center">创建静态库文件</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>生成了静态库后，可以在可执行文件中调用静态库内的函数,示例代码：</p>
+
+<p><figure class='code'><figcaption><span>lang: test_hello_stactic.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="k">extern</span> <span class="kt">void</span> <span class="nf">helloworld</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">stdio</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">helloworld</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<p>编译命令:</p>
+
+<p><code>
+$ gcc test_hello_stactic.c -o test_hello_sta ./libsayhello.a
+</code></p>
+
+<h3 id="section-2">动态库使用示例</h3>
+
+<p>编译动态库：</p>
+
+<p><code>
+$ gcc -O2 -fPIC -shared sayhello.c -o libsayhello.so
+或
+$ gcc -O2 -fPIC -c sayhello.c
+$ gcc -shared -o libsayhello.so sayhello.o
+</code></p>
+
+<p>其中</p>
+
+<ul>
+  <li>fPIC:产生与位置无关码，全部使用相对地址</li>
+  <li>shared:生成动态库</li>
+</ul>
+
+<p>调用动态库的示例代码：</p>
+
+<p><figure class='code'><figcaption><span>lang: test_hello_shared.c </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;dlfcn.h&gt;&lt;/dlfcn.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-lib-libsayhelloso&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LIB</span> <span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">libsayhello</span><span class="p">.</span><span class="n">so</span><span class="err">”</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">dl</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="n">LIB</span><span class="p">,</span> <span class="n">RTLD_LAZY</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">dl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="nl">Error</span><span class="p">:</span><span class="n">faile</span> <span class="n">to</span> <span class="n">load</span> <span class="n">libary</span><span class="p">.</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)()</span> <span class="o">=</span> <span class="n">dlsym</span><span class="p">(</span><span class="n">dl</span><span class="p">,</span> <span class="s">&quot;helloworld&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">func</span><span class="p">();</span>
+</span><span class='line'><span class="n">dlclose</span><span class="p">(</span><span class="n">dl</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h3 id="section-3">动态库和静态库整合</h3>
+
+<h3 id="section-4">参考文档</h3>
+
+<ol>
+  <li><a href="http://answerywj.com/2016/10/10/Linux%E4%B8%8BC%E8%B0%83%E7%94%A8%E9%9D%99%E6%80%81%E5%BA%93%E5%92%8C%E5%8A%A8%E6%80%81%E5%BA%93/">Linux下C调用静态库和动态库</a></li>
+  <li><a href="https://liam0205.me/2017/04/03/not-to-link-libstdc-statically-and-why/">为什么不能再动态库里静态链接</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[如何理解内存对齐]]></title>
+    <link href="http://lazybing.github.io/blog/2018/08/22/memory-alignment/"/>
+    <updated>2018-08-22T08:23:49-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/08/22/memory-alignment</id>
+    <content type="html"><![CDATA[<p>数据对齐会影响到计算机访问内存以及占用内存的空间大小。</p>
+
+<!--more-->
+
+<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">对齐要求</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">填充</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">结构体的对齐和填充</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">结构体成员重排</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">可读性与缓存局部性</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">代码测试示例</a></li>
+  <li><a href="#section-6" id="markdown-toc-section-6">参考文档</a></li>
+</ul>
+
+<h3 id="section">对齐要求</h3>
+
+<p>在<code>X86</code>或<code>ARM</code>处理器中，基本 C 数据类型通常并不存储于内存中的随机字节地址。实际情况是，除<code>char</code>外，
+所有其他类型都有对齐要求：<code>char</code>可起始于任意字节地址，2 字节的 short 必须从偶数字节地址开始，4 字节<code>int</code>或<code>float</code>必须
+从能被 4 整除的地址开始，8 比特的<code>long</code>和<code>double</code>必须从能被 4 整除的地址开始，8 比特的<code>long</code>和<code>double</code>必须从
+能被 8 整除的地址开始。无论<code>signed(有符号)</code>还是<code>unsigned(无符号)</code>都不受影响。</p>
+
+<p>简言之，<code>X86</code>和<code>ARM</code>的基本 C 类型是<code>自对齐(self-aligned)</code>的。关于指针，无论 32 位还是 64 位也都是自对齐的。</p>
+
+<p>自对齐可令访问速度更快，因为它有利于生成单指令(single-instruction)存取这些类型的数据。另一方面，如若没有对齐约束，可能
+最终不得不通过两个或更多指令访问跨越机器字边界的数据。字符数据是种特殊情况，因其始终处在单一机器字中，所以无论存取何处的字符数据，
+开销都是一致的。这也就是它不需要对齐的原因。</p>
+
+<h3 id="section-1">填充</h3>
+
+<p>假设我们有如下一段 C 代码：</p>
+
+<p><code>
+int function(void)
+{
+    char *pchar;
+    char ch;
+    int idx;
+    ...
+}
+</code></p>
+
+<p>这里的占用字节空间如下：</p>
+
+<p><code>
+char *pchar;    //4 or 8 bytes
+char ch;        //1 byte
+char pad[3];    //3 bytes, 3 个字节的空间被浪费掉了
+int idx;        //4 bytes
+...
+</code></p>
+
+<p>如果 <code>x </code>为 2 字节 short：</p>
+
+<p><code>
+char *p;
+char c;
+short x;
+</code></p>
+
+<p>时间分布为:</p>
+
+<p><code>
+char *p;    //4 or 8 bytes
+char c;     //1 byte
+char pad[1];    //1 byte, 1 字节的空间被浪费掉了
+short x;        //2 bytes
+</code></p>
+
+<p>更多示例，请参照最后给出的程序示例。</p>
+
+<h3 id="section-2">结构体的对齐和填充</h3>
+
+<p>通常情况下，结构体实例以其最宽的标量成员为基准进行对齐。编译器之所以如此，是因为此乃确保所有成员自对齐，实现快速访问最简便的方法。</p>
+
+<p>思考如下的结构体：</p>
+
+<p><code>
+struct foo1{
+    char *p;
+    char c;
+    long x;
+};
+</code></p>
+
+<p>64 位系统中，任何<code>struct foo1</code>的实例都采用 8 字节对齐，其内存分布如下：</p>
+
+<p><code>
+struct foo1{
+    char *p;    //8 bytes
+    char c;     //1 byte
+    char pad[7];    // 7 bytes
+    long x;         // 8 bytes
+};
+</code>
+更多示例，请参照最后给出的程序示例。</p>
+
+<h3 id="section-3">结构体成员重排</h3>
+
+<p>理解了结构体成员的对齐后，可以看到，最简单的节省内存的方式，是按对齐递减重新对结构体成员排序。即让所有指针对齐成员排在最前面，因为
+在 64 为系统中它们占用 8 字节；然后是 4 字节的 int；再然后是 2 字节的 short，最后是字符。</p>
+
+<p>以简单的链表结构为例：</p>
+
+<p><code>
+struct foo7{
+    char c;
+    struct foo7 *p;
+    short x;
+};
+</code>
+<code>sizeof(foo7)</code>占用 24 字节。如果按照长度重排，可以得到:</p>
+
+<p><code>
+struct foo8{
+    struct foo8 *p;
+    short x;
+    char c;
+};
+</code></p>
+
+<p>重新打包后，空间降低为 16 字节。</p>
+
+<h3 id="section-4">可读性与缓存局部性</h3>
+
+<p>笨拙地、机械地重排结构体可能有损可读性。最好重排成员：将语义相关的数据放在一起，形成连贯的组。最理想的情况是，结构体的设计应与程序的设计相通。</p>
+
+<h3 id="section-5">代码测试示例</h3>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;stdbool.h&gt;&lt;/stdbool.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo1</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">long</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo2</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>      <span class="cm">/* 1 byte &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">    char pad[7]; /&lt;/em&gt; 7 bytes &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">    char *p;     /&lt;/em&gt; 8 bytes &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">    long x;      /&lt;/em&gt; 8 bytes */</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo3</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">p</span><span class="p">;</span>     <span class="o">/&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="mi">8</span> <span class="n">bytes</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;/</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>      <span class="o">/&lt;/</span><span class="n">em</span><span class="o">&gt;</span> <span class="mi">1</span> <span class="n">byte</span> <span class="err">*/</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo4</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">short</span> <span class="n">s</span><span class="p">;</span>     <span class="cm">/* 2 bytes &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">    char c;      /&lt;/em&gt; 1 byte */</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo5</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">foo5_inner</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span> <span class="n">inner</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo6</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">short</span> <span class="n">s</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">flip</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">nybble</span><span class="p">:</span><span class="mi">4</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">septet</span><span class="p">:</span><span class="mi">7</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo7</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo8</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield1</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield1</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield2</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield2</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo9</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield1</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">bigfield2</span><span class="p">:</span><span class="mi">31</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield1</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nl">littlefield2</span><span class="p">:</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo10</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">foo10</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo11</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">foo11</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">struct</span> <span class="n">foo12</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">foo12_inner</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">short</span> <span class="n">x</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span> <span class="n">inner</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span>        <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">long</span><span class="p">)</span>          <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">long</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span>           <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">short</span><span class="p">)</span>         <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">short</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">)</span>          <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">)</span>         <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>        <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo1</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo1</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo2</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo2</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo3</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo3</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo4</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo4</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo5</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo5</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo6</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo6</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo7</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo7</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo8</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo8</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo9</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo9</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo10</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo10</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo11</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo11</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo12</span><span class="p">)</span>   <span class="o">=</span> <span class="o">%</span><span class="n">zu</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">foo12</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h3 id="section-6">参考文档</h3>
+
+<ol>
+  <li><a href="https://github.com/ludx/The-Lost-Art-of-C-Structure-Packing">The Lost Art Of C Structure Packing</a></li>
+  <li><a href="https://wr.informatik.uni-hamburg.de/_media/teaching/wintersemester_2013_2014/epc-14-haase-svenhendrik-alignmentinc-paper.pdf">Memory Alignment</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Data_structure_alignment">Data Structure Alignment</a></li>
+</ol>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[音频概念介绍(采样频率、帧率、通道数等)]]></title>
+    <link href="http://lazybing.github.io/blog/2018/03/25/audio-basic-concept/"/>
+    <updated>2018-03-25T08:54:32-07:00</updated>
+    <id>http://lazybing.github.io/blog/2018/03/25/audio-basic-concept</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">音频基础概述</a></li>
+  <li><a href="#pcm-" id="markdown-toc-pcm-">PCM 数据摆放格式</a></li>
+</ul>
+
+<p>最近在给现代汽车做一个从 FFMpeg 中提取各个音频解码器的项目，很多都是音频。因为之前做的大多数都是视频项目，音频知识比较匮乏。限制记录一下。
+<!--more--></p>
+
+<h2 id="section">音频基础概述</h2>
+
+<p>首先我们用 MediaInfo 来看下音频流的一些信息如图所示：</p>
+
+<p><img src="/images/audio_basic_concept/audio_basic_format.png"></p>
+
+<p>逐个分析：</p>
+
+<p><code>
+Format:AC-3
+Format/Info:Audio Coding 3
+Duration:33s 984ms
+Bit rate:448 Kbps
+Channel(s):6 channels
+Channel positions: Front:L C R, Side:L R LFE
+Sampling rate:48.0KHz
+Bit depth:16bits
+Frame rate:31.250 fps 
+</code></p>
+
+<p>采样率(sampling rate)：声音信号在”模数”转换过程中单位时间内采样的次数。采样率是指每一次采样周期内声音模拟信号的数值，一般的采样率包括：8kHz/11.025kHz/22.05kHz/16kHz/37.8kHz/44.1kHz/48kHz。</p>
+
+<p>帧率(Frame rate):每秒钟中帧数，单位是fps，如上面的 31.250 fps。</p>
+
+<p>通道数(channels):声音的通道数，常用的有单声道和立体声之分。上面的声道数是 6 通道。</p>
+
+<p>比特率(bit rate):每秒的传输速率(比特率)。</p>
+
+<p>bitspersample:每个 sample 占用的 bits 数。</p>
+
+<h2 id="pcm-">PCM 数据摆放格式</h2>
+
+<p>在做项目的过程中，经常用到的一点是在输出 PCM 数据时，经常要了解 PCM 的摆放格式。根据不同的 bps 和 channels，数据的摆放时不同的。</p>
+
+<p><img src="/images/audio_basic_concept/pcm_channels_bps.png"></p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ELF格式分析手册]]></title>
@@ -254,465 +899,6 @@
 </span></code></pre></td></tr></table></div></figure></p>
 
 <h1 id="loading-the-elf-file">Loading the ELF File</h1>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[编程小技巧]]></title>
-    <link href="http://lazybing.github.io/blog/2017/09/29/coding-tips/"/>
-    <updated>2017-09-29T13:35:57-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/09/29/coding-tips</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">获取文件路径后缀名</a>    <ul>
-      <li><a href="#c-" id="markdown-toc-c-">C 语言实现</a></li>
-      <li><a href="#c--1" id="markdown-toc-c--1">C++ 语言实现</a></li>
-      <li><a href="#shell-" id="markdown-toc-shell-">Shell 脚本实现</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-1" id="markdown-toc-section-1">调试信息分级打印</a></li>
-  <li><a href="#define-logdefault-2" id="markdown-toc-define-logdefault-2">define LOG_DEFAULT 2</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">分析特定格式的文件</a></li>
-      <li><a href="#fopen-" id="markdown-toc-fopen-">fopen 函数个数限制</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p>本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
-工作中遇到某个问题时，自然而然能想到的解决方法，通常是一些比较通用的小技巧。</p>
-
-<!--more-->
-
-<h2 id="section">获取文件路径后缀名</h2>
-
-<p>工作中经常遇到对一批视频文件进行统一处理的情况，有时会根据文件名的不同后缀名进行不同的处理操作。此时就需要首先获取文件的后缀名，
-之后再根据后缀名的不同进行相应的操作。</p>
-
-<h3 id="c-">C 语言实现</h3>
-
-<p>实现思路：获取文件字符串的最后一个字符，依次向前寻找<code>.</code>，<code>.</code>后面即为后缀名。</p>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">get_filename_extension</span><span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">ext</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span> <span class="n">filename</span> <span class="p">);</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="o">*</span><span class="n">ext</span> <span class="o">!=</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ext</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'>        <span class="n">ext</span><span class="err">–</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">ext</span> <span class="o">+=</span> <span class="o">*</span><span class="n">ext</span> <span class="o">==</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">ext</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="c--1">C++ 语言实现</h3>
-
-<p>实现思路：首先将文件或路径名转换为一个<code>string</code>类，使用它的成员函数<code>rfind</code>找到最后一个<code>.</code>的位置，最后使用<code>substr</code>成员函数返回<code>.</code>后的所有内容，即得后缀名。</p>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="k">using</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">;</span>
-</span><span class='line'><span class="n">string</span> <span class="n">getFileExt</span><span class="p">(</span><span class="k">const</span> <span class="n">string</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">s</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">string</span><span class="o">::</span><span class="n">npos</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="err">“”</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="shell-">Shell 脚本实现</h3>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/sh</span>
-</span><span class='line'><span class="nv">fullfilename</span><span class="o">=</span><span class="nv">$1</span>
-</span><span class='line'><span class="nv">filename</span><span class="o">=</span><span class="k">$(</span>basename “<span class="nv">$fullfilename</span>”<span class="k">)</span>
-</span><span class='line'><span class="nv">fname</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">%.&lt;em&gt;</span><span class="k">}</span>”
-</span><span class='line'><span class="nv">ext</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">##&lt;/em&gt;.</span><span class="k">}</span>”&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;echo “Input File:<span class="nv">$fullfilename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Path:<span class="nv">$filename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Extension:<span class="nv">$fname</span>”
-</span><span class='line'><span class="nb">echo</span> “File Extension without Name:<span class="nv">$ext</span>”
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-1">调试信息分级打印</h2>
-
-<p>在工作中，经常遇到需要将调试信息分级打印的情况。比如在码流播放中可能默认要打印出码流的宽高、码流的 CODEC 类型等基本信息，可以定义此类信息级别为<code>LOG_INFO</code>级别；
-码流播放时，可能会出现错误，此类信息级别为<code>LOG_ERROR</code>等。</p>
-
-<p>实现思路：将需要打印的信息级别与默认打印信息级别进行比较，级别高时，将信息打印出来；级别低时，不打印信息。</p>
-
-<p><figure class='code'><figcaption><span>log_level </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-logdefault-2&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LOG_DEFAULT</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">LOG_NONE</span>    <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="cp">#define LOG_ERROR   0</span>
-</span><span class='line'><span class="cp">#define LOG_WARNING 1</span>
-</span><span class='line'><span class="cp">#define LOG_INFO    2</span>
-</span><span class='line'><span class="cp">#define LOG_DEBUG   3&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">Printf</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="kt">va_list</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="kt">char</span> <span class="o">*</span><span class="n">psz_prefix</span><span class="p">;</span>
-</span><span class='line'>   <span class="k">switch</span><span class="p">(</span><span class="n">i_level</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_ERROR</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">error</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_WARNING</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">warning</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_INFO</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">info</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_DEBUG</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">debug</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">brengak</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">default</span><span class="o">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">unknown</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>   <span class="n">vfprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i_level</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">LOG_DEFAULT</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">va_list</span> <span class="n">arg</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">va_start</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">Printf</span><span class="p">(</span><span class="n">i_level</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">va_end</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-2">分析特定格式的文件</h2>
-
-<p>工作中在验证芯片的<code>vdec</code>模块是否正常工作时，需要大量的跑一些码流，这些码流通常会放到一个<code>filelist</code>中，因为需要测试的项不同，此时就可以
-通过按照一定的格式并列存放这些码流，例如根据不同的<code>codec</code>、测试比较<code>YUV</code>或<code>CRC</code>，是要连续测试，还是要中途停止方便<code>Debug</code>问题，我们可以按照如下格式对<code>filelist</code>进行定义：</p>
-
-<p><code>
-Codec_Type  Compare_Type Test_Type Bitstream_Full_Path
-</code></p>
-
-<p>对于上面这种<code>filelist</code>，可以通过<code>fscanf</code>来逐个的获取特定的字符串，并通过<code>feof</code>来判断文件文件是否读取完毕， 之后使用<code>strcmp</code>来与特定的字符串进行匹配。例如，有如下的一个<code>filelist.txt</code>：</p>
-
-<p><code>
-HEVC Compare_CRC Debug F:\FFmpeg\hevc_bitstream1.bin
-H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
-</code></p>
-
-<p>分析<code>filelist.txt</code>示例代码：</p>
-
-<p><figure class='code'><figcaption><span>parse_filelist </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">char</span> <span class="n">Codec_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Compare_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Release_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Bitstream_Path</span><span class="p">[</span><span class="mi">200</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">filelist</span><span class="p">.</span><span class="n">txt</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">open</span> <span class="n">file</span> <span class="n">fail</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">pFile</span><span class="p">))</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fscanf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="err">“</span><span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">,</span> <span class="n">Compare_Type</span><span class="p">,</span> <span class="n">Release_Type</span><span class="p">,</span> <span class="n">Bitstream_Path</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">HEVC</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">H264</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">H264</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>注意上面表示出来了通过<code>strcmp</code>来判断<code>Codec_Type</code>的类型，后面的<code>Compare_Type</code>可以用同样的方法来给出。</p>
-
-<p>在使用过程中，人们并不会特别在意字母的大小写，但要表达的意思通常是一样的，比如<code>HEVC</code><code>hevc</code><code>Hevc</code>通过都是一样的，如果此时还用<code>strcmp</code>来判断，会出错，为此，我们提出了<code>strcasecmp</code>的使用方法，来避免大小写带来的问题，这也算是编写类似代码的一个小技巧。</p>
-
-<h2 id="fopen-">fopen 函数个数限制</h2>
-
-<p>严格来讲，这个并不是编程的一些小的技巧，而是自己在工作中遇到的一个小问题，最近在每晚上跑测试时，经常遇到一晚上跑完 503 个测试后，程序就会崩溃掉，给出的提示信息是”Open File Fail”,起初是通过观察<code>errno</code>的类型来<code>Debug</code>出错的原因，最后定位到问题是，
-对每个文件都打开了两次，而关闭只有一次，导致文件描述符的个数爆掉了。这个问题的原因是在不同的系统中，都会有对文件描述符的最大个数有一定的限制。</p>
-
-<p>在&lt;UNIX环境高级编程:文件I/O&gt;中有这样的解释：</p>
-
-<blockquote>
-  <p>当读或写一个文件时，使用<code>open</code>返回的文件描述符标识该文件，将其作为参数传送给<code>read</code>或<code>write</code>。文件描述符的变化范围是<code>0~OPEN_MAX</code>。</p>
-</blockquote>
-
-<p>关于文件描述符的最大个数问题，从<code>stackoverflow</code>上找到了以下几个问题的回复，可参考：</p>
-
-<p><a href="https://stackoverflow.com/questions/870173/is-there-a-limit-on-number-of-open-files-in-windows">1.Is there a limit on number of open files in Windows</a><br />
-<a href="https://stackoverflow.com/questions/17931583/maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux">2.maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux</a><br />
-<a href="https://stackoverflow.com/questions/3184345/fopen-problem-too-many-open-files">3.fopen-problem-too-many-open-files</a></p>
-
-<p>关于<code>fopen</code>的使用，通常会判断返回值是否<code>NULL</code>来判断是否打开成功，其实除此之外，还可以继续监测出错的类型<code>errno</code>，并用<code>strerror()</code>函数直接显示出错的具体原因。技巧如下：</p>
-
-<p><figure class='code'><figcaption><span>fopen_tips </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;error.h&gt;&lt;/error.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="n">file_full_path</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Open</span> <span class="n">File</span> <span class="nl">Fail</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Linux 使用小技巧总结]]></title>
-    <link href="http://lazybing.github.io/blog/2017/05/01/linux-tips/"/>
-    <updated>2017-05-01T19:03:52-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/05/01/linux-tips</id>
-    <content type="html"><![CDATA[<p>Linux 使用过程中，有些特殊的小技巧能够很好地提高效率。在此记录使用过程中的惊艳的小技巧。</p>
-
-<h2 id="section">快速搜索命令</h2>
-
-<p>Linux 使用大部分是在命令行下进行的，某些命令是前面使用到的，此时我们不想重新完整的输入命令，而是想根据命令中的某些关键字搜索到该命令，然后直接执行。
-此时第一个想到的方法可能是<code>history</code>命令，然后复制粘贴，其实还有一个更智能的命令搜索命令<code>Ctrl+r</code>。执行完<code>Ctrl+r</code>后，可直接输出要查找的命令中的某个
-关键字。然后直接回车即可！非常方便，尤其是命令行比较长的时候。</p>
-
-<h2 id="section-1">命令行快捷键</h2>
-
-<p>Linux 命令行经常遇到输入错误，需要修改的时候，此时如果命令行特别长，想要用方向键或退格键来进行修改删除，速度会特别慢，其实 Linux 命令行也有
-很多快捷键可以使用。具体有如下几个：</p>
-
-<ul>
-  <li><code>Ctrl+a</code> 移至命令行行首</li>
-  <li><code>Ctrl+e</code> 移至命令行行尾</li>
-  <li><code>Ctrl+u</code> 从光标处删除至命令行行首</li>
-  <li><code>Ctrl+k</code> 从光标处删除至命令行行尾</li>
-</ul>
-
-<p><img src="/images/linux_tips/linuxcommandshortcut.png"></p>
-
-<h2 id="section-2">其他技巧</h2>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[YUV 数据分析]]></title>
-    <link href="http://lazybing.github.io/blog/2016/05/23/the-data-layout/"/>
-    <updated>2016-05-23T09:23:07-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/05/23/the-data-layout</id>
-    <content type="html"><![CDATA[<p>图像的摆放布局各式各样，不同的布局用于不同的场景。简单记录一下常用的几种数据摆放格式。
-<!--more--></p>
-
-<h2 id="yuv-">YUV 数据</h2>
-<p>对于 YUV 图像来说，会有如下几个特性：<code>FOURCC</code> <code>Format</code> <code>Component Order</code> <code>Image Resolution</code> <code>Interlace/Progressive</code> <code>Packed/Planar</code> 。</p>
-
-<p><code>FOURCC</code>包括：<code>UYVY</code> <code>UYNV</code> <code>Y422</code> <code>IUYV</code> 等等；</p>
-
-<p><code>Format</code>包括：<code>YUV420</code> <code>YUV422</code> <code>YUV444</code> <code>RGB444</code> <code>MONO</code>等等：</p>
-
-<p><code>Component Order</code>包括：<code>YUV</code> <code>YVU</code>。</p>
-
-<h3 id="yuv420">YUV420摆放格式</h3>
-
-<p>progressive 的摆放格式如图：</p>
-
-<p><img src="http://lazybing.github.io/images/datalayout/Yuv420.png" /></p>
-
-<p>通过 YUV image 的摆放格式可以提取出 Y/U/V 三个分量。tulips_yuv420_prog_planar_qcif.yuv以 Planar、progressive、YUV420、176*144、IYUV（I420）为例，示例代码如下：</p>
-
-<p><figure class='code'><figcaption><span>splityuvfile </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">split_yuv</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="n">uint</span> <span class="n">height</span><span class="p">,</span> <span class="n">uint</span> <span class="n">width</span><span class="p">)</span>                                                                                                                              <span class="o">&lt;</span><span class="n">br</span> <span class="o">/&gt;</span>
-</span><span class='line'><span class="p">{</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpy</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpu</span><span class="p">;</span>
-</span><span class='line'><span class="kt">FILE</span> <span class="o">*</span><span class="n">fpv</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">unsigned</span> <span class="kt">char</span>  <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpy</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;y.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpu</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;u.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">fpv</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">&quot;v.bin&quot;</span><span class="p">,</span> <span class="s">&quot;wa&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">fpv</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpu</span> <span class="o">||</span> <span class="o">!</span><span class="n">fpy</span> <span class="o">||</span> <span class="o">!</span><span class="n">fp</span><span class="p">){</span>
-</span><span class='line'>     <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;line %d open file error.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">__LINE__</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">FALSE</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fread</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fp</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="p">,</span> <span class="n">fpy</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpu</span><span class="p">);</span>
-</span><span class='line'><span class="n">fwrite</span><span class="p">(</span><span class="n">buf</span> <span class="o">+</span> <span class="p">(</span><span class="n">uint</span><span class="p">)(</span><span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">width</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">fpv</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpv</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpu</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fpy</span><span class="p">);</span>
-</span><span class='line'><span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
-</span><span class='line'><span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">return</span> <span class="n">TRUE</span><span class="p">;</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-</code></pre>
-
-<p>上面给出的是 YUV Progressive 的文件，现在对 interlace 文件进行分析。
-interlace 的摆放格式如图：</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[UBoot 源码分析]]></title>
-    <link href="http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system/"/>
-    <updated>2015-07-01T07:48:51-07:00</updated>
-    <id>http://lazybing.github.io/blog/2015/07/01/how-to-boot-up-system</id>
-    <content type="html"><![CDATA[<p>公司在验证FPGA 模块时，其中一个是裸机环境下启动系统，这个跟研究生时看到 uboot 启动过程大同小异。本文就记录下uboot 源码中系统的启动过程。
-<!--more--></p>
 
 ]]></content>
   </entry>

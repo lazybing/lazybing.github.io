@@ -1,0 +1,512 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>AV1(DAV1D) 解码详解(二)之film_grain - 懒人李冰</title>
+  <meta name="author" content="李冰">
+
+  
+  <meta name="description" content="Film Grain 简介 Film Grain 流程 源码分析及优化 参考文档 Film Grain在电视和电影内容中广泛存在，它经常是创作内容的一部分，在编码过程中需要保留下来，因为film grain的随机性，导致很难用传统的压缩算法进行压缩。 Film Grain 简介 film &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
+  <link href="/stylesheets/data-table.css" media="screen, projection" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-77812244-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">懒人李冰</a></h1>
+  
+    <h2>记录我的生活、学习</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="订阅RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lazybing.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="搜索"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章列表</a></li>
+  <li><a href="/photography/">摄影作品</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">AV1(DAV1D) 解码详解(二)之film_grain</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2018-10-17T08:35:36-07:00'><span class='date'>2018 年 10 月 17 日</span> <span class='time'>8:35 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#film-grain-" id="markdown-toc-film-grain-">Film Grain 简介</a></li>
+  <li><a href="#film-grain--1" id="markdown-toc-film-grain--1">Film Grain 流程</a></li>
+  <li><a href="#section" id="markdown-toc-section">源码分析及优化</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">参考文档</a></li>
+</ul>
+
+<p><code>Film Grain</code>在电视和电影内容中广泛存在，它经常是创作内容的一部分，在编码过程中需要保留下来，因为<code>film grain</code>的随机性，导致很难用传统的压缩算法进行压缩。</p>
+
+<!--more-->
+
+<h1 id="film-grain-">Film Grain 简介</h1>
+
+<p><code>film grain</code>模型和整体框架如图所示。</p>
+
+<p><img src="/images/film_grain_av1/film_grain_framework.png" /></p>
+
+<p><code>film grain</code>在去噪音过程中会从视频中去除掉，<code>grain</code>参数会通过噪音视频序列和去噪视频序列的差异中获得,这些参数会和压缩视频流一起传输到解码端。 解码后，<code>film grain</code>会被叠加到重建视频帧中。</p>
+
+<h1 id="film-grain--1">Film Grain 流程</h1>
+
+<p>从上面的框架图可以看出，<code>film grain</code>包括压缩前的去噪、编码参数、解码参数、噪音叠加到重建帧等几个过程，这里不讨论去噪的过程，主要讨论<code>film grain modeling synthesis</code>。
+流程可以从<code>SPEC</code>中看到，也可以从源码中学习，<code>film grain</code>中在源码中主要集中在<code>aom/aom_dsp/grain_synthesis.c</code>中的<code>av1_add_film_grain_run</code>函数中，分析源码可知大致分为如下流程：</p>
+
+<ul>
+  <li>init_array. 为<code>film grain</code>准备后面用到的内存，大致分为三类<code>grain buffer(luma_grain_block/cb_grain_block/cr_grain_block)</code>、<code>line buf(y_line_buf/cb_line_buf/cr_line_buf)</code>、<code>column buf(y_col_buf/cb_col_buf/cr_col_buf)</code>。</li>
+  <li>generate_luma_grain_block 和 generate_chroma_grain_blocks. 它会根据码流中 parse 出来的<code>grain_scale_shift/ar_coeff_lag</code>的值和<code>gaussian_sequence</code>表来填充<code>grain block</code>。</li>
+  <li>init_scaling_function. 它是利用码流中 parse 出来的 <code>scaling_points_y</code>来填充<code>scaling_lut_y/scaling_lut_cb/scaling_lut_cr</code>数组。</li>
+  <li>add_noise_to_block。它会根据上面生成的<code>grain block</code>叠加到重建帧上。</li>
+</ul>
+
+<h1 id="section">源码分析及优化</h1>
+<p>以解码器 DAV1D 中 Film Grain 的源码分析。首先看 Y 方向上的主要代码</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">// samples from the correct block of a grain LUT, while taking into account the</span>
+</span><span class="line"><span class="c1">// offsets provided by the offsets cache</span>
+</span><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="n">entry</span> <span class="nf">sample_lut</span><span class="p">(</span><span class="n">entry</span> <span class="n">grain_lut</span><span class="p">[</span><span class="n">GRAIN_HEIGHT</span><span class="p">][</span><span class="n">GRAIN_WIDTH</span><span class="p">],</span>
+</span><span class="line">                               <span class="kt">int</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="kt">int</span> <span class="n">subx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">suby</span><span class="p">,</span>
+</span><span class="line">                               <span class="kt">int</span> <span class="n">bx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">by</span><span class="p">,</span> <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">randval</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">bx</span><span class="p">][</span><span class="n">by</span><span class="p">];</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">offx</span>    <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">&gt;&gt;</span> <span class="n">subx</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="n">randval</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">));</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">offy</span>    <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">&gt;&gt;</span> <span class="n">suby</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="n">randval</span> <span class="o">&amp;</span> <span class="mh">0xF</span><span class="p">));</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">grain_lut</span><span class="p">[</span><span class="n">offy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">BLOCK_SIZE</span> <span class="o">&gt;&gt;</span> <span class="n">suby</span><span class="p">)</span> <span class="o">*</span> <span class="n">by</span><span class="p">]</span>
+</span><span class="line">                    <span class="p">[</span><span class="n">offx</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BLOCK_SIZE</span> <span class="o">&gt;&gt;</span> <span class="n">subx</span><span class="p">)</span> <span class="o">*</span> <span class="n">bx</span><span class="p">];</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define add_noise_y(x, y, grain)    \</span>
+</span><span class="line"><span class="cp">    pixel *src = src_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
+</span><span class="line"><span class="cp">    pixel *dst = dst_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
+</span><span class="line"><span class="cp">    int noise = round2(scaling[*src] * (grain), data-&gt;scaling_shift); \</span>
+</span><span class="line"><span class="cp">    *dst = iclip(*src + noise, min_value, max_value);</span>
+</span><span class="line">
+</span><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="c1">// Non-overlapped image region(straightforward)</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">grain</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+</span><span class="line">        <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>上面的代码主要包含两部分，一. 从 grain_lut 中获取 grain，二. 通过获取的 grain 值，执行 add_noise_y。分析代码，如果想要利用 NEON 进行汇编优化，
+存在一个问题，就是无法连续的从 grain_lut 中连续的获取值，因此直接按照源码的流程，无法进行 NEON 优化。考虑到硬件的 cache 原理，可以先将
+所有的 grain 值提前提取出来放到数组中，之后在进行 add_noise_y 时，就可以连续的获取 grain 值了。从程序上看，该方法没有任何作用，因为执行的代码
+是相同的，但硬件是有cache的，因此，可以提升性能。也为后面的 NEON 提供了遍历。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define add_noise_y(x, y, grain)    \</span>
+</span><span class="line"><span class="cp">    pixel *src = src_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
+</span><span class="line"><span class="cp">    pixel *dst = dst_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
+</span><span class="line"><span class="cp">    int noise = round2(scaling[*src] * (grain), data-&gt;scaling_shift); \</span>
+</span><span class="line"><span class="cp">    *dst = iclip(*src + noise, min_value, max_value);</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="o">*</span><span class="n">grain</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="o">*</span> <span class="p">(</span><span class="n">bh</span> <span class="o">-</span> <span class="n">ystart</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">bw</span> <span class="o">-</span> <span class="n">xstart</span><span class="p">));</span>
+</span><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">){</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">        <span class="n">grain</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="c1">// Non-overlapped image region(straightforward)</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>上面代码优化前，解码 960x540 的分辨率率的视频，该模块耗时 8ms,C 代码优化完后，该模块耗时 7ms。在此基础上，进行 NEON 优化，该模块耗时 5ms。</p>
+
+<h1 id="section-1">参考文档</h1>
+
+<ol>
+  <li><a href="https://aomediacodec.github.io/av1-spec/">AV1 Bitstream &amp; Decoding Process</a></li>
+</ol>
+
+<p>(未完待续…)</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2018-10-17T08:35:36-07:00'><span class='date'>2018 年 10 月 17 日</span> <span class='time'>8:35 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/av1/'>av1</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2018/10/15/av1-startup/" title="Previous Post: AV1(DAV1D) 解码详解(一)">&laquo; AV1(DAV1D) 解码详解(一)</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2019/01/19/neon-technology-overview/" title="Next Post: NEON 技术概述">NEON 技术概述 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+      <h1>分类目录</h1>
+        <ul id="categories">
+                <li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+<li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
+<li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
+<li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
+<li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (20)</a></li>
+<li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
+<li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
+<li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
+<li class='category'><a href='/blog/categories/bian-cheng-gong-ju/'>编程工具 (7)</a></li>
+<li class='category'><a href='/blog/categories/shi-pin-ji-chu/'>视频基础 (3)</a></li>
+<li class='category'><a href='/blog/categories/du-shu-bi-ji/'>读书笔记 (3)</a></li>
+<li class='category'><a href='/blog/categories/xiang-mu-shi-jian/'>项目实践 (4)</a></li>
+
+                  </ul>
+</section>
+<section>
+  <h1>最新文章</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/07/11/doxygen-graphviz/">Doxygen和graphviz使用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/04/21/locality-of-reference/">性能优化之利用局部性原理</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>微博</h1>
+  <ul id="weibo">
+    <li>
+        <iframe 
+            width="100%" 
+            height="350" 
+            class="share_self"  
+            frameborder="0" 
+            scrolling="no" 
+            src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=350&fansRow=0&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=1882167025&verifier=64bf2e00&dpc=1">
+        </iframe>
+    </li>
+  </ul">
+</section>
+
+<section>
+    <h1>微信</h1>
+    <img src="/images/weixin.png">
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+      // hide #back-top first
+      $("#back-top").hide();
+        
+        // fade in #back-top
+        $(function () {
+           $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('#back-top').fadeIn();
+                 } else {
+                     $('#back-top').fadeOut();
+                 }
+           });
+
+          // scroll body to 0px on click
+          $('#back-top a').click(function () {
+              $('body,html').animate({
+                  scrollTop: 0
+              }, 800);
+              return false;
+         });
+     });
+
+});
+</script>
+
+<style type="text/css">
+#back-top {
+      position: fixed;
+      bottom: 50px;
+      right: 100px;
+}
+
+#back-top a {
+      width: 80px;
+      display: block;
+      text-align: center;
+      font: 11px/100% Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #bbb;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover {
+      color: #000;
+}
+
+/* arrow icon (span tag) */
+#back-top span {
+      width: 80px;
+      height: 80px;
+      display: block;
+      margin-bottom: 7px;
+      background: #ddd url(/images/top.png) no-repeat center center;
+
+      /* rounded corners */
+      -webkit-border-radius: 15px;
+      -moz-border-radius: 15px;
+      border-radius: 15px;
+
+      /* transition */
+      -webkit-transition: 1s;
+      -moz-transition: 1s;
+      transition: 1s;
+}
+#back-top a:hover span {
+      background-color: #888;
+}
+</style>
+
+<p id="back-top">
+  <a href="#top"><span></span></a>
+</p>
+
+<p>
+  Copyright &copy; 2019 - 李冰 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1259410454'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1259410454%26online%3D1%26show%3Dline' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+<!-- MathJax -->  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       inlineMath: [ ['$','$'], ["\\(","\\)"] ],  
+                       processEscapes: true  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Config({  
+                       tex2jax: {  
+                       skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']  
+                       }  
+                       });  
+    </script>  
+  
+<script type="text/x-mathjax-config">  
+    MathJax.Hub.Queue(function() {  
+                      var all = MathJax.Hub.getAllJax(), i;  
+                      for(i=0; i < all.length; i += 1) {  
+                      all[i].SourceElement().parentNode.className += ' has-jax';  
+                      }  
+                      });  
+    </script>  
+  
+<script type="text/javascript"  
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">  
+    </script>  
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
