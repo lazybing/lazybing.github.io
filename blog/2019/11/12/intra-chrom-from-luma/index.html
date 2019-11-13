@@ -125,6 +125,146 @@
 <span class="line-number">8</span>
 <span class="line-number">9</span>
 <span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">dav1d_inta_ped_dsp_init</span><span class="p">(</span><span class="n">Dav1dIntraPredDSPContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">c</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_ac</span><span class="p">[</span><span class="n">DAV1D_PIXEL_LAYOUT_I420</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfl_ac_420_c</span><span class="p">;</span>
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_ac</span><span class="p">[</span><span class="n">DAV1D_PIXEL_LAYOUT_I422</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfl_ac_422_c</span><span class="p">;</span>
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_ac</span><span class="p">[</span><span class="n">DAV1D_PIXEL_LAYOUT_I444</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfl_ac_444_c</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">DC_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_c</span><span class="p">;</span>
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">DC_128_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_128_c</span><span class="p">;</span>
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">TOP_DC_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_top_c</span><span class="p">;</span>
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">LEFT_DC_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_left_c</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">cfl_ac_c</span><span class="p">(</span><span class="kt">int16_t</span> <span class="o">*</span><span class="n">ac</span><span class="p">,</span> <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">ypx</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                     <span class="k">const</span> <span class="kt">int</span> <span class="n">w_pad</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">h_pad</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span>
+</span><span class="line">                     <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_hor</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_ver</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int16_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">ac_orig</span> <span class="o">=</span> <span class="n">ac</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">w_pad</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">w_pad</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">);</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">h_pad</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">h_pad</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">h_pad</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">w_pad</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="kt">int</span> <span class="n">ac_sum</span> <span class="o">=</span> <span class="n">ypx</span><span class="p">[</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">ss_hor</span><span class="p">];</span>
+</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">ss_hor</span><span class="p">)</span> <span class="n">ac_sum</span> <span class="o">+=</span> <span class="n">ypx</span><span class="p">[</span><span class="n">x</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">ss_ver</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">                <span class="n">ac_sum</span> <span class="o">+=</span> <span class="n">ypx</span><span class="p">[(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">ss_hor</span><span class="p">)</span> <span class="o">+</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)];</span>
+</span><span class="line">                <span class="k">if</span> <span class="p">(</span><span class="n">ss_hor</span><span class="p">)</span> <span class="n">ac_sum</span> <span class="o">+=</span> <span class="n">ypx</span><span class="p">[</span><span class="n">x</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)];</span>
+</span><span class="line">            <span class="p">}</span>
+</span><span class="line">            <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">ac_sum</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="o">!</span><span class="n">ss_ver</span> <span class="o">+</span> <span class="o">!</span><span class="n">ss_hor</span><span class="p">);</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">            <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">ac</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class="line">        <span class="n">ac</span> <span class="o">+=</span> <span class="n">width</span><span class="p">;</span>
+</span><span class="line">        <span class="n">ypx</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">ss_ver</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span> <span class="p">(;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="n">memcpy</span><span class="p">(</span><span class="n">ac</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ac</span><span class="p">[</span><span class="o">-</span><span class="n">width</span><span class="p">],</span> <span class="n">width</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">ac</span><span class="p">));</span>
+</span><span class="line">        <span class="n">ac</span> <span class="o">+=</span> <span class="n">width</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">log2sz</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">(</span><span class="n">width</span><span class="p">)</span> <span class="o">+</span> <span class="n">ctz</span><span class="p">(</span><span class="n">height</span><span class="p">);</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">sum</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">log2sz</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">ac</span> <span class="o">=</span> <span class="n">ac_orig</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">            <span class="n">sum</span> <span class="o">+=</span> <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="n">sum</span> <span class="o">&gt;&gt;=</span> <span class="n">log2s</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="c1">//subtract DC</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">ac</span> <span class="o">=</span> <span class="n">ac_orig</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">            <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-=</span> <span class="n">sum</span><span class="p">;</span>
+</span><span class="line">        <span class="n">ac</span> <span class="o">+=</span> <span class="n">width</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define cfl_ac_fn(fmt, ss_hor, ss_ver)  \</span>
+</span><span class="line"><span class="cp">    static void cfl_ac_##fmt##_c(int16_t *const ac, const pixel *const ypx, \</span>
+</span><span class="line"><span class="cp">                                 const ptrdiff_t stide, const int w_pad, \</span>
+</span><span class="line"><span class="cp">                                 const int h_pad, const int cw, const int ch) \</span>
+</span><span class="line"><span class="cp">{   \</span>
+</span><span class="line"><span class="cp">    cfl_ac_c(ac, ypx, stride, w_pad, h_pad, cw, ch, ss_hor, ss_ver);    \</span>
+</span><span class="line"><span class="cp">}</span>
+</span><span class="line">
+</span><span class="line"><span class="n">cfl_ac_fn</span><span class="p">(</span><span class="mi">420</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line"><span class="n">cfl_ac_fn</span><span class="p">(</span><span class="mi">422</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line"><span class="n">cfl_ac_fn</span><span class="p">(</span><span class="mi">444</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
 <span class="line-number">11</span>
 <span class="line-number">12</span>
 <span class="line-number">13</span>
@@ -184,74 +324,112 @@
 <span class="line-number">67</span>
 <span class="line-number">68</span>
 <span class="line-number">69</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">cfl_ac_c</span><span class="p">(</span><span class="kt">int16_t</span> <span class="o">*</span><span class="n">ac</span><span class="p">,</span> <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">ypx</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
-</span><span class="line">                     <span class="k">const</span> <span class="kt">int</span> <span class="n">w_pad</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">h_pad</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span>
-</span><span class="line">                     <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_hor</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_ver</span><span class="p">)</span>
+<span class="line-number">70</span>
+<span class="line-number">71</span>
+<span class="line-number">72</span>
+<span class="line-number">73</span>
+<span class="line-number">74</span>
+<span class="line-number">75</span>
+<span class="line-number">76</span>
+<span class="line-number">77</span>
+<span class="line-number">78</span>
+<span class="line-number">79</span>
+<span class="line-number">80</span>
+<span class="line-number">81</span>
+<span class="line-number">82</span>
+<span class="line-number">83</span>
+<span class="line-number">84</span>
+<span class="line-number">85</span>
+<span class="line-number">86</span>
+<span class="line-number">87</span>
+<span class="line-number">88</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">unsigned</span> <span class="nf">dc_gen</span><span class="p">(</span><span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span>
+</span><span class="line">                       <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">)</span>
 </span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int16_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">ac_orig</span> <span class="o">=</span> <span class="n">ac</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="n">dc</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">+</span> <span class="n">height</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">        <span class="n">dc</span> <span class="o">+=</span> <span class="n">topleft</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">        <span class="n">dc</span> <span class="o">+=</span> <span class="n">topleft</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)];</span>
+</span><span class="line">    <span class="n">dc</span> <span class="o">&gt;&gt;=</span> <span class="n">ctz</span><span class="p">(</span><span class="n">width</span> <span class="o">+</span> <span class="n">height</span><span class="p">);</span>
 </span><span class="line">
-</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">w_pad</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">w_pad</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">);</span>
-</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">h_pad</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">h_pad</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">width</span> <span class="o">!=</span> <span class="n">height</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="n">dc</span> <span class="o">*=</span> <span class="p">(</span><span class="n">width</span> <span class="o">&gt;</span> <span class="n">height</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">||</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="n">width</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">?</span> <span class="nl">MULTIPLIER_1x4</span> <span class="p">:</span>
+</span><span class="line">                                                            <span class="n">MULTIPLIER_1x2</span><span class="p">;</span>
+</span><span class="line">        <span class="n">dc</span> <span class="o">&gt;&gt;=</span> <span class="n">BASE_SHIFT</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">dc</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
 </span><span class="line">
-</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">h_pad</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">w_pad</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">            <span class="kt">int</span> <span class="n">ac_sum</span> <span class="o">=</span> <span class="n">ypx</span><span class="p">[</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">ss_hor</span><span class="p">];</span>
-</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">ss_hor</span><span class="p">)</span> <span class="n">ac_sum</span> <span class="o">+=</span> <span class="n">ypx</span><span class="p">[</span><span class="n">x</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
-</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">ss_ver</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">                <span class="n">ac_sum</span> <span class="o">+=</span> <span class="n">ypx</span><span class="p">[(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="n">ss_hor</span><span class="p">)</span> <span class="o">+</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)];</span>
-</span><span class="line">                <span class="k">if</span> <span class="p">(</span><span class="n">ss_hor</span><span class="p">)</span> <span class="n">ac_sum</span> <span class="o">+=</span> <span class="n">ypx</span><span class="p">[</span><span class="n">x</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)];</span>
-</span><span class="line">            <span class="p">}</span>
-</span><span class="line">            <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">ac_sum</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="o">!</span><span class="n">ss_ver</span> <span class="o">+</span> <span class="o">!</span><span class="n">ss_hor</span><span class="p">);</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span>
+</span><span class="line"><span class="nf">cfl_pred</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">         <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">dc</span><span class="p">,</span>
+</span><span class="line">         <span class="k">const</span> <span class="kt">int16_t</span> <span class="o">*</span><span class="n">ac</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">alpha</span> <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">diff</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
+</span><span class="line">            <span class="n">dst</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">iclip_pixel</span><span class="p">(</span><span class="n">dc</span> <span class="o">+</span> <span class="n">apply_sign</span><span class="p">((</span><span class="n">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span> <span class="o">+</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">,</span> <span class="n">diff</span><span class="p">));</span>
 </span><span class="line">        <span class="p">}</span>
-</span><span class="line">        <span class="k">for</span> <span class="p">(;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">            <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">ac</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span>
 </span><span class="line">        <span class="n">ac</span> <span class="o">+=</span> <span class="n">width</span><span class="p">;</span>
-</span><span class="line">        <span class="n">ypx</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">ss_ver</span><span class="p">;</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">for</span> <span class="p">(;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="n">memcpy</span><span class="p">(</span><span class="n">ac</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ac</span><span class="p">[</span><span class="o">-</span><span class="n">width</span><span class="p">],</span> <span class="n">width</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">ac</span><span class="p">));</span>
-</span><span class="line">        <span class="n">ac</span> <span class="o">+=</span> <span class="n">width</span><span class="p">;</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">log2sz</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">(</span><span class="n">width</span><span class="p">)</span> <span class="o">+</span> <span class="n">ctz</span><span class="p">(</span><span class="n">height</span><span class="p">);</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">sum</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">log2sz</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">ac</span> <span class="o">=</span> <span class="n">ac_orig</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">            <span class="n">sum</span> <span class="o">+=</span> <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="n">sum</span> <span class="o">&gt;&gt;=</span> <span class="n">log2s</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1">//subtract DC</span>
-</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">ac</span> <span class="o">=</span> <span class="n">ac_orig</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">            <span class="n">ac</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-=</span> <span class="n">sum</span><span class="p">;</span>
-</span><span class="line">        <span class="n">ac</span> <span class="o">+=</span> <span class="n">width</span><span class="p">;</span>
+</span><span class="line">        <span class="n">dst</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
 </span><span class="line">    <span class="p">}</span>
 </span><span class="line"><span class="p">}</span>
 </span><span class="line">
-</span><span class="line"><span class="cp">#define cfl_ac_fn(fmt, ss_hor, ss_ver)  \</span>
-</span><span class="line"><span class="cp">    static void cfl_ac_##fmt##_c(int16_t *const ac, const pixel *const ypx, \</span>
-</span><span class="line"><span class="cp">                                 const ptrdiff_t stide, const int w_pad, \</span>
-</span><span class="line"><span class="cp">                                 const int h_pad, const int cw, const int ch) \</span>
-</span><span class="line"><span class="cp">{   \</span>
-</span><span class="line"><span class="cp">    cfl_ac_c(ac, ypx, stride, w_pad, h_pad, cw, ch, ss_hor, ss_ver);    \</span>
-</span><span class="line"><span class="cp">}</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_cfl_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                        <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span>
+</span><span class="line">                        <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span>
+</span><span class="line">                        <span class="k">const</span> <span class="kt">int16_t</span> <span class="o">*</span><span class="n">ac</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">alpha</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">dc_gen</span><span class="p">(</span><span class="n">topleft</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">    <span class="n">cfl_pred</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dc</span><span class="p">,</span> <span class="n">ac</span><span class="p">,</span> <span class="n">alpha</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
 </span><span class="line">
-</span><span class="line"><span class="n">cfl_ac_fn</span><span class="p">(</span><span class="mi">420</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class="line"><span class="n">cfl_ac_fn</span><span class="p">(</span><span class="mi">422</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class="line"><span class="n">cfl_ac_fn</span><span class="p">(</span><span class="mi">444</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_cfl_128_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="kt">int16_t</span> <span class="o">*</span><span class="n">ac</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">alpha</span>
+</span><span class="line">                            <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line"><span class="cp">#if BITDEPTH == 16</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">dc</span> <span class="o">=</span> <span class="p">(</span><span class="n">bitdepth_max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line"><span class="cp">#else</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">dc</span> <span class="o">=</span> <span class="mi">128</span><span class="p">;</span>
+</span><span class="line"><span class="cp">#endif</span>
+</span><span class="line">    <span class="n">cfl_pred</span><span class="p">(</span><span class="n">dst</span> <span class="n">stride</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dc</span><span class="p">,</span> <span class="n">ac</span> <span class="n">alpha</span> <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
 </span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="n">dav1d_inta_ped_dsp_init</span><span class="p">(</span><span class="n">Dav1dIntraPredDSPContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">c</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_ac</span><span class="p">[</span><span class="n">DAV1D_PIXEL_LAYOUT_I420</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfl_ac_420_c</span><span class="p">;</span>
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_ac</span><span class="p">[</span><span class="n">DAV1D_PIXEL_LAYOUT_I422</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfl_ac_422_c</span><span class="p">;</span>
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_ac</span><span class="p">[</span><span class="n">DAV1D_PIXEL_LAYOUT_I444</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfl_ac_444_c</span><span class="p">;</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">unsigned</span> <span class="nf">dc_gen_left</span><span class="p">(</span><span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">height</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">        <span class="n">dc</span> <span class="o">++</span> <span class="n">topleft</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">)];</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">dc</span> <span class="o">&gt;&gt;</span> <span class="n">ctz</span><span class="p">(</span><span class="n">height</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
 </span><span class="line">
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">DC_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_c</span><span class="p">;</span>
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">DC_128_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_128_c</span><span class="p">;</span>
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">TOP_DC_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_top_c</span><span class="p">;</span>
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cfl_pred</span><span class="p">[</span><span class="n">LEFT_DC_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_cfl_left_c</span><span class="p">;</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">unsigned</span> <span class="nf">dc_gen_top</span><span class="p">(</span><span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">width</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">        <span class="n">dc</span> <span class="o">+=</span> <span class="n">topleft</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">];</span>
+</span><span class="line">    <span class="k">return</span> <span class="n">dc</span> <span class="o">&gt;&gt;</span> <span class="n">ctz</span><span class="p">(</span><span class="n">width</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_cfl_left_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                             <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span>
+</span><span class="line">                             <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span>
+</span><span class="line">                             <span class="k">const</span> <span class="kt">int16_t</span> <span class="o">*</span><span class="n">ac</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">alpha</span>
+</span><span class="line">                             <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">unsigned</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">dc_gen_left</span><span class="p">(</span><span class="n">topleft</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+</span><span class="line">    <span class="n">cfl_pred</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dc</span><span class="p">,</span> <span class="n">ac</span><span class="p">,</span> <span class="n">alpha</span> <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_cfl_top_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="kt">int</span> <span class="n">widht</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span>
+</span><span class="line">                            <span class="k">const</span> <span class="kt">int16_t</span> <span class="o">*</span><span class="n">ac</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">alpha</span>
+</span><span class="line">                            <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">cfl_pred</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">dc_gen_top</span><span class="p">(</span><span class="n">topleft</span><span class="p">,</span> <span class="n">width</span><span class="p">),</span> <span class="n">ac</span><span class="p">,</span> <span class="n">alpha</span> <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">);</span>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -275,7 +453,7 @@
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/av/'>av</a>
+    <a class='category' href='/blog/categories/av1/'>av1</a>
   
 </span>
 
@@ -307,8 +485,7 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/av/'>av (1)</a></li>
-<li class='category'><a href='/blog/categories/av1/'>av1 (5)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (6)</a></li>
 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
