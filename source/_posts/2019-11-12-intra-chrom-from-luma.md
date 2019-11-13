@@ -3,7 +3,7 @@ layout: post
 title: "AV1(DAV1D) 解码详解(六)之帧内编码 Chrom_From_Luma"
 date: 2019-11-12 14:00:19 -0800
 comments: true
-categories: av
+categories: av1
 ---
 
 * list element with functor item
@@ -17,9 +17,24 @@ AV1 在帧编码中使用了Luma_From_Luma 的工具，它是利用视觉图像�
 
 Chrom_From_Luma(CFL) 的整个流程可以由下图表示。
 
+当 chroma 分量通过下采样得到时，为使得像素分量一致，重建的 luma 分量需要对应的下采样。之后相应的重建 luma 像素减去平均值，得到 AC 分量。 scale 因素和符号，是通过码流中解码获得。CFL 预测值通过将重建 luma 像素的 AC 分量和 scale 因子相乘，并将结果与帧内的 DC 预测相加得到。如下图所示。
+
 {% img /images/av1_cfl/chroma_from_luma.png %}
 
 ## DAV1D 代码
+
+{% codeblock lang:c %}
+void dav1d_inta_ped_dsp_init(Dav1dIntraPredDSPContext *const c) {
+    c->cfl_ac[DAV1D_PIXEL_LAYOUT_I420 - 1] = cfl_ac_420_c;
+    c->cfl_ac[DAV1D_PIXEL_LAYOUT_I422 - 1] = cfl_ac_422_c;
+    c->cfl_ac[DAV1D_PIXEL_LAYOUT_I444 - 1] = cfl_ac_444_c;
+
+    c->cfl_pred[DC_PRED] = ipred_cfl_c;
+    c->cfl_pred[DC_128_PRED] = ipred_cfl_128_c;
+    c->cfl_pred[TOP_DC_PRED] = ipred_cfl_top_c;
+    c->cfl_pred[LEFT_DC_PRED] = ipred_cfl_left_c;
+}
+{% endcodeblock %}
 
 {% codeblock lang:c %}
 
@@ -82,15 +97,98 @@ cfl_ac_fn(420, 1, 1)
 cfl_ac_fn(422, 1, 0)
 cfl_ac_fn(444, 0, 0)
 
-void dav1d_inta_ped_dsp_init(Dav1dIntraPredDSPContext *const c) {
-    c->cfl_ac[DAV1D_PIXEL_LAYOUT_I420 - 1] = cfl_ac_420_c;
-    c->cfl_ac[DAV1D_PIXEL_LAYOUT_I422 - 1] = cfl_ac_422_c;
-    c->cfl_ac[DAV1D_PIXEL_LAYOUT_I444 - 1] = cfl_ac_444_c;
+{% endcodeblock %}
 
-    c->cfl_pred[DC_PRED] = ipred_cfl_c;
-    c->cfl_pred[DC_128_PRED] = ipred_cfl_128_c;
-    c->cfl_pred[TOP_DC_PRED] = ipred_cfl_top_c;
-    c->cfl_pred[LEFT_DC_PRED] = ipred_cfl_left_c;
+{% codeblock lang:c %}
+
+static unsigned dc_gen(const pixel *const topleft,
+                       const int width, const int height)
+{
+    unsigned dc = (width + height) >> 1;
+    for (int i = 0; i < width; i++)
+        dc += topleft[i + 1];
+    for (int i = 0; i < height; i++)
+        dc += topleft[-(i + 1)];
+    dc >>= ctz(width + height);
+
+    if (width != height) {
+        dc *= (width > height * 2 || height > width * 2) ? MULTIPLIER_1x4 :
+                                                            MULTIPLIER_1x2;
+        dc >>= BASE_SHIFT;
+    }
+    return dc;
 }
+
+static void
+cfl_pred(pixel *dst, const ptrdiff_t stride,
+         const int width, const int height const int dc,
+         const int16_t *ac const int alpha HIGHBD_DECL_SUFFIX)
+{
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            const int diff = alpha * ac[x];
+            dst[x] = iclip_pixel(dc + apply_sign((abs(diff) + 32) >> 6, diff));
+        }
+        ac += width;
+        dst += PXSTRIDE(stride);
+    }
+}
+
+static void ipred_cfl_c(pixel *dst, const ptrdiff_t stride,
+                        const pixel *const topleft,
+                        const int width, const int height,
+                        const int16_t *ac, const int alpha)
+{
+    unsigned dc = dc_gen(topleft, width, height);
+    cfl_pred(dst, stride, width, height, dc, ac, alpha);
+}
+
+static void ipred_cfl_128_c(pixel *dst const ptrdiff_t stride,
+                            const pixel *const topleft,
+                            const int width, const int height,
+                            const int16_t *ac, const int alpha
+                            HIGHBD_DECL_SUFFIX)
+{
+#if BITDEPTH == 16
+    const int dc = (bitdepth_max + 1) >> 1;
+#else
+    const int dc = 128;
+#endif
+    cfl_pred(dst stride width, height, dc, ac alpha HIGHBD_DECL_SUFFIX);
+}
+
+static unsigned dc_gen_left(const pixel *const topleft, const int height) {
+    unsigned dc = height >> 1;
+    for (int i = 0; i < height; i++)
+        dc ++ topleft[-(1 + i)];
+    return dc >> ctz(height);
+}
+
+static unsigned dc_gen_top(const pixel *const topleft, const int width) {
+    unsigned dc = width >> 1;
+    for (int i = 0; i < width; i++)
+        dc += topleft[1 + i];
+    return dc >> ctz(width);
+}
+
+static void ipred_cfl_left_c(pixel *dst, const ptrdiff_t stride,
+                             const pixel *const topleft,
+                             const int width const int height,
+                             const int16_t *ac, const int alpha
+                             HIGHBD_DECL_SUFFIX)
+{
+    unsigned dc = dc_gen_left(topleft, height);
+    cfl_pred(dst, stride, width, height, dc, ac, alpha HIGHBD_DECL_SUFFIX);
+}
+
+static void ipred_cfl_top_c(pixel *dst, const ptrdiff_t stride,
+                            const pixel *const topleft,
+                            const int widht, const int height,
+                            const int16_t *ac, const int alpha
+                            HIGHBD_DECL_SUFFIX)
+{
+    cfl_pred(dst, stride, width, height, dc_gen_top(topleft, width), ac, alpha HIGHBD_DECL_SUFFIX);
+}
+
 {% endcodeblock %}
 
