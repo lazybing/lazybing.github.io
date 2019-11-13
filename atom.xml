@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-11-13T07:15:33-08:00</updated>
+  <updated>2019-11-13T08:07:15-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,15 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[AV1(DAV1D)解码详解(七)之帧间编码 OBMC]]></title>
+    <link href="http://lazybing.github.io/blog/2019/11/13/obmc/"/>
+    <updated>2019-11-13T08:04:43-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/11/13/obmc</id>
+    <content type="html"><![CDATA[<h2 id="obmc">OBMC</h2>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[AV1(DAV1D) 解码详解(六)之帧内编码 Chrom_From_Luma]]></title>
@@ -30,6 +39,8 @@
 <h2 id="section">概述</h2>
 
 <p>Chrom_From_Luma(CFL) 的整个流程可以由下图表示。</p>
+
+<p>当 chroma 分量通过下采样得到时，为使得像素分量一致，重建的 luma 分量需要对应的下采样。之后相应的重建 luma 像素减去平均值，得到 AC 分量。 scale 因素和符号，是通过码流中解码获得。CFL 预测值通过将重建 luma 像素的 AC 分量和 scale 因子相乘，并将结果与帧内的 DC 预测相加得到。如下图所示。</p>
 
 <p><img src="http://lazybing.github.io/images/av1_cfl/chroma_from_luma.png" /></p>
 
@@ -3433,154 +3444,6 @@
   <li><a href="https://community.arm.com/processors/b/blog/posts/coding-for-neon---part-3-matrix-multiplication">Coding for NEON - Part 3: Matrix Multiplication</a>.</li>
 </ol>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[AV1(DAV1D) 解码详解(二)之film_grain]]></title>
-    <link href="http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis/"/>
-    <updated>2018-10-17T08:35:36-07:00</updated>
-    <id>http://lazybing.github.io/blog/2018/10/17/av1-film-grain-synthesis</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#film-grain-" id="markdown-toc-film-grain-">Film Grain 简介</a></li>
-  <li><a href="#film-grain--1" id="markdown-toc-film-grain--1">Film Grain 流程</a></li>
-  <li><a href="#section" id="markdown-toc-section">源码分析及优化</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">参考文档</a></li>
-</ul>
-
-<p><code>Film Grain</code>在电视和电影内容中广泛存在，它经常是创作内容的一部分，在编码过程中需要保留下来，因为<code>film grain</code>的随机性，导致很难用传统的压缩算法进行压缩。</p>
-
-<!--more-->
-
-<h1 id="film-grain-">Film Grain 简介</h1>
-
-<p><code>film grain</code>模型和整体框架如图所示。</p>
-
-<p><img src="http://lazybing.github.io/images/film_grain_av1/film_grain_framework.png" /></p>
-
-<p><code>film grain</code>在去噪音过程中会从视频中去除掉，<code>grain</code>参数会通过噪音视频序列和去噪视频序列的差异中获得,这些参数会和压缩视频流一起传输到解码端。 解码后，<code>film grain</code>会被叠加到重建视频帧中。</p>
-
-<h1 id="film-grain--1">Film Grain 流程</h1>
-
-<p>从上面的框架图可以看出，<code>film grain</code>包括压缩前的去噪、编码参数、解码参数、噪音叠加到重建帧等几个过程，这里不讨论去噪的过程，主要讨论<code>film grain modeling synthesis</code>。
-流程可以从<code>SPEC</code>中看到，也可以从源码中学习，<code>film grain</code>中在源码中主要集中在<code>aom/aom_dsp/grain_synthesis.c</code>中的<code>av1_add_film_grain_run</code>函数中，分析源码可知大致分为如下流程：</p>
-
-<ul>
-  <li>init_array. 为<code>film grain</code>准备后面用到的内存，大致分为三类<code>grain buffer(luma_grain_block/cb_grain_block/cr_grain_block)</code>、<code>line buf(y_line_buf/cb_line_buf/cr_line_buf)</code>、<code>column buf(y_col_buf/cb_col_buf/cr_col_buf)</code>。</li>
-  <li>generate_luma_grain_block 和 generate_chroma_grain_blocks. 它会根据码流中 parse 出来的<code>grain_scale_shift/ar_coeff_lag</code>的值和<code>gaussian_sequence</code>表来填充<code>grain block</code>。</li>
-  <li>init_scaling_function. 它是利用码流中 parse 出来的 <code>scaling_points_y</code>来填充<code>scaling_lut_y/scaling_lut_cb/scaling_lut_cr</code>数组。</li>
-  <li>add_noise_to_block。它会根据上面生成的<code>grain block</code>叠加到重建帧上。</li>
-</ul>
-
-<h1 id="section">源码分析及优化</h1>
-<p>以解码器 DAV1D 中 Film Grain 的源码分析。首先看 Y 方向上的主要代码</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="c1">// samples from the correct block of a grain LUT, while taking into account the</span>
-</span><span class="line"><span class="c1">// offsets provided by the offsets cache</span>
-</span><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="n">entry</span> <span class="nf">sample_lut</span><span class="p">(</span><span class="n">entry</span> <span class="n">grain_lut</span><span class="p">[</span><span class="n">GRAIN_HEIGHT</span><span class="p">][</span><span class="n">GRAIN_WIDTH</span><span class="p">],</span>
-</span><span class="line">                               <span class="kt">int</span> <span class="n">offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="kt">int</span> <span class="n">subx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">suby</span><span class="p">,</span>
-</span><span class="line">                               <span class="kt">int</span> <span class="n">bx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">by</span><span class="p">,</span> <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">randval</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">bx</span><span class="p">][</span><span class="n">by</span><span class="p">];</span>
-</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">offx</span>    <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">&gt;&gt;</span> <span class="n">subx</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="n">randval</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">));</span>
-</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">offy</span>    <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">&gt;&gt;</span> <span class="n">suby</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="n">randval</span> <span class="o">&amp;</span> <span class="mh">0xF</span><span class="p">));</span>
-</span><span class="line">    <span class="k">return</span> <span class="n">grain_lut</span><span class="p">[</span><span class="n">offy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">BLOCK_SIZE</span> <span class="o">&gt;&gt;</span> <span class="n">suby</span><span class="p">)</span> <span class="o">*</span> <span class="n">by</span><span class="p">]</span>
-</span><span class="line">                    <span class="p">[</span><span class="n">offx</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="p">(</span><span class="n">BLOCK_SIZE</span> <span class="o">&gt;&gt;</span> <span class="n">subx</span><span class="p">)</span> <span class="o">*</span> <span class="n">bx</span><span class="p">];</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="cp">#define add_noise_y(x, y, grain)    \</span>
-</span><span class="line"><span class="cp">    pixel *src = src_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
-</span><span class="line"><span class="cp">    pixel *dst = dst_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
-</span><span class="line"><span class="cp">    int noise = round2(scaling[*src] * (grain), data-&gt;scaling_shift); \</span>
-</span><span class="line"><span class="cp">    *dst = iclip(*src + noise, min_value, max_value);</span>
-</span><span class="line">
-</span><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="c1">// Non-overlapped image region(straightforward)</span>
-</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="kt">int</span> <span class="n">grain</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
-</span><span class="line">        <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>上面的代码主要包含两部分，一. 从 grain_lut 中获取 grain，二. 通过获取的 grain 值，执行 add_noise_y。分析代码，如果想要利用 NEON 进行汇编优化，
-存在一个问题，就是无法连续的从 grain_lut 中连续的获取值，因此直接按照源码的流程，无法进行 NEON 优化。考虑到硬件的 cache 原理，可以先将
-所有的 grain 值提前提取出来放到数组中，之后在进行 add_noise_y 时，就可以连续的获取 grain 值了。从程序上看，该方法没有任何作用，因为执行的代码
-是相同的，但硬件是有cache的，因此，可以提升性能。也为后面的 NEON 提供了遍历。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#define add_noise_y(x, y, grain)    \</span>
-</span><span class="line"><span class="cp">    pixel *src = src_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
-</span><span class="line"><span class="cp">    pixel *dst = dst_row + (y) * PXSTRIDE(stride) + (bx + (x)); \</span>
-</span><span class="line"><span class="cp">    int noise = round2(scaling[*src] * (grain), data-&gt;scaling_shift); \</span>
-</span><span class="line"><span class="cp">    *dst = iclip(*src + noise, min_value, max_value);</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="o">*</span><span class="n">grain</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="o">*</span> <span class="p">(</span><span class="n">bh</span> <span class="o">-</span> <span class="n">ystart</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">bw</span> <span class="o">-</span> <span class="n">xstart</span><span class="p">));</span>
-</span><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">){</span>
-</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">        <span class="n">grain</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_lut</span><span class="p">(</span><span class="n">grain_lut</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ystart</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">bh</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="c1">// Non-overlapped image region(straightforward)</span>
-</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">xstart</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">bw</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="n">add_noise_y</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grain</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>上面代码优化前，解码 960x540 的分辨率率的视频，该模块耗时 8ms,C 代码优化完后，该模块耗时 7ms。在此基础上，进行 NEON 优化，该模块耗时 5ms。</p>
-
-<h1 id="section-1">参考文档</h1>
-
-<ol>
-  <li><a href="https://aomediacodec.github.io/av1-spec/">AV1 Bitstream &amp; Decoding Process</a></li>
-</ol>
-
-<p>(未完待续…)</p>
 ]]></content>
   </entry>
   
