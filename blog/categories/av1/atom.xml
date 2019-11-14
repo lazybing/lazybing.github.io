@@ -4,7 +4,7 @@
   <title><![CDATA[分类:av1 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/av1/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-11-13T08:07:15-08:00</updated>
+  <updated>2019-11-14T07:15:53-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -14,11 +14,183 @@
 
   
   <entry>
+    <title type="html"><![CDATA[AV1(DAV1D)解码详解(七)之帧内编码 Color Palette]]></title>
+    <link href="http://lazybing.github.io/blog/2019/11/14/intra-color-palette-predictor/"/>
+    <updated>2019-11-14T08:04:43-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/11/14/intra-color-palette-predictor</id>
+    <content type="html"><![CDATA[<h2 id="section">调色板模式概述</h2>
+
+<p>调色板模式，对于屏幕内容图像，很多编码块内部的颜色数是有限的，调色板模式枚举这些颜色生成颜色表，然后为每个样本传递一个索引以指示它属于颜色表中的哪种颜色。和基于预测-变换的传统编码方法相比，对于颜色数相对集中的屏幕内容图像，调色板模式往往更加有效。</p>
+
+<h2 id="color-palette">Color Palette</h2>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="nf">pal_pred_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class='line'>                       <span class="k">const</span> <span class="kt">uint16_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">pal</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">idx</span><span class="p">,</span>
+</span><span class='line'>                       <span class="k">const</span> <span class="kt">int</span> <span class="n">w</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">h</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">h</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">w</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">dst</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">pal</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">x</span><span class="p">]];</span>
+</span><span class='line'>        <span class="n">idx</span> <span class="o">+=</span> <span class="n">w</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">dst</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[AV1(DAV1D)解码详解(七)之帧间编码 OBMC]]></title>
-    <link href="http://lazybing.github.io/blog/2019/11/13/obmc/"/>
+    <link href="http://lazybing.github.io/blog/2019/11/13/inter-overlapped-block-motion-compensation/"/>
     <updated>2019-11-13T08:04:43-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/11/13/obmc</id>
-    <content type="html"><![CDATA[<h2 id="obmc">OBMC</h2>
+    <id>http://lazybing.github.io/blog/2019/11/13/inter-overlapped-block-motion-compensation</id>
+    <content type="html"><![CDATA[<h2 id="obmc-">OBMC 概述</h2>
+
+<p>OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。</p>
+
+<h2 id="section">代码</h2>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="nf">obmc</span><span class="p">(</span><span class="n">Dav1dTileContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">t</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">dst_stride</span><span class="p">,</span>
+</span><span class='line'>                <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">b_dim</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">pl</span><span class="p">,</span>
+</span><span class='line'>                <span class="k">const</span> <span class="kt">int</span> <span class="n">bx4</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">by4</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">w4</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">h4</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">assert</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">bx</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="o">!</span><span class="p">(</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">by</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="mi">1</span><span class="p">));</span>
+</span><span class='line'>    <span class="k">const</span> <span class="n">Dav1dFrameContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">f</span> <span class="o">=</span> <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">f</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">const</span> <span class="n">refmvs</span> <span class="o">*</span><span class="k">const</span> <span class="n">r</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mvs</span><span class="p">[</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">by</span> <span class="o">*</span> <span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">b4_stride</span> <span class="o">+</span> <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">bx</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">lap</span> <span class="o">=</span> <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">scratch</span><span class="p">.</span><span class="n">lap</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_ver</span> <span class="o">=</span> <span class="o">!!</span><span class="n">pl</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cur</span><span class="p">.</span><span class="n">p</span><span class="p">.</span><span class="n">layout</span> <span class="o">==</span> <span class="n">DAV1D_PIXEL_LAYOUT_I420</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_hor</span> <span class="o">=</span> <span class="o">!!</span><span class="n">pl</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">cur</span><span class="p">.</span><span class="n">p</span><span class="p">.</span><span class="n">layout</span> <span class="o">==</span> <span class="n">DAV1D_PIXEL_LAYOUT_I444</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">const</span> <span class="kt">int</span> <span class="n">h_mul</span> <span class="o">=</span> <span class="mi">4</span><span class="err"> »</span> <span class="n">ss_hor</span><span class="p">,</span> <span class="n">v_mul</span> <span class="o">=</span> <span class="mi">4</span><span class="err"> »</span> <span class="n">ss_ver</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">res</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">if</span> <span class="p">(</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">by</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ts</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tiling</span><span class="p">.</span><span class="n">row_start</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">(</span><span class="o">!</span><span class="n">pl</span> <span class="o">||</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">h_mul</span> <span class="o">+</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">v_mul</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">16</span><span class="p">))</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">w4</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">4</span><span class="p">);)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// only odd blocks are considered for overlap handling, hence + 1</span>
+</span><span class='line'>        <span class="k">const</span> <span class="n">refmvs</span> <span class="o">*</span><span class="k">const</span> <span class="n">a_r</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">r</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">b4_stride</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">a_b_dim</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">dav1d_block_dimensions</span><span class="p">[</span><span class="n">sbtype_to_bs</span><span class="p">[</span><span class="n">a_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sb_type</span><span class="p">]];</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">a_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">const</span> <span class="kt">int</span> <span class="n">ow4</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">(</span><span class="n">a_b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'>            <span class="k">const</span> <span class="kt">int</span> <span class="n">oh4</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">res</span> <span class="o">=</span> <span class="n">mc</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">ow4</span> <span class="o">*</span> <span class="n">h_mul</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">pixel</span><span class="p">),</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">oh4</span><span class="p">,</span>
+</span><span class='line'>                     <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">bx</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">by</span><span class="p">,</span> <span class="n">pl</span><span class="p">,</span> <span class="n">a_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+</span><span class='line'>                     <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">refp</span><span class="p">[</span><span class="n">a_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ref</span><span class="p">[[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">a_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>                     <span class="n">dav1d_filter_2d</span><span class="p">[</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">filter</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">bx4</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]][</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">a</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">filter</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">bx4</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]);</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">dsp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mc</span><span class="p">.</span><span class="n">blend_h</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">dst</span><span class="p">[</span><span class="n">x</span> <span class="o">*</span> <span class="n">h_mul</span><span class="p">],</span> <span class="n">dst_stride</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span>
+</span><span class='line'>                               <span class="n">h_mul</span> <span class="o">*</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">v_mul</span> <span class="o">*</span> <span class="n">oh4</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">x</span> <span class="o">+=</span> <span class="n">imax</span><span class="p">(</span><span class="n">a_b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">bx</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ts</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">tiling</span><span class="p">.</span><span class="n">col_start</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">h4</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">4</span><span class="p">);</span> <span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// only odd blocks are considered for overlap handling, hence +1</span>
+</span><span class='line'>        <span class="k">const</span> <span class="n">refmvs</span> <span class="o">*</span><span class="k">const</span> <span class="n">l_r</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">r</span><span class="p">[(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">b4_stride</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>        <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">l_b_dim</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">dav1d_block_dimensions</span><span class="p">[</span><span class="n">sbtype_to_bs</span><span class="p">[</span><span class="n">l_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">sb_type</span><span class="p">]];</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">l_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">const</span> <span class="kt">int</span> <span class="n">ow4</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">const</span> <span class="kt">int</span> <span class="n">oh4</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">(</span><span class="n">l_b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>            <span class="n">res</span> <span class="o">=</span> <span class="n">mc</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">h_mul</span> <span class="o">*</span> <span class="n">ow4</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">pixel</span><span class="p">),</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">oh4</span><span class="p">,</span>
+</span><span class='line'>                     <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">bx</span><span class="p">,</span> <span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">by</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">pl</span><span class="p">,</span> <span class="n">l_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+</span><span class='line'>                     <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">refp</span><span class="p">[</span><span class="n">l_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">l_r</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>                     <span class="n">dav1d_filter_2d</span><span class="p">[</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">l</span><span class="p">.</span><span class="n">filter</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">by4</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]][</span><span class="n">t</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">l</span><span class="p">.</span><span class="n">filter</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">by4</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]);</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">f</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">dsp</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">mc</span><span class="p">.</span><span class="n">blend_v</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">dst</span><span class="p">[</span><span class="n">y</span> <span class="o">*</span> <span class="n">v_mul</span> <span class="o">*</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">dst_stride</span><span class="p">)],</span>
+</span><span class='line'>                            <span class="n">dst_stride</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span> <span class="n">h_mul</span> <span class="o">*</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">v_mul</span> <span class="o">*</span> <span class="n">oh4</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">y</span> <span class="o">+=</span> <span class="n">imax</span><span class="p">(</span><span class="n">l_b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
 ]]></content>
   </entry>
   
@@ -532,134 +704,6 @@
   <li><a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">AV1 Bitstream and Decoding Process</a></li>
   <li><a href="https://jmvalin.ca/papers/AV1_tools.pdf">An Overview of Core Coding Tools in the AV1 Video Codec</a></li>
   <li><a href="https://static1.squarespace.com/static/56ac12221f40397fbfd21993/t/59cf3d9a2278e777855714bb/1506753947391/0000265.pdf">A SWITCHABLE LOOP-RESTORATION WITH SIDE-INFORMATION FRAMEWORK FOR THE EMERGING AV1 VIDEO CODEC</a></li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[AV1(DAV1D) 解码详解(三)之CDEF]]></title>
-    <link href="http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter/"/>
-    <updated>2019-01-28T06:32:04-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/01/28/av1-cdef-filter</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#cdef-" id="markdown-toc-cdef-">CDEF 介绍</a></li>
-  <li><a href="#section" id="markdown-toc-section">方向查找</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">非线性低通滤波器</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">定向滤波器</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">代码实现分析</a>        <ul>
-          <li><a href="#section-4" id="markdown-toc-section-4">方向查找实现</a></li>
-          <li><a href="#cdef--1" id="markdown-toc-cdef--1">CDEF 方向滤波</a></li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-  <li><a href="#section-5" id="markdown-toc-section-5">参考文档</a></li>
-</ul>
-
-<p>CDEF(constrained directional enhancement)约束方向增强滤波器是 AV1 里的几种滤波器之一， SPEC 中定义的该部分在 7.15 CDEF process 中。AOM 代码中在 cdef.c 相关的文件中。除此外，还可以参考 <code>The AV1 CONSTRAINED DIRECTIONAL ENHANCEMENT FILTER</code>论文，本文就是基于上面三个部分分析的结果。</p>
-
-<!--more-->
-
-<p>环路滤波器基于非线性低通滤波器，专为矢量化效率设计的。该滤波器考虑边缘方向和滤波模式，它通过确定每个 block 块的方向，然后自适应的用沿方向的滤波强度进行滤波。增强滤波目的是提高 AOM 的质量，尤其是低复杂性的配置中。</p>
-
-<h2 id="cdef-">CDEF 介绍</h2>
-
-<p>CDEF 的主要目的是过滤掉编码杂音，同时保留图像的详细内容。AV1 中采用的方法是非线性空间滤波器，该滤波器的设计非常适用于矢量化，即可以使用 SIMD 操作，而其他非线性滤波器（如中值滤波器和双边滤波器）并非如此。</p>
-
-<p>CDEF 滤波器的设计基于以下观察：编码图像中杂音的数量通常与量化步长大致成比例，图像详细内容的数量是输入图像的一个属性，保留在量化过的图像中的最小的实际信息量也与量化成一定的比例。对于给定的步长，杂音的幅度要比细节的幅度小很多。</p>
-
-<p>CDEF 首先判断每个块的方向，之后沿着判断的方向自适应的滤波，并沿着判断的方向小幅度旋转 45 度，滤波强度明确表示，对模糊的高度控制。</p>
-
-<p>CDEF 是基于之前提到的两个环路滤波器，结合的滤波器用在了 AV1 Codec 中。</p>
-
-<p>从 SPEC 中的7.15 节可以看出，CDEF 可以理解为，输入为重建像素的当前帧数组，输出为包含了 Deringed 像素的数组 CDEF 帧。CDEF 的作用就是在侦测到的块方向上执行 DEringing， 码流中 CDEF 参数存放到每个64x64块(luma像素)中。可以将 CDEF 模块大致分为3步：</p>
-
-<ul>
-  <li>CDEF Block 处理</li>
-  <li>CDEF Direction 处理</li>
-  <li>CDEF Filter 处理</li>
-</ul>
-
-<h2 id="section">方向查找</h2>
-
-<p>方块滤波后，方向查找就作用在重建像素上。因为重建像素对解码器是可获取的，因此滤波方向不需要特定的给出。查找作用在 8x8 块上，当应用到量化过后的图像时，该大小对于充分处理非直接边缘已经足够小，而对可靠地估计出方向又已经足够大了,有一个固定方向作用在8x8区域上，使得矢量化滤波更容易。</p>
-
-<p><img src="/images/av1_cdef/av1_cdef_find_dir.png"></p>
-
-<p>对每个方向d，每行k的平均像素是: $ u_{d,k} = \frac{1}{N_{d,k}} \sum_{p \in P_{d,k}} x_p$ 其中：</p>
-
-<ul>
-  <li>$x_p$ 是像素$p$的值</li>
-  <li>$P_{d,k}$是在方向$d$上第$k$行的一组像素值</li>
-  <li>$N_{d,k}$是相对$P_{d,k}$对应的基数，如$N_{1,0}=2, N_{1,4}=8$</li>
-</ul>
-
-<p><code>SSD</code>的计算公式如下：$E_{d}^2 = \sum_{k} \big[\sum_{p \in P_{d,k}} \big( x_{p} - u_{d,k}\big)^2 \big]$</p>
-
-<p>将上面的两个公式整合后，结果如下：$E_{d}^2 = \sum_{p}x_{p}^2 - \sum_{k}\frac{1}{N_{d,k}} \big(\sum_{p \in P_{d,k}} x_p \big)^2$</p>
-
-<p>我们可以通过计算上面公式中第二部分的最大值来寻找最佳方向 $d_{opt}$, $d_opt = max_d s_d$, 其中 $s_{d} = \sum_{k}\frac{1}{N_{d,k}} \big(sum_{p \in P_{d,k}} x_p \big)^2$</p>
-
-<p>可以用 840 乘以$S_d$来避免除以$N_{d,k}$,840 是所有$N_{d,k}$的最小公倍数。对于 8bit 数据，数据值为$[-128, 127]$，所有$840S_d$和所有的其他计算都适用于 32位 signed 整数类型。对于更高的bit，如10bit或12bit，在查找方向时，缩放像素到 8bit。</p>
-
-<p><img src="/images/av1_cdef/direction_search.png"></p>
-
-<p>上图展示了一个针对 8x8 块，寻找方向的例子，寻找的算法如下。为了节省解码器的复杂度，我们假定亮度和色度方向是相关的，因此我们只寻找亮度原件的方向，该方向与色度方向相同。</p>
-
-<p><img src="/images/av1_cdef/algorithm_find_direction.png"></p>
-
-<h2 id="section-1">非线性低通滤波器</h2>
-
-<p>CDEF 使用非线性低通滤波器，去除编码杂音的同时不会模糊块的边缘。AV1 根据特定方向寻找滤波器抽头位置，同时当滤波器运用到块边界时，要防止过度模糊。使用非线性低通滤波器，在滤波像素偏差过大时，就不再对该像素过度强调。</p>
-
-<h3 id="section-2">定向滤波器</h3>
-
-<p>确认方向是为了统一特定方向上滤波器抽头，来降低振铃，同时不会模糊特定的边缘。但是单纯的定向滤波器有时无法高效的降低振铃效应，因此同时需要对像素数据使用滤波器抽头，该抽头并不是直接沿着主要方向。为了降低模糊块的风险，这些额外的抽头会被更保守的处理。因此，CDEF 定义了 primary taps 和 secondary taps。</p>
-
-<p>primary taps 沿着方向 d，它的系数如上面图 4 所示。对 primary taps，对不同的 strength，会有不同的系数，对于1/3/5的strength，与2/4/6的strength，系数是不同的。secondary tpas 会形成一个十字架，是方向 d 旋转 45° 后得到，系数如图 5。</p>
-
-<p><img src="/images/av1_cdef/primary_filter.png">
-<img src="/images/av1_cdef/secondary_filter.png"></p>
-
-<p>2-D CDEF 滤波器公式如下：</p>
-
-<p>$y(i,j) = x(i,j) + round( \sum_{m,n} w_{d,m,n}^{(p)} f(x(m,n) -x(i, j), S^{(p)}, D) + \sum_{m,n} w_{d,m,n}^{(s)} f(x(m,n) -x(i,j), S^{(s)}, D))$</p>
-
-<ul>
-  <li>$S_{p}$和$S_{s}$是 primary 和 secondary 抽头的 strength。</li>
-</ul>
-
-<p>每个要滤波的 8x8 块，方向、strength 和 damping 参数是固定的。当处理位置(i, j)处的像素时，滤波器允许使用 x(i+m, j+m)处的像素，该像素可能超出 8x8 块的边界。如果处理像素超出了帧范围，像素会被忽略(f(d, S, D) = 0)。为最大化并行，CDEF 总是作用在输入(post-deblocking)像素 x(i,j)上，这样在滤波其他像素时，不会用的之前已经滤波王城的像素。</p>
-
-<h3 id="section-3">代码实现分析</h3>
-
-<p>此处以 DAV1D 工程里的 CDEF 模块作为例子，主要介绍两部分，<code>cdef_find_dir</code>和<code>cdef_filter_block</code>，并把 10bit 汇编优化完成。完成后，在 pixel2 手机上测试，效率提升大概 30% 左右。</p>
-
-<h4 id="section-4">方向查找实现</h4>
-
-<p>DAV1D 工程里，对 CDEF 方向查找，完成了 C 代码实现和对 8bit 码流的汇编优化，对10bit优化并没有完成。</p>
-
-<p><figure class='code'><figcaption><span>cdef_find_dir.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h4 id="cdef--1">CDEF 方向滤波</h4>
-
-<p>滤波主要由两步完成，</p>
-
-<h2 id="section-5">参考文档</h2>
-
-<ol>
-  <li><a href="https://aomediacodec.github.io/av1-spec/av1-spec.pdf">AV1 Bitstream and Decoding Process</a></li>
-  <li><a href="https://jmvalin.ca/papers/AV1_tools.pdf">An Overview of Core Coding Tools in the AV1 Video Codec</a></li>
-  <li><a href="http://www.mirlab.org/conference_papers/international_conference/ICASSP%202018/pdfs/0001193.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
-  <li><a href="https://jmvalin.ca/misc_stuff/icassp2018_slides.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
 </ol>
 
 ]]></content>

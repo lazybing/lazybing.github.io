@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>AV1(DAV1D)解码详解(七)之帧间编码 OBMC - 懒人李冰</title>
+  <title>AV1(DAV1D)解码详解(七)之帧内编码 Color Palette - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="OBMC
-">
+  <meta name="description" content="调色板模式概述 调色板模式，对于屏幕内容图像，很多编码块内部的颜色数是有限的，调色板模式枚举这些颜色生成颜色表，然后为每个样本传递一个索引以指示它属于颜色表中的哪种颜色。和基于预测-变换的传统编码方法相比，对于颜色数相对集中的屏幕内容图像，调色板模式往往更加有效。 Color Palette 1 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2019/11/13/obmc/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/11/14/intra-color-palette-predictor/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -83,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">AV1(DAV1D)解码详解(七)之帧间编码 OBMC</h1>
+      <h1 class="entry-title">AV1(DAV1D)解码详解(七)之帧内编码 Color Palette</h1>
     
     
       <p class="meta">
@@ -92,14 +91,43 @@
 
 
 
-<time class='entry-date' datetime='2019-11-13T08:04:43-08:00'><span class='date'>2019 年 11 月 13 日</span> <span class='time'>8:04 am</span></time>
+<time class='entry-date' datetime='2019-11-14T08:04:43-08:00'><span class='date'>2019 年 11 月 14 日</span> <span class='time'>8:04 am</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><h2 id="obmc">OBMC</h2>
+<div class="entry-content"><h2 id="section">调色板模式概述</h2>
+
+<p>调色板模式，对于屏幕内容图像，很多编码块内部的颜色数是有限的，调色板模式枚举这些颜色生成颜色表，然后为每个样本传递一个索引以指示它属于颜色表中的哪种颜色。和基于预测-变换的传统编码方法相比，对于颜色数相对集中的屏幕内容图像，调色板模式往往更加有效。</p>
+
+<h2 id="color-palette">Color Palette</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">pal_pred_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                       <span class="k">const</span> <span class="kt">uint16_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">pal</span><span class="p">,</span> <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">idx</span><span class="p">,</span>
+</span><span class="line">                       <span class="k">const</span> <span class="kt">int</span> <span class="n">w</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">h</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">h</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">w</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line">            <span class="n">dst</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">pal</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">x</span><span class="p">]];</span>
+</span><span class="line">        <span class="n">idx</span> <span class="o">+=</span> <span class="n">w</span><span class="p">;</span>
+</span><span class="line">        <span class="n">dst</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
@@ -115,7 +143,7 @@
 
 
 
-<time class='entry-date' datetime='2019-11-13T08:04:43-08:00'><span class='date'>2019 年 11 月 13 日</span> <span class='time'>8:04 am</span></time>
+<time class='entry-date' datetime='2019-11-14T08:04:43-08:00'><span class='date'>2019 年 11 月 14 日</span> <span class='time'>8:04 am</span></time>
       
 
 <span class="categories">
@@ -129,7 +157,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/11/13/obmc/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/11/13/obmc/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/11/14/intra-color-palette-predictor/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/11/14/intra-color-palette-predictor/" >Tweet</a>
   
   
   
@@ -138,7 +166,7 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2019/11/12/intra-chrom-from-luma/" title="Previous Post: AV1(DAV1D) 解码详解(六)之帧内编码 Chrom_From_Luma">&laquo; AV1(DAV1D) 解码详解(六)之帧内编码 Chrom_From_Luma</a>
+        <a class="basic-alignment left" href="/blog/2019/11/13/inter-overlapped-block-motion-compensation/" title="Previous Post: AV1(DAV1D)解码详解(七)之帧间编码 OBMC">&laquo; AV1(DAV1D)解码详解(七)之帧间编码 OBMC</a>
       
       
     </p>
@@ -152,7 +180,7 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/av1/'>av1 (7)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (8)</a></li>
 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
@@ -173,7 +201,11 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2019/11/13/obmc/">AV1(DAV1D)解码详解(七)之帧间编码 OBMC</a>
+        <a href="/blog/2019/11/14/intra-color-palette-predictor/">AV1(DAV1D)解码详解(七)之帧内编码 Color Palette</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/11/13/inter-overlapped-block-motion-compensation/">AV1(DAV1D)解码详解(七)之帧间编码 OBMC</a>
       </li>
     
       <li class="post">
@@ -186,10 +218,6 @@
     
       <li class="post">
         <a href="/blog/2019/07/10/deblock-filter/">AV1(DAV1D) 解码详解(五)之DEBLOCK FILTER</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/05/17/perf/">性能优化之性能分析工具perf</a>
       </li>
     
   </ul>
