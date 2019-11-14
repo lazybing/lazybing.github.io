@@ -6,6 +6,13 @@ comments: true
 categories:  av1
 ---
 
+* list element with functor item
+{:toc}
+
+OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。
+
+<!--more-->
+
 ## OBMC 概述
 
 OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。
