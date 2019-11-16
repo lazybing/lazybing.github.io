@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>X264 源码解析之帧间预测 - 懒人李冰</title>
+  <title>AV1(DAV1D)解码详解(九)之帧内编码帧内拷贝模式 Intra_Block_Copy - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="本文记录 H264 中关于帧间预测的部分，并详细解析它在 x264 中的源码实现。 ">
+  <meta name="description" content="概述 几个概念 AV1 允许它的帧内编码器在预测当前块时，反向搜索当前帧中之前已经重建的部分，该方式在某种程度上与帧间编码搜索之前的帧是类似的。
+该方法对于屏幕内容的视频压缩非常有效，因为屏幕内容的视频通常会在同一帧中包含相同的文本、字符等内容。 概述 帧内块拷贝(Intra Block &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2017/07/08/x264-inter-prediction/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/11/16/intra-block-copy/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +83,7 @@
   
   <header>
     
-      <h1 class="entry-title">X264 源码解析之帧间预测</h1>
+      <h1 class="entry-title">AV1(DAV1D)解码详解(九)之帧内编码帧内拷贝模式 Intra_Block_Copy</h1>
     
     
       <p class="meta">
@@ -91,16 +92,44 @@
 
 
 
-<time class='entry-date' datetime='2017-07-08T07:44:15-07:00'><span class='date'>2017 年 07 月 08 日</span> <span class='time'>7:44 am</span></time>
+<time class='entry-date' datetime='2019-11-16T00:59:55-08:00'><span class='date'>2019 年 11 月 16 日</span> <span class='time'>12:59 am</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>本文记录 H264 中关于帧间预测的部分，并详细解析它在 x264 中的源码实现。</p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">概述</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">几个概念</a></li>
+</ul>
+
+<p>AV1 允许它的帧内编码器在预测当前块时，反向搜索当前帧中之前已经重建的部分，该方式在某种程度上与帧间编码搜索之前的帧是类似的。
+该方法对于屏幕内容的视频压缩非常有效，因为屏幕内容的视频通常会在同一帧中包含相同的文本、字符等内容。</p>
 
 <!--more-->
+
+<h2 id="section">概述</h2>
+
+<p>帧内块拷贝(Intra Block Copy，简称 IntraBC)，除了传统的帧内和帧间预测模式外，IBC 模式采用当前帧中已重建帧作为预测块，可以认为 IntraBC 是当前编码图像内的运动补偿。</p>
+
+<h2 id="section-1">几个概念</h2>
+
+<p>AV1 SPEC 中关于 IntraBC 的几点。</p>
+
+<blockquote>
+  <p><strong>allow_intrabc</strong> equal to 1 indicates that intra block copy may be used in this frame. allow_intrabc equal to 0 indicates that intra block copy is not allowed in this frame.
+<strong>Note:</strong> intra block copy is only allowed in intra frames, and disables all loop filtering. force_integer_mv will be equal to 1 for intra frames, so only integer offsets are allowed in block copy mode.
+<strong>force_integer_mv</strong> equal to 1 specifies that motion vectors will always be integers. force_integer_mv equal to 0 specifies that motion vectors can contain fractional bits.</p>
+</blockquote>
+
+<p>allow_intrabc 为1，表示该帧中可能存在 intra block copy，否则不存在。同时，intra block copy 仅仅在帧内编码图像中允许，使用了 intra block copy 的块，禁止任何的滤波。</p>
+
+<blockquote>
+  <p><strong>use_intrabc</strong> equal to 1 specifies that intra block copy should be used for this block. use_intrabc equal to 0 specifies that intra block copy should not be used.</p>
+</blockquote>
+
+<p>use_intrabc 为 1，表示该宏块使用 intra_block_copy ，否则不使用该方法。</p>
 
 </div>
 
@@ -117,12 +146,12 @@
 
 
 
-<time class='entry-date' datetime='2017-07-08T07:44:15-07:00'><span class='date'>2017 年 07 月 08 日</span> <span class='time'>7:44 am</span></time>
+<time class='entry-date' datetime='2019-11-16T00:59:55-08:00'><span class='date'>2019 年 11 月 16 日</span> <span class='time'>12:59 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/x264/'>x264</a>
+    <a class='category' href='/blog/categories/av1/'>av1</a>
   
 </span>
 
@@ -131,7 +160,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2017/07/08/x264-inter-prediction/" data-via="" data-counturl="http://lazybing.github.io/blog/2017/07/08/x264-inter-prediction/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/11/16/intra-block-copy/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/11/16/intra-block-copy/" >Tweet</a>
   
   
   
@@ -140,10 +169,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2017/06/30/x264-intra-prediction/" title="Previous Post: x264 源码解析之帧内预测">&laquo; x264 源码解析之帧内预测</a>
+        <a class="basic-alignment left" href="/blog/2019/11/14/intra-color-palette-predictor/" title="Previous Post: AV1(DAV1D)解码详解(八)之帧内编码调色板模式 Color Palette">&laquo; AV1(DAV1D)解码详解(八)之帧内编码调色板模式 Color Palette</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2017/07/08/x264-pixel-init-function/" title="Next Post: x264源码解析之x264_pixel_init函数">x264源码解析之x264_pixel_init函数 &raquo;</a>
       
     </p>
   </footer>
