@@ -9,8 +9,15 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="
-帧内预测种，除了方向预测模式外，AV1 还支持非定向帧内预测模式，它有 4 种不同的方法对当前值进行预测，其中包括 3 种平滑预测模式 SMOOTH_V、SMOOTH_H、SMOOTH 以及 PAETH 预测器。 ">
+  <meta name="description" content="概述 DAV1D 代码 帧内预测种，除了方向预测模式外，AV1 还支持非定向帧内预测模式，它有 4 种不同的方法对当前值进行预测，其中包括 3 种平滑预测模式 SMOOTH_V、SMOOTH_H、SMOOTH 以及 PAETH 预测器。 概述 DAV1D 代码 1
+2
+3
+4
+5
+6
+7
+8
+9 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,10 +106,112 @@
   </header>
 
 
-<div class="entry-content">
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">概述</a></li>
+  <li><a href="#dav1d-" id="markdown-toc-dav1d-">DAV1D 代码</a></li>
+</ul>
+
 <p>帧内预测种，除了方向预测模式外，AV1 还支持非定向帧内预测模式，它有 4 种不同的方法对当前值进行预测，其中包括 3 种平滑预测模式 SMOOTH_V、SMOOTH_H、SMOOTH 以及 PAETH 预测器。</p>
 
 <!--more-->
+
+<h2 id="section">概述</h2>
+
+<h2 id="dav1d-">DAV1D 代码</h2>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_paeth_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                          <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">tl_ptr</span><span class="p">,</span>
+</span><span class="line">                          <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">a</span><span class="p">,</span>
+</span><span class="line">                          <span class="k">const</span> <span class="kt">int</span> <span class="n">max_width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">max_height</span>
+</span><span class="line">                          <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">topleft</span> <span class="o">=</span> <span class="n">tl_ptr</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">const</span> <span class="kt">int</span> <span class="n">left</span> <span class="o">=</span> <span class="n">tl_ptr</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)];</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="n">cont</span> <span class="kt">int</span> <span class="n">top</span> <span class="o">=</span> <span class="n">tl_ptr</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">];</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">base</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">top</span> <span class="o">-</span> <span class="n">topleft</span><span class="p">;</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">ldiff</span> <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">left</span> <span class="o">-</span> <span class="n">base</span><span class="p">);</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">tdiff</span> <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">top</span> <span class="o">-</span> <span class="n">base</span><span class="p">);</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">tldiff</span> <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">topleft</span> <span class="o">-</span> <span class="n">base</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">            <span class="n">dst</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">ldiff</span> <span class="o">&lt;=</span> <span class="n">tdiff</span> <span class="o">&amp;&amp;</span> <span class="n">ldiff</span> <span class="o">&lt;=</span> <span class="n">tldiff</span> <span class="o">?</span> <span class="nl">left</span> <span class="p">:</span>
+</span><span class="line">                    <span class="n">tdiff</span> <span class="o">&lt;=</span> <span class="n">tldiff</span> <span class="o">?</span> <span class="nl">top</span> <span class="p">:</span> <span class="n">topleft</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="n">dst</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<p>3 种平滑预测的方法如下图所示。</p>
+
+<p><img src="/images/av1_startup/smooth_intra_predictors.png" /></p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_smooth_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                           <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft</span><span class="p">,</span>
+</span><span class="line">                           <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">a</span><span class="p">,</span>
+</span><span class="line">                           <span class="k">const</span> <span class="kt">int</span> <span class="n">max_width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">max_height</span>
+</span><span class="line">                           <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">weights_hor</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dav1d_sm_weights</span><span class="p">[</span><span class="n">width</span><span class="p">];</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">weights_ver</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dav1d_sm_weights</span><span class="p">[</span><span class="n">height</span><span class="p">];</span>
+</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">right</span> <span class="o">=</span> <span class="n">topleft</span><span class="p">[</span><span class="n">width</span><span class="p">],</span> <span class="n">bottom</span> <span class="o">=</span> <span class="n">topleft</span><span class="p">[</span><span class="o">-</span><span class="n">height</span><span class="p">];</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">pred</span> <span class="o">=</span> <span class="n">weights_ver</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">*</span> <span class="n">topleft</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">]</span> <span class="o">+</span>
+</span><span class="line">                            <span class="p">(</span><span class="mi">256</span> <span class="o">-</span> <span class="n">weights_ver</span><span class="p">[</span><span class="n">y</span><span class="p">])</span> <span class="o">*</span> <span class="n">bottom</span> <span class="o">+</span>
+</span><span class="line">                                <span class="n">weights_hor</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">*</span> <span class="n">topleft</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">y</span><span class="p">)]</span> <span class="o">+</span>
+</span><span class="line">                            <span class="p">(</span><span class="mi">256</span> <span class="o">-</span> <span class="n">weights_hor</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="o">*</span> <span class="n">right</span><span class="p">;</span>
+</span><span class="line">            <span class="n">dst</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">pred</span> <span class="o">+</span> <span class="mi">256</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">9</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="n">dst</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 </div>
 
