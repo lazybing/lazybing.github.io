@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AV1(DAV1D) 解码详解(六)之帧内编码 Chrom_From_Luma"
+title: "AV1(DAV1D) 解码详解(六)之帧内编码 Chroma_From_Luma"
 date: 2019-11-12 14:00:19 -0800
 comments: true
 categories: av1
@@ -9,19 +9,29 @@ categories: av1
 * list element with functor item
 {:toc}
 
-AV1 在帧编码中使用了Luma_From_Luma 的工具，它是利用视觉图像中亮度值和色度值具有高度相似性的特点，通过选择适当的参数结合重建亮度值来预测色度值，该工具在游戏视频中具有很好地压缩效果。
+AV1 在帧编码中使用了Chroma_From_Luma 的工具，它是利用视觉图像中亮度值和色度值具有高度相似性的特点，通过选择适当的参数结合重建亮度值来预测色度值，该工具在游戏视频中具有很好地压缩效果。
 
 <!--more-->
 
 ## 概述
 
+
+
 Chrom_From_Luma(CFL) 的整个流程可以由下图表示。
 
-当 chroma 分量通过下采样得到时，为使得像素分量一致，重建的 luma 分量需要对应的下采样。之后相应的重建 luma 像素减去平均值，得到 AC 分量。 scale 因素和符号，是通过码流中解码获得。CFL 预测值通过将重建 luma 像素的 AC 分量和 scale 因子相乘，并将结果与帧内的 DC 预测相加得到。如下图所示。
+当 chroma 分量通过下采样得到时，为使得像素分量一致，重建的 luma 分量需要对应的下采样。之后相应的重建 luma 像素减去平均值，得到 AC 分量。 scale 因子和符号，是通过码流中解码获得。CFL 预测值通过将重建 luma 像素的 AC 分量和 scale 因子相乘，并将结果与帧内的 DC 预测相加得到。如下图所示。
 
 {% img /images/av1_cfl/chroma_from_luma.png %}
 
+该流程分为三步：
+
+1. Compute Luma AC Contribution。
+2. Scale Chroma Plane
+3. Add Chroma DC_PRED
+
 ## DAV1D 代码
+
+DAV1D 中关于 CFL 的部分，主要由下面两类函数完成，其中一类就是求 AC Contribution。第二类就是 alpha * AC + DC_PRED。
 
 {% codeblock lang:c %}
 void dav1d_inta_ped_dsp_init(Dav1dIntraPredDSPContext *const c) {
@@ -35,6 +45,8 @@ void dav1d_inta_ped_dsp_init(Dav1dIntraPredDSPContext *const c) {
     c->cfl_pred[LEFT_DC_PRED] = ipred_cfl_left_c;
 }
 {% endcodeblock %}
+
+关于求 AC Contribution 的函数如下，它根据 YUV 三个分量的组成比例，会有不同的参数传递，但整体思路是一样的.
 
 {% codeblock lang:c %}
 
@@ -98,6 +110,8 @@ cfl_ac_fn(422, 1, 0)
 cfl_ac_fn(444, 0, 0)
 
 {% endcodeblock %}
+
+接下来是求解 DC PRED 的值以及最终的 Chroma 值。
 
 {% codeblock lang:c %}
 
@@ -192,3 +206,6 @@ static void ipred_cfl_top_c(pixel *dst, const ptrdiff_t stride,
 
 {% endcodeblock %}
 
+## 结论
+
+AV1 中采用的 Chroma_From_Luma 预测工具，该工具不仅降低了解码器复杂度，同时降低了预测错误率。
