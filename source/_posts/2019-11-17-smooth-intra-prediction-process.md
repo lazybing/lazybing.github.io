@@ -47,6 +47,45 @@ static void ipred_paeth_c(pixel *dst, const ptrdiff_t stride,
 {% img /images/av1_startup/smooth_intra_predictors.png %}
 
 {% codeblock lang:c %}
+
+static void ipred_smooth_v_c(pixel *dst, const ptrdiff_t stride,
+                             const pixel *const topleft,
+                             const int width, const int height, const int a,
+                             const int max_width, const int max_height,
+                             HIGHBD_DECL_SUFFIX)
+{
+    const uint8_t *const weights_ver = &dav1d_sm_weights[height];
+    const int bottom = topleft[-height];
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            const int pred = weights_ver[y] * topleft[1 + x] +
+                        (256 - weights_ver[y]) * bottom;
+            dst[x] = (pred + 128) >> 8;
+        }
+        dst += PXSTRIDE(stride);
+    }
+}
+
+static void ipred_smooth_h_c(pixel *dst, const ptrdiff_t stride,
+                             const pixel *const topleft,
+                             const int width, const int height, const int a,
+                             const int max_width, const int max_height
+                             HIGHBD_DECL_SUFFIX)
+{
+    const uint8_t *const weights_hor = &dav1d_sm_weights[width];
+    const int right = topleft[width];
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            const int pred = weights_hor[x] * topleft[-(y + 1)] +
+                        (256 - weights_hor[x]) * right;
+            dst[x] = (pred + 128) >> 8;
+        }
+        dst += PXSTRIDE(stride);
+    }
+}
+
 static void ipred_smooth_c(pixel *dst, const ptrdiff_t stride,
                            const pixel *const topleft,
                            const int width, const int height, const int a,
