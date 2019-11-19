@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2019-11-17T07:54:28-08:00</updated>
+  <updated>2019-11-19T07:12:05-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,158 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[AV1(DAV1D)解码详解(十一)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering]]></title>
+    <link href="http://lazybing.github.io/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/"/>
+    <updated>2019-11-19T06:18:48-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/11/19/recursive-filtering-based-intra-prediction-process</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#spec-" id="markdown-toc-spec-">SPEC 概述</a></li>
+  <li><a href="#section" id="markdown-toc-section">代码</a></li>
+</ul>
+
+<h2 id="spec-">SPEC 概述</h2>
+
+<p>下面给出 SPEC 中对该预测模式的概述：</p>
+
+<blockquote>
+  <p>The inputs to this process are:<br />
+1. a variable w specifying the width of the region to be predicted.<br />
+2. a variable h specifying the height of the region to be predicted.<br />
+The output of this process is a 2D array named pred containing the intra predicted samples.<br />
+For each block of 4x2 samples, this process first prepares an array p of 7 neighboring samples, and then produces the output block by filtering this array.<br />
+The variable w4 is set equal to w » 2.<br />
+The variable h2 is set equal to h » 1.<br />
+The following steps apply of i2 = 0…h2 - 1, for j4 = 0…w4 - 1:<br />
+The array p is derived as follows for i = 0…6:<br />
+  1. If i is less than 5, p[i] is derived as follows:<br />
+      1. If i2 is equal to 0, p[i] is set equal to AboveRow[(j4 « 2) + i -1].<br />
+      2. Otherwise, if j4 is equal to 0 and i is equal to 0, p[i] is set equal to LeftCol[(i2 « 1) - 1].<br />
+      3. Otherwise, p[i] is set equal to pred[(i2 « 1) - 1][(j4 « 2) + i - 1].<br />
+  2. Otherwise (i is greater than or equal to 5), p[i] is derived as follows:<br />
+      1. If j4 is equal to 0, p[i] is set equal to LeftCol[(i2 « 1) + i - 5].<br />
+      2. Otherwise(j4 is not equal to 0), p[i] is set equal to pred[(i2 « 1) + i - 5][(j4 « 2) - 1]<br />
+The following steps apply for i1 = 0..1, j1 = 0..3:<br />
+  1. The variable pr is set equal to 0.<br />
+  2. The variable pr is incremented by Intra_Filter_Taps[filter_intra_mode][(i1 « 2) + j1][i] * p[i] for i = 0…6<br />
+  3. pred[(i2 « 1) + i1][(j4 « 2) + j1] is set equal to Clip1(Round2Signed(pr, INTRA_FILTER_SCALE_BITS)).</p>
+
+  <p>The output of the process is the array pred.</p>
+</blockquote>
+
+<p>对于每个 4x2 采样点的块，该预测模式首先准备包含 7 个相邻样本的数组,之后通过对该数组进行滤波产生输出块。</p>
+
+<h2 id="section">代码</h2>
+
+<p>Dav1d 中关于此预测模式的代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/* Up to 32x32 only */</span>
+</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_filter_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
+</span><span class="line">                           <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft_in</span><span class="p">,</span>
+</span><span class="line">                           <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="kt">int</span> <span class="n">filt_idx</span><span class="p">,</span>
+</span><span class="line">                           <span class="k">const</span> <span class="kt">int</span> <span class="n">max_width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">max_height</span>
+</span><span class="line">                           <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">filt_idx</span> <span class="o">&amp;=</span> <span class="mi">511</span><span class="p">;</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">filt_idx</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">const</span> <span class="kt">int8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">filter</span> <span class="o">=</span> <span class="n">dav1d_filter_intra_taps</span><span class="p">[</span><span class="n">filt_idx</span><span class="p">];</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">ptrdiff_t</span> <span class="n">left_stride</span><span class="p">;</span>
+</span><span class="line">    <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">left</span><span class="p">,</span> <span class="o">*</span><span class="n">topleft</span><span class="p">,</span> <span class="o">*</span><span class="n">top</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">top</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">topleft_in</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span> <span class="o">+=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="n">topleft</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">topleft_in</span><span class="p">[</span><span class="o">-</span><span class="n">y</span><span class="p">];</span>
+</span><span class="line">        <span class="n">left</span> <span class="o">=</span> <span class="n">topleft</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">        <span class="n">left_strie</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">p0</span> <span class="o">=</span> <span class="o">*</span><span class="n">topleft</span><span class="p">;</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">p1</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">p3</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">p4</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">p5</span> <span class="o">=</span> <span class="n">left</span><span class="p">[</span><span class="mi">0</span> <span class="o">*</span> <span class="n">left_stride</span><span class="p">],</span> <span class="n">p6</span> <span class="o">=</span> <span class="n">left</span><span class="p">[</span><span class="mi">1</span> <span class="o">*</span> <span class="n">left_stride</span><span class="p">];</span>
+</span><span class="line">            <span class="n">pixel</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
+</span><span class="line">            <span class="k">const</span> <span class="kt">int8_t</span> <span class="o">*</span><span class="n">flt_ptr</span> <span class="o">=</span> <span class="n">filter</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">yy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">yy</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">;</span> <span class="n">yy</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">                <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">xx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">xx</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">xx</span><span class="o">++</span><span class="p">,</span> <span class="n">flt_ptr</span> <span class="o">+=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">                    <span class="kt">int</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">flt_ptr</span><span class="p">[</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">p0</span> <span class="o">+</span> <span class="n">flt_ptr</span><span class="p">[</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">p1</span> <span class="o">+</span>
+</span><span class="line">                              <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">*</span> <span class="n">p1</span> <span class="o">+</span> <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">17</span><span class="p">]</span> <span class="o">*</span> <span class="n">p3</span> <span class="o">+</span>
+</span><span class="line">                              <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="o">*</span> <span class="n">p4</span> <span class="o">+</span> <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">33</span><span class="p">]</span> <span class="o">*</span> <span class="n">p5</span> <span class="o">+</span>
+</span><span class="line">                              <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">48</span><span class="p">]</span> <span class="o">*</span> <span class="n">p6</span><span class="p">;</span>
+</span><span class="line">                    <span class="n">ptr</span><span class="p">[</span><span class="n">xx</span><span class="p">]</span> <span class="o">=</span> <span class="n">iclip_pixel</span><span class="p">((</span><span class="n">acc</span> <span class="o">+</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">);</span>
+</span><span class="line">                <span class="p">}</span>
+</span><span class="line">                <span class="n">ptr</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
+</span><span class="line">            <span class="p">}</span>
+</span><span class="line">            <span class="n">left</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span>
+</span><span class="line">            <span class="n">left_stride</span> <span class="o">=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
+</span><span class="line">            <span class="n">top</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class="line">            <span class="n">topleft</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">top</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="n">top</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)];</span>
+</span><span class="line">        <span class="n">dst</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">];</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="kt">void</span> <span class="nf">bitfn</span><span class="p">(</span><span class="n">dav1d_intra_pred_dsp_init</span><span class="p">)(</span><span class="n">Dav1dIntaPredDSPContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">c</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">intra_pred</span><span class="p">[</span><span class="n">FILTER_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_filter_c</span><span class="p">;</span>
+</span><span class="line">    <span class="p">...</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[AV1(DAV1D)解码详解(十)之帧内编码平滑帧内编码Smooth_Intra_Prediction]]></title>
@@ -2910,234 +3062,6 @@ AV1 支持从 8x8 到 64x64 的块，支持调色板模式，编码器会自动�
   <li>通过移位将一个向量位复制到另一个向量位。</li>
   <li>在高精度条件下进行临时计算，并在低精度条件下计算结果。</li>
 </ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NEON 编程3——矩阵相乘]]></title>
-    <link href="http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication/"/>
-    <updated>2019-01-21T06:44:07-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/01/21/neon-matrix-multiplication</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">矩阵</a></li>
-  <li><a href="#algorithm" id="markdown-toc-algorithm">算法(Algorithm)</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">代码</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">浮点数运算</a></li>
-      <li><a href="#d-and-q-" id="markdown-toc-d-and-q-">D and Q 寄存器</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">回到代码中</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-4" id="markdown-toc-section-4">定点运算</a>    <ul>
-      <li><a href="#section-5" id="markdown-toc-section-5">宏定义：</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-6" id="markdown-toc-section-6">如果考虑到调度的话</a></li>
-</ul>
-
-<p>前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。</p>
-
-<!--more-->
-
-<h2 id="section">矩阵</h2>
-
-<p>本篇文章会分析如何有效的完成4x4矩阵相乘，这种操作在 3D 图形中经常会用到。假设矩阵存放到内存中，并且是列优先的顺序，该格式在 OpenGL-ES 中使用。</p>
-
-<h2 id="algorithm">算法(Algorithm)</h2>
-
-<p>先详细的检测一下矩阵相乘的操作，通过把计算扩展开，并确定哪些子操作可以使用 NEON 指令实现。</p>
-
-<p><img src="http://lazybing.github.io/images/neon_matrix_multiply/neon_matrix_multiply.png" /></p>
-
-<p>在上图中，我们将第一个矩阵的每一列(红色标记)乘以在第二个矩阵中对应的数值(蓝色标记)，然后将结果加起来，得到结果中的一个列的数值。这个操作将被重复四次。</p>
-
-<p><img src="http://lazybing.github.io/images/neon_matrix_multiply/vector_by_scalar_multiply.png" /></p>
-
-<p>如果每个列都是在 NEON 寄存器中的一个向量，我们能够用 vector-by-scalar multiplication 指令来计算每个列。即上图中显示的指令。我们可以用同样指令的累计版本来将结果都加起来组成每一列的结果。</p>
-
-<p>当我们处理第一个矩阵的列，产生结果中的一列时，读取和写入数据到或者从内存中都是一个线性操作，不需要交错读取及存储指令。</p>
-
-<h2 id="section-1">代码</h2>
-
-<h3 id="section-2">浮点数运算</h3>
-
-<p>首先，我们先关注乘以单精度浮点数矩阵的实现。</p>
-
-<p>从内存中加载矩阵到 NEON 寄存器，该矩阵是使用列顺序进行存储，所以存储的列都是线性的存储在内存中。一个列能够用 VLD1 指令加载到 NEON 寄存器，用 VST1 写入到内存。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class="asm"><span class="line"><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d16-d19</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
-</span><span class="line"><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d20-d23</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
-</span><span class="line"><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d0-d3</span><span class="err">}</span><span class="p">,</span>   <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
-</span><span class="line"><span class="nf">vld1.32</span> <span class="err">{</span><span class="no">d4-d7</span><span class="err">}</span><span class="p">,</span>   <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>    <span class="err">@</span><span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>NEON 有 32 个 64 位寄存器，我们可以从矩阵中加载所有的数据到寄存器，并且还有剩余的寄存器可以用来作为累加用。这里 d16 到 d23 保存第一个矩阵中的 16 个数据，而 d0 到 d7 保存第二个矩阵中的 16 个数据。</p>
-
-<h3 id="d-and-q-">D and Q 寄存器</h3>
-
-<p>大部分 NEON 指令能够用一下两种方式使用寄存器组：</p>
-
-<ul>
-  <li>32 个双字寄存器， 64bits 大小，从 d0 到 d31。</li>
-  <li>16 个四字寄存器， 128bits 大小，从 q0 到 q15。</li>
-</ul>
-
-<p><img src="http://lazybing.github.io/images/neon_matrix_multiply/neon_register.png" /></p>
-
-<p>这些寄存器用别名表示，因此，在 Q 寄存器，以及在相对应的两个 D 寄存器中，数据都是一样的。例如，q0 可被分为 d0 及 d1，数据可以在两种模式下进行访问。在 C 中，这种方式类似于 union。</p>
-
-<p>对于浮点数矩阵乘法的例子，我们频繁的使用 Q 寄存器，因为我们处理 4 个 32-bit 浮点数的列，这将对应于一个 128 位的 Q 寄存器。</p>
-
-<h3 id="section-3">回到代码中</h3>
-
-<p>应用 NEON 乘法指令，我们能够计算矩阵相乘的一个列。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class="asm"><span class="line"><span class="nf">vmul.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>  <span class="err">@</span><span class="no">multiply</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">0</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">0</span>
-</span><span class="line"><span class="nf">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>  <span class="err">@</span><span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">1</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">1</span>
-</span><span class="line"><span class="nf">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q10</span><span class="p">,</span> <span class="no">d1</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span> <span class="err">@</span><span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">2</span>
-</span><span class="line"><span class="nf">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q11</span><span class="p">,</span> <span class="no">d1</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span> <span class="err">@</span><span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">3</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>第一个指令实现了在矩阵乘法分解图中的操作，x0、x1、x2 和 x3（在 q8 寄存器中）分别乘以 y0（d0 的第 0 个数据），结果保存在 q12。接下来的指令用于处理第一个矩阵中的其他列，乘以第二个矩阵第一列中对应的元素。结果将会累加到 q12，来构成最终结果的第一列。</p>
-
-<p>需要注意的是，乘法指令中的标量是 D 寄存器，尽管q0[3]的数据与d1[1]相同，但是这里使用d1[1]更加说得过去，并且 GNU 汇编器并不支持这种格式。因此，我们不得不使用 D 寄存器。</p>
-
-<p>宏：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="asm"><span class="line"><span class="na">.macro</span> <span class="no">mul_col_f32</span> <span class="no">res_q</span><span class="p">,</span> <span class="no">col0_d</span><span class="p">,</span> <span class="no">col1_d</span>
-</span><span class="line">    <span class="nf">vmul.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="err">\</span><span class="no">col0_d</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>      <span class="err">@</span> <span class="no">multiply</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">0</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">0</span>
-</span><span class="line">    <span class="nf">vmla.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="err">\</span><span class="no">col0_d</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>      <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">1</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">1</span>
-</span><span class="line">    <span class="nf">vmla.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q10</span><span class="p">,</span> <span class="err">\</span><span class="no">col1_d</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>  <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">2</span>
-</span><span class="line">    <span class="nf">vmla.f32</span>    <span class="err">\</span><span class="no">res_q</span><span class="p">,</span> <span class="no">q11</span><span class="p">,</span> <span class="err">\</span><span class="no">col1_d</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>  <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">3</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">3</span>
-</span><span class="line"><span class="na">.endm</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>4x4 浮点矩阵相乘可以被这样实现：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-</pre></td><td class="code"><pre><code class="asm"><span class="line">    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d16-d19</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
-</span><span class="line">    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d20-d23</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
-</span><span class="line">    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d0-d3</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>              <span class="err">@</span> <span class="no">load</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
-</span><span class="line">    <span class="nf">vld1.32</span>  <span class="err">{</span><span class="no">d4-d7</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]!</span>              <span class="err">@</span> <span class="no">load</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
-</span><span class="line">
-</span><span class="line">    <span class="nf">mul_col_f32</span> <span class="no">q12</span><span class="p">,</span> <span class="no">d0</span><span class="p">,</span> <span class="no">d1</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">0</span>
-</span><span class="line">    <span class="nf">mul_col_f32</span> <span class="no">q13</span><span class="p">,</span> <span class="no">d2</span><span class="p">,</span> <span class="no">d3</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">1</span>
-</span><span class="line">    <span class="nf">mul_col_f32</span> <span class="no">q14</span><span class="p">,</span> <span class="no">d4</span><span class="p">,</span> <span class="no">d5</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">2</span>
-</span><span class="line">    <span class="nf">mul_col_f32</span> <span class="no">q15</span><span class="p">,</span> <span class="no">d6</span><span class="p">,</span> <span class="no">d7</span>           <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">3</span>
-</span><span class="line">
-</span><span class="line">    <span class="nf">vst1.32</span>  <span class="err">{</span><span class="no">d24-d27</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">store</span> <span class="no">first</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">result</span>
-</span><span class="line">    <span class="nf">vst1.32</span>  <span class="err">{</span><span class="no">d28-d31</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]!</span>            <span class="err">@</span> <span class="no">store</span> <span class="no">second</span> <span class="no">eight</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">result</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h2 id="section-4">定点运算</h2>
-
-<p>使用定点数运算通常比浮点数更快，因为它占用更小的内存带来读取及写入数值，并且整数的乘法通常来说更快。然而，在使用定点数运算时，当需要保证程序要求的计算精度时，你必须仔细选择表示方法来避免溢出或者饱和。</p>
-
-<p>使用定点数进行矩阵乘法与浮点数非常类似。在这个例子中个，我们使用 Q1.14 定点数格式，但是操作上与其他格式类似，可能只需要最终左移的位数。</p>
-
-<h3 id="section-5">宏定义：</h3>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="asm"><span class="line"><span class="na">.macro</span> <span class="no">mul_col_s16</span> <span class="no">res_d</span><span class="p">,</span> <span class="no">col_d</span>
-</span><span class="line">    <span class="nf">vmull.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d16</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">0</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">0</span>
-</span><span class="line">    <span class="nf">vmlal.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d17</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">1</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">1</span>
-</span><span class="line">    <span class="nf">vmlal.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d18</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">2</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">2</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">2</span>
-</span><span class="line">    <span class="nf">vmlal.s16</span>   <span class="no">q12</span><span class="p">,</span> <span class="no">d19</span><span class="p">,</span> <span class="err">\</span><span class="no">col_d</span><span class="err">[</span><span class="mi">3</span><span class="err">]</span>   <span class="err">@</span> <span class="no">multiply-acc</span> <span class="no">col</span> <span class="no">element</span> <span class="mi">3</span> <span class="no">by</span> <span class="no">matrix</span> <span class="no">col</span> <span class="mi">3</span>
-</span><span class="line">    <span class="nf">vqrshrn.s32</span> <span class="err">\</span><span class="no">res_d</span><span class="p">,</span> <span class="no">q12</span><span class="p">,</span> <span class="c">#14            @ shift right and narrow accumulator into</span>
-</span><span class="line">                                            <span class="err">@</span>  <span class="nf">Q1.14</span> <span class="no">fixed</span> <span class="no">point</span> <span class="no">format</span><span class="p">,</span> <span class="no">with</span> <span class="no">saturation</span>
-</span><span class="line"><span class="na">.endm</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>与浮点数版本的宏进行对比，你将会发现：</p>
-
-<ul>
-  <li>数值是16位而不是32为，我们可以使用D寄存器保存4个输入。</li>
-  <li>两个16位数的相乘结果是一个32位数，我们使用VMULL及VMLAL，因为它们将保存结果至Q寄存器，使用两倍于数据的大小来保存所有的位数。</li>
-  <li>最后的结果为16位，但是累加器是32位的。我们通过VQRSHRN获取16位结果，一个向量，饱和计算，四舍五入，右移窄运算。这将把所有正确的值加起来到各自的数据，右移并饱和计算到新的更窄的数据大小。</li>
-</ul>
-
-<p>32位数到16位数的减少对内存访问有所影响。数据会被加载和存储使用更少的指令，代码如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="asm"><span class="line"> <span class="nf">vld1.16</span>  <span class="err">{</span><span class="no">d16-d19</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r1</span><span class="err">]</span>       <span class="err">@</span> <span class="no">load</span> <span class="no">sixteen</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">0</span>
-</span><span class="line"> <span class="nf">vld1.16</span>  <span class="err">{</span><span class="no">d0-d3</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]</span>         <span class="err">@</span> <span class="no">load</span> <span class="no">sixteen</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">matrix</span> <span class="mi">1</span>
-</span><span class="line">
-</span><span class="line"> <span class="nf">mul_col_s16</span> <span class="no">d4</span><span class="p">,</span> <span class="no">d0</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">0</span>
-</span><span class="line"> <span class="nf">mul_col_s16</span> <span class="no">d5</span><span class="p">,</span> <span class="no">d1</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">1</span>
-</span><span class="line"> <span class="nf">mul_col_s16</span> <span class="no">d6</span><span class="p">,</span> <span class="no">d2</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">2</span>
-</span><span class="line"> <span class="nf">mul_col_s16</span> <span class="no">d7</span><span class="p">,</span> <span class="no">d3</span>                      <span class="err">@</span> <span class="no">matrix</span> <span class="mi">0</span> <span class="p">*</span> <span class="no">matrix</span> <span class="mi">1</span> <span class="no">col</span> <span class="mi">3</span>
-</span><span class="line">
-</span><span class="line"> <span class="nf">vst1.16</span>  <span class="err">{</span><span class="no">d4-d7</span><span class="err">}</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>         <span class="err">@</span> <span class="no">store</span> <span class="no">sixteen</span> <span class="no">elements</span> <span class="no">of</span> <span class="no">result</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<h2 id="section-6">如果考虑到调度的话</h2>
-
-<p>我们会在以后的文章中讨论调度的细节，现在的话，可以看看在代码中查看改进指令调度的影响。</p>
-
-<p>在宏中，临近的乘法指令写入到相同的寄存器，使得NEON流水线在开始下个指令执行时必须等待每个乘法完成。</p>
-
-<p>如果我们把这些指令移出宏然后重新安排顺序，我们能够分离出那些依赖于其他指令的部分，这部分指令能够在其他指令在后台完成时也被执行。 
-在这个实例中，我们重组代码来分离累加寄存器的使用。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="asm"><span class="line">    <span class="nf">vmul.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col0</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col0</span> <span class="no">elt0</span><span class="p">)</span>
-</span><span class="line">    <span class="nf">vmul.f32</span>    <span class="no">q13</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d2</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col1</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col1</span> <span class="no">elt0</span><span class="p">)</span>
-</span><span class="line">    <span class="nf">vmul.f32</span>    <span class="no">q14</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d4</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col2</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col2</span> <span class="no">elt0</span><span class="p">)</span>
-</span><span class="line">    <span class="nf">vmul.f32</span>    <span class="no">q15</span><span class="p">,</span> <span class="no">q8</span><span class="p">,</span> <span class="no">d6</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col3</span>  <span class="err">=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col0</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col3</span> <span class="no">elt0</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="nf">vmla.f32</span>    <span class="no">q12</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="no">d0</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col0</span> <span class="err">+=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col1</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col0</span> <span class="no">elt1</span><span class="p">)</span>
-</span><span class="line">    <span class="nf">vmla.f32</span>    <span class="no">q13</span><span class="p">,</span> <span class="no">q9</span><span class="p">,</span> <span class="no">d2</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>              <span class="err">@</span> <span class="no">rslt</span> <span class="no">col1</span> <span class="err">+=</span> <span class="p">(</span><span class="no">mat0</span> <span class="no">col1</span><span class="p">)</span> <span class="p">*</span> <span class="p">(</span><span class="no">mat1</span> <span class="no">col1</span> <span class="no">elt1</span><span class="p">)</span>
-</span><span class="line">    <span class="na">...</span>
-</span><span class="line">    <span class="na">...</span>
-</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
