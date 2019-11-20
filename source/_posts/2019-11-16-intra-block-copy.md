@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AV1(DAV1D)解码详解(九)之帧内编码帧内拷贝模式 Intra_Block_Copy"
+title: "AV1(DAV1D)解码详解(八)之帧内编码帧内拷贝模式 Intra_Block_Copy"
 date: 2019-11-16 00:59:55 -0800
 comments: true
 categories: AV1

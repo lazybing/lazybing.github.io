@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AV1(DAV1D)解码详解(八)之帧内编码调色板模式 Color Palette"
+title: "AV1(DAV1D)解码详解(七)之帧内编码调色板模式 Color Palette"
 date: 2019-11-14 08:04:43 -0800
 comments: true
 categories:  av1

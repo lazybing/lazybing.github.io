@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "AV1(DAV1D)解码详解(十)之帧内编码平滑帧内编码Smooth_Intra_Prediction"
-date: 2019-11-16 06:24:55 -0800
+title: "AV1(DAV1D)解码详解(九)之帧内编码平滑帧内编码Smooth_Intra_Prediction"
+date: 2019-11-17 06:24:55 -0800
 comments: true
 categories: AV1
 ---

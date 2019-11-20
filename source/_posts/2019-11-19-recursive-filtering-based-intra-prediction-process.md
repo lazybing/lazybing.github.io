@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AV1(DAV1D)解码详解(十一)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering"
+title: "AV1(DAV1D)解码详解(十)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering"
 date: 2019-11-19 06:18:48 -0800
 comments: true
 categories: AV1
@@ -8,6 +8,10 @@ categories: AV1
 
 * list element with functor item
 {:toc}
+
+AV1 中的帧内预测器，有一种称之为基于递归滤波的帧内预测器。该帧内预测器利用滤波的方式递归地对每个像素值进行预测，在编码方面复杂度会有所提升。  
+
+<!--more-->
 
 ##SPEC 概述
 
