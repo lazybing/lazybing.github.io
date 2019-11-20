@@ -9,9 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="SPEC 概述 代码 SPEC 概述 下面给出 SPEC 中对该预测模式的概述： The inputs to this process are:
-1. a variable w specifying the width of the region to be predicted.
-2. a &hellip;">
+  <meta name="description" content=" OBMC 概述 代码 OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -87,7 +85,81 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/">AV1(DAV1D)解码详解(十一)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering</a></h1>
+      <h1 class="entry-title"><a href="/blog/2019/11/20/inter-overlapped-block-motion-compensation/">AV1(DAV1D)解码详解(十一)之帧间编码 OBMC</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-11-20T08:04:43-08:00'><span class='date'>2019 年 11 月 20 日</span> <span class='time'>8:04 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#obmc-" id="markdown-toc-obmc-">OBMC 概述</a></li>
+  <li><a href="#section" id="markdown-toc-section">代码</a></li>
+</ul>
+
+<p>OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2019/11/20/inter-overlapped-block-motion-compensation/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/11/20/warped-motion-inter-predict/">Warped Motion Inter Predict</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-11-20T05:09:25-08:00'><span class='date'>2019 年 11 月 20 日</span> <span class='time'>5:09 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content">
+<p>Warped motion 模型在 AV1 中是通过两个仿射变换模型完成的，全局和局部的 warped 运动补偿。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2019/11/20/warped-motion-inter-predict/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/">AV1(DAV1D)解码详解(十)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering</a></h1>
     
     
       <p class="meta">
@@ -108,147 +180,14 @@
   <li><a href="#section" id="markdown-toc-section">代码</a></li>
 </ul>
 
-<h2 id="spec-">SPEC 概述</h2>
-
-<p>下面给出 SPEC 中对该预测模式的概述：</p>
-
-<blockquote>
-  <p>The inputs to this process are:<br />
-1. a variable w specifying the width of the region to be predicted.<br />
-2. a variable h specifying the height of the region to be predicted.<br />
-The output of this process is a 2D array named pred containing the intra predicted samples.<br />
-For each block of 4x2 samples, this process first prepares an array p of 7 neighboring samples, and then produces the output block by filtering this array.<br />
-The variable w4 is set equal to w » 2.<br />
-The variable h2 is set equal to h » 1.<br />
-The following steps apply of i2 = 0…h2 - 1, for j4 = 0…w4 - 1:<br />
-The array p is derived as follows for i = 0…6:<br />
-  1. If i is less than 5, p[i] is derived as follows:<br />
-      1. If i2 is equal to 0, p[i] is set equal to AboveRow[(j4 « 2) + i -1].<br />
-      2. Otherwise, if j4 is equal to 0 and i is equal to 0, p[i] is set equal to LeftCol[(i2 « 1) - 1].<br />
-      3. Otherwise, p[i] is set equal to pred[(i2 « 1) - 1][(j4 « 2) + i - 1].<br />
-  2. Otherwise (i is greater than or equal to 5), p[i] is derived as follows:<br />
-      1. If j4 is equal to 0, p[i] is set equal to LeftCol[(i2 « 1) + i - 5].<br />
-      2. Otherwise(j4 is not equal to 0), p[i] is set equal to pred[(i2 « 1) + i - 5][(j4 « 2) - 1]<br />
-The following steps apply for i1 = 0..1, j1 = 0..3:<br />
-  1. The variable pr is set equal to 0.<br />
-  2. The variable pr is incremented by Intra_Filter_Taps[filter_intra_mode][(i1 « 2) + j1][i] * p[i] for i = 0…6<br />
-  3. pred[(i2 « 1) + i1][(j4 « 2) + j1] is set equal to Clip1(Round2Signed(pr, INTRA_FILTER_SCALE_BITS)).</p>
-
-  <p>The output of the process is the array pred.</p>
-</blockquote>
-
-<p>对于每个 4x2 采样点的块，该预测模式首先准备包含 7 个相邻样本的数组,之后通过对该数组进行滤波产生输出块。</p>
-
-<h2 id="section">代码</h2>
-
-<p>Dav1d 中关于此预测模式的代码如下：</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-<span class="line-number">42</span>
-<span class="line-number">43</span>
-<span class="line-number">44</span>
-<span class="line-number">45</span>
-<span class="line-number">46</span>
-<span class="line-number">47</span>
-<span class="line-number">48</span>
-<span class="line-number">49</span>
-<span class="line-number">50</span>
-<span class="line-number">51</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/* Up to 32x32 only */</span>
-</span><span class="line"><span class="k">static</span> <span class="kt">void</span> <span class="nf">ipred_filter_c</span><span class="p">(</span><span class="n">pixel</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">,</span>
-</span><span class="line">                           <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">topleft_in</span><span class="p">,</span>
-</span><span class="line">                           <span class="k">const</span> <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="kt">int</span> <span class="n">filt_idx</span><span class="p">,</span>
-</span><span class="line">                           <span class="k">const</span> <span class="kt">int</span> <span class="n">max_width</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">max_height</span>
-</span><span class="line">                           <span class="n">HIGHBD_DECL_SUFFIX</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">filt_idx</span> <span class="o">&amp;=</span> <span class="mi">511</span><span class="p">;</span>
-</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">filt_idx</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">const</span> <span class="kt">int8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">filter</span> <span class="o">=</span> <span class="n">dav1d_filter_intra_taps</span><span class="p">[</span><span class="n">filt_idx</span><span class="p">];</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">ptrdiff_t</span> <span class="n">left_stride</span><span class="p">;</span>
-</span><span class="line">    <span class="k">const</span> <span class="n">pixel</span> <span class="o">*</span><span class="n">left</span><span class="p">,</span> <span class="o">*</span><span class="n">topleft</span><span class="p">,</span> <span class="o">*</span><span class="n">top</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">top</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">topleft_in</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-</span><span class="line">    <span class="k">for</span> <span class="p">(</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="p">;</span> <span class="n">y</span> <span class="o">+=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">        <span class="n">topleft</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">topleft_in</span><span class="p">[</span><span class="o">-</span><span class="n">y</span><span class="p">];</span>
-</span><span class="line">        <span class="n">left</span> <span class="o">=</span> <span class="n">topleft</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
-</span><span class="line">        <span class="n">left_strie</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="p">;</span> <span class="n">x</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">p0</span> <span class="o">=</span> <span class="o">*</span><span class="n">topleft</span><span class="p">;</span>
-</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">p1</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">p3</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">p4</span> <span class="o">=</span> <span class="n">top</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
-</span><span class="line">            <span class="k">const</span> <span class="kt">int</span> <span class="n">p5</span> <span class="o">=</span> <span class="n">left</span><span class="p">[</span><span class="mi">0</span> <span class="o">*</span> <span class="n">left_stride</span><span class="p">],</span> <span class="n">p6</span> <span class="o">=</span> <span class="n">left</span><span class="p">[</span><span class="mi">1</span> <span class="o">*</span> <span class="n">left_stride</span><span class="p">];</span>
-</span><span class="line">            <span class="n">pixel</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
-</span><span class="line">            <span class="k">const</span> <span class="kt">int8_t</span> <span class="o">*</span><span class="n">flt_ptr</span> <span class="o">=</span> <span class="n">filter</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">            <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">yy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">yy</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">;</span> <span class="n">yy</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">                <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">xx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">xx</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">xx</span><span class="o">++</span><span class="p">,</span> <span class="n">flt_ptr</span> <span class="o">+=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">                    <span class="kt">int</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">flt_ptr</span><span class="p">[</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">p0</span> <span class="o">+</span> <span class="n">flt_ptr</span><span class="p">[</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">p1</span> <span class="o">+</span>
-</span><span class="line">                              <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">*</span> <span class="n">p1</span> <span class="o">+</span> <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">17</span><span class="p">]</span> <span class="o">*</span> <span class="n">p3</span> <span class="o">+</span>
-</span><span class="line">                              <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">32</span><span class="p">]</span> <span class="o">*</span> <span class="n">p4</span> <span class="o">+</span> <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">33</span><span class="p">]</span> <span class="o">*</span> <span class="n">p5</span> <span class="o">+</span>
-</span><span class="line">                              <span class="n">flt_ptr</span><span class="p">[</span><span class="mi">48</span><span class="p">]</span> <span class="o">*</span> <span class="n">p6</span><span class="p">;</span>
-</span><span class="line">                    <span class="n">ptr</span><span class="p">[</span><span class="n">xx</span><span class="p">]</span> <span class="o">=</span> <span class="n">iclip_pixel</span><span class="p">((</span><span class="n">acc</span> <span class="o">+</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">);</span>
-</span><span class="line">                <span class="p">}</span>
-</span><span class="line">                <span class="n">ptr</span> <span class="o">+=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
-</span><span class="line">            <span class="p">}</span>
-</span><span class="line">            <span class="n">left</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span>
-</span><span class="line">            <span class="n">left_stride</span> <span class="o">=</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">);</span>
-</span><span class="line">            <span class="n">top</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">;</span>
-</span><span class="line">            <span class="n">topleft</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">top</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
-</span><span class="line">        <span class="p">}</span>
-</span><span class="line">        <span class="n">top</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)];</span>
-</span><span class="line">        <span class="n">dst</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">stride</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">];</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line"><span class="kt">void</span> <span class="nf">bitfn</span><span class="p">(</span><span class="n">dav1d_intra_pred_dsp_init</span><span class="p">)(</span><span class="n">Dav1dIntaPredDSPContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">c</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="p">...</span>
-</span><span class="line">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">intra_pred</span><span class="p">[</span><span class="n">FILTER_PRED</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipred_filter_c</span><span class="p">;</span>
-</span><span class="line">    <span class="p">...</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>AV1 中的帧内预测器，有一种称之为基于递归滤波的帧内预测器。该帧内预测器利用滤波的方式递归地对每个像素值进行预测，在编码方面复杂度会有所提升。</p>
 
 </div>
   
+  
+    <footer>
+      <a rel="full-article" href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/">阅读全文;</a>
+    </footer>
   
 
 
@@ -259,7 +198,7 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2019/11/16/smooth-intra-prediction-process/">AV1(DAV1D)解码详解(十)之帧内编码平滑帧内编码Smooth_Intra_Prediction</a></h1>
+      <h1 class="entry-title"><a href="/blog/2019/11/17/smooth-intra-prediction-process/">AV1(DAV1D)解码详解(九)之帧内编码平滑帧内编码Smooth_Intra_Prediction</a></h1>
     
     
       <p class="meta">
@@ -268,7 +207,7 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
 
 
 
-<time class='entry-date' datetime='2019-11-16T06:24:55-08:00'><span class='date'>2019 年 11 月 16 日</span> <span class='time'>6:24 am</span></time>
+<time class='entry-date' datetime='2019-11-17T06:24:55-08:00'><span class='date'>2019 年 11 月 17 日</span> <span class='time'>6:24 am</span></time>
         
       </p>
     
@@ -286,7 +225,7 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
   
   
     <footer>
-      <a rel="full-article" href="/blog/2019/11/16/smooth-intra-prediction-process/">阅读全文;</a>
+      <a rel="full-article" href="/blog/2019/11/17/smooth-intra-prediction-process/">阅读全文;</a>
     </footer>
   
 
@@ -298,7 +237,7 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2019/11/16/intra-block-copy/">AV1(DAV1D)解码详解(九)之帧内编码帧内拷贝模式 Intra_Block_Copy</a></h1>
+      <h1 class="entry-title"><a href="/blog/2019/11/16/intra-block-copy/">AV1(DAV1D)解码详解(八)之帧内编码帧内拷贝模式 Intra_Block_Copy</a></h1>
     
     
       <p class="meta">
@@ -338,7 +277,7 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2019/11/14/intra-color-palette-predictor/">AV1(DAV1D)解码详解(八)之帧内编码调色板模式 Color Palette</a></h1>
+      <h1 class="entry-title"><a href="/blog/2019/11/14/intra-color-palette-predictor/">AV1(DAV1D)解码详解(七)之帧内编码调色板模式 Color Palette</a></h1>
     
     
       <p class="meta">
@@ -366,45 +305,6 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
   
     <footer>
       <a rel="full-article" href="/blog/2019/11/14/intra-color-palette-predictor/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2019/11/13/inter-overlapped-block-motion-compensation/">AV1(DAV1D)解码详解(七)之帧间编码 OBMC</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2019-11-13T08:04:43-08:00'><span class='date'>2019 年 11 月 13 日</span> <span class='time'>8:04 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#obmc-" id="markdown-toc-obmc-">OBMC 概述</a></li>
-  <li><a href="#section" id="markdown-toc-section">代码</a></li>
-</ul>
-
-<p>OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2019/11/13/inter-overlapped-block-motion-compensation/">阅读全文;</a>
     </footer>
   
 
@@ -559,45 +459,6 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2019/04/26/branch-predictor/">性能优化之分支预测</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2019-04-26T08:58:32-07:00'><span class='date'>2019 年 04 月 26 日</span> <span class='time'>8:58 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">预测种类</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">程序示例</a></li>
-</ul>
-
-<p>分支预测是在分支指令执行结束之前猜测哪一路分支将会被执行，以提高处理器的指令流水线的性能。使用分支预测器的目的，在于改善指令管线化的流程。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2019/04/26/branch-predictor/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -611,7 +472,7 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/av1/'>av1 (11)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (12)</a></li>
 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
@@ -632,23 +493,23 @@ The following steps apply for i1 = 0..1, j1 = 0..3:<br />
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/">AV1(DAV1D)解码详解(十一)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering</a>
+        <a href="/blog/2019/11/20/inter-overlapped-block-motion-compensation/">AV1(DAV1D)解码详解(十一)之帧间编码 OBMC</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/16/smooth-intra-prediction-process/">AV1(DAV1D)解码详解(十)之帧内编码平滑帧内编码Smooth_Intra_Prediction</a>
+        <a href="/blog/2019/11/20/warped-motion-inter-predict/">Warped Motion Inter Predict</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/16/intra-block-copy/">AV1(DAV1D)解码详解(九)之帧内编码帧内拷贝模式 Intra_Block_Copy</a>
+        <a href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/">AV1(DAV1D)解码详解(十)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/14/intra-color-palette-predictor/">AV1(DAV1D)解码详解(八)之帧内编码调色板模式 Color Palette</a>
+        <a href="/blog/2019/11/17/smooth-intra-prediction-process/">AV1(DAV1D)解码详解(九)之帧内编码平滑帧内编码Smooth_Intra_Prediction</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/13/inter-overlapped-block-motion-compensation/">AV1(DAV1D)解码详解(七)之帧间编码 OBMC</a>
+        <a href="/blog/2019/11/16/intra-block-copy/">AV1(DAV1D)解码详解(八)之帧内编码帧内拷贝模式 Intra_Block_Copy</a>
       </li>
     
   </ul>

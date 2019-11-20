@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>HEVC SPEC 学习之SEI——Recovery_Point - 懒人李冰</title>
+  <title>Warped Motion Inter Predict - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Recovery point SEI 消息语法 Recovery point SEI 消息语义 HM 中的 Recovery_Point 本文主要记录 HEVC 中的 Recovery_Point 这一类 SEI PayloadType 的介绍。recovery &hellip;">
+  <meta name="description" content="
+Warped motion 模型在 AV1 中是通过两个仿射变换模型完成的，全局和局部的 warped 运动补偿。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2016/11/24/hevc-sei-recovery-point/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/11/20/warped-motion-inter-predict/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +83,7 @@
   
   <header>
     
-      <h1 class="entry-title">HEVC SPEC 学习之SEI——Recovery_Point</h1>
+      <h1 class="entry-title">Warped Motion Inter Predict</h1>
     
     
       <p class="meta">
@@ -91,108 +92,17 @@
 
 
 
-<time class='entry-date' datetime='2016-11-24T18:05:50-08:00'><span class='date'>2016 年 11 月 24 日</span> <span class='time'>6:05 pm</span></time>
+<time class='entry-date' datetime='2019-11-20T05:09:25-08:00'><span class='date'>2019 年 11 月 20 日</span> <span class='time'>5:09 am</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#recovery-point-sei-" id="markdown-toc-recovery-point-sei-">Recovery point SEI 消息语法</a></li>
-  <li><a href="#recovery-point-sei--1" id="markdown-toc-recovery-point-sei--1">Recovery point SEI 消息语义</a></li>
-  <li><a href="#hm--recoverypoint" id="markdown-toc-hm--recoverypoint">HM 中的 Recovery_Point</a></li>
-</ul>
-
-<p>本文主要记录 HEVC 中的 Recovery_Point 这一类 SEI PayloadType 的介绍。<code>recovery point</code>与<code>H264</code>中<code>recovery point</code>的功能是相似的，主要作用是帮助解码器确认，在解码器凯斯随机
-访问或解码器遇到序列中断的链接以后，解码过程生成能够合格显示的图像的时间。</p>
+<div class="entry-content">
+<p>Warped motion 模型在 AV1 中是通过两个仿射变换模型完成的，全局和局部的 warped 运动补偿。</p>
 
 <!--more-->
-
-<h2 id="recovery-point-sei-">Recovery point SEI 消息语法</h2>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">recovery_point(payloadSize)</th>
-      <th style="text-align: center">Descriptor</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">recovery_poc_cnt</td>
-      <td style="text-align: center">se(v)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">exact_match_flag</td>
-      <td style="text-align: center">u(1)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">broken_link_flag</td>
-      <td style="text-align: center">u(1)</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="recovery-point-sei--1">Recovery point SEI 消息语义</h2>
-
-<p>当解码过程从一个解码顺序中与<code>recovery point sei payloadType</code>关联的访问单元开始时，所有此<code>SEI</code>消息指明的输出
-顺序中<code>recovery point</code>以后的解码图像都是内容正确或大致正确的(即显示时不会有明显的马赛克)。有<code>recovery point sei payloadType</code>关联
-的图像之前的随机访问单元生成的解码图像在内容上不一定是正确的，直到指定的<code>recovery point</code>。从与<code>recovery point sei payloadType</code>的访问
-单元开始的解码过程操作可以包含对解码图像缓冲区不存在的图像的引用。</p>
-
-<ul>
-  <li>
-    <p>recovery_poc_cnt 指定输出顺序中解码图像的恢复点。如果存在图像A, 以解码顺序看它在当前图像(与当前的 SEI 消息关联的图像)的后面，并且
-它的 POC 等于当前图像的 POC 加上<code>recovery_poc_cnt</code>的值，则图像A被认定为<code>recovery point picture</code>。否则，显示顺序中第一个 POC 大于当前
-图像 POC 加上 <code>recovery_poc_cnt</code>值的图像被认定为<code>recovery point picture</code>。<code>recovery point</code>图像在解码顺序中不能再当前图像的前面。以显示
-顺序来看，从<code>recovery point</code>图像之后的所有解码图像在内容上都是正确或基本正确的。<code>recovery_poc_cnt</code>的值应当在<code>-MaxPicOrderCntLsb / 2</code>和
-<code>MaxPicOrderCntLsb / 2 - 1</code>的范围内。</p>
-  </li>
-  <li>
-    <p>exact_match_flag 表示在与恢复点 SEI 消息关联的访问单元处开始的解码过程输出的特定恢复点之后的解码图像，是否应该是一个与 NAL 单元流中
-的前一个 IDR 访问单元位置处开始的解码过程生成的图像精确匹配的图像。值为 0 表示不一定精确匹配，为 1 表示精确匹配。</p>
-  </li>
-</ul>
-
-<p>当解码从恢复点 SEI 消息开始时，所有对不可获得的参考图像的引用应当推断为对只包含用内部宏块预测方式编码的宏块，样点值为 Y 等于 128, Cb 和 Cr 等于
-128（中度灰）的图像的引用，目的是确定与<code>exact_match_flag</code>的取值的一致性。</p>
-
-<ul>
-  <li>broken_link_flag 表示在恢复点 SEI 消息处 NAL 单元流的链接是否出现中断。它的语义如下：
-—— 如果<code>broken_link_flag</code>值为 1， 在前一个 IDR 访问单元位置处开始的解码过程生成的图像可能包含不希望的视觉假象，以致于在输出顺序中关联恢复点 SEI 消息的访问单元之后
-的解码图像不可显示，直到指定的输出顺序中的恢复点。<br />
-—— 如果<code>broken_link_flag</code>值为 0, 没有预示会出现潜在的视觉假象。</li>
-</ul>
-
-<h2 id="hm--recoverypoint">HM 中的 Recovery_Point</h2>
-
-<p>HM 源码中只是对<code>Recovery_Point</code>这一 SEI 信息做了 parse，但并没有使用解析出来的信息，可以认为 HM 中是不支持 <code>recovery_point</code>的。 其中解析的源码如下：</p>
-
-<figure class="code"><figcaption><span>recovery_point </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">Void</span> <span class="n">SEIReader</span><span class="o">::</span><span class="n">xParseSEIRecoveryPoint</span><span class="p">(</span><span class="n">SEIRecoveryPoint</span><span class="o">&amp;</span> <span class="n">sei</span><span class="p">,</span> <span class="n">UInt</span> <span class="n">payloadSize</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">ostream</span> <span class="o">*</span><span class="n">pDecodedMessageOutputStream</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">  <span class="n">Int</span>  <span class="n">iCode</span><span class="p">;</span>
-</span><span class="line">  <span class="n">UInt</span> <span class="n">uiCode</span><span class="p">;</span>
-</span><span class="line">  <span class="n">output_sei_message_header</span><span class="p">(</span><span class="n">sei</span><span class="p">,</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">payloadSize</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">  <span class="n">sei_read_svlc</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">iCode</span><span class="p">,</span>  <span class="s">&quot;recovery_poc_cnt&quot;</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_recoveryPocCnt</span>     <span class="o">=</span> <span class="n">iCode</span><span class="p">;</span>
-</span><span class="line">  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="s">&quot;exact_matching_flag&quot;</span> <span class="p">);</span>   <span class="n">sei</span><span class="p">.</span><span class="n">m_exactMatchingFlag</span>  <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
-</span><span class="line">  <span class="n">sei_read_flag</span><span class="p">(</span> <span class="n">pDecodedMessageOutputStream</span><span class="p">,</span> <span class="n">uiCode</span><span class="p">,</span> <span class="s">&quot;broken_link_flag&quot;</span> <span class="p">);</span>      <span class="n">sei</span><span class="p">.</span><span class="n">m_brokenLinkFlag</span>     <span class="o">=</span> <span class="n">uiCode</span><span class="p">;</span>
-</span><span class="line">  <span class="n">xParseByteAlign</span><span class="p">();</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
 
 </div>
 
@@ -209,12 +119,12 @@
 
 
 
-<time class='entry-date' datetime='2016-11-24T18:05:50-08:00'><span class='date'>2016 年 11 月 24 日</span> <span class='time'>6:05 pm</span></time>
+<time class='entry-date' datetime='2019-11-20T05:09:25-08:00'><span class='date'>2019 年 11 月 20 日</span> <span class='time'>5:09 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/hevcxue-xi/'>hevc学习</a>
+    <a class='category' href='/blog/categories/av1/'>av1</a>
   
 </span>
 
@@ -223,7 +133,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2016/11/24/hevc-sei-recovery-point/" data-via="" data-counturl="http://lazybing.github.io/blog/2016/11/24/hevc-sei-recovery-point/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/11/20/warped-motion-inter-predict/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/11/20/warped-motion-inter-predict/" >Tweet</a>
   
   
   
@@ -232,10 +142,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2016/11/16/par-sar-dar-analyse/" title="Previous Post: HEVC SPEC学习之PAR、DAR、SAR">&laquo; HEVC SPEC学习之PAR、DAR、SAR</a>
+        <a class="basic-alignment left" href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/" title="Previous Post: AV1(DAV1D)解码详解(十)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering">&laquo; AV1(DAV1D)解码详解(十)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering</a>
       
       
-        <a class="basic-alignment right" href="/blog/2016/11/25/hevc-fps/" title="Next Post: HEVC SPEC 学习之 Frame Rate">HEVC SPEC 学习之 Frame Rate &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2019/11/20/inter-overlapped-block-motion-compensation/" title="Next Post: AV1(DAV1D)解码详解(十一)之帧间编码 OBMC">AV1(DAV1D)解码详解(十一)之帧间编码 OBMC &raquo;</a>
       
     </p>
   </footer>

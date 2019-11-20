@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content=" 矩阵 算法(Algorithm) 代码 浮点数运算 D and Q 寄存器 回到代码中 定点运算 宏定义： 如果考虑到调度的话 前面两篇分别介绍了如何使用 NEON 来加载和存储数据，如何使用 NEON 处理多余的数据。这一篇介绍一点儿使用的数据处理——矩阵相乘。 ">
+  <meta name="description" content="向量移位 移位与插入 移位与计算 指令修改器 可用移位表 示例：转换颜色深度 从 565 到 888 从888到565 结论 本文将介绍 NEON 提供的移位运算，并介绍如何利用移位运算在常用颜色深度之间转换影像数据。本系列前期已发布的文章包括：第一部分：加载与存储，第二部分：余数的处理， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,54 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/01/22/neon-shifting-left-and-right/">NEON 编程4——左右移位</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-01-22T06:44:07-08:00'><span class='date'>2019 年 01 月 22 日</span> <span class='time'>6:44 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">向量移位</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">移位与插入</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">移位与计算</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">指令修改器</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">可用移位表</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">示例：转换颜色深度</a>    <ul>
+      <li><a href="#section-6" id="markdown-toc-section-6">从 565 到 888</a></li>
+      <li><a href="#section-7" id="markdown-toc-section-7">从888到565</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-8" id="markdown-toc-section-8">结论</a></li>
+</ul>
+
+<p>本文将介绍 NEON 提供的移位运算，并介绍如何利用移位运算在常用颜色深度之间转换影像数据。本系列前期已发布的文章包括：第一部分：加载与存储，第二部分：余数的处理，第三部分：矩阵乘法。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2019/01/22/neon-shifting-left-and-right/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -544,47 +592,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/">如何从FFMpeg中提取CODEC(以TTA Decoder为例)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2018-05-06T07:55:35-07:00'><span class='date'>2018 年 05 月 06 日</span> <span class='time'>7:55 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#tta-" id="markdown-toc-tta-">TTA 简介</a></li>
-  <li><a href="#ffmpeg--tta-decoder" id="markdown-toc-ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</a></li>
-  <li><a href="#tta-decoder-" id="markdown-toc-tta-decoder-">提取 TTA Decoder 中可能遇到的问题</a></li>
-  <li><a href="#tta-decoder--1" id="markdown-toc-tta-decoder--1">提取 TTA Decoder 实现</a></li>
-</ul>
-
-<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA Decoder 为例，介绍如何同 FFMpeg 中提取 CODEC。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/4">&larr; Older</a>
@@ -600,7 +607,7 @@
     <section>
       <h1>分类目录</h1>
         <ul id="categories">
-                <li class='category'><a href='/blog/categories/av1/'>av1 (11)</a></li>
+                <li class='category'><a href='/blog/categories/av1/'>av1 (12)</a></li>
 <li class='category'><a href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析 (13)</a></li>
 <li class='category'><a href='/blog/categories/hevcxue-xi/'>hevc学习 (7)</a></li>
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
@@ -621,23 +628,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/">AV1(DAV1D)解码详解(十一)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering</a>
+        <a href="/blog/2019/11/20/inter-overlapped-block-motion-compensation/">AV1(DAV1D)解码详解(十一)之帧间编码 OBMC</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/16/smooth-intra-prediction-process/">AV1(DAV1D)解码详解(十)之帧内编码平滑帧内编码Smooth_Intra_Prediction</a>
+        <a href="/blog/2019/11/20/warped-motion-inter-predict/">Warped Motion Inter Predict</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/16/intra-block-copy/">AV1(DAV1D)解码详解(九)之帧内编码帧内拷贝模式 Intra_Block_Copy</a>
+        <a href="/blog/2019/11/19/recursive-filtering-based-intra-prediction-process/">AV1(DAV1D)解码详解(十)之帧内编码基于递归滤波的帧内预测器Recursive_Filtering</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/14/intra-color-palette-predictor/">AV1(DAV1D)解码详解(八)之帧内编码调色板模式 Color Palette</a>
+        <a href="/blog/2019/11/17/smooth-intra-prediction-process/">AV1(DAV1D)解码详解(九)之帧内编码平滑帧内编码Smooth_Intra_Prediction</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2019/11/13/inter-overlapped-block-motion-compensation/">AV1(DAV1D)解码详解(七)之帧间编码 OBMC</a>
+        <a href="/blog/2019/11/16/intra-block-copy/">AV1(DAV1D)解码详解(八)之帧内编码帧内拷贝模式 Intra_Block_Copy</a>
       </li>
     
   </ul>
