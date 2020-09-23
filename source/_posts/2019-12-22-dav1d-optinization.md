@@ -65,12 +65,10 @@ for (int j = 0; j < h; j++) {
     }
 }
 ```
+
 ### 2. 局部性原理用在 Film Grain 优化。
 
-Film Grain 的流程主要包括两部分：
-
-1. 从 Grain_lut 中获取 grain值。
-2. 通过获取的 grain 值，执行 add_noise_y。
+Film Grain 的流程主要包括两部分：1. 从 Grain_lut 中获取 grain值。2. 通过获取的 grain 值，执行 add_noise_y。
 
 因为获取 grain 值时，访问的内存是不连续的。此时可以考虑，先将获取的grain 值存起来，放到一块连续的buffer中，之后在执行 add_noise_y 的操作。
 实现完上述步骤后，可以利用这种方式继续执行，继续使用 NEON 优化。
@@ -83,4 +81,36 @@ Film Grain 的流程主要包括两部分：
 
 SIMD 指令优化，在编解码中一直起着非常非常重要的作用，这也解释了为什么所有的编解码器，都有 SIMD 指令的优化，可以说，SIMD 指令优化是仅次于线程优化的方案了。
 在 DAV1D 最初的版本中，还不支持持 10 bit汇编的情况下，自己手动实现了 LoopFilter、CDEF Filter、LoopRestoration Filter、Film Grain Filter、MC 等模块后，解码效率提升了150%-200%。这还是在没实现 IDXT 模块的前提下。如果将所有能够使用SIMD指令优化的结果，都实现了，预估应该能做到 200%-250% 的解码效率。
+
+绝大多数的 NEON 汇编优化，核心代码都可以简化为如下模式：  
+
+```
+for (int i = 0; i < height; i++)
+    for (int j = 0; j < width; j++)
+        dst[i * stride + j] = iclip((src1[i][j] * weight1 + src2[i][j] * weight2 + offset) << shift, min, max);
+```
+使用 NEON 汇编优化上面的代码实现，假设 src1 的地址在寄存器 x0 中，src2 的地址在寄存器 x2 中。
+
+```
+ld1 {v0.8b, v1.8b}, [x1]
+ld1 {v2.8b, v2.8b}, [x2]
+movi v9.8h, #offset
+movi v12.8h, #shift
+movi v3.8b, #255
+movi v4.8b, #128
+smul v5.8h, v0.8b, v3.8b
+smul v6.8h, v1.8b, v3.8b
+smul v7.8h, v2.8b, v4.8b
+smul v8.8h, v3.8b, v5.8b
+add  v5.8h, v5.8h, v7.8h
+add  v6.8h, v6.8h, v8.8h
+add  v5.8h, v5.8h, v9.8h
+add  v6.8h, v6.8h, v9.8h
+ushl v5.8h, v5.8h, v12.8h
+ushl v6.8h, v6.8h, v12.8h
+smax v5.8h, v5.8h, v10.8h
+smax v6.8h, v6.8h, v10.8h
+smin v5.8h, v5.8h, v11.8h
+smin v6.8h, v6.8h, v11.8h
+```
 
