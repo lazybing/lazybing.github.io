@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AV1(DAV1D) 解码详解(二)之film_grain"
+title: "AV1(DAV1D) 解码详解(二)之FILM_GRAIN"
 date: 2018-10-17 08:35:36 -0700
 comments: true
 categories: av1
