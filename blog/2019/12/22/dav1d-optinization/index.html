@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="DAV1D 作为 AV1 最高效的解码器，仍然有可优化的空间，根据自己的理解，可执行的优化方案大概从三个方面实现：程序流程、算法实现、编程语言三个角度进行优化。 程序流程 算法实现 Film Grain 部分，利用局部性原理。 编程语言 NEON 优化：LoopFilter、CDEF Filter &hellip;">
+  <meta name="description" content="程序流程 算法实现 1. 局部性原理用在 LoopRestoration 中。 编程语言 DAV1D 作为 AV1 最高效的解码器，仍然有可优化的空间，根据自己的理解，可执行的优化方案大概从三个方面实现：程序流程、算法实现、编程语言三个角度进行优化。 程序流程 DAV1D 解码器的流程如下图所示 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2019/12/22/dav1d-optimization/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2019/12/22/dav1d-optinization/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -98,19 +98,114 @@
   </header>
 
 
-<div class="entry-content"><p>DAV1D 作为 AV1 最高效的解码器，仍然有可优化的空间，根据自己的理解，可执行的优化方案大概从三个方面实现：程序流程、算法实现、编程语言三个角度进行优化。</p>
+<div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">程序流程</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">算法实现</a>    <ul>
+      <li><a href="#looprestoration-" id="markdown-toc-looprestoration-">1. 局部性原理用在 LoopRestoration 中。</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-2" id="markdown-toc-section-2">编程语言</a></li>
+</ul>
+
+<p>DAV1D 作为 AV1 最高效的解码器，仍然有可优化的空间，根据自己的理解，可执行的优化方案大概从三个方面实现：程序流程、算法实现、编程语言三个角度进行优化。</p>
 
 <!--more-->
 
-<h1 id="section">程序流程</h1>
+<h2 id="section">程序流程</h2>
 
-<h1 id="section-1">算法实现</h1>
+<p>DAV1D  解码器的流程如下图所示：
+<img src="/images/dav1d_opt/dav1d_decoder_flow.png" /></p>
 
-<p>Film Grain 部分，利用局部性原理。</p>
+<p>从图中可以看出，DAV1D 解码器本身有三个线程，Main Thread、Frame Thread 和 Tile Thread。</p>
 
-<h1 id="section-2">编程语言</h1>
+<ul>
+  <li>Main Thread 主要控制整个解码流程，包括读取数据、Parse Obu Header（Sequence、Frame、Tile）、Film Grain、将AV1 数据给到另外两条 Thread、写数据。</li>
+  <li>Tile Thread 主要完成重建帧部分，包括read_coef_blocks、recon_b_intra/recon_b_inter、itxfm_add。</li>
+  <li>Frame Thread 主要完成滤波部分，是在一帧内，所有的Tile 解码完成后，Loop Filter、CDEF Filter、LoopRestoration Filter。</li>
+</ul>
 
-<p>NEON 优化：LoopFilter、CDEF Filter、LoopRestoration Filter、MC。</p>
+<p>分析上面的流程可以看出 Film Grain 部分，属于后处理部分，不会影响到其他帧的解码，因此，可以将 Film Grain 部分单独创建一个 Thread 来实现。这条优化肯定是可以实现的，只是代码库中还没有实现。</p>
+
+<p>另外，Frame Thread 主要包括三种滤波：Loop Filter 、CDEF Filter、LoopRestoration Filter 三种，而且是顺序执行，因此可以考虑将这三种滤波，用不同的 Thread 实现。</p>
+
+<h2 id="section-1">算法实现</h2>
+
+<h3 id="looprestoration-">1. 局部性原理用在 LoopRestoration 中。</h3>
+
+<p>LoopRestoration_tmpl.c 中，维纳滤波的实现有如下一段代码：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">for (int j = 0; j &lt; w; j++) {
+</span><span class="line">    for (int i = 0; i &lt; h; i++) {
+</span><span class="line">        int sum = (hor[(j + 3) * REST_UNIT_STRIDE + i] &lt;&lt; 7) - round_offset;
+</span><span class="line">
+</span><span class="line">        for (int k = 0; k &lt; 7; k++) {
+</span><span class="line">            sum += hor[(j + k) * REST_UNIT_STRIDE + i] * filterv[k];
+</span><span class="line">        }
+</span><span class="line">
+</span><span class="line">        p[j * PXSTRIDE(p_stride) + i] = 
+</span><span class="line">            iclip_pixel((sum + rounding_off_v) &gt;&gt; round_bits_v);
+</span><span class="line">    }
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<p>上面的实现是按照列实现完成的，其实硬件的存储结构导致，行实现完成效率更高。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">for (int j = 0; j &lt; h; j++) {
+</span><span class="line">    for (int i = 0; i &lt; w; i++) {
+</span><span class="line">        int sum = (hor[(j + 3) * REST_UNIT_STRIDE + i] &lt;&lt; 7) - round_offset;
+</span><span class="line">
+</span><span class="line">        for (int k = 0; k &lt; 7; k++) {
+</span><span class="line">            sum += hor[(j + k) * REST_UNIT_STRIDE + i] * filterv[k];
+</span><span class="line">        }
+</span><span class="line">
+</span><span class="line">        p[j * PXSTRIDE(p_stride) + i] = 
+</span><span class="line">            iclip_pixel((sum + rounding_off_v) &gt;&gt; round_bits_v);
+</span><span class="line">    }
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+<p>### 2. 局部性原理用在 Film Grain 优化。</p>
+
+<p>Film Grain 的流程主要包括两部分：</p>
+
+<ol>
+  <li>从 Grain_lut 中获取 grain值。</li>
+  <li>通过获取的 grain 值，执行 add_noise_y。</li>
+</ol>
+
+<p>因为获取 grain 值时，访问的内存是不连续的。此时可以考虑，先将获取的grain 值存起来，放到一块连续的buffer中，之后在执行 add_noise_y 的操作。
+实现完上述步骤后，可以利用这种方式继续执行，继续使用 NEON 优化。</p>
+
+<p>测试下来发现，960x540 分辨率，解码模块耗时 8ms，利用局部性原理优化完成后，该模块耗时 7ms，使用NEON优化后，该模块耗时5ms。</p>
+
+<p>这还只是优化了 Y 方向的计算，如果后续优化完成 UV 方向的计算后，效果会更加明显。</p>
+
+<h2 id="section-2">编程语言</h2>
+
+<p>SIMD 指令优化，在编解码中一直起着非常非常重要的作用，这也解释了为什么所有的编解码器，都有 SIMD 指令的优化，可以说，SIMD 指令优化是仅次于线程优化的方案了。
+在 DAV1D 最初的版本中，还不支持持 10 bit汇编的情况下，自己手动实现了 LoopFilter、CDEF Filter、LoopRestoration Filter、Film Grain Filter、MC 等模块后，解码效率提升了150%-200%。这还是在没实现 IDXT 模块的前提下。如果将所有能够使用SIMD指令优化的结果，都实现了，预估应该能做到 200%-250% 的解码效率。</p>
+
 </div>
 
 
@@ -140,7 +235,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/12/22/dav1d-optimization/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/12/22/dav1d-optimization/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2019/12/22/dav1d-optinization/" data-via="" data-counturl="http://lazybing.github.io/blog/2019/12/22/dav1d-optinization/" >Tweet</a>
   
   
   
@@ -184,7 +279,7 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2019/12/22/dav1d-optimization/">AV1(DAV1D)解码详解(八)DAV1D源码优化 Dav1d_optimization</a>
+        <a href="/blog/2019/12/22/dav1d-optinization/">AV1(DAV1D)解码详解(八)DAV1D源码优化 Dav1d_optimization</a>
       </li>
     
       <li class="post">
