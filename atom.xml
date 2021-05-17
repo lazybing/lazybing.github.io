@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-05-17T07:39:09-07:00</updated>
+  <updated>2021-05-17T08:06:21-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,32 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[H264 Motion Estimation Algorithm]]></title>
+    <link href="http://lazybing.github.io/blog/2021/05/17/h264-motion-estimation-algorithm/"/>
+    <updated>2021-05-17T07:54:51-07:00</updated>
+    <id>http://lazybing.github.io/blog/2021/05/17/h264-motion-estimation-algorithm</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">钻石搜索算法</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">六边形搜索算法</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">非对称交叉多层次六边形网格搜索算法</a></li>
+</ul>
+
+<p>运动估计是寻找运动矢量的过程。在整个编码过程中，运动估计耗时占了整个编码过程的60%-80%不等，因此，对运动估计的优化是实现视频实时应用的关键。</p>
+
+<p>H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 分数像素级精度的估计。其中整数像素级的运动估计包括两类算法：全搜索算法、快速搜索算法(DIA/HEX/UMH)。</p>
+
+<!--more-->
+
+<h2 id="section">钻石搜索算法</h2>
+
+<h2 id="section-1">六边形搜索算法</h2>
+
+<h2 id="section-2">非对称交叉多层次六边形网格搜索算法</h2>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[AV1(DAV1D)解码详解(八)DAV1D源码优化 Dav1d_optimization]]></title>
@@ -3413,331 +3439,6 @@ AV1 支持从 8x8 到 64x64 的块，支持调色板模式，编码器会自动�
 </span><span class="line">    <span class="na">...</span>
 </span><span class="line">    <span class="na">...</span>
 </span></code></pre></td></tr></table></div></figure>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NEON 编程2——处理多余的数据]]></title>
-    <link href="http://lazybing.github.io/blog/2019/01/20/neon-dealing-with-leftovers/"/>
-    <updated>2019-01-20T00:56:44-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/01/20/neon-dealing-with-leftovers</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#fixing-up" id="markdown-toc-fixing-up">修复数据(Fixing Up)</a>    <ul>
-      <li><a href="#larger-arrays" id="markdown-toc-larger-arrays">Larger Arrays</a>        <ul>
-          <li><a href="#notes" id="markdown-toc-notes">Notes</a></li>
-          <li><a href="#code-fragment" id="markdown-toc-code-fragment">Code Fragment</a></li>
-        </ul>
-      </li>
-      <li><a href="#overlapping" id="markdown-toc-overlapping">Overlapping</a>        <ul>
-          <li><a href="#notes-1" id="markdown-toc-notes-1">Notes</a></li>
-          <li><a href="#code-fragment-1" id="markdown-toc-code-fragment-1">Code Fragment</a></li>
-        </ul>
-      </li>
-      <li><a href="#single-elements" id="markdown-toc-single-elements">Single Elements</a>        <ul>
-          <li><a href="#notes-2" id="markdown-toc-notes-2">Notes</a></li>
-        </ul>
-      </li>
-      <li><a href="#further-considerations" id="markdown-toc-further-considerations">Further Considerations</a>        <ul>
-          <li><a href="#beginning-or-end" id="markdown-toc-beginning-or-end">Beginning or End</a></li>
-          <li><a href="#alignment" id="markdown-toc-alignment">Alignment</a></li>
-          <li><a href="#using-arm-to-fix-up" id="markdown-toc-using-arm-to-fix-up">Using Arm to Fix Up</a></li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-</ul>
-
-<p>上一篇关于NEON 加载和存储的文章中，在NEON 处理单元（寄存器）和内存之间进行数据传输。这篇文章中，我们会处理经常遇到的问题：输入数据并不对齐，也就是输入数据的长度并不是向量长度的整数倍。我们需要在数组开始或结束的位置处理剩余的元素。使用 NEON 哪种方式最有效呢？</p>
-
-<!--more-->
-
-<p>使用 NEON 处理数据时，通常处理的数据向量的长度从 4 个元素到 16 个元素。通常情况下，你会发现数据的实际长度并不是切好等于寄存器向量长度的倍数，你必须单独处理剩余的元素。</p>
-
-<p>例如，你想要使用 NEON 每次加载、处理、存储 8 个元素，但你的数组有 21 个元素的长度。前面 2 组能够正常处理，但对第 3 个，还剩下 5 个元素没有处理。你要怎么做呢？</p>
-
-<h2 id="fixing-up">修复数据(Fixing Up)</h2>
-
-<p>有三种方法来处理剩余的数据，三种方法的需求、性能和代码大小都不相同，分别是<code>Larger Arrays</code>、<code>Overlapping</code>、<code>Single Elements</code>，第一种方法效率最高。</p>
-
-<h3 id="larger-arrays">Larger Arrays</h3>
-
-<p>如何可以改变处理数组的大小，使用填充元素增加数组的长度到下一个向量大小的倍数，就可以读写超出数据本身的边界而不会影响相邻的存储。下面的例子中，增加元素到 24 个元素是的第三组可以很好地完成而不会有数据损坏。</p>
-
-<p><img src="http://lazybing.github.io/images/neon_deal_leftovers/larger_array.png" /></p>
-
-<h4 id="notes">Notes</h4>
-
-<ul>
-  <li>分配更大的数组会消耗更大的内存。</li>
-  <li>新的填充数据需要在初始化时给定一个值，该值不能够影响最后的计算结果。例如，如果是求和，填充数据就只能填充为 0.如果是要找到数组里面的最小值，可以设置填充数据为可以获取的最大值。</li>
-  <li>某些情况下，没办法给定一个填充数据一个初始值，不影响最终结果，比如查找数据的范围时。</li>
-</ul>
-
-<h4 id="code-fragment">Code Fragment</h4>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">@ r0 = input array pointer
-</span><span class="line">@ r1 = output array pointer
-</span><span class="line">@ r2 = length of data in array
-</span><span class="line">
-</span><span class="line">@ We can assume that the array length is greater than zero, is an integer
-</span><span class="line">@ number of vectors, and is greater than or equal to the length of data
-</span><span class="line">@ in the array.
-</span><span class="line">
-</span><span class="line">    add r2, r2, #7      @ add (vector length - 1) to the data length
-</span><span class="line">    lsr r2, r2, #3      @ divide the length of the array by the length
-</span><span class="line">                        @ of a vector, 8, to find the number of
-</span><span class="line">                        @ vectors of data to be processed
-</span><span class="line">loop:
-</span><span class="line">    subs r2, r2, #1     @ decrement the loop counter, and set flags
-</span><span class="line">    vld1.8 {d0}, [r0]!  @ load eight elements from the array pointed to
-</span><span class="line">                        @ by r0 into d0, and update r0 to point to the next vector
-</span><span class="line">    ...
-</span><span class="line">    ...                 @ process the input in d0
-</span><span class="line">    ...
-</span><span class="line">    vst1.8 {d0}, [r1]!  @ write eight elements to the output array, and 
-</span><span class="line">                        @ update r1 to point to next vector
-</span><span class="line">    bne loop            @ if r2 is not equal to 0, loop</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="overlapping">Overlapping</h3>
-
-<p>如果操作合适，剩余元素可以使用重叠的方法来处理。这会对数组中的某些元素进行两次处理。</p>
-
-<p>示例中，第一组处理元素从0-7，第二组处理元素从5-12，第三组处理元素是13-20。注意，第5-7个元素，在第一次和第二次处理的向量中有重合，它们处理了两次。</p>
-
-<p><img src="http://lazybing.github.io/images/neon_deal_leftovers/neon_overlapping.png" /></p>
-
-<h4 id="notes-1">Notes</h4>
-
-<ul>
-  <li>Overlapping 方法只有当输入数据的操作应用不会受操作次数的改变而改变时才能使用；例如，如果想要找到最大值可以使用该方法，而求和操作就不能使用该方法，因为 overlapping 会计算元素两次。</li>
-  <li>数组中的元素数量至少能够填充一个完整的向量。</li>
-</ul>
-
-<h4 id="code-fragment-1">Code Fragment</h4>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">@ r0 = input array pointer
-</span><span class="line">@ r1 = output array pointer
-</span><span class="line">@ r2 = length of data in array
-</span><span class="line">
-</span><span class="line">@ We can assume that the operation is idempotent, and the array is greater
-</span><span class="line">@ than or equal to one vector long.
-</span><span class="line">
-</span><span class="line">    ands r3, r2, #7     @ calculate number of elements left over after
-</span><span class="line">                        @ processing complete vectors using
-</span><span class="line">                        @ data length &amp; (vector length - 1)
-</span><span class="line">    beq loopsetup       @ if the result of the ands is zero, the length
-</span><span class="line">                        @ of the data is an integer number of vectors,
-</span><span class="line">                        @ so there is no overlap, and processing can begin at the loop
-</span><span class="line">                        @ handle the first vector separately
-</span><span class="line">    vld1.8 {d0}, [r0], r3   @ load the first eight elements from the array,
-</span><span class="line">                            @ and update the pointer by the number of elements left over
-</span><span class="line">    ...
-</span><span class="line">    ...                     @ process the input in d0
-</span><span class="line">    ...
-</span><span class="line">    vst1.8  {d0}, [r1], r3  @ wirte eight elements to the output array, and
-</span><span class="line">                            @ update the pointer
-</span><span class="line">                            @ now, set up the vector processing loop
-</span><span class="line"> loopsetup:
-</span><span class="line">     lsr  r2, r2, #3      @ divide the length of the array by the length
-</span><span class="line">                             @  of a vector, 8, to find the number of
-</span><span class="line">                             @  vectors of data to be processed
-</span><span class="line"> 
-</span><span class="line">                             @ the loop can now be executed as normal. the
-</span><span class="line">                             @  first few elements of the first vector will
-</span><span class="line">                             @  overlap with some of those processed above
-</span><span class="line"> loop:
-</span><span class="line">     subs    r2, r2, #1      @ decrement the loop counter, and set flags
-</span><span class="line">     vld1.8  {d0}, [r0]!  @ load eight elements from the array, and update
-</span><span class="line">                             @  the pointer
-</span><span class="line">     ...
-</span><span class="line">     ...                  @ process the input in d0
-</span><span class="line">     ...
-</span><span class="line"> 
-</span><span class="line">     vst1.8  {d0}, [r1]!  @ write eight elements to the output array, and
-</span><span class="line">                             @  update the pointer
-</span><span class="line">     bne  loop            @ if r2 is not equal to 0, loop</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="single-elements">Single Elements</h3>
-
-<p>NEON 提供的加载和存储指令可以对向量中的某个元素进行操作。使用这个操作，可以加载向量的单个元素，在上面执行操作，并把元素写会内存。</p>
-
-<p>示例中的问题是，前面两组数据能够正常执行(0-7元素、8-15元素)。第三组需要处理剩余的 5 个元素，它们是单独的循环中处理的，每次都执行加载、处理和存储元素。</p>
-
-<p><img src="http://lazybing.github.io/images/neon_deal_leftovers/neon_single_element.png" /></p>
-
-<h4 id="notes-2">Notes</h4>
-
-<ul>
-  <li>该方法比上面提到的方法要效率低，因为每个元素都单独执行加载、处理和存储。</li>
-  <li>处理剩余的元素需要两个循环——一个是向量、另一个是单个元素，这回增加函数中的代码量</li>
-</ul>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">@ r0 = input array pointer
-</span><span class="line"> @ r1 = output array pointer
-</span><span class="line"> @ r2 = length of data in array
-</span><span class="line"> 
-</span><span class="line">     lsrs    r3, r2, #3      @ calculate the number of complete vectors to be
-</span><span class="line">                             @  processed and set flags
-</span><span class="line">     beq  singlesetup  @ if there are zero complete vectors, branch to
-</span><span class="line">                             @  the single element handling code
-</span><span class="line"> 
-</span><span class="line">                             @ process vector loop
-</span><span class="line"> vectors:
-</span><span class="line">     subs    r3, r3, #1      @ decrement the loop counter, and set flags
-</span><span class="line">     vld1.8  {d0}, [r0]!  @ load eight elements from the array and update
-</span><span class="line">                             @  the pointer
-</span><span class="line">     ...
-</span><span class="line">     ...                  @ process the input in d0
-</span><span class="line">     ...
-</span><span class="line"> 
-</span><span class="line">     vst1.8  {d0}, [r1]!  @ write eight elements to the output array, and
-</span><span class="line">                             @  update the pointer
-</span><span class="line">     bne  vectors      @ if r3 is not equal to zero, loop
-</span><span class="line"> 
-</span><span class="line"> singlesetup:
-</span><span class="line">     ands    r3, r2, #7      @ calculate the number of single elements to process
-</span><span class="line">     beq  exit            @ if the number of single elements is zero, branch
-</span><span class="line">                             @  to exit
-</span><span class="line"> 
-</span><span class="line">                             @ process single element loop
-</span><span class="line"> singles:
-</span><span class="line">     subs    r3, r3, #1      @ decrement the loop counter, and set flags
-</span><span class="line">     vld1.8  {d0[0]}, [r0]!  @ load single element into d0, and update the
-</span><span class="line">                             @  pointer
-</span><span class="line">     ...
-</span><span class="line">     ...                  @ process the input in d0[0]
-</span><span class="line">     ...
-</span><span class="line"> 
-</span><span class="line">     vst1.8  {d0[0]}, [r1]!  @ write the single element to the output array,
-</span><span class="line">                             @  and update the pointer
-</span><span class="line">     bne  singles      @ if r3 is not equal to zero, loop
-</span><span class="line"> 
-</span><span class="line"> exit:</span></code></pre></td></tr></table></div></figure>
-
-<h3 id="further-considerations">Further Considerations</h3>
-
-<h4 id="beginning-or-end">Beginning or End</h4>
-
-<p>Overlapping 和 single element 技术可以应用到处理数组的开始或结束位置。如何应用程序更适合处理结束端，上面的代码可以很容易的改成处理末端的元素。</p>
-
-<h4 id="alignment">Alignment</h4>
-
-<p>加载和存储地址应该与高速缓存线对齐，这样会使得内存访问更加高效。</p>
-
-<p>对于 Cortex-A8，至少要 16 字节对齐，如果在输入或输出数组的开始位置没有对齐，就必须在数组的开始和结束位置处理元素。</p>
-
-<p>当对齐内存来加速时，记得使用加载和存储指令时加上<code>:64</code>或<code>:128</code>或<code>:256</code>。</p>
-
-<h4 id="using-arm-to-fix-up">Using Arm to Fix Up</h4>
-
-<p>在使用<code>single elements</code>方法时，你可以使用 Arm 指令来对每个元素进行单独处理。然而，同时使用 Arm 指令和 NEON 指令来存储相同的内存会降低效率，因为通过 Arm 管道来写必须在 NEON 管道写完后才能进行。</p>
-
-<p>一般情况下，应该避免同时使用 Arm 和 NEON 代码写到相同的内存区域，尤其是同一个高速缓存区域。</p>
 
 ]]></content>
   </entry>
