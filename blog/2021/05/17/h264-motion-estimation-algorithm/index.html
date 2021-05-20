@@ -121,7 +121,9 @@
 
 <p>大钻石搜索算法有 9 个搜索点，小钻石搜索算法有 5 个搜索点。</p>
 
-<p>钻石搜索的步骤是：</p>
+<p><img src="/images/h264_me/diamond_search.png" /></p>
+
+<p>从上图可以看出，钻石搜索的步骤是：</p>
 
 <ul>
   <li>LDSP:</li>
@@ -156,8 +158,46 @@
   <li>设置新的搜索原点</li>
   <li>将新步长设置为 S = S / 2</li>
   <li>重复搜索过程以找到重量最轻的位置</li>
-  <li>选择权重最小的卫生纸作为运动矢量权重最小的运动矢量位置。</li>
+  <li>选择权重最小的位置作为运动矢量权重最小的运动矢量位置。</li>
 </ol>
+
+<p>x264 中只采用了钻石搜索里的小钻石搜索算法。 具体代码实现如下:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">bcost</span> <span class="o">&lt;&lt;=</span> <span class="mi">4</span>
+</span><span class="line"><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">i_me_range</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">do</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="n">COST_MV_X4_DIR</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">costs</span><span class="p">);</span>
+</span><span class="line">    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="mi">15</span><span class="p">))</span>
+</span><span class="line">        <span class="k">break</span><span class="p">;</span>
+</span><span class="line">    <span class="n">bmx</span> <span class="o">-=</span> <span class="p">(</span><span class="n">bcost</span> <span class="o">&lt;&lt;</span> <span class="mi">28</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">30</span><span class="p">;</span>
+</span><span class="line">    <span class="n">bmy</span> <span class="o">-=</span> <span class="p">(</span><span class="n">bcost</span> <span class="o">&lt;&lt;</span> <span class="mi">30</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">30</span><span class="p">;</span>
+</span><span class="line">    <span class="n">bcost</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="mi">15</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span><span class="k">while</span><span class="p">(</span><span class="o">--</span><span class="n">i</span> <span class="o">&amp;&amp;</span><span class="n">CHECK_MVRANGE</span><span class="p">(</span><span class="n">bmx</span><span class="p">,</span> <span class="n">bmy</span><span class="p">));</span>
+</span><span class="line"><span class="n">bcost</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
 
 <h2 id="section-1">六边形搜索算法</h2>
 
