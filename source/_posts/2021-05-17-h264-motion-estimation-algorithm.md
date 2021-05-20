@@ -24,7 +24,9 @@ H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 
     
 大钻石搜索算法有 9 个搜索点，小钻石搜索算法有 5 个搜索点。
 
-钻石搜索的步骤是：
+{% img /images/h264_me/diamond_search.png %}
+
+从上图可以看出，钻石搜索的步骤是：
 
 * LDSP:
 
@@ -40,7 +42,29 @@ H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 
 1. 设置新的搜索原点
 2. 将新步长设置为 S = S / 2
 3. 重复搜索过程以找到重量最轻的位置
-4. 选择权重最小的卫生纸作为运动矢量权重最小的运动矢量位置。
+4. 选择权重最小的位置作为运动矢量权重最小的运动矢量位置。
+
+x264 中只采用了钻石搜索里的小钻石搜索算法。 具体代码实现如下:
+
+{% codeblock lang:c %}
+bcost <<= 4
+int i = i_me_range;
+
+do
+{
+    COST_MV_X4_DIR(0, -1, 0, 1, -1, 0, 1, 0, costs);
+    COPY1_IF_LT(bcost, (costs[0] << 4) + 1);
+    COPY1_IF_LT(bcost, (costs[1] << 4) + 1);
+    COPY1_IF_LT(bcost, (costs[2] << 4) + 1);
+    COPY1_IF_LT(bcost, (costs[3] << 4) + 1);
+    if (!(bcost&15))
+        break;
+    bmx -= (bcost << 28) >> 30;
+    bmy -= (bcost << 30) >> 30;
+    bcost &= ~15;
+}while(--i &&CHECK_MVRANGE(bmx, bmy));
+bcost >> 4;
+{% endcodeblock %}
 
 ## 六边形搜索算法
 
