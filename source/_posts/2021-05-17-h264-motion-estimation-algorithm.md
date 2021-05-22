@@ -72,6 +72,68 @@ bcost >> 4;
 
 ## 六边形搜索算法
 
+所谓的六边形搜索算法，不止包括六边形搜索，还有小菱形搜索和正方形搜索两种。
+
+{% img /images/h264_me/Hexagon_Search_Algorithm.png 'H264 Motion Estimation Hexagon Search' %}
+
+{% codeblock lang:c %}
+/* equivalent to the above, but eliminates duplicate candidates */
+
+/* hexagon */
+COST_MV_X3_DIR( -2,0, -1, 2,  1, 2, costs   );
+COST_MV_X3_DIR(  2,0,  1,-2, -1,-2, costs+4 ); /* +4 for 16-byte alignment */
+bcost <<= 3;
+COPY1_IF_LT( bcost, (costs[0]<<3)+2 );
+COPY1_IF_LT( bcost, (costs[1]<<3)+3 );
+COPY1_IF_LT( bcost, (costs[2]<<3)+4 );
+COPY1_IF_LT( bcost, (costs[4]<<3)+5 );
+COPY1_IF_LT( bcost, (costs[5]<<3)+6 );
+COPY1_IF_LT( bcost, (costs[6]<<3)+7 );
+
+if( bcost&7 )
+{
+int dir = (bcost&7)-2;
+bmx += hex2[dir+1][0];
+bmy += hex2[dir+1][1];
+
+/* half hexagon, not overlapping the previous iteration */
+for( int i = (i_me_range>>1) - 1; i > 0 && CHECK_MVRANGE(bmx, bmy); i-- )
+{
+    COST_MV_X3_DIR( hex2[dir+0][0], hex2[dir+0][1],
+                    hex2[dir+1][0], hex2[dir+1][1],
+                    hex2[dir+2][0], hex2[dir+2][1],
+                    costs );
+    bcost &= ~7;
+    COPY1_IF_LT( bcost, (costs[0]<<3)+1 );
+    COPY1_IF_LT( bcost, (costs[1]<<3)+2 );
+    COPY1_IF_LT( bcost, (costs[2]<<3)+3 );
+    if( !(bcost&7) )
+        break;
+    dir += (bcost&7)-2;
+    dir = mod6m1[dir+1];
+    bmx += hex2[dir+1][0];
+    bmy += hex2[dir+1][1];
+}
+}
+bcost >>= 3;
+
+/* square refine */
+bcost <<= 4;
+COST_MV_X4_DIR(  0,-1,  0,1, -1,0, 1,0, costs );
+COPY1_IF_LT( bcost, (costs[0]<<4)+1 );
+COPY1_IF_LT( bcost, (costs[1]<<4)+2 );
+COPY1_IF_LT( bcost, (costs[2]<<4)+3 );
+COPY1_IF_LT( bcost, (costs[3]<<4)+4 );
+COST_MV_X4_DIR( -1,-1, -1,1, 1,-1, 1,1, costs );
+COPY1_IF_LT( bcost, (costs[0]<<4)+5 );
+COPY1_IF_LT( bcost, (costs[1]<<4)+6 );
+COPY1_IF_LT( bcost, (costs[2]<<4)+7 );
+COPY1_IF_LT( bcost, (costs[3]<<4)+8 );
+bmx += square1[bcost&15][0];
+bmy += square1[bcost&15][1];
+bcost >>= 4;
+{% endcodeblock %}
+
 ## 非对称交叉多层次六边形网格搜索算法
 
 UMH 算法是基于 MV 具有时空相关性，因此可以结合上一帧和上一步中 MV 的方向和角度，来修改多层六边形的形状。
