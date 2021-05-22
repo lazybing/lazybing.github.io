@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-05-20T17:06:31-07:00</updated>
+  <updated>2021-05-21T22:54:57-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -34,9 +34,7 @@
 
 <p>钻石搜索算法有两种搜索模式： 大钻石搜索算法(LDSP)和小钻石搜索算法(SDSP)。大钻石搜索算法有 9 个搜索点，小钻石搜索算法有 5 个搜索点。</p>
 
-<p><img src="/images/h264_me/diamond_search.png"></p>
-
-<p>从上图可以看出，钻石搜索的步骤是：</p>
+<p>钻石搜索的步骤是：先使用 LDSP 进行搜索，直到最佳匹配点位于大菱形的中心位置；之后使用小菱形搜索，直至最佳匹配点位于小菱形的中心位置。</p>
 
 <ul>
   <li>LDSP:</li>
@@ -74,7 +72,13 @@
   <li>选择权重最小的位置作为运动矢量权重最小的运动矢量位置。</li>
 </ol>
 
-<p>x264 中只采用了钻石搜索里的小钻石搜索算法。 具体代码实现如下:</p>
+<p><img src="/images/h264_me/diamond_search.png" title="‘H264 Motion Estimation Diamond Search’" ></p>
+
+<p>上图可以看出，LDSP 又可分为两种模式，LDSP(1) 中的两个菱形，有 4 个重合点；LDSP(2) 中的两个菱形，有 6 个重合点。不重复计算这些点，可以节省运算复杂度。</p>
+
+<p>SDSP 中, 4 个菱形的角距离中心点距离相等，因此 SDSP(1) 和 SDSP(2) 可以看出是一种模式。两个临近的搜索菱形，有 2 个重合点，不重复计算这些点，同样可以节省运算复杂度。</p>
+
+<p>x264 中只采用了钻石搜索里的小钻石搜索算法, 搜索半径为 1。 具体代码实现如下:</p>
 
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -93,16 +97,18 @@
 <span class='line-number'>15</span>
 <span class='line-number'>16</span>
 <span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">bcost</span> <span class="err">«</span><span class="o">=</span> <span class="mi">4</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">//diamond search, radius 1</span>
+</span><span class='line'><span class="n">bcost</span> <span class="err">«</span><span class="o">=</span> <span class="mi">4</span>
 </span><span class='line'><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">i_me_range</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">do</span>
 </span><span class='line'><span class="p">{</span>
 </span><span class='line'>    <span class="n">COST_MV_X4_DIR</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">costs</span><span class="p">);</span>
 </span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="err">« </span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="err">« </span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="err">« </span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="err">« </span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="err">« </span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="err">« </span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span><span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="err">« </span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">12</span><span class="p">);</span>
 </span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">15</span><span class="p">))</span>
 </span><span class='line'>        <span class="k">break</span><span class="p">;</span>
 </span><span class='line'>    <span class="n">bmx</span> <span class="o">-=</span> <span class="p">(</span><span class="n">bcost</span> <span class="err">« </span><span class="mi">28</span><span class="p">)</span><span class="err"> »</span> <span class="mi">30</span><span class="p">;</span>
@@ -111,6 +117,10 @@
 </span><span class='line'><span class="p">}</span><span class="k">while</span><span class="p">(</span><span class="err">–</span><span class="n">i</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">CHECK_MVRANGE</span><span class="p">(</span><span class="n">bmx</span><span class="p">,</span> <span class="n">bmy</span><span class="p">));</span>
 </span><span class='line'><span class="n">bcost</span><span class="err"> »</span> <span class="mi">4</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure></p>
+
+<p>注意：这段代码写的比较 trick，先把 bcost 左移四位，留出的最后四位，每一位都代表一个搜索点，初始化时，默认菱形中心点为最佳匹配点。若菱形周边点 cost 更小，就将该点作为中心点继续进行菱形搜索，直到最佳匹配点确为中心点，跳出循环。</p>
+
+<p>这段代码的速度优化空间，正如上面分析的那样，可以避开两个相邻菱形的搜索重叠搜索点。</p>
 
 <h2 id="section-1">六边形搜索算法</h2>
 
