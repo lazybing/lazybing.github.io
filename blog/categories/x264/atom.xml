@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-05-21T22:54:57-07:00</updated>
+  <updated>2021-05-22T08:24:30-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -123,6 +123,122 @@
 <p>这段代码的速度优化空间，正如上面分析的那样，可以避开两个相邻菱形的搜索重叠搜索点。</p>
 
 <h2 id="section-1">六边形搜索算法</h2>
+
+<p>所谓的六边形搜索算法，不止包括六边形搜索，还有小菱形搜索和正方形搜索两种。</p>
+
+<p><img src="/images/h264_me/Hexagon_Search_Algorithm.png" title="‘H264 Motion Estimation Hexagon Search’" ></p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* equivalent to the above, but eliminates duplicate candidates */</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* hexagon &lt;em&gt;/</span>
+</span><span class='line'><span class="cm">COST_MV_X3_DIR( -2,0, -1, 2,  1, 2, costs   );</span>
+</span><span class='line'><span class="cm">COST_MV_X3_DIR(  2,0,  1,-2, -1,-2, costs+4 ); /&lt;/em&gt; +4 for 16-byte alignment */</span>
+</span><span class='line'><span class="n">bcost</span> <span class="err">«</span><span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">4</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">5</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">6</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">7</span> <span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span> <span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">dir</span> <span class="o">=</span> <span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">;</span>
+</span><span class='line'><span class="n">bmx</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'><span class="n">bmy</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* half hexagon, not overlapping the previous iteration */</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i_me_range</span><span class="err">»</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">CHECK_MVRANGE</span><span class="p">(</span><span class="n">bmx</span><span class="p">,</span> <span class="n">bmy</span><span class="p">);</span> <span class="n">i</span><span class="err">–</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">COST_MV_X3_DIR</span><span class="p">(</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>                    <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>                    <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>                    <span class="n">costs</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">bcost</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">=</span> <span class="o">~</span><span class="mi">7</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'>        <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">dir</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">dir</span> <span class="o">=</span> <span class="n">mod6m1</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">bmx</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">bmy</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">bcost</span><span class="err"> »</span><span class="o">=</span> <span class="mi">3</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* square refine */</span>
+</span><span class='line'><span class="n">bcost</span> <span class="err">«</span><span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+</span><span class='line'><span class="n">COST_MV_X4_DIR</span><span class="p">(</span>  <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">costs</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">4</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COST_MV_X4_DIR</span><span class="p">(</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">costs</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">5</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">6</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">7</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="err">«</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="mi">8</span> <span class="p">);</span>
+</span><span class='line'><span class="n">bmx</span> <span class="o">+=</span> <span class="n">square1</span><span class="p">[</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">15</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'><span class="n">bmy</span> <span class="o">+=</span> <span class="n">square1</span><span class="p">[</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">15</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'><span class="n">bcost</span><span class="err"> »</span><span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <h2 id="section-2">非对称交叉多层次六边形网格搜索算法</h2>
 
