@@ -17,14 +17,15 @@ categories: x264
 
 H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 分数像素级精度的估计。其中整数像素级的运动估计包括两类算法：全搜索算法、快速搜索算法(DIA/HEX/UMH)。
 
-几个运动估计中用到的缩写：
-* MV: 运动矢量。被用来表示一个宏块基于该宏块中的另一个图像的位置。
-* MVP:预测运动矢量。
-* MVD：两个运动矢量的差值。
-* SATD(Sum of Absolute Transformed Difference):即 hadamard 变换后再绝对值求和。
-* SSD(Sum of Squared Difference) = SSE(Sum of Squared Error) 即差值的平方和。
-* MAD(Mean Absolute Difference) = MAE(Mean Absolute Error) 即平均绝对差值。
-* MSD(Mean Squared Difference) = MSE(Mean Squared Error) 即平均平方误差。
+几个运动估计中用到的缩写：  
+
+* MV: 运动矢量。被用来表示一个宏块基于该宏块中的另一个图像的位置。  
+* MVP:预测运动矢量。  
+* MVD：两个运动矢量的差值。  
+* SATD(Sum of Absolute Transformed Difference):即 hadamard 变换后再绝对值求和。  
+* SSD(Sum of Squared Difference) = SSE(Sum of Squared Error) 即差值的平方和。  
+* MAD(Mean Absolute Difference) = MAE(Mean Absolute Error) 即平均绝对差值。  
+* MSD(Mean Squared Difference) = MSE(Mean Squared Error) 即平均平方误差。  
 
 ## 钻石搜索算法(Diamond Search Algorithm)
 
