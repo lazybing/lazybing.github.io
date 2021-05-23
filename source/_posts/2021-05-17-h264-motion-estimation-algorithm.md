@@ -9,13 +9,15 @@ categories: x264
 * list element with functor item
 {:toc}
 
-运动估计是寻找运动矢量的过程。在整个编码过程中，运动估计耗时占了整个编码过程的60%-80%不等，因此，对运动估计的优化是实现视频实时应用的关键。
+运动估计是在参考帧中为当前编码的宏块寻找最佳匹配快，找到最佳匹配块后，运动估计会输出是运动矢量。
+
+运动估计的下一步是运动补偿(Motion Compensation)，即从当前块中减去匹配块得到残差块。在整个编码过程中，运动估计耗时占了整个编码过程的60%-80%不等，因此，对运动估计的优化是实现视频实时应用的关键。
 
 H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 分数像素级精度的估计。其中整数像素级的运动估计包括两类算法：全搜索算法、快速搜索算法(DIA/HEX/UMH)。
 
 <!--more-->
 
-## 钻石搜索算法
+## 钻石搜索算法(Diamond Search Algorithm)
 
 钻石搜索算法有两种搜索模式： 大钻石搜索算法(LDSP)和小钻石搜索算法(SDSP)。大钻石搜索算法有 9 个搜索点，小钻石搜索算法有 5 个搜索点。
 
@@ -70,11 +72,19 @@ bcost >> 4;
 
 这段代码的速度优化空间，正如上面分析的那样，可以避开两个相邻菱形的搜索重叠搜索点。
 
-## 六边形搜索算法
+## 六边形搜索算法(Hexagon Search Algorithm)
 
-所谓的六边形搜索算法，不止包括六边形搜索，还有小菱形搜索和正方形搜索两种。
+所谓的六边形搜索算法，不止包括六边形搜索(搜索半径为 2)，还有小菱形搜索和正方形搜索(搜索半径为 1)两种。
 
 {% img /images/h264_me/Hexagon_Search_Algorithm.png 'H264 Motion Estimation Hexagon Search' %}
+
+六边形搜索算法采用 1 个大模板(六边形模板)和 2 个小模板（小菱形模板和小正方形模板），具体步骤如下：
+
+1. 以搜索起点为中心，采用上图中左边的六边形模板进行搜索。计算区域中心及周围 6 个点处的匹配误差并比较，如最小 MBD 点位于模板中心点，则转至步骤 2；否则以上一次的 MBD 点作为中心点，以六边形模板为模板进行反复搜索。
+
+2. 以上一次的 MBD 点为中心点，采用小菱形模板搜索和小正方形模板搜索，计算各点的匹配误差，找到 MBD点, 即为最优匹配点。
+
+从上图中的六边形搜索可以看出，两个临近的六边形，有三个重叠搜索点，因此，可以通过减少重复计算，来提升搜索性能。事实上，x264 中已经采用了这种优化方法。
 
 {% codeblock lang:c %}
 /* equivalent to the above, but eliminates duplicate candidates */
@@ -92,28 +102,28 @@ COPY1_IF_LT( bcost, (costs[6]<<3)+7 );
 
 if( bcost&7 )
 {
-int dir = (bcost&7)-2;
-bmx += hex2[dir+1][0];
-bmy += hex2[dir+1][1];
+    int dir = (bcost&7)-2;
+    bmx += hex2[dir+1][0];
+    bmy += hex2[dir+1][1];
 
-/* half hexagon, not overlapping the previous iteration */
-for( int i = (i_me_range>>1) - 1; i > 0 && CHECK_MVRANGE(bmx, bmy); i-- )
-{
-    COST_MV_X3_DIR( hex2[dir+0][0], hex2[dir+0][1],
+    /* half hexagon, not overlapping the previous iteration */
+    for( int i = (i_me_range>>1) - 1; i > 0 && CHECK_MVRANGE(bmx, bmy); i-- )
+    {
+        COST_MV_X3_DIR( hex2[dir+0][0], hex2[dir+0][1],
                     hex2[dir+1][0], hex2[dir+1][1],
                     hex2[dir+2][0], hex2[dir+2][1],
                     costs );
-    bcost &= ~7;
-    COPY1_IF_LT( bcost, (costs[0]<<3)+1 );
-    COPY1_IF_LT( bcost, (costs[1]<<3)+2 );
-    COPY1_IF_LT( bcost, (costs[2]<<3)+3 );
-    if( !(bcost&7) )
-        break;
-    dir += (bcost&7)-2;
-    dir = mod6m1[dir+1];
-    bmx += hex2[dir+1][0];
-    bmy += hex2[dir+1][1];
-}
+        bcost &= ~7;
+        COPY1_IF_LT( bcost, (costs[0]<<3)+1 );
+        COPY1_IF_LT( bcost, (costs[1]<<3)+2 );
+        COPY1_IF_LT( bcost, (costs[2]<<3)+3 );
+        if( !(bcost&7) )
+            break;
+        dir += (bcost&7)-2;
+        dir = mod6m1[dir+1];
+        bmx += hex2[dir+1][0];
+        bmy += hex2[dir+1][1];
+    }
 }
 bcost >>= 3;
 
@@ -136,7 +146,7 @@ bcost >>= 4;
 
 ## 非对称交叉多层次六边形网格搜索算法
 
-UMH 算法是基于 MV 具有时空相关性，因此可以结合上一帧和上一步中 MV 的方向和角度，来修改多层六边形的形状。
+UMH(Uneven Multi-hexagon-grid Search Algorithm) 算法是基于 MV 具有时空相关性，因此可以结合上一帧和上一步中 MV 的方向和角度，来修改多层六边形的形状。
 
 UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜索、迭代六边形搜索、菱形搜索。主要流程步骤如下:
 
