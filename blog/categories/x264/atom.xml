@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-05-22T08:24:30-07:00</updated>
+  <updated>2021-05-22T17:12:56-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -19,18 +19,20 @@
     <updated>2021-05-17T07:54:51-07:00</updated>
     <id>http://lazybing.github.io/blog/2021/05/17/h264-motion-estimation-algorithm</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">钻石搜索算法</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">六边形搜索算法</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">非对称交叉多层次六边形网格搜索算法</a></li>
+  <li><a href="#diamond-search-algorithm" id="markdown-toc-diamond-search-algorithm">钻石搜索算法(Diamond Search Algorithm)</a></li>
+  <li><a href="#hexagon-search-algorithm" id="markdown-toc-hexagon-search-algorithm">六边形搜索算法(Hexagon Search Algorithm)</a></li>
+  <li><a href="#section" id="markdown-toc-section">非对称交叉多层次六边形网格搜索算法</a></li>
 </ul>
 
-<p>运动估计是寻找运动矢量的过程。在整个编码过程中，运动估计耗时占了整个编码过程的60%-80%不等，因此，对运动估计的优化是实现视频实时应用的关键。</p>
+<p>运动估计是在参考帧中为当前编码的宏块寻找最佳匹配快，找到最佳匹配块后，运动估计会输出是运动矢量。</p>
+
+<p>运动估计的下一步是运动补偿(Motion Compensation)，即从当前块中减去匹配块得到残差块。在整个编码过程中，运动估计耗时占了整个编码过程的60%-80%不等，因此，对运动估计的优化是实现视频实时应用的关键。</p>
 
 <p>H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 分数像素级精度的估计。其中整数像素级的运动估计包括两类算法：全搜索算法、快速搜索算法(DIA/HEX/UMH)。</p>
 
 <!--more-->
 
-<h2 id="section">钻石搜索算法</h2>
+<h2 id="diamond-search-algorithm">钻石搜索算法(Diamond Search Algorithm)</h2>
 
 <p>钻石搜索算法有两种搜索模式： 大钻石搜索算法(LDSP)和小钻石搜索算法(SDSP)。大钻石搜索算法有 9 个搜索点，小钻石搜索算法有 5 个搜索点。</p>
 
@@ -122,11 +124,24 @@
 
 <p>这段代码的速度优化空间，正如上面分析的那样，可以避开两个相邻菱形的搜索重叠搜索点。</p>
 
-<h2 id="section-1">六边形搜索算法</h2>
+<h2 id="hexagon-search-algorithm">六边形搜索算法(Hexagon Search Algorithm)</h2>
 
-<p>所谓的六边形搜索算法，不止包括六边形搜索，还有小菱形搜索和正方形搜索两种。</p>
+<p>所谓的六边形搜索算法，不止包括六边形搜索(搜索半径为 2)，还有小菱形搜索和正方形搜索(搜索半径为 1)两种。</p>
 
 <p><img src="/images/h264_me/Hexagon_Search_Algorithm.png" title="‘H264 Motion Estimation Hexagon Search’" ></p>
+
+<p>六边形搜索算法采用 1 个大模板(六边形模板)和 2 个小模板（小菱形模板和小正方形模板），具体步骤如下：</p>
+
+<ol>
+  <li>
+    <p>以搜索起点为中心，采用上图中左边的六边形模板进行搜索。计算区域中心及周围 6 个点处的匹配误差并比较，如最小 MBD 点位于模板中心点，则转至步骤 2；否则以上一次的 MBD 点作为中心点，以六边形模板为模板进行反复搜索。</p>
+  </li>
+  <li>
+    <p>以上一次的 MBD 点为中心点，采用小菱形模板搜索和小正方形模板搜索，计算各点的匹配误差，找到 MBD点, 即为最优匹配点。</p>
+  </li>
+</ol>
+
+<p>从上图中的六边形搜索可以看出，两个临近的六边形，有三个重叠搜索点，因此，可以通过减少重复计算，来提升搜索性能。事实上，x264 中已经采用了这种优化方法。</p>
 
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -182,7 +197,6 @@
 <span class='line-number'>52</span>
 <span class='line-number'>53</span>
 <span class='line-number'>54</span>
-<span class='line-number'>55</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cm">/* equivalent to the above, but eliminates duplicate candidates */</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* hexagon &lt;em&gt;/</span>
@@ -198,30 +212,29 @@
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span> <span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span> <span class="p">)</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">dir</span> <span class="o">=</span> <span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">;</span>
-</span><span class='line'><span class="n">bmx</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
-</span><span class='line'><span class="n">bmy</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">dir</span> <span class="o">=</span> <span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">bmx</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="n">bmy</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* half hexagon, not overlapping the previous iteration */</span>
-</span><span class='line'><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i_me_range</span><span class="err">»</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">CHECK_MVRANGE</span><span class="p">(</span><span class="n">bmx</span><span class="p">,</span> <span class="n">bmy</span><span class="p">);</span> <span class="n">i</span><span class="err">–</span> <span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="cm">/* half hexagon, not overlapping the previous iteration */</span>
+</span><span class='line'><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i_me_range</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">0</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">CHECK_MVRANGE</span><span class="p">(</span><span class="n">bmx</span><span class="p">,</span> <span class="n">bmy</span><span class="p">);</span> <span class="n">i</span><span class="o">--</span> <span class="p">)</span>
 </span><span class='line'><span class="p">{</span>
 </span><span class='line'>    <span class="n">COST_MV_X3_DIR</span><span class="p">(</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
-</span><span class='line'>                    <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
-</span><span class='line'>                    <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
-</span><span class='line'>                    <span class="n">costs</span> <span class="p">);</span>
+</span><span class='line'>                <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>                <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>                <span class="n">costs</span> <span class="p">);</span>
 </span><span class='line'>    <span class="n">bcost</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">=</span> <span class="o">~</span><span class="mi">7</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span> <span class="p">);</span>
-</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span> <span class="p">);</span>
-</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="err">«</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span> <span class="p">);</span>
+</span><span class='line'>    <span class="n">COPY1_IF_LT</span><span class="p">(</span> <span class="n">bcost</span><span class="p">,</span> <span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mi">3</span> <span class="p">);</span>
 </span><span class='line'>    <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span><span class="p">)</span> <span class="p">)</span>
 </span><span class='line'>        <span class="k">break</span><span class="p">;</span>
 </span><span class='line'>    <span class="n">dir</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bcost</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="mi">7</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">;</span>
 </span><span class='line'>    <span class="n">dir</span> <span class="o">=</span> <span class="n">mod6m1</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
 </span><span class='line'>    <span class="n">bmx</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
 </span><span class='line'>    <span class="n">bmy</span> <span class="o">+=</span> <span class="n">hex2</span><span class="p">[</span><span class="n">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">];</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="n">bcost</span><span class="err"> »</span><span class="o">=</span> <span class="mi">3</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">}</span> <span class="p">}</span> <span class="n">bcost</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="cm">/* square refine */</span>
 </span><span class='line'><span class="n">bcost</span> <span class="err">«</span><span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
@@ -240,9 +253,9 @@
 </span><span class='line'><span class="n">bcost</span><span class="err"> »</span><span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
-<h2 id="section-2">非对称交叉多层次六边形网格搜索算法</h2>
+<h2 id="section">非对称交叉多层次六边形网格搜索算法</h2>
 
-<p>UMH 算法是基于 MV 具有时空相关性，因此可以结合上一帧和上一步中 MV 的方向和角度，来修改多层六边形的形状。</p>
+<p>UMH(Uneven Multi-hexagon-grid Search Algorithm) 算法是基于 MV 具有时空相关性，因此可以结合上一帧和上一步中 MV 的方向和角度，来修改多层六边形的形状。</p>
 
 <p>UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜索、迭代六边形搜索、菱形搜索。主要流程步骤如下:</p>
 
