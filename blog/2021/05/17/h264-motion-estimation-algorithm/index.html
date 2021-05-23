@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="钻石搜索算法(Diamond Search Algorithm) 六边形搜索算法(Hexagon Search Algorithm) 非对称交叉多层次六边形网格搜索算法 运动估计是在参考帧中为当前编码的宏块寻找最佳匹配快，找到最佳匹配块后，运动估计会输出是运动矢量。 运动估计的下一步是运动补偿( &hellip;">
+  <meta name="description" content="钻石搜索算法(Diamond Search Algorithm) 六边形搜索算法(Hexagon Search Algorithm) 非对称交叉多层次六边形网格搜索算法(Uneven Multi-hexagon-grid Search Algorithm) &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -101,16 +101,25 @@
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#diamond-search-algorithm" id="markdown-toc-diamond-search-algorithm">钻石搜索算法(Diamond Search Algorithm)</a></li>
   <li><a href="#hexagon-search-algorithm" id="markdown-toc-hexagon-search-algorithm">六边形搜索算法(Hexagon Search Algorithm)</a></li>
-  <li><a href="#section" id="markdown-toc-section">非对称交叉多层次六边形网格搜索算法</a></li>
+  <li><a href="#uneven-multi-hexagon-grid-search-algorithm" id="markdown-toc-uneven-multi-hexagon-grid-search-algorithm">非对称交叉多层次六边形网格搜索算法(Uneven Multi-hexagon-grid Search Algorithm)</a></li>
 </ul>
 
 <p>运动估计是在参考帧中为当前编码的宏块寻找最佳匹配快，找到最佳匹配块后，运动估计会输出是运动矢量。</p>
+
+<!--more-->
 
 <p>运动估计的下一步是运动补偿(Motion Compensation)，即从当前块中减去匹配块得到残差块。在整个编码过程中，运动估计耗时占了整个编码过程的60%-80%不等，因此，对运动估计的优化是实现视频实时应用的关键。</p>
 
 <p>H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 分数像素级精度的估计。其中整数像素级的运动估计包括两类算法：全搜索算法、快速搜索算法(DIA/HEX/UMH)。</p>
 
-<!--more-->
+<p>几个运动估计中用到的缩写：
+* MV: 运动矢量。被用来表示一个宏块基于该宏块中的另一个图像的位置。
+* MVP:预测运动矢量。
+* MVD：两个运动矢量的差值。
+* SATD(Sum of Absolute Transformed Difference):即 hadamard 变换后再绝对值求和。
+* SSD(Sum of Squared Difference) = SSE(Sum of Squared Error) 即差值的平方和。
+* MAD(Mean Absolute Difference) = MAE(Mean Absolute Error) 即平均绝对差值。
+* MSD(Mean Squared Difference) = MSE(Mean Squared Error) 即平均平方误差。</p>
 
 <h2 id="diamond-search-algorithm">钻石搜索算法(Diamond Search Algorithm)</h2>
 
@@ -335,9 +344,9 @@
 </span><span class="line"><span class="n">bcost</span> <span class="o">&gt;&gt;=</span> <span class="mi">4</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 
-<h2 id="section">非对称交叉多层次六边形网格搜索算法</h2>
+<h2 id="uneven-multi-hexagon-grid-search-algorithm">非对称交叉多层次六边形网格搜索算法(Uneven Multi-hexagon-grid Search Algorithm)</h2>
 
-<p>UMH(Uneven Multi-hexagon-grid Search Algorithm) 算法是基于 MV 具有时空相关性，因此可以结合上一帧和上一步中 MV 的方向和角度，来修改多层六边形的形状。</p>
+<p>UMH 算法是基于 MV 具有时空相关性，因此可以结合上一帧和上一步中 MV 的方向和角度，来修改多层六边形的形状。</p>
 
 <p>UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜索、迭代六边形搜索、菱形搜索。主要流程步骤如下:</p>
 
