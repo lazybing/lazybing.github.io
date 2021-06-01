@@ -27,6 +27,8 @@ H264 中运动估计的过程分为两步：1. 整数像素精度的估计。2. 
 * MAD(Mean Absolute Difference) = MAE(Mean Absolute Error) 即平均绝对差值。  
 * MSD(Mean Squared Difference) = MSE(Mean Squared Error) 即平均平方误差。  
 
+# 整数像素运动估计
+
 ## 钻石搜索算法(Diamond Search Algorithm)
 
 钻石搜索算法有两种搜索模式： 大钻石搜索算法(LDSP)和小钻石搜索算法(SDSP)。大钻石搜索算法有 9 个搜索点，小钻石搜索算法有 5 个搜索点。
@@ -171,6 +173,8 @@ UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜
 
 1. 小菱形搜索和中菱形搜索。
 
+{% img /images/h264_me/umh.png 'H264 Motion Estimation UMHexagonS Search' %}
+
 2. 对称交叉搜索和六边形搜索。
 
 3. 非对称交叉搜索。
@@ -178,6 +182,8 @@ UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜
 4. 5x5搜索和多六边形网格搜索。
 
 5. 迭代六边形搜索。
+
+# 整数像素运动估计
 
 ## 亚像素搜索算法
 
