@@ -173,15 +173,232 @@ UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜
 
 1. 小菱形搜索和中菱形搜索。
 
-    {% img /images/h264_me/umh.png 'H264 Motion Estimation UMHexagonS Search' %}
+{% img /images/h264_me/umh.png 'H264 Motion Estimation UMHexagonS Search' %}
+
+首先对中值 MV 和(0, 0)点进行小钻石搜索，计算出每个搜索点的 SAD 值，并找出新的 MBD 搜索点。如果新的 MBD 点的 SAD 值比门限1 的值(2000)还要大，就执行 Step4，否则继续。  
+
+对搜索点进行中钻石搜索，来找出新的 MBD 搜索点。若 SAD 值小于门限值2(500)，停止搜索。否则继续。
 
 2. 对称交叉搜索和六边形搜索。
 
+对上一步中找到的新的 MBD 搜索点，执行对称交叉搜索(半径为 7)和六边形搜索(半径为 2),计算这 20 个点的 SAD 值，并且找出本步最新的 MBD 点。如果该步找到的 MBD 点与上一步中的 MBD 点吻合，停止搜索。否则继续。
+
 3. 非对称交叉搜索。
+
+执行非对称的交叉搜索，找到最新的 MBD 点。
 
 4. 5x5搜索和多六边形网格搜索。
 
+执行 5x5 全搜索和多六边形网格搜索。
+
 5. 迭代六边形搜索。
+
+设置上步中的 MBD 点作为搜索中心，执行迭代六边形搜索。
+
+x264 中关于 UMH 算法的代码如下
+
+{% codeblock lang:c %}
+
+        case X264_ME_UMH:
+        {
+            /* Uneven-cross Multi-Hexagon-grid Search
+             * as in JM, except with different early termination */
+
+            static const uint8_t pixel_size_shift[7] = { 0, 1, 1, 2, 3, 3, 4 };
+
+            int ucost1, ucost2;
+            int cross_start = 1;
+
+            /* refine predictors */
+            ucost1 = bcost;
+            DIA1_ITER( pmx, pmy ); //1. 小菱形搜索算法用于median MV, the small diamond search
+            if( pmx | pmy )
+                DIA1_ITER( 0, 0 ); //1. 小菱形搜索算法用于(0, 0), the small diamond search
+
+            if( i_pixel == PIXEL_4x4 )
+                goto me_hex2;
+
+            ucost2 = bcost;
+            if( (bmx | bmy) && ((bmx-pmx) | (bmy-pmy)) )
+                DIA1_ITER( bmx, bmy );
+            if( bcost == ucost2 )
+                cross_start = 3;
+            omx = bmx; omy = bmy;
+
+            /* early termination */
+#define SAD_THRESH(v) ( bcost < ( v >> pixel_size_shift[i_pixel] ) )
+            if( bcost == ucost2 && SAD_THRESH(2000) )
+            {
+                COST_MV_X4( 0,-2, -1,-1, 1,-1, -2,0 ); //2. 中菱形搜索算法，找出新的MBD, the middle diamond search point
+                COST_MV_X4( 2, 0, -1, 1, 1, 1,  0,2 ); //2. 中菱形搜索算法，找出新的MBD, the middle diamond search point
+                if( bcost == ucost1 && SAD_THRESH(500) )
+                    break;
+                if( bcost == ucost2 )
+                {
+                    int range = (i_me_range>>1) | 1;
+                    CROSS( 3, range, range ); //3. 对称的交叉搜索, symmetric cross search(radius 7)
+                    COST_MV_X4( -1,-2, 1,-2, -2,-1, 2,-1 ); //3. 六边形搜索，octagon search(radius 2)
+                    COST_MV_X4( -2, 1, 2, 1, -1, 2, 1, 2 ); //3. 六边形搜索，octagon search(radius 2)
+                    if( bcost == ucost2 )
+                        break;
+                    cross_start = range + 2;
+                }
+            }
+
+            /* adaptive search range */
+            if( i_mvc )
+            {
+                /* range multipliers based on casual inspection of some statistics of
+                 * average distance between current predictor and final mv found by ESA.
+                 * these have not been tuned much by actual encoding. */
+                static const uint8_t range_mul[4][4] =
+                {
+                    { 3, 3, 4, 4 },
+                    { 3, 4, 4, 4 },
+                    { 4, 4, 4, 5 },
+                    { 4, 4, 5, 6 },
+                };
+                int mvd;
+                int sad_ctx, mvd_ctx;
+                int denom = 1;
+
+                if( i_mvc == 1 )
+                {
+                    if( i_pixel == PIXEL_16x16 )
+                        /* mvc is probably the same as mvp, so the difference isn't meaningful.
+                         * but prediction usually isn't too bad, so just use medium range */
+                        mvd = 25;
+                    else
+                        mvd = abs( m->mvp[0] - mvc[0][0] )
+                            + abs( m->mvp[1] - mvc[0][1] );
+                }
+                else
+                {
+                    /* calculate the degree of agreement between predictors. */
+                    /* in 16x16, mvc includes all the neighbors used to make mvp,
+                     * so don't count mvp separately. */
+                    denom = i_mvc - 1;
+                    mvd = 0;
+                    if( i_pixel != PIXEL_16x16 )
+                    {
+                        mvd = abs( m->mvp[0] - mvc[0][0] )
+                            + abs( m->mvp[1] - mvc[0][1] );
+                        denom++;
+                    }
+                    mvd += x264_predictor_difference( mvc, i_mvc );
+                }
+
+                sad_ctx = SAD_THRESH(1000) ? 0
+                        : SAD_THRESH(2000) ? 1
+                        : SAD_THRESH(4000) ? 2 : 3;
+                mvd_ctx = mvd < 10*denom ? 0
+                        : mvd < 20*denom ? 1
+                        : mvd < 40*denom ? 2 : 3;
+
+                i_me_range = i_me_range * range_mul[mvd_ctx][sad_ctx] >> 2;
+            }
+
+            /* FIXME if the above DIA2/OCT2/CROSS found a new mv, it has not updated omx/omy.
+             * we are still centered on the same place as the DIA2. is this desirable? */
+            CROSS( cross_start, i_me_range, i_me_range>>1 ); //4. 非对称交叉搜索, an uneven cross search
+
+            COST_MV_X4( -2,-2, -2,2, 2,-2, 2,2 ); //5. 5x5 search
+
+            /* hexagon grid */
+            omx = bmx; omy = bmy;
+            const uint16_t *p_cost_omvx = p_cost_mvx + omx*4;
+            const uint16_t *p_cost_omvy = p_cost_mvy + omy*4;
+            int i = 1;
+            do
+            {
+                static const int8_t hex4[16][2] = { //5. 多六边形网格搜索, multi-hexagon-grid search
+                    { 0,-4}, { 0, 4}, {-2,-3}, { 2,-3},
+                    {-4,-2}, { 4,-2}, {-4,-1}, { 4,-1},
+                    {-4, 0}, { 4, 0}, {-4, 1}, { 4, 1},
+                    {-4, 2}, { 4, 2}, {-2, 3}, { 2, 3},
+                };
+
+                if( 4*i > X264_MIN4( mv_x_max-omx, omx-mv_x_min,
+                                     mv_y_max-omy, omy-mv_y_min ) )
+                {
+                    for( int j = 0; j < 16; j++ )
+                    {
+                        int mx = omx + hex4[j][0]*i;
+                        int my = omy + hex4[j][1]*i;
+                        if( CHECK_MVRANGE(mx, my) )
+                            COST_MV( mx, my );
+                    }
+                }
+                else
+                {
+                    int dir = 0;
+                    pixel *pix_base = p_fref_w + omx + (omy-4*i)*stride;
+                    int dy = i*stride;
+#define SADS(k,x0,y0,x1,y1,x2,y2,x3,y3)\
+                    h->pixf.fpelcmp_x4[i_pixel]( p_fenc,\
+                            pix_base x0*i+(y0-2*k+4)*dy,\
+                            pix_base x1*i+(y1-2*k+4)*dy,\
+                            pix_base x2*i+(y2-2*k+4)*dy,\
+                            pix_base x3*i+(y3-2*k+4)*dy,\
+                            stride, costs+4*k );\
+                    pix_base += 2*dy;
+#define ADD_MVCOST(k,x,y) costs[k] += p_cost_omvx[x*4*i] + p_cost_omvy[y*4*i]
+#define MIN_MV(k,x,y)     COPY2_IF_LT( bcost, costs[k], dir, x*16+(y&15) )
+                    SADS( 0, +0,-4, +0,+4, -2,-3, +2,-3 );
+                    SADS( 1, -4,-2, +4,-2, -4,-1, +4,-1 );
+                    SADS( 2, -4,+0, +4,+0, -4,+1, +4,+1 );
+                    SADS( 3, -4,+2, +4,+2, -2,+3, +2,+3 );
+                    ADD_MVCOST(  0, 0,-4 );
+                    ADD_MVCOST(  1, 0, 4 );
+                    ADD_MVCOST(  2,-2,-3 );
+                    ADD_MVCOST(  3, 2,-3 );
+                    ADD_MVCOST(  4,-4,-2 );
+                    ADD_MVCOST(  5, 4,-2 );
+                    ADD_MVCOST(  6,-4,-1 );
+                    ADD_MVCOST(  7, 4,-1 );
+                    ADD_MVCOST(  8,-4, 0 );
+                    ADD_MVCOST(  9, 4, 0 );
+                    ADD_MVCOST( 10,-4, 1 );
+                    ADD_MVCOST( 11, 4, 1 );
+                    ADD_MVCOST( 12,-4, 2 );
+                    ADD_MVCOST( 13, 4, 2 );
+                    ADD_MVCOST( 14,-2, 3 );
+                    ADD_MVCOST( 15, 2, 3 );
+                    MIN_MV(  0, 0,-4 );
+                    MIN_MV(  1, 0, 4 );
+                    MIN_MV(  2,-2,-3 );
+                    MIN_MV(  3, 2,-3 );
+                    MIN_MV(  4,-4,-2 );
+                    MIN_MV(  5, 4,-2 );
+                    MIN_MV(  6,-4,-1 );
+                    MIN_MV(  7, 4,-1 );
+                    MIN_MV(  8,-4, 0 );
+                    MIN_MV(  9, 4, 0 );
+                    MIN_MV( 10,-4, 1 );
+                    MIN_MV( 11, 4, 1 );
+                    MIN_MV( 12,-4, 2 );
+                    MIN_MV( 13, 4, 2 );
+                    MIN_MV( 14,-2, 3 );
+                    MIN_MV( 15, 2, 3 );
+#undef SADS
+#undef ADD_MVCOST
+#undef MIN_MV
+                    if( dir )
+                    {
+                        bmx = omx + i*(dir>>4);
+                        bmy = omy + i*((dir<<28)>>28);
+                    }
+                }
+            } while( ++i <= i_me_range>>2 );
+            if( bmy <= mv_y_max && bmy >= mv_y_min && bmx <= mv_x_max && bmx >= mv_x_min )
+                goto me_hex2;   //6. iterative hexagon search
+            break;
+        }
+{% endcodeblock %}
+
+### UMH 优化思路
+
+由于视频帧间具有时间相关性，大多数视频序列，当前宏块的方向与上一帧中相同位置宏块的方向高度相关。这意味着
 
 # 分数像素运动估计
 
