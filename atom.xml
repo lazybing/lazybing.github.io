@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-01T16:11:08-07:00</updated>
+  <updated>2021-06-02T06:30:27-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -372,10 +372,15 @@
 
 <H.264 标准="">中规定，运动估计为1/4像素精度，因此在 H.264 编码和解码的过程中，需要将画面中的像素进行插值——简单地说就是把原先的 1 个像素点拓展成 4x4 一共 16 个点。
 
-下图显示了  H.264 编码和解码过程中像素插值情况。可以看出原先的 G 点的右下方通过插值的方式产生了 a、b、c、d 等一共 16 个点。
+下图显示了  H.264 编码和解码过程中像素插值情况。可以看出原先的 G 点的右下方通过插值的方式产生了 a、b、c、d 等一共 16 个点。  
 
-如图所示，1/4 像素内插一般分成两成：1. 半像素内插。这一步通过 6 抽头滤波器获得 5 个半像素点。2. 线性内插。这一步通过简单的线性内插获得剩余的 1/4 像素点。 
-图中半像素内插点为 b、m、h、s、j五个点。半像素内插方法是对整像素点进行 6 抽头滤波得到，滤波器的权重为(1/32, -5/32, 5/8, 5/8, -5/32, 1/32)。例如 b 的计算公式为： `b = round((E - 5F + 20G + 20H - 5I + J)/32)`。
+<img src="http://lazybing.github.io/images/h264_me/Interpolation_of_luma_half-pel.PNG" title="'H264 Motion Estimation UMHexagonS Search'" />    
+
+如图所示，1/4 像素内插一般分成两成：1. 半像素内插。这一步通过 6 抽头滤波器获得 5 个半像素点。2. 线性内插。这一步通过简单的线性内插获得剩余的 1/4 像素点。   
+
+<img src="http://lazybing.github.io/images/h264_me/Interpolation_of_luma_quanter-pel.PNG" title="'H264 Motion Estimation UMHexagonS Search'" />    
+
+图中半像素内插点为 b、m、h、s、j五个点。半像素内插方法是对整像素点进行 6 抽头滤波得到，滤波器的权重为(1/32, -5/32, 5/8, 5/8, -5/32, 1/32)。例如 b 的计算公式为： `b = round((E - 5F + 20G + 20H - 5I + J)/32)`。  
 
 剩下几个半像素点的计算关系如下：
 
@@ -389,7 +394,6 @@
 </span><span class="line">s：由K、L、M、N、P、Q计算  
 </span><span class="line">j：由cc、dd、h、m、ee、ff计算。 
 </span><span class="line">需要注意j点的运算量比较大，因为cc、dd、ee、ff都需要通过半像素内插方法进行计算。</span></code></pre></td></tr></table></div></figure>
-
 在获得半像素点之后，就可以通过简单的线性内插获得 1/4 像素内插点了。1/4 像素内插的方式如下图所示。例如图中 a 点的计算公式如下： `A = round((G + b) / 2)`
 
 在这里有一点需要注意： 位于 4 个角的 e、g、p、r 四个点并不是通过j 点计算的，而是通过b、h、s、m四个半像素点计算的。
