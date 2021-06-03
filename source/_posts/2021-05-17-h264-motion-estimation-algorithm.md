@@ -173,27 +173,21 @@ UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜
 
 1. 小菱形搜索和中菱形搜索。
 
-{% img /images/h264_me/umh.png 'H264 Motion Estimation UMHexagonS Search' %}
+    首先对中值 MV 和(0, 0)点进行小钻石搜索，计算出每个搜索点的 SAD 值，并找出新的 MBD 搜索点。如果新的 MBD 点的 SAD 值比门限1 的值(2000)还要大，就执行 Step4，否则继续。  
 
-首先对中值 MV 和(0, 0)点进行小钻石搜索，计算出每个搜索点的 SAD 值，并找出新的 MBD 搜索点。如果新的 MBD 点的 SAD 值比门限1 的值(2000)还要大，就执行 Step4，否则继续。  
-
-对搜索点进行中钻石搜索，来找出新的 MBD 搜索点。若 SAD 值小于门限值2(500)，停止搜索。否则继续。
+    对搜索点进行中钻石搜索，来找出新的 MBD 搜索点。若 SAD 值小于门限值2(500)，停止搜索。否则继续。
 
 2. 对称交叉搜索和六边形搜索。
 
-对上一步中找到的新的 MBD 搜索点，执行对称交叉搜索(半径为 7)和六边形搜索(半径为 2),计算这 20 个点的 SAD 值，并且找出本步最新的 MBD 点。如果该步找到的 MBD 点与上一步中的 MBD 点吻合，停止搜索。否则继续。
+    对上一步中找到的新的 MBD 搜索点，执行对称交叉搜索(半径为 7)和六边形搜索(半径为 2),计算这 20 个点的 SAD 值，并且找出本步最新的 MBD 点。
+    
+    如果该步找到的 MBD 点与上一步中的 MBD 点吻合，停止搜索。否则继续。
 
-3. 非对称交叉搜索。
+3. 非对称交叉搜索。执行非对称的交叉搜索，找到最新的 MBD 点。
 
-执行非对称的交叉搜索，找到最新的 MBD 点。
+4. 5x5搜索和多六边形网格搜索。执行 5x5 全搜索和多六边形网格搜索。
 
-4. 5x5搜索和多六边形网格搜索。
-
-执行 5x5 全搜索和多六边形网格搜索。
-
-5. 迭代六边形搜索。
-
-设置上步中的 MBD 点作为搜索中心，执行迭代六边形搜索。
+5. 迭代六边形搜索。设置上步中的 MBD 点作为搜索中心，执行迭代六边形搜索。
 
 x264 中关于 UMH 算法的代码如下
 
@@ -396,9 +390,34 @@ x264 中关于 UMH 算法的代码如下
         }
 {% endcodeblock %}
 
-### UMH 优化思路
+### UMH 优化思路(The Proposed Algorithm For UMH)
 
-由于视频帧间具有时间相关性，大多数视频序列，当前宏块的方向与上一帧中相同位置宏块的方向高度相关。这意味着
+由于视频帧间具有时间相关性，大多数视频序列，当前宏块的方向与上一帧中相同位置宏块的方向高度相关。这意味着连续帧间，运动矢量有高度一致性。因此，当前宏块的运动方向可以通过之前帧对应坐标的方向来预测。基于运动方向预测，不同形状的搜索模式应用到 UMH 搜索模式。目标就是提升估计的运行时间，同时获得相同的质量。
+
+方向可以通过运动矢量的角度来度量，可以使用如下公式：arcsin(-y / sqrt(x^2 + y^2)) * 180 / π 。
+
+下面提出的算法使用上一帧中相同坐标块的运动矢量动态设置搜索非对称搜索模式的搜索长度，决定多六边形网格搜索的四分之一模式。同时，它根据上一步的方向来设计迭代六边形搜索模式。
+
+#### Search Range Decision for Uneven Cross Pattern
+
+在大多数视频序列中，水平方向上的运动要比垂直方向上的运动更加剧烈。正如上面提到的非对称交叉搜索中，水平方向上的长度是垂直方向上的长度的两倍。
+
+在某些特殊的视频序列中，垂直方向上的运动比水平方向上的运动更加剧烈。因此我们可以动态的设置非对称交叉搜索模式的长度，来确保运动估计的质量。
+
+基于连续帧的相关性，我们可以使用上一帧中相同坐标块的 MV（pmv）来预测当前块的的运动矢量，并且设置非对称交叉搜索模式的长度。如下：
+
+```
+if (pmv.dx > 2 * pmv.dy)
+    PATTERN_SEARCH(CROSS1, 21, 1) //an uneven cross search: search length in vertical direction is 15 and in horizontal direction is 7.
+else if (pmv.dy > 2 * pmv.dx)
+    PATTERN_SEARCH(CROSS2, 21, 1) //an uneven cross search: search length in vertical direction is 7 and in horizontal direction is 15.
+else
+    PATTERN_SEARCH(CROSS3, 21, 1) //an uneven cross search: search length in vertical direction is the same as in horizontal direction.
+```
+#### Optimize for Multi-hexagon-grid Search
+
+
+#### Optimize for Iterative Hexagon Search
 
 # 分数像素运动估计
 
