@@ -423,6 +423,8 @@ else
 
 第二部分是多六边形网格搜索，它有 64 个点需要检查。在此步骤中，我们根据当前宏块的运动方向预测，设计了 4 种模式，它有 20 个搜索点需要检查，这回极大的降低计算复杂度。算法描述如下：  
 
+{% img /images/h264_me/multi_hexagon_grid.png 'H264 Motion Estimation UMHexagonS Search' %}
+
 计算 pmv(x, y)的角度α：
 
 a) 如果 α = 0-90，寻找 20 个搜索点，如图3(b),并找到新的 MBD，之后处理第 6 步  
@@ -433,6 +435,8 @@ d) 如果 α = -90-0，寻找 20 个搜索点，如图3(e),并找到新的 MBD�
 #### Optimize for Iterative Hexagon Search
 
 第六步是迭代六边形搜索模式，设置第五步中的 MBD 点作为搜索中心，最开始有 7 个点需要检查。然后在搜索过程中，六边形搜索不断前进，中心移动到六个端点中的任何一个。每次总是有三个新的点出现，而其他三个点是重复的。该算法根据前一步的方向设计新的六边形图案，避免了重复搜索冗余点。对第 6 步的优化过程如下：  
+
+{% img /images/h264_me/iterative_hexagon.png 'H264 Motion Estimation UMHexagonS Search' %}
 
 步骤6-1：
 
@@ -463,11 +467,12 @@ a) 如果 α = -90-0,如图4(e)所示，搜索四个点；并寻找新的 MBD �
 
 下图显示了  H.264 编码和解码过程中像素插值情况。可以看出原先的 G 点的右下方通过插值的方式产生了 a、b、c、d 等一共 16 个点。  
 
-{% img /images/h264_me/Interpolation_of_luma_half-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}    
+    {% img /images/h264_me/Interpolation_of_luma_half-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}    
 
 如图所示，1/4 像素内插一般分成两成：1. 半像素内插。这一步通过 6 抽头滤波器获得 5 个半像素点。2. 线性内插。这一步通过简单的线性内插获得剩余的 1/4 像素点。   
 
-{% img /images/h264_me/Interpolation_of_luma_quanter-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}    
+    {% img /images/h264_me/Interpolation_of_luma_quanter-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}   
+
 
 图中半像素内插点为 b、m、h、s、j五个点。半像素内插方法是对整像素点进行 6 抽头滤波得到，滤波器的权重为(1/32, -5/32, 5/8, 5/8, -5/32, 1/32)。例如 b 的计算公式为： `b = round((E - 5F + 20G + 20H - 5I + J)/32)`。  
 
