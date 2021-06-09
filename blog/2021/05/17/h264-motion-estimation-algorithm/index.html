@@ -105,6 +105,7 @@
       <li><a href="#uneven-multi-hexagon-grid-search-algorithm" id="markdown-toc-uneven-multi-hexagon-grid-search-algorithm">非对称交叉多层次六边形网格搜索算法(Uneven Multi-hexagon-grid Search Algorithm)</a>        <ul>
           <li><a href="#umh-the-proposed-algorithm-for-umh" id="markdown-toc-umh-the-proposed-algorithm-for-umh">UMH 优化思路(The Proposed Algorithm For UMH)</a>            <ul>
               <li><a href="#search-range-decision-for-uneven-cross-pattern" id="markdown-toc-search-range-decision-for-uneven-cross-pattern">Search Range Decision for Uneven Cross Pattern</a></li>
+              <li><a href="#optimize-for-multi-hexagon-grid-search" id="markdown-toc-optimize-for-multi-hexagon-grid-search">Optimize for Multi-hexagon-grid Search</a></li>
               <li><a href="#optimize-for-iterative-hexagon-search" id="markdown-toc-optimize-for-iterative-hexagon-search">Optimize for Iterative Hexagon Search</a></li>
             </ul>
           </li>
@@ -827,9 +828,44 @@
 </span><span class="line">    PATTERN_SEARCH(CROSS2, 21, 1) //an uneven cross search: search length in vertical direction is 7 and in horizontal direction is 15.
 </span><span class="line">else
 </span><span class="line">    PATTERN_SEARCH(CROSS3, 21, 1) //an uneven cross search: search length in vertical direction is the same as in horizontal direction.</span></code></pre></td></tr></table></div></figure>
-<p>#### Optimize for Multi-hexagon-grid Search</p>
+
+<h4 id="optimize-for-multi-hexagon-grid-search">Optimize for Multi-hexagon-grid Search</h4>
+
+<p>多六边形网格搜索包括两部分：5x5 搜索和多六边形网格搜索。</p>
+
+<p>大多数真实世界的视频序列都有中心偏移运动矢量分布。有超过 80% 的运动矢量在 5x5 区域的预测内，而有 70% 的运动矢量在 3x3 区域的预测内。尽管 5x5 的区域，比 3x3 的区域有更高(10%)的预测概率,但是搜索点的数量是它的 3 倍之多。因此我们选择 3x3 搜索而不是 5x5 搜索。</p>
+
+<p>第二部分是多六边形网格搜索，它有 64 个点需要检查。在此步骤中，我们根据当前宏块的运动方向预测，设计了 4 种模式，它有 20 个搜索点需要检查，这回极大的降低计算复杂度。算法描述如下：</p>
+
+<p>计算 pmv(x, y)的角度α：</p>
+
+<p>a) 如果 α = 0-90，寻找 20 个搜索点，如图3(b),并找到新的 MBD，之后处理第 6 步<br />
+b) 如果 α = 90-180，寻找 20 个搜索点，如图3(c),并找到新的 MBD，之后处理第 6 步<br />
+c) 如果 α = 180-270，寻找 20 个搜索点，如图3(d),并找到新的 MBD，之后处理第 6 步<br />
+d) 如果 α = -90-0，寻找 20 个搜索点，如图3(e),并找到新的 MBD，之后处理第 6 步</p>
 
 <h4 id="optimize-for-iterative-hexagon-search">Optimize for Iterative Hexagon Search</h4>
+
+<p>第六步是迭代六边形搜索模式，设置第五步中的 MBD 点作为搜索中心，最开始有 7 个点需要检查。然后在搜索过程中，六边形搜索不断前进，中心移动到六个端点中的任何一个。每次总是有三个新的点出现，而其他三个点是重复的。该算法根据前一步的方向设计新的六边形图案，避免了重复搜索冗余点。对第 6 步的优化过程如下：</p>
+
+<p>步骤6-1：</p>
+
+<p>图4(a) 所示的六边形位于步骤 5 的 MBD 点的中心。如果在本步骤中找到的 MBD 点仍然与在上一步中找到的 MBD 点一致，则转至步骤6-3；否则计算上一步方向的角度，进行下一步处理。</p>
+
+<p>a) 如果 α = 0-90,如图4(b)所示，搜索四个点；并寻找新的 MBD 点并执行步骤 6-2。<br />
+b) 如果 α = 90-180,如图4(c)所示，搜索四个点；并寻找新的 MBD 点并执行步骤 6-2。<br />
+a) 如果 α = 180-270,如图4(d)所示，搜索四个点；并寻找新的 MBD 点并执行步骤 6-2。<br />
+a) 如果 α = -90-0,如图4(e)所示，搜索四个点；并寻找新的 MBD 点并执行步骤 6-2。</p>
+
+<p>步骤6-2：</p>
+
+<p>以上一步搜索的 MBD 点为中心，形成一个新的六边形。检查三个新的候选点，再次确定 MBD 点。如果 MBD 仍然与上一步中发现的 MBD 点重合，则转至步骤6-3；否则，如果 4 所示重复此步骤。</p>
+
+<p>步骤6-3：</p>
+
+<p>将搜索模式从六边形切换到小尺寸的六边形搜索。将检查基于角度评估的两个候选点。先的 MBD 点是运动矢量的最终解。</p>
+
+<p>图 4(f) 显示了该方法的一个例子。</p>
 
 <h1 id="section-1">分数像素运动估计</h1>
 
