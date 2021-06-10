@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-09T08:33:37-07:00</updated>
+  <updated>2021-06-09T17:18:38-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,37 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[H.264 Loop Filter]]></title>
+    <link href="http://lazybing.github.io/blog/2021/06/09/h264-loop-filter/"/>
+    <updated>2021-06-09T17:05:54-07:00</updated>
+    <id>http://lazybing.github.io/blog/2021/06/09/h264-loop-filter</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">引入环路滤波的原因</a></li>
+</ul>
+
+<p>本文将从去块滤波的引入原因出发，分析去块滤波的原理、强度、决策、实现，并给出一个具体的实例，最后会给出 x264 中关于 Deblock 的代码实现。</p>
+
+<!--more-->
+
+<h2 id="section">引入环路滤波的原因</h2>
+
+<p>在编码过程中，会引入如下原因引入块效应：</p>
+
+<ol>
+  <li>
+    <p>每个宏块的变换、量化过程都是独立进行的，采用的量化参数不同，这就会引入量化误差，导致相邻块边界步连续。</p>
+  </li>
+  <li>
+    <p>在运动补偿中，相邻块的预测值可能来自不同图像的不同位置，导致预测残差信号在边界产生数值不连续。</p>
+  </li>
+</ol>
+
+<p>环路滤波的引入，可以调整相邻宏块边缘上的像素值，降低不连续性，使其看起来更平滑。</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[H264 Motion Estimation Algorithm]]></title>
@@ -1800,86 +1831,6 @@ int GetAnnexbNALU(NALU_t *nalu);
 </span><span class='line'><span class="n">x264_emms</span><span class="p">();</span> <span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 </code></pre>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[X264 源码解析之参考帧]]></title>
-    <link href="http://lazybing.github.io/blog/2017/10/19/reference-frame/"/>
-    <updated>2017-10-19T07:53:49-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/10/19/reference-frame</id>
-    <content type="html"><![CDATA[
-<p>本篇博客主要记录<code>X264</code>中关于参考帧管理。</p>
-
-<!--more-->
-
-<p><code>X264</code>中的帧可以大致分为以下几类：参考帧(ference frame)、当前编码帧(current frame)、未使用帧(unused frame)等。对帧的管理操作
-的基本操作由两种：从队列中获取帧(<code>x264_frame_pop</code>)、向队列中添加帧(<code>x264_frame_push_unused</code>)。</p>
-
-<p>关于帧队列的管理是通过数组来的，下面先介绍最基本的帧队列的一些基本操作。</p>
-
-<p>首先将<code>frame</code>帧插入到<code>list</code>队列中，实现代码如下：</p>
-
-<p><figure class='code'><figcaption><span>x264_frame_push </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">x264_frame_push</span><span class="p">(</span><span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span><span class="p">,</span> <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span><span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>从<code>list</code>队列中获取<code>frame</code>帧，实现代码如下：</p>
-
-<p><figure class='code'><figcaption><span>x264_frame_pop </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">x264_frame_t</span> <span class="o">*</span><span class="nf">x264_frame_pop</span><span class="p">(</span> <span class="kt">x264_frame_t</span> <span class="o">**</span><span class="n">list</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">x264_frame_t</span> <span class="o">*</span><span class="n">frame</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">assert</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">);</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">frame</span> <span class="o">=</span> <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
-</span><span class='line'>    <span class="n">list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">frame</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>当编码帧类型为<code>IDR</code>帧时，需要重置整个参考帧队列，<code>X264</code>中重置参考队列是通过<code>x264_reference_reset</code>函数完成，实现过程即为将<code>reference</code>队列
-所有的参考帧设置为<code>unused</code>队列中的<code>unused</code>帧；实现代码如下：</p>
-
-<p><figure class='code'><figcaption><span>x264_reference_reset </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">x264_reference_reset</span><span class="p">(</span> <span class="kt">x264_t</span> <span class="o">*</span><span class="n">h</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
-</span><span class='line'>        <span class="n">x264_frame_push_unused</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">x264_frame_pop</span><span class="p">(</span> <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">frames</span><span class="p">.</span><span class="n">reference</span> <span class="p">)</span> <span class="p">);</span>
-</span><span class='line'>    <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">fdec</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_poc</span> <span class="o">=</span>
-</span><span class='line'>    <span class="n">h</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">fenc</span><span class="o">-&amp;</span><span class="n">gt</span><span class="p">;</span><span class="n">i_poc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
 
 ]]></content>
   </entry>

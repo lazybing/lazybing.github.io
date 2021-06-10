@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Intra-frame Prediction Algorithm - 懒人李冰</title>
+  <title>H.264 Loop Filter - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Introduction Intra-Frame Prediction Elements The Existing Intra-Frame Prediction Algorithm Flows And Questions 本论文详细分析了帧内预测算法的原则和流程，同时提出了一个提升算法， &hellip;">
+  <meta name="description" content="引入环路滤波的原因 本文将从去块滤波的引入原因出发，分析去块滤波的原理、强度、决策、实现，并给出一个具体的实例，最后会给出 x264 中关于 Deblock 的代码实现。 引入环路滤波的原因 在编码过程中，会引入如下原因引入块效应： 每个宏块的变换、量化过程都是独立进行的，采用的量化参数不同， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2021/05/26/intra-frame-algorithm/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2021/06/09/h264-loop-filter/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -82,7 +82,7 @@
   
   <header>
     
-      <h1 class="entry-title">Intra-frame Prediction Algorithm</h1>
+      <h1 class="entry-title">H.264 Loop Filter</h1>
     
     
       <p class="meta">
@@ -91,7 +91,7 @@
 
 
 
-<time class='entry-date' datetime='2021-05-26T07:38:25-07:00'><span class='date'>2021 年 05 月 26 日</span> <span class='time'>7:38 am</span></time>
+<time class='entry-date' datetime='2021-06-09T17:05:54-07:00'><span class='date'>2021 年 06 月 09 日</span> <span class='time'>5:05 pm</span></time>
         
       </p>
     
@@ -99,48 +99,27 @@
 
 
 <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
-  <li><a href="#intra-frame-prediction-elements" id="markdown-toc-intra-frame-prediction-elements">Intra-Frame Prediction Elements</a></li>
-  <li><a href="#the-existing-intra-frame-prediction-algorithm-flows-and-questions" id="markdown-toc-the-existing-intra-frame-prediction-algorithm-flows-and-questions">The Existing Intra-Frame Prediction Algorithm Flows And Questions</a></li>
+  <li><a href="#section" id="markdown-toc-section">引入环路滤波的原因</a></li>
 </ul>
 
-<p>本论文详细分析了帧内预测算法的原则和流程，同时提出了一个提升算法，并阐述了优势。通过实现关于H.264/AVC的标准和和应用实验，证明算法具有实用价值和促进作用。</p>
-
-<p>“Intra-frame Prediction Algorithm Based on the H.264/AVC Research and Improvement”</p>
+<p>本文将从去块滤波的引入原因出发，分析去块滤波的原理、强度、决策、实现，并给出一个具体的实例，最后会给出 x264 中关于 Deblock 的代码实现。</p>
 
 <!--more-->
 
-<h2 id="introduction">Introduction</h2>
+<h2 id="section">引入环路滤波的原因</h2>
 
-<p>在帧内编码的过程中，有很多帧内预测模式已被采用提高效率。通过这种方法，空间图像信息的冗余将被删除。亮度预测被分为四个部分，它们分别是 4x4 帧内预测、16x16 帧内预测、8x8 帧内预测和 I-PCM 模式。</p>
+<p>在编码过程中，会引入如下原因引入块效应：</p>
 
-<p>4x4 模式用于小的预测宏块，来处理详细而复杂的图像。在图像编码中，处理平坦区域使用更大的宏块的帧内 16x16 模式。I-PCM 模式是一个特别模式，它在特殊情况下使用，当原始数据直接传输比预测编码传输还要低时使用。帧内 8x8 预测用于高清，这个是在 2005 年提出的预测。拉格朗日 RD 模型，决定在正确的时间选择。</p>
+<ol>
+  <li>
+    <p>每个宏块的变换、量化过程都是独立进行的，采用的量化参数不同，这就会引入量化误差，导致相邻块边界步连续。</p>
+  </li>
+  <li>
+    <p>在运动补偿中，相邻块的预测值可能来自不同图像的不同位置，导致预测残差信号在边界产生数值不连续。</p>
+  </li>
+</ol>
 
-<h2 id="intra-frame-prediction-elements">Intra-Frame Prediction Elements</h2>
-
-<p>帧内预测编码使用图像信息字段的相关性以压缩冗余。它基于在宏块的边界上，主要是指左边宏块、上方宏块和右方宏块来预测当前宏块。之后进行 DCT 和量化，从而达到压缩编码的目的。</p>
-
-<p>在编码过程中，有时需要根据具体的算法和 RDO 模型来选择最终成本最低的预测模式。</p>
-
-<p>16x16 亮度采用垂直预测(模型 0)、水平预测(模型 1)、DC 预测(模型 2)、平面预测(模型 3)。通过 16x16 宏块通常是应用到简单的场景，并且没有很多细节。因此</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">16 X 16 Luminance adopted plumb prediction (model 0), plane prediction (model 1), DC prediction (model 2) and planar prediction (model 3). The prediction models less than 4 X 4 luminance. It can comprehend that the macroblock should be plainness through using of 16X 16 macroblock for intra-frame and not have many details, So
-</span><span class="line">it not necessary to support many texture prediction and then the luminance is likely to the prediction mode the only difference is the model code.
-</span><span class="line">
-</span><span class="line">For reducing the extra information because of 4 X 4
-</span><span class="line">prediction mode differences by the standard, it adopt a
-</span><span class="line">method which can make intra-frame prediction
-</span><span class="line">information trans into signal mode to realize the basic
-</span><span class="line">information compression.</span></code></pre></td></tr></table></div></figure>
-
-<h2 id="the-existing-intra-frame-prediction-algorithm-flows-and-questions">The Existing Intra-Frame Prediction Algorithm Flows And Questions</h2>
+<p>环路滤波的引入，可以调整相邻宏块边缘上的像素值，降低不连续性，使其看起来更平滑。</p>
 
 </div>
 
@@ -157,12 +136,12 @@
 
 
 
-<time class='entry-date' datetime='2021-05-26T07:38:25-07:00'><span class='date'>2021 年 05 月 26 日</span> <span class='time'>7:38 am</span></time>
+<time class='entry-date' datetime='2021-06-09T17:05:54-07:00'><span class='date'>2021 年 06 月 09 日</span> <span class='time'>5:05 pm</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/lun-wen/'>论文</a>
+    <a class='category' href='/blog/categories/x264/'>x264</a>
   
 </span>
 
@@ -171,7 +150,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2021/05/26/intra-frame-algorithm/" data-via="" data-counturl="http://lazybing.github.io/blog/2021/05/26/intra-frame-algorithm/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2021/06/09/h264-loop-filter/" data-via="" data-counturl="http://lazybing.github.io/blog/2021/06/09/h264-loop-filter/" >Tweet</a>
   
   
   
@@ -180,10 +159,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2021/05/17/h264-motion-estimation-algorithm/" title="Previous Post: H264 Motion Estimation Algorithm">&laquo; H264 Motion Estimation Algorithm</a>
+        <a class="basic-alignment left" href="/blog/2021/05/26/intra-frame-algorithm/" title="Previous Post: Intra-frame Prediction Algorithm">&laquo; Intra-frame Prediction Algorithm</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2021/06/09/h264-loop-filter/" title="Next Post: H.264 Loop Filter">H.264 Loop Filter &raquo;</a>
       
     </p>
   </footer>
