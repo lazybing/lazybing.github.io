@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-11T21:01:02-07:00</updated>
+  <updated>2021-06-11T22:27:01-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -353,7 +353,8 @@
 
 <p>x264 中关于 UMH 算法的代码如下</p>
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><figcaption><span>X264_ME_UMH </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -767,7 +768,83 @@ else
 
 <p>大多数真实世界的视频序列都有中心偏移运动矢量分布。有超过 80% 的运动矢量在 5x5 区域的预测内，而有 70% 的运动矢量在 3x3 区域的预测内。尽管 5x5 的区域，比 3x3 的区域有更高(10%)的预测概率,但是搜索点的数量是它的 3 倍之多。因此我们选择 3x3 搜索而不是 5x5 搜索。</p>
 
-<p>第二部分是多六边形网格搜索，它有 64 个点需要检查。在此步骤中，我们根据当前宏块的运动方向预测，设计了 4 种模式，它有 20 个搜索点需要检查，这回极大的降低计算复杂度。算法描述如下：</p>
+<p>x264 中已经对 5x5 全搜索做了优化，甚至比上面提到的优化，还要更加彻底，x264 中关于 5x5 的全搜索，仅检查 4 个搜索点。它的代码更新迭代过程如下：</p>
+
+<p><figure class='code'><figcaption><span>5x5_ESA </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="mi">5</span><span class="n">x5</span> <span class="n">ESA</span> <span class="n">method</span> <span class="mi">1</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+</span><span class='line'><span class="n">omx</span> <span class="o">=</span> <span class="n">bmx</span><span class="p">;</span> <span class="n">omy</span> <span class="o">=</span> <span class="n">bmy</span><span class="p">;</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">bcost</span> <span class="o">==</span> <span class="n">ucost2</span><span class="p">)</span> <span class="o">?</span> <span class="mi">4</span> <span class="o">:</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">24</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">static</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">square2</span><span class="p">[</span><span class="mi">24</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>        <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span>  <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">},</span>
+</span><span class='line'>        <span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">},</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>    <span class="n">COST_MV</span><span class="p">(</span><span class="n">omx</span> <span class="o">+</span> <span class="n">square2</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">omy</span> <span class="o">+</span> <span class="n">square2</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">///////////////////////////</span>
+</span><span class='line'><span class="c1">///////////////////////////</span>
+</span><span class='line'><span class="c1">///////////////////////////</span>
+</span><span class='line'><span class="c1">///////////////////////////&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;/&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="mi">5</span><span class="n">x5</span> <span class="n">ESA</span> <span class="n">method</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+</span><span class='line'><span class="n">omx</span> <span class="o">=</span> <span class="n">bmx</span><span class="p">;</span> <span class="n">omy</span> <span class="o">=</span> <span class="n">bmy</span><span class="p">;</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">bcost</span> <span class="o">!=</span> <span class="n">ucost2</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">COST_MV_X4</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="n">COST_MV_X4</span><span class="p">(</span>  <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>  <span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COST_MV_X4</span><span class="p">(</span>  <span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COST_MV_X4</span><span class="p">(</span>  <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COST_MV_X4</span><span class="p">(</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span> <span class="p">);</span>
+</span><span class='line'><span class="n">COST_MV_X4</span><span class="p">(</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span>  <span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span>  <span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span> <span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c1">///////////////////////////</span>
+</span><span class='line'><span class="c1">///////////////////////////</span>
+</span><span class='line'><span class="c1">///////////////////////////</span>
+</span><span class='line'><span class="c1">///////////////////////////</span>
+</span><span class='line'><span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">optimize</span> <span class="mi">5</span><span class="n">x5</span> <span class="n">ESA</span> <span class="n">method</span> <span class="mi">3</span><span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+</span><span class='line'><span class="n">COST_MV_x4</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+第二部分是多六边形网格搜索，它有 64 个点需要检查。在此步骤中，我们根据当前宏块的运动方向预测，设计了 4 种模式，它有 20 个搜索点需要检查，这回极大的降低计算复杂度。算法描述如下：</p>
 
 <p><img src="/images/h264_me/multi_hexagon_grid.png" title="‘H264 Motion Estimation UMHexagonS Search’" ></p>
 
@@ -813,12 +890,11 @@ a) 如果 α = -90-0,如图4(e)所示，搜索四个点；并寻找新的 MBD �
 
 下图显示了  H.264 编码和解码过程中像素插值情况。可以看出原先的 G 点的右下方通过插值的方式产生了 a、b、c、d 等一共 16 个点。  
 
-    <img src="/images/h264_me/Interpolation_of_luma_half-pel.PNG" title="'H264 Motion Estimation UMHexagonS Search'" >    
+<img src="/images/h264_me/Interpolation_of_luma_half-pel.PNG" title="'H264 Motion Estimation UMHexagonS Search'" >    
 
 如图所示，1/4 像素内插一般分成两成：1. 半像素内插。这一步通过 6 抽头滤波器获得 5 个半像素点。2. 线性内插。这一步通过简单的线性内插获得剩余的 1/4 像素点。   
 
-    <img src="/images/h264_me/Interpolation_of_luma_quanter-pel.PNG" title="'H264 Motion Estimation UMHexagonS Search'" >   
-
+<img src="/images/h264_me/Interpolation_of_luma_quanter-pel.PNG" title="'H264 Motion Estimation UMHexagonS Search'" >   
 
 图中半像素内插点为 b、m、h、s、j五个点。半像素内插方法是对整像素点进行 6 抽头滤波得到，滤波器的权重为(1/32, -5/32, 5/8, 5/8, -5/32, 1/32)。例如 b 的计算公式为： `b = round((E - 5F + 20G + 20H - 5I + J)/32)`。  
 
