@@ -191,7 +191,7 @@ UMH 算法包含四中搜索模式:不均匀交叉搜索、多六边形网格搜
 
 x264 中关于 UMH 算法的代码如下
 
-{% codeblock lang:c %}
+{% codeblock lang:c X264_ME_UMH %}
 
         case X264_ME_UMH:
         {
@@ -421,6 +421,46 @@ else
 
 大多数真实世界的视频序列都有中心偏移运动矢量分布。有超过 80% 的运动矢量在 5x5 区域的预测内，而有 70% 的运动矢量在 3x3 区域的预测内。尽管 5x5 的区域，比 3x3 的区域有更高(10%)的预测概率,但是搜索点的数量是它的 3 倍之多。因此我们选择 3x3 搜索而不是 5x5 搜索。
 
+x264 中已经对 5x5 全搜索做了优化，甚至比上面提到的优化，还要更加彻底，x264 中关于 5x5 的全搜索，仅检查 4 个搜索点。它的代码更新迭代过程如下：
+
+{% codeblock lang:c 5x5_ESA %}
+/*5x5 ESA method 1*/
+omx = bmx; omy = bmy;
+for (i = (bcost == ucost2) ? 4 : 0; i < 24; i++)
+{
+    static const int square2[24][2] = {
+        {1, 0}, {0, 1}, {-1, 0}, {0, -1},
+        {1, 1}, {-1,1}, {-1,-1}, {1, -1},
+        {2,-1}, {2, 0}, {2,  1}, {2, -2},
+        {1, 2}, {0, 2}, {-1, 2}, {-2, 2},
+        {-2, 1}, {-2, 0}, {-2, -1}, {-2, -2},
+        {-1,-2}, {0, -2}, {1, -2}, {2, -2},
+    };
+    COST_MV(omx + square2[i][0], omy + square2[i][1]);
+}
+
+///////////////////////////
+///////////////////////////
+///////////////////////////
+///////////////////////////
+
+/*5x5 ESA method 2*/
+omx = bmx; omy = bmy;
+if (bcost != ucost2)
+    COST_MV_X4(1, 0, 0, 1, -1, 0, 0, -1);
+COST_MV_X4(  1, 1, -1, 1, -1,-1,  1,-1 );
+COST_MV_X4(  2,-1,  2, 0,  2, 1,  2, 2 );
+COST_MV_X4(  1, 2,  0, 2, -1, 2, -2, 2 );
+COST_MV_X4( -2, 1, -2, 0, -2,-1, -2,-2 );
+COST_MV_X4( -1,-2,  0,-2,  1,-2,  2,-2 );
+
+///////////////////////////
+///////////////////////////
+///////////////////////////
+///////////////////////////
+/*optimize 5x5 ESA method 3*/
+COST_MV_x4(-2, -2, -2, 2, 2, -2, 2, 2);
+{% endcodeblock %}
 第二部分是多六边形网格搜索，它有 64 个点需要检查。在此步骤中，我们根据当前宏块的运动方向预测，设计了 4 种模式，它有 20 个搜索点需要检查，这回极大的降低计算复杂度。算法描述如下：  
 
 {% img /images/h264_me/multi_hexagon_grid.png 'H264 Motion Estimation UMHexagonS Search' %}
@@ -467,12 +507,11 @@ a) 如果 α = -90-0,如图4(e)所示，搜索四个点；并寻找新的 MBD �
 
 下图显示了  H.264 编码和解码过程中像素插值情况。可以看出原先的 G 点的右下方通过插值的方式产生了 a、b、c、d 等一共 16 个点。  
 
-    {% img /images/h264_me/Interpolation_of_luma_half-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}    
+{% img /images/h264_me/Interpolation_of_luma_half-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}    
 
 如图所示，1/4 像素内插一般分成两成：1. 半像素内插。这一步通过 6 抽头滤波器获得 5 个半像素点。2. 线性内插。这一步通过简单的线性内插获得剩余的 1/4 像素点。   
 
-    {% img /images/h264_me/Interpolation_of_luma_quanter-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}   
-
+{% img /images/h264_me/Interpolation_of_luma_quanter-pel.PNG 'H264 Motion Estimation UMHexagonS Search' %}   
 
 图中半像素内插点为 b、m、h、s、j五个点。半像素内插方法是对整像素点进行 6 抽头滤波得到，滤波器的权重为(1/32, -5/32, 5/8, 5/8, -5/32, 1/32)。例如 b 的计算公式为： `b = round((E - 5F + 20G + 20H - 5I + J)/32)`。  
 
