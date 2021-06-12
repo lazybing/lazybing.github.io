@@ -912,6 +912,7 @@
 </span><span class="line"><span class="cm">/*optimize 5x5 ESA method 3*/</span>
 </span><span class="line"><span class="n">COST_MV_x4</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
 </span></code></pre></td></tr></table></div></figure>
+
 <p>第二部分是多六边形网格搜索，它有 64 个点需要检查。在此步骤中，我们根据当前宏块的运动方向预测，设计了 4 种模式，它有 20 个搜索点需要检查，这回极大的降低计算复杂度。算法描述如下：</p>
 
 <p><img src="/images/h264_me/multi_hexagon_grid.png" title="'H264 Motion Estimation UMHexagonS Search'" /></p>
@@ -922,6 +923,8 @@
 b) 如果 α = 90-180，寻找 20 个搜索点，如图3(c),并找到新的 MBD，之后处理第 6 步<br />
 c) 如果 α = 180-270，寻找 20 个搜索点，如图3(d),并找到新的 MBD，之后处理第 6 步<br />
 d) 如果 α = -90-0，寻找 20 个搜索点，如图3(e),并找到新的 MBD，之后处理第 6 步</p>
+
+<p>x264 中并没有进行此项优化，此处可能有一个搜索优化空间。</p>
 
 <h4 id="optimize-for-iterative-hexagon-search">Optimize for Iterative Hexagon Search</h4>
 
@@ -947,6 +950,8 @@ a) 如果 α = -90-0,如图4(e)所示，搜索四个点；并寻找新的 MBD �
 <p>将搜索模式从六边形切换到小尺寸的六边形搜索。将检查基于角度评估的两个候选点。先的 MBD 点是运动矢量的最终解。</p>
 
 <p>图 4(f) 显示了该方法的一个例子。</p>
+
+<p>X264 中已经采用了此种优化方法，实现代码就是上一种的 X264_ME_HEX 代码。</p>
 
 <h1 id="section-1">分数像素运动估计</h1>
 
