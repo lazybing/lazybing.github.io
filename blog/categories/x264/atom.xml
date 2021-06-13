@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-12T04:45:15-07:00</updated>
+  <updated>2021-06-13T05:35:27-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -20,6 +20,7 @@
     <id>http://lazybing.github.io/blog/2021/06/09/h264-loop-filter</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">引入环路滤波的原因</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">环路滤波的介绍</a></li>
 </ul>
 
 <p>本文将从去块滤波的引入原因出发，分析去块滤波的原理、强度、决策、实现，并给出一个具体的实例，最后会给出 x264 中关于 Deblock 的代码实现。</p>
@@ -36,6 +37,24 @@
 </ol>
 
 <p>环路滤波的引入，可以调整相邻宏块边缘上的像素值，降低不连续性，使其看起来更平滑。</p>
+
+<h2 id="section-1">环路滤波的介绍</h2>
+
+<p>下面给出两篇论文中，关于环路滤波部分的介绍：首先给出<code>Overview of the H.264/AVC Video Coding Standard</code> 中的<code>K. In-Loop Deblocking Filter</code>的介绍。我把它翻译成长中文如下。</p>
+
+<blockquote>
+  <p>基于块的编码的一个特殊特征是偶然产生可见的块结构。块边缘通常以低于内部像素的精度重建，块通常被认为是当前压缩方法中最明显的伪影之一。为此，H.264/AVC 定义了一种自适应的环路去块滤波器，其中滤波的强度由若干语法元素的值控制。有关自适应去块滤波器的详细说明，请参阅<a href="">Adaptive deblocking filter</a>;</p>
+
+  <p>图 16 给出了使用一维边缘的可视化的去块滤波器的原理。样本 p0 和 q0 以及 p1 和 q1 是否被滤波取决于使用的量化参数(QP)和量化阈值α(QP)和β(QP)。因此，仅当满足以下每个条件时，才进行 p0 和 q0 的滤波：<br />
+1. |p0 - q0 | &lt; α(QP) <br />
+2. |p1 - p0 | &lt; β(QP)<br />
+3. |q1 - q0 | &lt; β(QP) <br />
+其中 β(QP) 比 α(QP) 小的多。如果满足相应的以下条件，则进行 p1 或 q1 的滤波： |p2 - p0| &lt; β(QP) 或者 |q2 - q0| &lt; β(QP)</p>
+
+  <p>基本思想是，如果测量块边缘附近的样本之间相对较大的绝对差，则很可能是块伪影，因此应减少。然而，如果该差异的幅度太大以致不能用编码中使用的量化的粗糙度来解释，则边缘更可能反映源图片的实际行为，并且不应被平滑。</p>
+
+  <p>块效应降低，而内容的锐化程度基本不变。因此，主观质量显著提高。滤波器通常将比特率降低 5%-10%，同时产生与未滤波视频相同的客观质量。</p>
+</blockquote>
 
 ]]></content>
   </entry>
