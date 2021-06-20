@@ -41,4 +41,8 @@ information compression.
 
 ## The Existing Intra-Frame Prediction Algorithm Flows And Questions
 
+对一对 16x16 亮度和两个 8x8 亮度宏块的 RDO 帧内预测模式的完全搜索如下：
+
+1). 
+
 
