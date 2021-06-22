@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-20T15:47:19-07:00</updated>
+  <updated>2021-06-22T08:25:36-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,19 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[H.264 Rate Control Algorithm]]></title>
+    <link href="http://lazybing.github.io/blog/2021/06/22/h264-rate-control-algorithm/"/>
+    <updated>2021-06-22T06:49:35-07:00</updated>
+    <id>http://lazybing.github.io/blog/2021/06/22/h264-rate-control-algorithm</id>
+    <content type="html"><![CDATA[
+<p>码率控制是 H.264 编码器中非常重要的一个模块。X264 的码率控制算法大致分为帧级码率控制、宏块级码率控制。帧级码率控制算法比如：VBV 调整。宏块级别码率控制比如：MBTree 算法。</p>
+
+<!--more-->
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[H.264 Loop Filter Algorithm]]></title>
@@ -3954,87 +3967,6 @@ AV1 支持从 8x8 到 64x64 的块，支持调色板模式，编码器会自动�
 <ul>
   <li>srshr v24.8h, v24.8h, #2</li>
 </ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NEON 编程5——重排矢量]]></title>
-    <link href="http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector/"/>
-    <updated>2019-01-23T07:35:06-07:00</updated>
-    <id>http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">介绍</a></li>
-  <li><a href="#section-1" id="markdown-toc-section-1">开始之前</a></li>
-  <li><a href="#section-2" id="markdown-toc-section-2">可替换的</a></li>
-  <li><a href="#section-3" id="markdown-toc-section-3">指令</a>    <ul>
-      <li><a href="#vmov--vswapmove--swap" id="markdown-toc-vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</a></li>
-      <li><a href="#vrevreverse" id="markdown-toc-vrevreverse">VREV:Reverse</a></li>
-      <li><a href="#vextextract" id="markdown-toc-vextextract">VEXT:Extract</a></li>
-      <li><a href="#vrtntranspose" id="markdown-toc-vrtntranspose">VRTN:Transpose</a></li>
-      <li><a href="#vzip--vuzpzip--unzip" id="markdown-toc-vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</a></li>
-      <li><a href="#vtbl-vtbxtable--table-extend" id="markdown-toc-vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</a></li>
-      <li><a href="#section-4" id="markdown-toc-section-4">其他</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-5" id="markdown-toc-section-5">结论</a></li>
-</ul>
-
-<p>本文描述了用于重置矢量寄存器数据的NEON指令。</p>
-
-<!--more-->
-
-<h2 id="section">介绍</h2>
-
-<p>当写 NEON 代码时，你或许会发现某些时候，寄存器中的数据格式并不适用于你的算法。可能需要重排矢量中的元素，从而让后续的算术可以。</p>
-
-<p>重新排序操作称为<strong>permutation</strong>，<strong>permutation</strong>指令重置单独像素、选择从单个或多个寄存器来组织一个新的矢量。</p>
-
-<h2 id="section-1">开始之前</h2>
-
-<p>在使用 NEON 提供的<strong>permutation</strong>指令之前，一定要想清楚是否真的需要使用它们。<strong>permutation</strong>指令与 move 指令相似，因为它们通常代表用于准备数据而不是处理数据的 CPU 周期。</p>
-
-<h2 id="section-2">可替换的</h2>
-
-<p>如何避免不必要的<em>permutes</em>？有如下方法选项：</p>
-
-<ul>
-  <li>
-    <p><strong>重排输入数据</strong>.</p>
-  </li>
-  <li>
-    <p><strong>重新设计算法</strong></p>
-  </li>
-  <li>
-    <p><strong>修改上一个处理阶段</strong></p>
-  </li>
-  <li>
-    <p><strong>使用交错负载和存储</strong></p>
-  </li>
-  <li>
-    <p><strong>综合方法</strong></p>
-  </li>
-</ul>
-
-<h2 id="section-3">指令</h2>
-
-<h3 id="vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</h3>
-
-<h3 id="vrevreverse">VREV:Reverse</h3>
-
-<h3 id="vextextract">VEXT:Extract</h3>
-
-<h3 id="vrtntranspose">VRTN:Transpose</h3>
-
-<h3 id="vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</h3>
-
-<h3 id="vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</h3>
-
-<h3 id="section-4">其他</h3>
-
-<h2 id="section-5">结论</h2>
-
-<p>仔细考虑你的代码是否真的需要重置你的数据是明智的。然而，当你的算法需要它时，permute 指令提供了一个高效的方法来使得你的数据存放到正确的格式。</p>
 
 ]]></content>
   </entry>
