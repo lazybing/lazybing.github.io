@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-22T08:25:36-07:00</updated>
+  <updated>2021-06-22T16:42:42-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -18,10 +18,42 @@
     <link href="http://lazybing.github.io/blog/2021/06/22/h264-rate-control-algorithm/"/>
     <updated>2021-06-22T06:49:35-07:00</updated>
     <id>http://lazybing.github.io/blog/2021/06/22/h264-rate-control-algorithm</id>
-    <content type="html"><![CDATA[
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">基础知识</a></li>
+</ul>
+
 <p>码率控制是 H.264 编码器中非常重要的一个模块。X264 的码率控制算法大致分为帧级码率控制、宏块级码率控制。帧级码率控制算法比如：VBV 调整。宏块级别码率控制比如：MBTree 算法。</p>
 
 <!--more-->
+
+<h1 id="section">基础知识</h1>
+
+<p>编码所需的 bits 与实际编码的复杂度和量化参数有关，复杂度越复杂，量化参数越小，所需 bits 越少。复杂度用运动补偿后残差的 SATD 表示。</p>
+
+<p>qscale = 0.85 * 2^((qp - 12)/6.0)   (1) <br />
+qp = 12 + 6 * log2(qscale / 0.85)   (2)</p>
+
+<p>x264 中的代码如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">float</span> <span class="nf">qp2scale</span><span class="p">(</span><span class="kt">float</span> <span class="n">qp</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="mf">0.85</span> <span class="o">*</span> <span class="n">powf</span><span class="p">(</span><span class="mf">2.0f</span><span class="p">,</span> <span class="p">(</span><span class="n">qp</span> <span class="o">-</span> <span class="p">(</span><span class="mf">12.0f</span> <span class="o">+</span> <span class="n">QP_BD_OFFSET</span><span class="p">))</span> <span class="o">/</span> <span class="mf">6.0f</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">float</span> <span class="nf">qscale2qp</span><span class="p">(</span><span class="kt">float</span> <span class="n">qscale</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="k">return</span> <span class="p">(</span><span class="mf">12.0f</span> <span class="o">+</span> <span class="n">QP_BD_OFFSET</span><span class="p">)</span> <span class="o">+</span> <span class="mf">6.0f</span> <span class="o">*</span> <span class="n">log2f</span><span class="p">(</span><span class="n">qscale</span> <span class="o">/</span> <span class="mf">0.85f</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
