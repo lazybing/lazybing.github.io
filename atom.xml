@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-26T08:24:07-07:00</updated>
+  <updated>2021-06-26T08:37:14-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1971,45 +1971,16 @@ main.o + sum.o—&gt;链接器(ld)—&gt;prog</p>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[AV1(DAV1D)解码详解（十三）之帧间编码 Motion Compensation]]></title>
-    <link href="http://lazybing.github.io/blog/2019/12/09/motion-compensation/"/>
-    <updated>2019-12-09T09:42:19-07:00</updated>
-    <id>http://lazybing.github.io/blog/2019/12/09/motion-compensation</id>
-    <content type="html"><![CDATA[<p>Motion Compensation 在视频编解码中是非常重要的模块。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[AV1(DAV1D)解码详解(十二)之帧间编码Warped Motion]]></title>
-    <link href="http://lazybing.github.io/blog/2019/11/20/warped-motion-inter-predict/"/>
-    <updated>2019-11-20T15:09:25-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/11/20/warped-motion-inter-predict</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">概述</a></li>
-</ul>
-
-<p>Warped motion 模型在 AV1 中是通过两个仿射预测模型完成的，全局和局部的 warped 运动补偿。在真实世界中，物体除了简单的平移运动外，还有淡入、淡出、旋转、视角运动、不规则运动等，对于这种运动，使用放射预测能很好地提高编码性能。</p>
-
-<!--more-->
-
-<h2 id="section">概述</h2>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[AV1(DAV1D)解码详解(十一)之帧间编码 OBMC]]></title>
-    <link href="http://lazybing.github.io/blog/2019/11/20/inter-overlapped-block-motion-compensation/"/>
+    <title type="html"><![CDATA[AV1(DAV1D)解码详解(七)之帧间编码 Inter Predicton]]></title>
+    <link href="http://lazybing.github.io/blog/2019/11/20/inter-prediction/"/>
     <updated>2019-11-20T08:04:43-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/11/20/inter-overlapped-block-motion-compensation</id>
+    <id>http://lazybing.github.io/blog/2019/11/20/inter-prediction</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#obmc-" id="markdown-toc-obmc-">OBMC 概述</a></li>
-  <li><a href="#section" id="markdown-toc-section">代码</a></li>
+  <li><a href="#warped-motion-" id="markdown-toc-warped-motion-">Warped Motion 概述</a></li>
 </ul>
 
-<p>OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。</p>
-
-<p>本文通过学习文献<code>Variable Block-Size Overlapped Block Motion Compensation In The Next Generation Open-Source Video Codec</code>学习 OBMC 算法在 AV1 中的应用，并对应到 DAV1D 源码中的应用。</p>
+<p>Motion Compensation 在视频编解码中是非常重要的模块。(未完待续)</p>
 
 <!--more-->
 
@@ -2017,139 +1988,15 @@ main.o + sum.o—&gt;链接器(ld)—&gt;prog</p>
 
 <p>OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。</p>
 
+<p>本文通过学习文献<code>Variable Block-Size Overlapped Block Motion Compensation In The Next Generation Open-Source Video Codec</code>学习 OBMC 算法在 AV1 中的应用，并对应到 DAV1D 源码中的应用。</p>
+
+<p>OBMC 会使用当前块运动矢量和相邻子块运动矢量进行运动补偿，减少方块效应。OBMC 通过融合相邻块的 Motion Vector 预测，很大程度上降低当前块预测错误。</p>
+
 <p>运动补偿技术通过高效的降低时间冗余，对现代视频压缩工具的成功，有非常大的贡献。主流的视频编解码标准中（AV1/VP9/HEVC/H264），它主要是基于块匹配上。</p>
 
-<h2 id="section">代码</h2>
+<h2 id="warped-motion-">Warped Motion 概述</h2>
 
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-<span class="line-number">42</span>
-<span class="line-number">43</span>
-<span class="line-number">44</span>
-<span class="line-number">45</span>
-<span class="line-number">46</span>
-<span class="line-number">47</span>
-<span class="line-number">48</span>
-<span class="line-number">49</span>
-<span class="line-number">50</span>
-<span class="line-number">51</span>
-<span class="line-number">52</span>
-<span class="line-number">53</span>
-<span class="line-number">54</span>
-<span class="line-number">55</span>
-<span class="line-number">56</span>
-<span class="line-number">57</span>
-<span class="line-number">58</span>
-<span class="line-number">59</span>
-<span class="line-number">60</span>
-<span class="line-number">61</span>
-<span class="line-number">62</span>
-<span class="line-number">63</span>
-<span class="line-number">64</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">static</span> <span class="kt">int</span> <span class="nf">obmc</span><span class="p">(</span><span class="n">Dav1dTileContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">t</span><span class="p">,</span>
-</span><span class="line">                <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">dst</span><span class="p">,</span> <span class="k">const</span> <span class="kt">ptrdiff_t</span> <span class="n">dst_stride</span><span class="p">,</span>
-</span><span class="line">                <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">b_dim</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">pl</span><span class="p">,</span>
-</span><span class="line">                <span class="k">const</span> <span class="kt">int</span> <span class="n">bx4</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">by4</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">w4</span><span class="p">,</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">h4</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">bx</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">by</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">));</span>
-</span><span class="line">    <span class="k">const</span> <span class="n">Dav1dFrameContext</span> <span class="o">*</span><span class="k">const</span> <span class="n">f</span> <span class="o">=</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">f</span><span class="p">;</span>
-</span><span class="line">    <span class="k">const</span> <span class="n">refmvs</span> <span class="o">*</span><span class="k">const</span> <span class="n">r</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">mvs</span><span class="p">[</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">by</span> <span class="o">*</span> <span class="n">f</span><span class="o">-&gt;</span><span class="n">b4_stride</span> <span class="o">+</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">bx</span><span class="p">];</span>
-</span><span class="line">    <span class="n">pixel</span> <span class="o">*</span><span class="k">const</span> <span class="n">lap</span> <span class="o">=</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">scratch</span><span class="p">.</span><span class="n">lap</span><span class="p">;</span>
-</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_ver</span> <span class="o">=</span> <span class="o">!!</span><span class="n">pl</span> <span class="o">&amp;&amp;</span> <span class="n">f</span><span class="o">-&gt;</span><span class="n">cur</span><span class="p">.</span><span class="n">p</span><span class="p">.</span><span class="n">layout</span> <span class="o">==</span> <span class="n">DAV1D_PIXEL_LAYOUT_I420</span><span class="p">;</span>
-</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">ss_hor</span> <span class="o">=</span> <span class="o">!!</span><span class="n">pl</span> <span class="o">&amp;&amp;</span> <span class="n">f</span><span class="o">-&gt;</span><span class="n">cur</span><span class="p">.</span><span class="n">p</span><span class="p">.</span><span class="n">layout</span> <span class="o">==</span> <span class="n">DAV1D_PIXEL_LAYOUT_I444</span><span class="p">;</span>
-</span><span class="line">    <span class="k">const</span> <span class="kt">int</span> <span class="n">h_mul</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">&gt;&gt;</span> <span class="n">ss_hor</span><span class="p">,</span> <span class="n">v_mul</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">&gt;&gt;</span> <span class="n">ss_ver</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">res</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">by</span> <span class="o">&gt;</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">ts</span><span class="o">-&gt;</span><span class="n">tiling</span><span class="p">.</span><span class="n">row_start</span> <span class="o">&amp;&amp;</span>
-</span><span class="line">        <span class="p">(</span><span class="o">!</span><span class="n">pl</span> <span class="o">||</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">h_mul</span> <span class="o">+</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">v_mul</span> <span class="o">&gt;=</span> <span class="mi">16</span><span class="p">))</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">w4</span> <span class="o">&amp;&amp;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">4</span><span class="p">);)</span> <span class="p">{</span>
-</span><span class="line">            <span class="c1">// only odd blocks are considered for overlap handling, hence + 1</span>
-</span><span class="line">            <span class="k">const</span> <span class="n">refmvs</span> <span class="o">*</span><span class="k">const</span> <span class="n">a_r</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">r</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="n">f</span><span class="o">-&gt;</span><span class="n">b4_stride</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
-</span><span class="line">            <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">a_b_dim</span> <span class="o">=</span>
-</span><span class="line">                <span class="n">dav1d_block_dimensions</span><span class="p">[</span><span class="n">sbtype_to_bs</span><span class="p">[</span><span class="n">a_r</span><span class="o">-&gt;</span><span class="n">sb_type</span><span class="p">]];</span>
-</span><span class="line">
-</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">a_r</span><span class="o">-&gt;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">                <span class="k">const</span> <span class="kt">int</span> <span class="n">ow4</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">(</span><span class="n">a_b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
-</span><span class="line">                <span class="k">const</span> <span class="kt">int</span> <span class="n">oh4</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class="line">                <span class="n">res</span> <span class="o">=</span> <span class="n">mc</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">ow4</span> <span class="o">*</span> <span class="n">h_mul</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">pixel</span><span class="p">),</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">oh4</span><span class="p">,</span>
-</span><span class="line">                         <span class="n">t</span><span class="o">-&gt;</span><span class="n">bx</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">by</span><span class="p">,</span> <span class="n">pl</span><span class="p">,</span> <span class="n">a_r</span><span class="o">-&gt;</span><span class="n">mv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-</span><span class="line">                         <span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">refp</span><span class="p">[</span><span class="n">a_r</span><span class="o">-&gt;</span><span class="n">ref</span><span class="p">[[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">a_r</span><span class="o">-&gt;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class="line">                         <span class="n">dav1d_filter_2d</span><span class="p">[</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">a</span><span class="o">-&gt;</span><span class="n">filter</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">bx4</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]][</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">a</span><span class="o">-&gt;</span><span class="n">filter</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">bx4</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]);</span>
-</span><span class="line">                <span class="k">if</span> <span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
-</span><span class="line">                <span class="n">f</span><span class="o">-&gt;</span><span class="n">dsp</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">blend_h</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">x</span> <span class="o">*</span> <span class="n">h_mul</span><span class="p">],</span> <span class="n">dst_stride</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span>
-</span><span class="line">                                   <span class="n">h_mul</span> <span class="o">*</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">v_mul</span> <span class="o">*</span> <span class="n">oh4</span><span class="p">);</span>
-</span><span class="line">                <span class="n">i</span><span class="o">++</span><span class="p">;</span>
-</span><span class="line">            <span class="p">}</span>
-</span><span class="line">            <span class="n">x</span> <span class="o">+=</span> <span class="n">imax</span><span class="p">(</span><span class="n">a_b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class="line">        <span class="p">}</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">if</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">bx</span> <span class="o">&gt;</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">ts</span><span class="o">-&gt;</span><span class="n">tiling</span><span class="p">.</span><span class="n">col_start</span><span class="p">)</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">h4</span> <span class="o">&amp;&amp;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">4</span><span class="p">);</span> <span class="p">)</span> <span class="p">{</span>
-</span><span class="line">            <span class="c1">// only odd blocks are considered for overlap handling, hence +1</span>
-</span><span class="line">            <span class="k">const</span> <span class="n">refmvs</span> <span class="o">*</span><span class="k">const</span> <span class="n">l_r</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">r</span><span class="p">[(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">f</span><span class="o">-&gt;</span><span class="n">b4_stride</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span>
-</span><span class="line">            <span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="k">const</span> <span class="n">l_b_dim</span> <span class="o">=</span>
-</span><span class="line">                <span class="n">dav1d_block_dimensions</span><span class="p">[</span><span class="n">sbtype_to_bs</span><span class="p">[</span><span class="n">l_r</span><span class="o">-&gt;</span><span class="n">sb_type</span><span class="p">]];</span>
-</span><span class="line">
-</span><span class="line">            <span class="k">if</span> <span class="p">(</span><span class="n">l_r</span><span class="o">-&gt;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">                <span class="k">const</span> <span class="kt">int</span> <span class="n">ow4</span> <span class="o">=</span> <span class="n">imin</span><span class="p">(</span><span class="n">b_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class="line">                <span class="k">const</span> <span class="kt">int</span> <span class="n">oh4</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">(</span><span class="n">l_b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
-</span><span class="line">                <span class="n">res</span> <span class="o">=</span> <span class="n">mc</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">h_mul</span> <span class="o">*</span> <span class="n">ow4</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">pixel</span><span class="p">),</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">oh4</span><span class="p">,</span>
-</span><span class="line">                         <span class="n">t</span><span class="o">-&gt;</span><span class="n">bx</span><span class="p">,</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">by</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">pl</span><span class="p">,</span> <span class="n">l_r</span><span class="o">-&gt;</span><span class="n">mv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-</span><span class="line">                         <span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">refp</span><span class="p">[</span><span class="n">l_r</span><span class="o">-&gt;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">l_r</span><span class="o">-&gt;</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class="line">                         <span class="n">dav1d_filter_2d</span><span class="p">[</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">l</span><span class="p">.</span><span class="n">filter</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">by4</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]][</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">l</span><span class="p">.</span><span class="n">filter</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">by4</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]);</span>
-</span><span class="line">                <span class="k">if</span> <span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
-</span><span class="line">                <span class="n">f</span><span class="o">-&gt;</span><span class="n">dsp</span><span class="o">-&gt;</span><span class="n">mc</span><span class="p">.</span><span class="n">blend_v</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dst</span><span class="p">[</span><span class="n">y</span> <span class="o">*</span> <span class="n">v_mul</span> <span class="o">*</span> <span class="n">PXSTRIDE</span><span class="p">(</span><span class="n">dst_stride</span><span class="p">)],</span>
-</span><span class="line">                                <span class="n">dst_stride</span><span class="p">,</span> <span class="n">lap</span><span class="p">,</span> <span class="n">h_mul</span> <span class="o">*</span> <span class="n">ow4</span><span class="p">,</span> <span class="n">v_mul</span> <span class="o">*</span> <span class="n">oh4</span><span class="p">);</span>
-</span><span class="line">                <span class="n">i</span><span class="o">++</span><span class="p">;</span>
-</span><span class="line">            <span class="p">}</span>
-</span><span class="line">            <span class="n">y</span> <span class="o">+=</span> <span class="n">imax</span><span class="p">(</span><span class="n">l_b_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class="line">        <span class="p">}</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>Warped motion 模型在 AV1 中是通过两个仿射预测模型完成的，全局和局部的 warped 运动补偿。在真实世界中，物体除了简单的平移运动外，还有淡入、淡出、旋转、视角运动、不规则运动等，对于这种运动，使用放射预测能很好地提高编码性能。</p>
 
 ]]></content>
   </entry>
@@ -4354,6 +4201,479 @@ AV1 支持从 8x8 到 64x64 的块，支持调色板模式，编码器会自动�
   <li><a href="http://www.mirlab.org/conference_papers/international_conference/ICASSP%202018/pdfs/0001193.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
   <li><a href="https://jmvalin.ca/misc_stuff/icassp2018_slides.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
 </ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ARM64 汇编指令总结]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/24/neon-of-coding/"/>
+    <updated>2019-01-24T06:35:54-08:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/24/neon-of-coding</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#sqdmulhvectorby-element" id="markdown-toc-sqdmulhvectorby-element">SQDMULH(vector/by element)</a></li>
+  <li><a href="#sqrdmulhvectorby-element" id="markdown-toc-sqrdmulhvectorby-element">SQRDMULH(vector/by element)</a></li>
+  <li><a href="#sqrshrun-sqrshrun2" id="markdown-toc-sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</a></li>
+  <li><a href="#sqshrun-sqshrun2" id="markdown-toc-sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</a></li>
+  <li><a href="#shl" id="markdown-toc-shl">SHL</a></li>
+  <li><a href="#shll-shll2" id="markdown-toc-shll-shll2">SHLL, SHLL2</a></li>
+  <li><a href="#sshll-sshll2" id="markdown-toc-sshll-sshll2">SSHLL, SSHLL2</a></li>
+  <li><a href="#ushll-ushll2" id="markdown-toc-ushll-ushll2">USHLL, USHLL2</a></li>
+  <li><a href="#trn1--trn2" id="markdown-toc-trn1--trn2">TRN1 &amp; TRN2</a></li>
+  <li><a href="#sxtl-sxtl2" id="markdown-toc-sxtl-sxtl2">SXTL, SXTL2</a></li>
+  <li><a href="#uxtl-uxtl2" id="markdown-toc-uxtl-uxtl2">UXTL, UXTL2</a></li>
+  <li><a href="#ext" id="markdown-toc-ext">EXT</a></li>
+  <li><a href="#bfm-ubfm-sbfmbitfield-move" id="markdown-toc-bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</a></li>
+  <li><a href="#srshr" id="markdown-toc-srshr">SRSHR</a></li>
+</ul>
+
+<p>ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。</p>
+
+<p>ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
+
+<!--more-->
+
+<p>指令格式：</p>
+
+<p><code>&lt;Opcode&gt;[&lt;Cond&gt;]&lt;S&gt; &lt;Rd&gt;, &lt;Rn&gt; [.&lt;Opcode2&gt;]</code></p>
+
+<ul>
+  <li>其中尖括号的选项是必须的，花括号是可选的。</li>
+  <li>A32 : Rd==&gt;{R0-R14}</li>
+  <li>A64 : Rd==&gt;Xt==&gt;{X0-X30}</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">标识符</th>
+      <th style="text-align: center">备注</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Opcode</td>
+      <td style="text-align: center">操作码，也就是助记符，说明指令需要执行的操作类型</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Cond</td>
+      <td style="text-align: center">指令执行条件码，在编码中占4bit, 0b000-0b1110</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">S</td>
+      <td style="text-align: center">条件码设置项，决定本次指令是否影响 PSTATE 寄存器响应状态位值</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Rd/Xt</td>
+      <td style="text-align: center">目标寄存器，A32 指令可以选择 R0-R14，T32指令大部分只能选择R0-R7,A64指令可以选择X0-X30 或 W0-W30</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Rn/Xn</td>
+      <td style="text-align: center">第一个操作数的寄存器，和 Rd 一样，不同指令有不同要求</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Opcode2</td>
+      <td style="text-align: center">第二个操作数，可以是立即数，寄存器Rm 和寄存器移位方式(Rm, #shift)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="sqdmulhvectorby-element">SQDMULH(vector/by element)</h2>
+
+<p>Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+
+<p>Scalar:</p>
+
+<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP</li>
+  <li><code>&lt;T&gt;</code>:4H/8H/2S/4S 中的一个</li>
+</ul>
+
+<p>示例</p>
+
+<ul>
+  <li>sqdmulh v0.8h, v0.8h, v30.8h</li>
+</ul>
+
+<p>Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+
+<p>Scalar:</p>
+
+<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<h2 id="sqrdmulhvectorby-element">SQRDMULH(vector/by element)</h2>
+
+<p>Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
+
+<p>Scalar:</p>
+
+<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<p>Scalar:</p>
+
+<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
+
+<h2 id="sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</h2>
+
+<p>Signed saturating Rounded Shift Right Unsigned Narrow(immediate).</p>
+
+<p>Scalar:</p>
+
+<p><code>SQRSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun v0.8b, v1.8h, #5</li>
+</ul>
+
+<p>Vector:</p>
+
+<p><code>SQRSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
+</ul>
+
+<h2 id="sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</h2>
+
+<p>Signed saturating Shift Right Unsigned Narror(immediate).</p>
+
+<p>Scalar:</p>
+
+<p><code>SQSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SQSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
+</ul>
+
+<h2 id="shl">SHL</h2>
+
+<p>Shift Left(immediate)。</p>
+
+<p>Scalar:</p>
+
+<p><code>SHL &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SHL &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+</ul>
+
+<h2 id="shll-shll2">SHLL, SHLL2</h2>
+
+<p>Shift Left Long(by element size)。</p>
+
+<p>Vector:</p>
+
+<p><code>SHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li>
+    <p><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</p>
+  </li>
+  <li>shll  v28.8h, v30.8b,  #8</li>
+  <li>shll2 v29.8h, v30.16b, #8</li>
+</ul>
+
+<h2 id="sshll-sshll2">SSHLL, SSHLL2</h2>
+
+<p>Signed Shift Left Long(immediate)。</p>
+
+<p><code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+</ul>
+
+<h2 id="ushll-ushll2">USHLL, USHLL2</h2>
+
+<p>Unsigned Shift Left Long(immediate)。</p>
+
+<p><code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
+  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
+</ul>
+
+<h2 id="trn1--trn2">TRN1 &amp; TRN2</h2>
+
+<p>TRN1:转置向量 Transpose vector(primary), 该指令从零开始读取两个源寄存器 SIMD&amp;FP 的相应偶数向量元素，并将每个结果放到向量的连续元素，并将向量写到目的寄存器中。第一个源寄存器中的向量元素被放到目的寄存器的偶数元素位置，第二个源寄存器中的向量元素放到目的寄存器的奇数元素位置。</p>
+
+<p>Advanced SIMD variant</p>
+
+<p><code>TRN1 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>trn1 v4.2d, v4.2d, v5.2d</li>
+</ul>
+
+<p>TRN2:转置向量 Transpose vectors(secondary)。该指令读取两个源寄存器 SIMD&amp;FP 的相应奇数向量元素，并将每个结果放到向量的连续元素，并将向量写到目的寄存器中。第一个源寄存器中的向量元素被放到目的寄存器的偶数元素位置，第二个源寄存器中的向量元素放到目的寄存器的奇数元素位置。</p>
+
+<p>Advanced SIMD variant</p>
+
+<p><code>TRN2 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
+
+<ul>
+  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>T</code>:8B/16B/4H/8H/2S/4S/2D。</li>
+  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
+  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
+</ul>
+
+<p>示例：</p>
+
+<ul>
+  <li>trn2 v7.2s, v5.2s, v7.2s</li>
+</ul>
+
+<p><img src="http://lazybing.github.io/images/neon_coding/trn.png" /></p>
+
+<h2 id="sxtl-sxtl2">SXTL, SXTL2</h2>
+
+<p>SXTL:Signed extend Long,该指令</p>
+
+<p>Vector:</p>
+
+<p><code>SXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>sxtl v0.8h, v0.8b</li>
+</ul>
+
+<h2 id="uxtl-uxtl2">UXTL, UXTL2</h2>
+
+<p>UXTL:Unsigned extend Long.</p>
+
+<p>Vector:</p>
+
+<p><code>UXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>uxtl v4.8h, v4.8b</li>
+</ul>
+
+<h2 id="ext">EXT</h2>
+
+<p>EXT:Extract vector from pair of vectors.</p>
+
+<p>Advanced SIMD variant</p>
+
+<p><code>EXT &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;, #&lt;index&gt;</code></p>
+
+<p><img src="http://lazybing.github.io/images/neon_coding/ext.png" /></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>ext v5.16b, v4.16b, v4.16b, #2</li>
+</ul>
+
+<h2 id="bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</h2>
+
+<p>BFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>BFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>BFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>SBFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>SBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>SBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>UBFM:</p>
+
+<p>32-bit variant</p>
+
+<p><code>UBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>64-bit variant</p>
+
+<p><code>UBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>ubfm w9, w5, #7, #13</li>
+</ul>
+
+<h2 id="srshr">SRSHR</h2>
+
+<p>SRSHR:Signed Rounding Shift Right(immediate)。</p>
+
+<p>Scalar variant:</p>
+
+<p><code>SRSHR &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
+
+<p>Vector:</p>
+
+<p><code>SRSHR &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
+
+<p>示例：</p>
+
+<ul>
+  <li>srshr v24.8h, v24.8h, #2</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NEON 编程5——重排矢量]]></title>
+    <link href="http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector/"/>
+    <updated>2019-01-23T07:35:06-07:00</updated>
+    <id>http://lazybing.github.io/blog/2019/01/23/neon-rearranging-vector</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">介绍</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">开始之前</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">可替换的</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">指令</a>    <ul>
+      <li><a href="#vmov--vswapmove--swap" id="markdown-toc-vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</a></li>
+      <li><a href="#vrevreverse" id="markdown-toc-vrevreverse">VREV:Reverse</a></li>
+      <li><a href="#vextextract" id="markdown-toc-vextextract">VEXT:Extract</a></li>
+      <li><a href="#vrtntranspose" id="markdown-toc-vrtntranspose">VRTN:Transpose</a></li>
+      <li><a href="#vzip--vuzpzip--unzip" id="markdown-toc-vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</a></li>
+      <li><a href="#vtbl-vtbxtable--table-extend" id="markdown-toc-vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</a></li>
+      <li><a href="#section-4" id="markdown-toc-section-4">其他</a></li>
+    </ul>
+  </li>
+  <li><a href="#section-5" id="markdown-toc-section-5">结论</a></li>
+</ul>
+
+<p>本文描述了用于重置矢量寄存器数据的NEON指令。</p>
+
+<!--more-->
+
+<h2 id="section">介绍</h2>
+
+<p>当写 NEON 代码时，你或许会发现某些时候，寄存器中的数据格式并不适用于你的算法。可能需要重排矢量中的元素，从而让后续的算术可以。</p>
+
+<p>重新排序操作称为<strong>permutation</strong>，<strong>permutation</strong>指令重置单独像素、选择从单个或多个寄存器来组织一个新的矢量。</p>
+
+<h2 id="section-1">开始之前</h2>
+
+<p>在使用 NEON 提供的<strong>permutation</strong>指令之前，一定要想清楚是否真的需要使用它们。<strong>permutation</strong>指令与 move 指令相似，因为它们通常代表用于准备数据而不是处理数据的 CPU 周期。</p>
+
+<h2 id="section-2">可替换的</h2>
+
+<p>如何避免不必要的<em>permutes</em>？有如下方法选项：</p>
+
+<ul>
+  <li>
+    <p><strong>重排输入数据</strong>.</p>
+  </li>
+  <li>
+    <p><strong>重新设计算法</strong></p>
+  </li>
+  <li>
+    <p><strong>修改上一个处理阶段</strong></p>
+  </li>
+  <li>
+    <p><strong>使用交错负载和存储</strong></p>
+  </li>
+  <li>
+    <p><strong>综合方法</strong></p>
+  </li>
+</ul>
+
+<h2 id="section-3">指令</h2>
+
+<h3 id="vmov--vswapmove--swap">VMOV 和 VSWAP：Move 和 Swap</h3>
+
+<h3 id="vrevreverse">VREV:Reverse</h3>
+
+<h3 id="vextextract">VEXT:Extract</h3>
+
+<h3 id="vrtntranspose">VRTN:Transpose</h3>
+
+<h3 id="vzip--vuzpzip--unzip">VZIP 和 VUZP:Zip 和 Unzip</h3>
+
+<h3 id="vtbl-vtbxtable--table-extend">VTBL, VTBX:Table 和 Table Extend</h3>
+
+<h3 id="section-4">其他</h3>
+
+<h2 id="section-5">结论</h2>
+
+<p>仔细考虑你的代码是否真的需要重置你的数据是明智的。然而，当你的算法需要它时，permute 指令提供了一个高效的方法来使得你的数据存放到正确的格式。</p>
 
 ]]></content>
   </entry>
