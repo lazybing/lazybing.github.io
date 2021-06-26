@@ -4,7 +4,7 @@
   <title><![CDATA[分类:总结积累 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/zong-jie-ji-lei/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-22T16:42:42-07:00</updated>
+  <updated>2021-06-26T06:14:53-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,622 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[程序链接(Program Linking)]]></title>
+    <link href="http://lazybing.github.io/blog/2020/06/25/program-linking/"/>
+    <updated>2020-06-25T15:22:39-07:00</updated>
+    <id>http://lazybing.github.io/blog/2020/06/25/program-linking</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">链接示例</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">静态链接</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">目标文件</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">可重定位目标文件</a>    <ul>
+      <li><a href="#section-4" id="markdown-toc-section-4">符号和符号表</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">符号解析</a>        <ul>
+          <li><a href="#section-6" id="markdown-toc-section-6">链接器如何解析多重定义的全局符号</a></li>
+          <li><a href="#section-7" id="markdown-toc-section-7">与静态库链接</a></li>
+          <li><a href="#section-8" id="markdown-toc-section-8">链接器如何使用静态库来解析引用</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-9" id="markdown-toc-section-9">重定位</a>        <ul>
+          <li><a href="#section-10" id="markdown-toc-section-10">重定位条目</a></li>
+          <li><a href="#section-11" id="markdown-toc-section-11">重定位符号引用</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#section-12" id="markdown-toc-section-12">可执行目标文件</a></li>
+  <li><a href="#section-13" id="markdown-toc-section-13">共享目标文件</a></li>
+  <li><a href="#section-14" id="markdown-toc-section-14">处理目标文件的工具</a></li>
+</ul>
+
+<p><strong>链接</strong>是将各种代码和数据片段收集并组合成一个单一文件的过程，该文件可以被加载到内存并执行。理解链接的几个好处有：</p>
+
+<!--more-->
+
+<ul>
+  <li>理解链接器将帮助你构造大型程序。</li>
+  <li>理解链接器将帮助你避免一些危险的编程错误。</li>
+  <li>理解链接器将帮助你理解语言的作用域规则是如何实现的。</li>
+  <li>理解链接器将帮助你理解其他重要的系统概念。</li>
+  <li>理解链接器将使你能够利用共享库</li>
+</ul>
+
+<p>下面会介绍静态链接、加载时的共享库的动态链接、运行时的共享库动态链接等方面。</p>
+
+<h2 id="section">链接示例</h2>
+
+<p>通常说的编译程序包括如下四个方面：预处理(cpp)、编译(ccl)、汇编(as)、链接(ld)。比如，有如下 main.c 和 sum.c 两个文件。</p>
+
+<p>```
+int sum(int *a, int n);</p>
+
+<p>int array[2] = {1, 2};</p>
+
+<p>int main()
+{
+    int val = sum(array, 2);
+    return val;
+}</p>
+
+<p>int sum(int *a, int n)
+{
+    int i, s = 0;</p>
+
+<pre><code>for (i = 0; i &lt; n; i++) {
+    s += a[i];
+}
+
+return s; } ```
+</code></pre>
+
+<p>编译命令：
+<code>
+$gcc -Og -o prog main.c sum.c 或
+$gcc -Og -v -o prog main.c sum.c
+</code></p>
+
+<p>对上面的源文件进行如下操作:</p>
+
+<p>main.c—&gt;预处理(cpp)—&gt;main.i—&gt;编译器(ccl)—&gt;main.s—&gt;汇编器(as)—&gt;main.o<br />
+sum.c—-&gt;预处理(cpp)—&gt;sum.i—-&gt;编译器(ccl)—&gt;sum.s—-&gt;汇编器(as)—&gt;sum.o<br />
+main.o + sum.o—&gt;链接器(ld)—&gt;prog</p>
+
+<h2 id="section-1">静态链接</h2>
+
+<p>静态链接以一组可重定位目标文件和命令行参数作为输入，生成一个完全链接的、可以加载和运行可执行目标文件作为输出。</p>
+
+<p>为构造可执行文件，链接器主要完成两项任务：</p>
+
+<ul>
+  <li><strong>符号解析。</strong> 符号解析的目的是使得目标文件中符号的定义和引用匹配起来。例如引用一个函数名符号时，符号解析的功能就是找到函数的引用和定义，并将其匹配起来。</li>
+  <li><strong>重定位。</strong> 由编译器和汇编器生成的 .code 和 .data 节，都是从地址 0 开始的。链接器通过将每个符号定义为一个与内存关联起来，完成重定位，然后修改所有对这些符号的引用，使得它们指向这个内存位置。</li>
+</ul>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>main.o:     file format elf64-x86-64
+</span><span class='line'>Disassembly of section .text:&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>0000000000000000 &lt;main&gt;:
+</span><span class='line'>   0:	55                   	push   %rbp
+</span><span class='line'>   1:	48 89 e5             	mov    %rsp,%rbp
+</span><span class='line'>   4:	48 83 ec 10          	sub    $0x10,%rsp
+</span><span class='line'>   8:	be 02 00 00 00       	mov    $0x2,%esi
+</span><span class='line'>   d:	48 8d 3d 00 00 00 00 	lea    0x0(%rip),%rdi        # 14 &lt;main+0x14&gt;
+</span><span class='line'>  14:	e8 00 00 00 00       	callq  19 &lt;main+0x19&gt;
+</span><span class='line'>  19:	89 45 fc             	mov    %eax,-0x4(%rbp)
+</span><span class='line'>  1c:	8b 45 fc             	mov    -0x4(%rbp),%eax
+</span><span class='line'>  1f:	c9                   	leaveq 
+</span><span class='line'>  20:	c3                   	retq&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>sum.o:     file format elf64-x86-64&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>Disassembly of section .text:&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>0000000000000000 &lt;sum>:
+</span><span class='line'>   0:	55                   	push   %rbp
+</span><span class='line'>   1:	48 89 e5             	mov    %rsp,%rbp
+</span><span class='line'>   4:	48 89 7d e8          	mov    %rdi,-0x18(%rbp)
+</span><span class='line'>   8:	89 75 e4             	mov    %esi,-0x1c(%rbp)
+</span><span class='line'>   b:	c7 45 fc 00 00 00 00 	movl   $0x0,-0x4(%rbp)
+</span><span class='line'>  12:	c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
+</span><span class='line'>  19:	eb 1d                	jmp    38 &lt;sum+0x38&gt;
+</span><span class='line'>  1b:	8b 45 f8             	mov    -0x8(%rbp),%eax
+</span><span class='line'>  1e:	48 98                	cltq   
+</span><span class='line'>  20:	48 8d 14 85 00 00 00 	lea    0x0(,%rax,4),%rdx
+</span><span class='line'>  27:	00 
+</span><span class='line'>  28:	48 8b 45 e8          	mov    -0x18(%rbp),%rax
+</span><span class='line'>  2c:	48 01 d0             	add    %rdx,%rax
+</span><span class='line'>  2f:	8b 00                	mov    (%rax),%eax
+</span><span class='line'>  31:	01 45 fc             	add    %eax,-0x4(%rbp)
+</span><span class='line'>  34:	83 45 f8 01          	addl   $0x1,-0x8(%rbp)
+</span><span class='line'>  38:	8b 45 f8             	mov    -0x8(%rbp),%eax
+</span><span class='line'>  3b:	3b 45 e4             	cmp    -0x1c(%rbp),%eax
+</span><span class='line'>  3e:	7c db                	jl     1b &lt;sum+0x1b&gt;
+</span><span class='line'>  40:	8b 45 fc             	mov    -0x4(%rbp),%eax
+</span><span class='line'>  43:	5d                   	pop    %rbp
+</span><span class='line'>  44:	c3                   	retq</span></code></pre></td></tr></table></div></figure></sum></p>
+
+<p>上面 text section 是 main.o 和 sum.o 反编译出来的，可以看出，main 函数和 sum 函数都是从地址 0 开始的。将 main.o 和 sum.o 链接生成 prog 可执行文件，反编译可执行文件后，部分 section 如下：</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>00000000000005fa &lt;main&gt;:
+</span><span class='line'> 5fa:	48 83 ec 08          	sub    $0x8,%rsp
+</span><span class='line'> 5fe:	be 02 00 00 00       	mov    $0x2,%esi
+</span><span class='line'> 603:	48 8d 3d 06 0a 20 00 	lea    0x200a06(%rip),%rdi        # 201010 &lt;array>
+</span><span class='line'> 60a:	e8 05 00 00 00       	callq  614 &lt;sum>
+</span><span class='line'> 60f:	48 83 c4 08          	add    $0x8,%rsp
+</span><span class='line'> 613:	c3                   	retq&lt;/sum>&lt;/array>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>0000000000000614 &lt;sum>:
+</span><span class='line'> 614:	b8 00 00 00 00       	mov    $0x0,%eax
+</span><span class='line'> 619:	ba 00 00 00 00       	mov    $0x0,%edx
+</span><span class='line'> 61e:	eb 09                	jmp    629 &lt;sum+0x15&gt;
+</span><span class='line'> 620:	48 63 ca             	movslq %edx,%rcx
+</span><span class='line'> 623:	03 04 8f             	add    (%rdi,%rcx,4),%eax
+</span><span class='line'> 626:	83 c2 01             	add    $0x1,%edx
+</span><span class='line'> 629:	39 f2                	cmp    %esi,%edx
+</span><span class='line'> 62b:	7c f3                	jl     620 &lt;sum+0xc&gt;
+</span><span class='line'> 62d:	f3 c3                	repz retq 
+</span><span class='line'> 62f:	90                   	nop</span></code></pre></td></tr></table></div></figure></sum></p>
+
+<p>从上面可以看出，可执行文件中的 main 和 sum 的地址已经不再是 0， main 中调用了 sum 的地址为 614,切好就是 sum 的地址。</p>
+
+<h2 id="section-2">目标文件</h2>
+
+<p>目标文件有三种形式：可重定位的目标文件、可执行的目标文件、共享目标文件。</p>
+
+<ul>
+  <li><strong>可重定位的目标文件</strong> 是包含二进制代码的数据，其可以在编译时与其他可重定位目标文件结合生成可执行文件。</li>
+  <li><strong>可执行目标文件</strong> 包含二进制代码和数据，可直接复制到内存中执行。</li>
+  <li><strong>共享目标文件</strong> 特殊的可重定位目标文件，可以在加载或运行时被动态地加载进内存并链接。</li>
+</ul>
+
+<h2 id="section-3">可重定位目标文件</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">ELF 头</th>
+      <th style="text-align: center">描述生成该文件的系统的字的大小和字节顺序，以及包含帮助链接器语法分析和解释目标文件的信息</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">.text</td>
+      <td style="text-align: center">已编译程序的机器代码</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.rodata</td>
+      <td style="text-align: center">只读数据，比如 printf 中的字符串</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.data</td>
+      <td style="text-align: center">已初始化的全局和静态 C 变量</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.bss</td>
+      <td style="text-align: center">未初始化的全局和静态 C 变量, 以及所有被初始化为 0 的全局或静态变量</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.symtab</td>
+      <td style="text-align: center">一个符号表，它存放在程序中定义和引用的函数和全局变量的信息</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.rel.text</td>
+      <td style="text-align: center">一个 .text 节中位置的列表，当链接器把这个目标文件和其他文件组合时，需要修改这些位置</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.rel.data</td>
+      <td style="text-align: center">被模块引用或定义的所有全局变量的重定位信息</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.debug</td>
+      <td style="text-align: center">调试符号表，与上面的 symtab 不同，它还包含了局部变量和类型定义，以及原始的 C 源文件</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.line</td>
+      <td style="text-align: center">原始 C 源程序中的行号和 .text 节中机器指令之间的映射</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.strtab</td>
+      <td style="text-align: center">一个字符串表，包括 .symtab 和 .debug 节中的符号表</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">节点头部</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>给出一个程序示例 obj.c：</p>
+
+<p>```
+#include <stdio.h></stdio.h></p>
+
+<p>int AAA = 3;</p>
+
+<p>int sum(int a, int b)
+{
+    return a + b;
+}</p>
+
+<p>int main(int argc, char **argv)
+{
+    int a = 0;
+    int b = 1;
+    int c;</p>
+
+<pre><code>static int aa = 0;
+static int bb = 1;
+static int cc;
+
+printf("a %d aa %d b %d bb %d c %d cc %d AAA %d\n", a, aa, b, bb, c, cc, AAA);
+c = sum(AAA, AAA);
+
+return 0; } ```
+</code></pre>
+
+<p>编译该文件 obj.c ：
+<code>
+$ gcc -g -c obj.c
+$ objdump -D obj.o &gt; obj.txt
+</code></p>
+
+<p>反编译生成的可重定位目标文件，下面给出几部分</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Disassembly of section .data:&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>0000000000000000 &lt;AAA>:
+</span><span class='line'>   0:	03 00                	add    (%rax),%eax
+</span><span class='line'>	...&lt;/AAA>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>0000000000000004 &lt;bb.2260>:
+</span><span class='line'>   4:	01 00                	add    %eax,(%rax)
+</span><span class='line'>	...&lt;/bb.2260>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>Disassembly of section .bss:&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>0000000000000000 &lt;cc.2261>:
+</span><span class='line'>   0:	00 00                	add    %al,(%rax)
+</span><span class='line'>	...&lt;/cc.2261>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>0000000000000004 &lt;aa.2259>:
+</span><span class='line'>   4:	00 00                	add    %al,(%rax)
+</span><span class='line'>	...&lt;/aa.2259>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></p>
+
+<p>可以看出，<code>.data</code> 包含了已初始化的全局变量 AAA、和静态变量 bb。<code>.bss</code>包含了未初始化的静态变量 cc 和初始化为零的静态变量 aa。但要注意，对于局部的变量 a、b、c并没有出现在上面的几个节中，因为局部变量在运行时被保护在栈中，既不出现在<code>.data</code>节中，也不出现在<code>.bss</code> 中。</p>
+
+<h3 id="section-4">符号和符号表</h3>
+
+<p>对于一个可重定位的模块 m 来说，它包含的定义和引用的符号，包含三种类型：
+* 由模块 m 定义并能被其他模块引用的全局符号。
+* 由其他模块定义并被模块 m 引用的全局符号。
+* 只被模块 m 定义和引用的局部符号。</p>
+
+<p>注意，链接器符号和程序变量是不同的，.symtab 中的符号表不包含对应于本地非静态程序变量的任何符号，非静态程序变量符号在运行时在栈中管理，链接器对此类符号不感兴趣，（但带有static 属性的变量除外）。</p>
+
+<p>下面给出符号表的一个示例 m.o 和 swap.o：</p>
+
+<p>```
+void swap();</p>
+
+<p>int buf[2] = {1, 2};</p>
+
+<p>int main()
+{
+    sawp();
+    return 0;
+}</p>
+
+<p>extern int buf[];</p>
+
+<p>int *bufp0 = &amp;buf[0];
+int *bufp1;</p>
+
+<p>void swap()
+{
+    int temp;</p>
+
+<pre><code>bufp1 = &amp;buf[1];
+temp  = *bufp0;
+*bufp0 = *bufp1;
+*bufp1 = temp; } ```
+</code></pre>
+
+<p>使用 readelf 工具对 swap.o 查看符号表如下:</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Symbol table ‘.symtab’ contains 13 entries:
+</span><span class='line'>   Num:    Value          Size Type    Bind   Vis      Ndx Name
+</span><span class='line'>     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+</span><span class='line'>     1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS swap.c
+</span><span class='line'>     2: 0000000000000000     0 SECTION LOCAL  DEFAULT    1 
+</span><span class='line'>     3: 0000000000000000     0 SECTION LOCAL  DEFAULT    3 
+</span><span class='line'>     4: 0000000000000000     0 SECTION LOCAL  DEFAULT    4 
+</span><span class='line'>     5: 0000000000000000     0 SECTION LOCAL  DEFAULT    5 
+</span><span class='line'>     6: 0000000000000000     0 SECTION LOCAL  DEFAULT    8 
+</span><span class='line'>     7: 0000000000000000     0 SECTION LOCAL  DEFAULT    9 
+</span><span class='line'>     8: 0000000000000000     0 SECTION LOCAL  DEFAULT    7 
+</span><span class='line'>     9: 0000000000000000     8 OBJECT  GLOBAL DEFAULT    5 bufp0
+</span><span class='line'>    10: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND buf
+</span><span class='line'>    11: 0000000000000008     8 OBJECT  GLOBAL DEFAULT  COM bufp1
+</span><span class='line'>    12: 0000000000000000    63 FUNC    GLOBAL DEFAULT    1 swap</span></code></pre></td></tr></table></div></figure></p>
+
+<p>从上面可以看出几个符号的解析如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">符号</th>
+      <th style="text-align: center">.symtab 条目</th>
+      <th style="text-align: center">符号类型</th>
+      <th style="text-align: center">所属模块</th>
+      <th style="text-align: center">节</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">buf</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">extern</td>
+      <td style="text-align: center">m.o</td>
+      <td style="text-align: center">.data</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bufp0</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">GLOBAL</td>
+      <td style="text-align: center">swap.o</td>
+      <td style="text-align: center">.data</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bufp1</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">GLOBAL</td>
+      <td style="text-align: center">swap.o</td>
+      <td style="text-align: center">.common</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">swap</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">GLOBAL</td>
+      <td style="text-align: center">swap.o</td>
+      <td style="text-align: center">.text</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">temp</td>
+      <td style="text-align: center">No</td>
+      <td style="text-align: center">-</td>
+      <td style="text-align: center">-</td>
+      <td style="text-align: center">-</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="section-5">符号解析</h3>
+
+<p>链接器解析符号引用的方法是将每个引用与它输入的可重定位目标文件的符号表中的一个确定的符号定义关联起来。对全局符号的解析，如果多个目标文件中定义相同名字的全局符号，链接器要么给出错误提示，要么以某种方法选出一个定义并抛弃其他定义。</p>
+
+<h4 id="section-6">链接器如何解析多重定义的全局符号</h4>
+
+<p>编译时，编译器向汇编器输出每个全局符号，或者是强或者是弱，汇编器把这个信息隐含地编码在可重定位目标文件的符号表里。函数和已初始化的全局变量是强符号，未初始化的全局变量是弱符号。链接规则如下：
+* 不允许有多个同名的强符号。
+* 如果有一个强符号和多个弱符号同名，选择强符号。
+* 如果有多个弱符号同名，从中任选一个。</p>
+
+<h4 id="section-7">与静态库链接</h4>
+
+<p>静态库，将所有相关的目标文件模块打包成一个单独的文件，该文件可以作为链接器的输入，当链接器构造一个输出的可执行文件时，链接器只会复制该文件中被应用程序引用的目标模块，这样的文件称为静态库。</p>
+
+<h4 id="section-8">链接器如何使用静态库来解析引用</h4>
+
+<p>解析阶段，链接器<strong>从左到右(有序的)</strong>按照它们在编译器驱动程序命令行上出现的顺序来扫描可重定位目标文件和存档文件。链接器会维护三个集合：可重定位目标文件集合E、未解析的符号集合U、已定义的符号集合D。链接器的解析过程如下:</p>
+
+<ul>
+  <li>对命令行上的每个输入文件 f，链接器判断是否为目标文件或静态库，如果是目标文件，将其添加到E，修改U 和 D，继续解析下一个文件。</li>
+  <li>如果 f 是静态库，链接器尝试匹配 U 中未解析的符号和由存档文件成员定义的符号。匹配成功，将模块添加到E 中，修改 U 和 D。</li>
+  <li>链接器扫描完输入文件后，U 非空，链接器输出一个错误并终止。否则，它会合并和重定位 E 中的目标文件，生成可执行文件。</li>
+</ul>
+
+<p>从链接器解析静态库的原理可以看出，编译时，静态库存放的位置很重要，同样的目标文件和静态库，位置不同，可能编译结果就不同了。</p>
+
+<p><code>
+$gcc -static ./libvector.a main.c
+$gcc -static main.c ./libvector.a
+</code></p>
+
+<h3 id="section-9">重定位</h3>
+
+<p>链接器完成符号解析后，就把代码中的每个符号和定义关联起来了。现在链接器就可以重定位了，重定位由两步组成：</p>
+
+<ul>
+  <li>重定位节和符号定义。链接器将所有相同类型的 section 合并成一个新的 section。比如，将所有模块的 .data 合并成一个新的 .data。之后将运行时的内存地址赋给新的 section 以及每个模块的定义。</li>
+  <li>重定位节中的符号引用。链接器修改 .data 和 .text 中对每个符号的引用，使得它们指向正确的运行时地址。</li>
+</ul>
+
+<h4 id="section-10">重定位条目</h4>
+
+<p>汇编器遇到对最终位置未知的目标引用，会生成一个重定位条目，告知链接器在将目标文件合并成可执行文件时如何修改该引用。代码的重定位条目放在 .rel.text 中，已初始化数据的重定位条目放在 .rel.data 中.</p>
+
+<p>重定位类型有 32 种，最常用的两种是:</p>
+
+<ul>
+  <li><strong>R_X86_64_P32</strong>，重定位一个使用 32 位 PC  相对地址的引用。比如调用函数常用的 call 指令</li>
+  <li><strong>R_X86_64_32</strong>，重定位一个使用 32 位绝对地址的引用</li>
+</ul>
+
+<h4 id="section-11">重定位符号引用</h4>
+<p>链接器的重定位算法的伪代码如下：
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>foreach section s {
+</span><span class='line'>    foreach relocation entry r {
+</span><span class='line'>        refptr = s + r.offset;  /&lt;em>ptr to reference to be relocated&lt;/em>/&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>    /* Relocate a PC-relative reference */
+</span><span class='line'>    if (r.type == R_X86_64_PC32) {
+</span><span class='line'>        refaddr = ADDR(s) + r.offset; /* ref's run-time address */
+</span><span class='line'>        *refptr = (unsigned)(ADDR(r.symbol) + r.addend - refaddr);
+</span><span class='line'>    }
+</span><span class='line'>    
+</span><span class='line'>    /* Relocate an absolute reference */
+</span><span class='line'>    if (r.type == R_X86_64_32) {
+</span><span class='line'>        *refptr = (unsigned)(ADDR(r.symbol) + r.addend);
+</span><span class='line'>    }
+</span><span class='line'>} }</span></code></pre></td></tr></table></div></figure>
+</code></pre>
+
+<h2 id="section-12">可执行目标文件</h2>
+
+<p>可执行目标文件格式类似于可重定位的目标文件格式，稍有不同的是：可执行目标文件有程序的入口点（程序运行时要执行的第一条指令地址）、<code>.text/.rodata/.data</code>节已经被重定位到它们最终运行时内存地址、可执行文件已经被重定位所以不需要 <code>.rel</code> 节。</p>
+
+<p>加载器会将可执行目标文件中的代码和数据从磁盘复制到内存中，然后跳转到程序的第一条指令或入口点来运行该程序。</p>
+
+<h2 id="section-13">共享目标文件</h2>
+
+<p>静态库需要定期维护和更新，静态库的代码被复制到每个运行进程的文本段中，会极大的浪费内存系统资源。共享库可以解决静态库的问题，共享库是一个目标模块，在运行和加载时，可加载到任意的内存地址，并和内存中的程序连接起来。</p>
+
+<p>动态加载和链接共享库:Linux系统为动态链接器提供了一个简单的接口，允许应用程序在运行时加载和链接共享库。</p>
+
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;dlfcn.h>
+</span><span class='line'>void *dlopen(const char *filename, int flag);
+</span><span class='line'>void *dlsym(void *handle, char *symbol);
+</span><span class='line'>int dlclose(void *handle);
+</span><span class='line'>const char *dlerror(void);</span></code></pre></td></tr></table></div></figure></dlfcn.h></p>
+
+<p>共享库的一个主要目的就是允许多个正在运行的进程共享内存中相同的库代码，从而节约宝贵的内存资源。现代系统以这样一种方式编译共享模块的代码段，使得可以把它们加载到内存的任何位置而无需链接器修改。使用该方法，无限多个进程可以共享一个共享模块的代码段的单一副本。加载而无需重定位的代码称为位置无关吗。</p>
+
+<h2 id="section-14">处理目标文件的工具</h2>
+<p>Linux系统中有很多工具可以帮忙处理目标文件。</p>
+
+<ul>
+  <li><strong>ar</strong> 创建静态库，插入、删除、列出和提取成员。</li>
+  <li><strong>strings</strong> 列出目标文件中所有可打印的字符串。</li>
+  <li><strong>strip</strong> 从目标文件中删除符号表信息。</li>
+  <li><strong>nm</strong> 列出一个目标文件的符号表中定义的符号。</li>
+  <li><strong>size</strong> 列出目标文件中节的名字和大小。</li>
+  <li><strong>readelf</strong> 显示目标文件的完整结构。</li>
+  <li><strong>objdump</strong> 所有二进制工具之母。能够显示目标文件中所有信息，最大作用是反编译 .text 节中的二进制指令。</li>
+  <li><strong>ldd</strong> 列出可执行文件在运行时所需要的共享库。</li>
+</ul>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Linux下C语言调用静态库和动态库简介]]></title>
@@ -865,374 +1481,6 @@ Frame rate:31.250 fps
 </span></code></pre></td></tr></table></div></figure></p>
 
 <h1 id="loading-the-elf-file">Loading the ELF File</h1>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[编程小技巧]]></title>
-    <link href="http://lazybing.github.io/blog/2017/09/29/coding-tips/"/>
-    <updated>2017-09-29T13:35:57-07:00</updated>
-    <id>http://lazybing.github.io/blog/2017/09/29/coding-tips</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">获取文件路径后缀名</a>    <ul>
-      <li><a href="#c-" id="markdown-toc-c-">C 语言实现</a></li>
-      <li><a href="#c--1" id="markdown-toc-c--1">C++ 语言实现</a></li>
-      <li><a href="#shell-" id="markdown-toc-shell-">Shell 脚本实现</a></li>
-    </ul>
-  </li>
-  <li><a href="#section-1" id="markdown-toc-section-1">调试信息分级打印</a></li>
-  <li><a href="#define-logdefault-2" id="markdown-toc-define-logdefault-2">define LOG_DEFAULT 2</a>    <ul>
-      <li><a href="#section-2" id="markdown-toc-section-2">分析特定格式的文件</a></li>
-      <li><a href="#fopen-" id="markdown-toc-fopen-">fopen 函数个数限制</a></li>
-      <li><a href="#section-3" id="markdown-toc-section-3">函数声明</a></li>
-    </ul>
-  </li>
-</ul>
-
-<p>本篇博客主要记录在写代码过程中遇到的一些小技巧，它并不是特别难以实现的复杂算法，也不是对某种特定语言的记录，而是在
-工作中遇到某个问题时，自然而然能想到的解决方法，通常是一些比较通用的小技巧。</p>
-
-<!--more-->
-
-<h2 id="section">获取文件路径后缀名</h2>
-
-<p>工作中经常遇到对一批视频文件进行统一处理的情况，有时会根据文件名的不同后缀名进行不同的处理操作。此时就需要首先获取文件的后缀名，
-之后再根据后缀名的不同进行相应的操作。</p>
-
-<h3 id="c-">C 语言实现</h3>
-
-<p>实现思路：获取文件字符串的最后一个字符，依次向前寻找<code>.</code>，<code>.</code>后面即为后缀名。</p>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kr">inline</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">get_filename_extension</span><span class="p">(</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">ext</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span> <span class="n">filename</span> <span class="p">);</span>
-</span><span class='line'>    <span class="k">while</span><span class="p">(</span> <span class="o">*</span><span class="n">ext</span> <span class="o">!=</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">ext</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">filename</span> <span class="p">)</span>
-</span><span class='line'>        <span class="n">ext</span><span class="err">–</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">ext</span> <span class="o">+=</span> <span class="o">*</span><span class="n">ext</span> <span class="o">==</span> <span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">ext</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="c--1">C++ 语言实现</h3>
-
-<p>实现思路：首先将文件或路径名转换为一个<code>string</code>类，使用它的成员函数<code>rfind</code>找到最后一个<code>.</code>的位置，最后使用<code>substr</code>成员函数返回<code>.</code>后的所有内容，即得后缀名。</p>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="k">using</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">;</span>
-</span><span class='line'><span class="n">string</span> <span class="n">getFileExt</span><span class="p">(</span><span class="k">const</span> <span class="n">string</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="n">s</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="err">‘</span><span class="p">.</span><span class="err">’</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">());</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">string</span><span class="o">::</span><span class="n">npos</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="p">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="n">i</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="err">“”</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h3 id="shell-">Shell 脚本实现</h3>
-
-<p><figure class='code'><figcaption><span>get_filename_extension </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/sh</span>
-</span><span class='line'><span class="nv">fullfilename</span><span class="o">=</span><span class="nv">$1</span>
-</span><span class='line'><span class="nv">filename</span><span class="o">=</span><span class="k">$(</span>basename “<span class="nv">$fullfilename</span>”<span class="k">)</span>
-</span><span class='line'><span class="nv">fname</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">%.&lt;em&gt;</span><span class="k">}</span>”
-</span><span class='line'><span class="nv">ext</span><span class="o">=</span>”<span class="k">${</span><span class="nv">filename</span><span class="p">##&lt;/em&gt;.</span><span class="k">}</span>”&lt;/p&gt;
-</span><span class='line'>
-</span><span class='line'>&lt;p&gt;echo “Input File:<span class="nv">$fullfilename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Path:<span class="nv">$filename</span>”
-</span><span class='line'><span class="nb">echo</span> “Filename without Extension:<span class="nv">$fname</span>”
-</span><span class='line'><span class="nb">echo</span> “File Extension without Name:<span class="nv">$ext</span>”
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-1">调试信息分级打印</h2>
-
-<p>在工作中，经常遇到需要将调试信息分级打印的情况。比如在码流播放中可能默认要打印出码流的宽高、码流的 CODEC 类型等基本信息，可以定义此类信息级别为<code>LOG_INFO</code>级别；
-码流播放时，可能会出现错误，此类信息级别为<code>LOG_ERROR</code>等。</p>
-
-<p>实现思路：将需要打印的信息级别与默认打印信息级别进行比较，级别高时，将信息打印出来；级别低时，不打印信息。</p>
-
-<p><figure class='code'><figcaption><span>log_level </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span> <span class="n">id</span><span class="o">=</span><span class="s">&quot;define-logdefault-2&quot;</span><span class="o">&gt;</span><span class="n">define</span> <span class="n">LOG_DEFAULT</span> <span class="mi">2</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="err">#</span><span class="n">define</span> <span class="n">LOG_NONE</span>    <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'><span class="cp">#define LOG_ERROR   0</span>
-</span><span class='line'><span class="cp">#define LOG_WARNING 1</span>
-</span><span class='line'><span class="cp">#define LOG_INFO    2</span>
-</span><span class='line'><span class="cp">#define LOG_DEBUG   3&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">Printf</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="kt">va_list</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="kt">char</span> <span class="o">*</span><span class="n">psz_prefix</span><span class="p">;</span>
-</span><span class='line'>   <span class="k">switch</span><span class="p">(</span><span class="n">i_level</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_ERROR</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">error</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_WARNING</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">warning</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_INFO</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">info</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">case</span> <span class="nl">LOG_DEBUG</span><span class="p">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">debug</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">brengak</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">default</span><span class="o">:</span>
-</span><span class='line'>            <span class="n">psz_prefix</span> <span class="o">=</span> <span class="err">“</span><span class="n">unknown</span><span class="err">”</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'>   <span class="n">vfprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">void</span> <span class="n">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">);</span>
-</span><span class='line'><span class="kt">void</span> <span class="nf">LOG_PRINT</span><span class="p">(</span><span class="kt">int</span> <span class="n">i_level</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">psz_fmt</span><span class="p">,</span> <span class="err">…</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">i_level</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">LOG_DEFAULT</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">va_list</span> <span class="n">arg</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">va_start</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">Printf</span><span class="p">(</span><span class="n">i_level</span><span class="p">,</span> <span class="n">psz_fmt</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">va_end</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-2">分析特定格式的文件</h2>
-
-<p>工作中在验证芯片的<code>vdec</code>模块是否正常工作时，需要大量的跑一些码流，这些码流通常会放到一个<code>filelist</code>中，因为需要测试的项不同，此时就可以
-通过按照一定的格式并列存放这些码流，例如根据不同的<code>codec</code>、测试比较<code>YUV</code>或<code>CRC</code>，是要连续测试，还是要中途停止方便<code>Debug</code>问题，我们可以按照如下格式对<code>filelist</code>进行定义：</p>
-
-<p><code>
-Codec_Type  Compare_Type Test_Type Bitstream_Full_Path
-</code></p>
-
-<p>对于上面这种<code>filelist</code>，可以通过<code>fscanf</code>来逐个的获取特定的字符串，并通过<code>feof</code>来判断文件文件是否读取完毕， 之后使用<code>strcmp</code>来与特定的字符串进行匹配。例如，有如下的一个<code>filelist.txt</code>：</p>
-
-<p><code>
-HEVC Compare_CRC Debug F:\FFmpeg\hevc_bitstream1.bin
-H264 Compare_YUV Release F:\FFmpeg\h264_bitstream2.bin
-</code></p>
-
-<p>分析<code>filelist.txt</code>示例代码：</p>
-
-<p><figure class='code'><figcaption><span>parse_filelist </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">char</span> <span class="n">Codec_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Compare_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Release_Type</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
-</span><span class='line'><span class="kt">char</span> <span class="n">Bitstream_Path</span><span class="p">[</span><span class="mi">200</span><span class="p">];</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="p">.</span><span class="o">/</span><span class="n">filelist</span><span class="p">.</span><span class="n">txt</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">open</span> <span class="n">file</span> <span class="n">fail</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">pFile</span><span class="p">))</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fscanf</span><span class="p">(</span><span class="n">pFile</span><span class="p">,</span> <span class="err">“</span><span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span> <span class="o">%</span><span class="n">s</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">,</span> <span class="n">Compare_Type</span><span class="p">,</span> <span class="n">Release_Type</span><span class="p">,</span> <span class="n">Bitstream_Path</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">HEVC</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="err">“</span><span class="n">H264</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">H264</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="err">“</span><span class="n">hevc</span><span class="err">”</span><span class="p">,</span> <span class="n">Codec_Type</span><span class="p">))</span> <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="n">Codec</span> <span class="n">Type</span> <span class="n">is</span> <span class="n">HEVC</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="err">…</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>注意上面表示出来了通过<code>strcmp</code>来判断<code>Codec_Type</code>的类型，后面的<code>Compare_Type</code>可以用同样的方法来给出。</p>
-
-<p>在使用过程中，人们并不会特别在意字母的大小写，但要表达的意思通常是一样的，比如<code>HEVC</code><code>hevc</code><code>Hevc</code>通过都是一样的，如果此时还用<code>strcmp</code>来判断，会出错，为此，我们提出了<code>strcasecmp</code>的使用方法，来避免大小写带来的问题，这也算是编写类似代码的一个小技巧。</p>
-
-<h2 id="fopen-">fopen 函数个数限制</h2>
-
-<p>严格来讲，这个并不是编程的一些小的技巧，而是自己在工作中遇到的一个小问题，最近在每晚上跑测试时，经常遇到一晚上跑完 503 个测试后，程序就会崩溃掉，给出的提示信息是”Open File Fail”,起初是通过观察<code>errno</code>的类型来<code>Debug</code>出错的原因，最后定位到问题是，
-对每个文件都打开了两次，而关闭只有一次，导致文件描述符的个数爆掉了。这个问题的原因是在不同的系统中，都会有对文件描述符的最大个数有一定的限制。</p>
-
-<p>在&lt;UNIX环境高级编程:文件I/O&gt;中有这样的解释：</p>
-
-<blockquote>
-  <p>当读或写一个文件时，使用<code>open</code>返回的文件描述符标识该文件，将其作为参数传送给<code>read</code>或<code>write</code>。文件描述符的变化范围是<code>0~OPEN_MAX</code>。</p>
-</blockquote>
-
-<p>关于文件描述符的最大个数问题，从<code>stackoverflow</code>上找到了以下几个问题的回复，可参考：</p>
-
-<p><a href="https://stackoverflow.com/questions/870173/is-there-a-limit-on-number-of-open-files-in-windows">1.Is there a limit on number of open files in Windows</a><br />
-<a href="https://stackoverflow.com/questions/17931583/maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux">2.maximum-number-of-files-that-can-be-opened-by-c-fopen-in-linux</a><br />
-<a href="https://stackoverflow.com/questions/3184345/fopen-problem-too-many-open-files">3.fopen-problem-too-many-open-files</a></p>
-
-<p>关于<code>fopen</code>的使用，通常会判断返回值是否<code>NULL</code>来判断是否打开成功，其实除此之外，还可以继续监测出错的类型<code>errno</code>，并用<code>strerror()</code>函数直接显示出错的具体原因。技巧如下：</p>
-
-<p><figure class='code'><figcaption><span>fopen_tips </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;error.h&gt;&lt;/error.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">pFile</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="err">“</span><span class="n">file_full_path</span><span class="err">”</span><span class="p">,</span> <span class="err">“</span><span class="n">rb</span><span class="err">”</span><span class="p">);</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">pFile</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="err">“</span><span class="n">Open</span> <span class="n">File</span> <span class="nl">Fail</span><span class="p">:</span><span class="o">%</span><span class="n">s</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<h2 id="section-3">函数声明</h2>
-
-<p>函数定义是指对函数功能的确立，包括指定函数名、函数值类型、形参类型、函数体等，它是一个完整的、独立的函数单位。</p>
-
-<p>函数声明的作用则是把函数的名字、函数类型以及形参类型、个数和顺序通知编译系统，以便在调用函数时系统按此进行对照检查。</p>
-
-<p>注意，C 语言环境下，如果函数不进行声明就使用，可能会产生错误，因为默认将返回值作为 int 类型来处理，所以，最好是在使用之前对函数进行声明。</p>
-
-<p>这个错误之前搞了我好久……囧，例子如下。</p>
-
-<p><figure class='code'><figcaption><span>float_int.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdint.h&gt;&lt;/stdint.h&gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">float</span> <span class="n">mid</span><span class="p">(</span><span class="kt">float</span> <span class="n">a</span><span class="p">,</span> <span class="kt">float</span> <span class="n">b</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p><figure class='code'><figcaption><span>main.c </span></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class='line'><span class="cp">#include &lt;stdlib.h&gt;&lt;/stdlib.h&gt;&lt;/stdio.h&gt;&lt;/p&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="err">“</span><span class="o">%</span><span class="n">f</span><span class="err">\</span><span class="n">n</span><span class="err">”</span><span class="p">,</span> <span class="n">mid</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">));</span>
-</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>编译上面的两个函数<code>gcc main.c float_int.c</code>, 之后运行它，输出时 0.00000.</p>
-
-<p>错误的原因是没有函数声明，默认认为函数返回值类型为 int.</p>
 
 ]]></content>
   </entry>

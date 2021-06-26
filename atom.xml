@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-22T16:42:42-07:00</updated>
+  <updated>2021-06-26T06:14:53-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -1056,6 +1056,686 @@ a) 如果 α = -90-0,如图4(e)所示，搜索四个点；并寻找新的 MBD �
 
 
 </H.264>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[程序链接(Program Linking)]]></title>
+    <link href="http://lazybing.github.io/blog/2020/06/25/program-linking/"/>
+    <updated>2020-06-25T15:22:39-07:00</updated>
+    <id>http://lazybing.github.io/blog/2020/06/25/program-linking</id>
+    <content type="html"><![CDATA[<ul id="markdown-toc">
+  <li><a href="#section" id="markdown-toc-section">链接示例</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">静态链接</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">目标文件</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">可重定位目标文件</a>    <ul>
+      <li><a href="#section-4" id="markdown-toc-section-4">符号和符号表</a></li>
+      <li><a href="#section-5" id="markdown-toc-section-5">符号解析</a>        <ul>
+          <li><a href="#section-6" id="markdown-toc-section-6">链接器如何解析多重定义的全局符号</a></li>
+          <li><a href="#section-7" id="markdown-toc-section-7">与静态库链接</a></li>
+          <li><a href="#section-8" id="markdown-toc-section-8">链接器如何使用静态库来解析引用</a></li>
+        </ul>
+      </li>
+      <li><a href="#section-9" id="markdown-toc-section-9">重定位</a>        <ul>
+          <li><a href="#section-10" id="markdown-toc-section-10">重定位条目</a></li>
+          <li><a href="#section-11" id="markdown-toc-section-11">重定位符号引用</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#section-12" id="markdown-toc-section-12">可执行目标文件</a></li>
+  <li><a href="#section-13" id="markdown-toc-section-13">共享目标文件</a></li>
+  <li><a href="#section-14" id="markdown-toc-section-14">处理目标文件的工具</a></li>
+</ul>
+
+<p><strong>链接</strong>是将各种代码和数据片段收集并组合成一个单一文件的过程，该文件可以被加载到内存并执行。理解链接的几个好处有：</p>
+
+<!--more-->
+
+<ul>
+  <li>理解链接器将帮助你构造大型程序。</li>
+  <li>理解链接器将帮助你避免一些危险的编程错误。</li>
+  <li>理解链接器将帮助你理解语言的作用域规则是如何实现的。</li>
+  <li>理解链接器将帮助你理解其他重要的系统概念。</li>
+  <li>理解链接器将使你能够利用共享库</li>
+</ul>
+
+<p>下面会介绍静态链接、加载时的共享库的动态链接、运行时的共享库动态链接等方面。</p>
+
+<h2 id="section">链接示例</h2>
+
+<p>通常说的编译程序包括如下四个方面：预处理(cpp)、编译(ccl)、汇编(as)、链接(ld)。比如，有如下 main.c 和 sum.c 两个文件。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">int sum(int *a, int n);
+</span><span class="line">
+</span><span class="line">int array[2] = {1, 2};
+</span><span class="line">
+</span><span class="line">int main()
+</span><span class="line">{
+</span><span class="line">    int val = sum(array, 2);
+</span><span class="line">    return val;
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">int sum(int *a, int n)
+</span><span class="line">{
+</span><span class="line">    int i, s = 0;
+</span><span class="line">    
+</span><span class="line">    for (i = 0; i &lt; n; i++) {
+</span><span class="line">        s += a[i];
+</span><span class="line">    }
+</span><span class="line">    
+</span><span class="line">    return s;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<p>编译命令：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$gcc -Og -o prog main.c sum.c 或
+</span><span class="line">$gcc -Og -v -o prog main.c sum.c</span></code></pre></td></tr></table></div></figure>
+
+<p>对上面的源文件进行如下操作:</p>
+
+<p>main.c—&gt;预处理(cpp)—&gt;main.i—&gt;编译器(ccl)—&gt;main.s—&gt;汇编器(as)—&gt;main.o<br />
+sum.c—-&gt;预处理(cpp)—&gt;sum.i—-&gt;编译器(ccl)—&gt;sum.s—-&gt;汇编器(as)—&gt;sum.o<br />
+main.o + sum.o—&gt;链接器(ld)—&gt;prog</p>
+
+<h2 id="section-1">静态链接</h2>
+
+<p>静态链接以一组可重定位目标文件和命令行参数作为输入，生成一个完全链接的、可以加载和运行可执行目标文件作为输出。</p>
+
+<p>为构造可执行文件，链接器主要完成两项任务：</p>
+
+<ul>
+  <li><strong>符号解析。</strong> 符号解析的目的是使得目标文件中符号的定义和引用匹配起来。例如引用一个函数名符号时，符号解析的功能就是找到函数的引用和定义，并将其匹配起来。</li>
+  <li><strong>重定位。</strong> 由编译器和汇编器生成的 .code 和 .data 节，都是从地址 0 开始的。链接器通过将每个符号定义为一个与内存关联起来，完成重定位，然后修改所有对这些符号的引用，使得它们指向这个内存位置。</li>
+</ul>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">main.o:     file format elf64-x86-64
+</span><span class="line">Disassembly of section .text:
+</span><span class="line">
+</span><span class="line">0000000000000000 &lt;main&gt;:
+</span><span class="line">   0:	55                   	push   %rbp
+</span><span class="line">   1:	48 89 e5             	mov    %rsp,%rbp
+</span><span class="line">   4:	48 83 ec 10          	sub    $0x10,%rsp
+</span><span class="line">   8:	be 02 00 00 00       	mov    $0x2,%esi
+</span><span class="line">   d:	48 8d 3d 00 00 00 00 	lea    0x0(%rip),%rdi        # 14 &lt;main+0x14&gt;
+</span><span class="line">  14:	e8 00 00 00 00       	callq  19 &lt;main+0x19&gt;
+</span><span class="line">  19:	89 45 fc             	mov    %eax,-0x4(%rbp)
+</span><span class="line">  1c:	8b 45 fc             	mov    -0x4(%rbp),%eax
+</span><span class="line">  1f:	c9                   	leaveq 
+</span><span class="line">  20:	c3                   	retq   
+</span><span class="line">  
+</span><span class="line">sum.o:     file format elf64-x86-64
+</span><span class="line">
+</span><span class="line">Disassembly of section .text:
+</span><span class="line">
+</span><span class="line">0000000000000000 &lt;sum&gt;:
+</span><span class="line">   0:	55                   	push   %rbp
+</span><span class="line">   1:	48 89 e5             	mov    %rsp,%rbp
+</span><span class="line">   4:	48 89 7d e8          	mov    %rdi,-0x18(%rbp)
+</span><span class="line">   8:	89 75 e4             	mov    %esi,-0x1c(%rbp)
+</span><span class="line">   b:	c7 45 fc 00 00 00 00 	movl   $0x0,-0x4(%rbp)
+</span><span class="line">  12:	c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
+</span><span class="line">  19:	eb 1d                	jmp    38 &lt;sum+0x38&gt;
+</span><span class="line">  1b:	8b 45 f8             	mov    -0x8(%rbp),%eax
+</span><span class="line">  1e:	48 98                	cltq   
+</span><span class="line">  20:	48 8d 14 85 00 00 00 	lea    0x0(,%rax,4),%rdx
+</span><span class="line">  27:	00 
+</span><span class="line">  28:	48 8b 45 e8          	mov    -0x18(%rbp),%rax
+</span><span class="line">  2c:	48 01 d0             	add    %rdx,%rax
+</span><span class="line">  2f:	8b 00                	mov    (%rax),%eax
+</span><span class="line">  31:	01 45 fc             	add    %eax,-0x4(%rbp)
+</span><span class="line">  34:	83 45 f8 01          	addl   $0x1,-0x8(%rbp)
+</span><span class="line">  38:	8b 45 f8             	mov    -0x8(%rbp),%eax
+</span><span class="line">  3b:	3b 45 e4             	cmp    -0x1c(%rbp),%eax
+</span><span class="line">  3e:	7c db                	jl     1b &lt;sum+0x1b&gt;
+</span><span class="line">  40:	8b 45 fc             	mov    -0x4(%rbp),%eax
+</span><span class="line">  43:	5d                   	pop    %rbp
+</span><span class="line">  44:	c3                   	retq</span></code></pre></td></tr></table></div></figure>
+
+<p>上面 text section 是 main.o 和 sum.o 反编译出来的，可以看出，main 函数和 sum 函数都是从地址 0 开始的。将 main.o 和 sum.o 链接生成 prog 可执行文件，反编译可执行文件后，部分 section 如下：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">00000000000005fa &lt;main&gt;:
+</span><span class="line"> 5fa:	48 83 ec 08          	sub    $0x8,%rsp
+</span><span class="line"> 5fe:	be 02 00 00 00       	mov    $0x2,%esi
+</span><span class="line"> 603:	48 8d 3d 06 0a 20 00 	lea    0x200a06(%rip),%rdi        # 201010 &lt;array&gt;
+</span><span class="line"> 60a:	e8 05 00 00 00       	callq  614 &lt;sum&gt;
+</span><span class="line"> 60f:	48 83 c4 08          	add    $0x8,%rsp
+</span><span class="line"> 613:	c3                   	retq   
+</span><span class="line">
+</span><span class="line">0000000000000614 &lt;sum&gt;:
+</span><span class="line"> 614:	b8 00 00 00 00       	mov    $0x0,%eax
+</span><span class="line"> 619:	ba 00 00 00 00       	mov    $0x0,%edx
+</span><span class="line"> 61e:	eb 09                	jmp    629 &lt;sum+0x15&gt;
+</span><span class="line"> 620:	48 63 ca             	movslq %edx,%rcx
+</span><span class="line"> 623:	03 04 8f             	add    (%rdi,%rcx,4),%eax
+</span><span class="line"> 626:	83 c2 01             	add    $0x1,%edx
+</span><span class="line"> 629:	39 f2                	cmp    %esi,%edx
+</span><span class="line"> 62b:	7c f3                	jl     620 &lt;sum+0xc&gt;
+</span><span class="line"> 62d:	f3 c3                	repz retq 
+</span><span class="line"> 62f:	90                   	nop</span></code></pre></td></tr></table></div></figure>
+
+<p>从上面可以看出，可执行文件中的 main 和 sum 的地址已经不再是 0， main 中调用了 sum 的地址为 614,切好就是 sum 的地址。</p>
+
+<h2 id="section-2">目标文件</h2>
+
+<p>目标文件有三种形式：可重定位的目标文件、可执行的目标文件、共享目标文件。</p>
+
+<ul>
+  <li><strong>可重定位的目标文件</strong> 是包含二进制代码的数据，其可以在编译时与其他可重定位目标文件结合生成可执行文件。</li>
+  <li><strong>可执行目标文件</strong> 包含二进制代码和数据，可直接复制到内存中执行。</li>
+  <li><strong>共享目标文件</strong> 特殊的可重定位目标文件，可以在加载或运行时被动态地加载进内存并链接。</li>
+</ul>
+
+<h2 id="section-3">可重定位目标文件</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">ELF 头</th>
+      <th style="text-align: center">描述生成该文件的系统的字的大小和字节顺序，以及包含帮助链接器语法分析和解释目标文件的信息</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">.text</td>
+      <td style="text-align: center">已编译程序的机器代码</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.rodata</td>
+      <td style="text-align: center">只读数据，比如 printf 中的字符串</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.data</td>
+      <td style="text-align: center">已初始化的全局和静态 C 变量</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.bss</td>
+      <td style="text-align: center">未初始化的全局和静态 C 变量, 以及所有被初始化为 0 的全局或静态变量</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.symtab</td>
+      <td style="text-align: center">一个符号表，它存放在程序中定义和引用的函数和全局变量的信息</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.rel.text</td>
+      <td style="text-align: center">一个 .text 节中位置的列表，当链接器把这个目标文件和其他文件组合时，需要修改这些位置</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.rel.data</td>
+      <td style="text-align: center">被模块引用或定义的所有全局变量的重定位信息</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.debug</td>
+      <td style="text-align: center">调试符号表，与上面的 symtab 不同，它还包含了局部变量和类型定义，以及原始的 C 源文件</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.line</td>
+      <td style="text-align: center">原始 C 源程序中的行号和 .text 节中机器指令之间的映射</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">.strtab</td>
+      <td style="text-align: center">一个字符串表，包括 .symtab 和 .debug 节中的符号表</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">节点头部</td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>给出一个程序示例 obj.c：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#include &lt;stdio.h&gt;
+</span><span class="line">
+</span><span class="line">int AAA = 3;
+</span><span class="line">
+</span><span class="line">int sum(int a, int b)
+</span><span class="line">{
+</span><span class="line">    return a + b;
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">int main(int argc, char **argv)
+</span><span class="line">{
+</span><span class="line">    int a = 0;
+</span><span class="line">    int b = 1;
+</span><span class="line">    int c;
+</span><span class="line">
+</span><span class="line">    static int aa = 0;
+</span><span class="line">    static int bb = 1;
+</span><span class="line">    static int cc;
+</span><span class="line">
+</span><span class="line">    printf("a %d aa %d b %d bb %d c %d cc %d AAA %d\n", a, aa, b, bb, c, cc, AAA);
+</span><span class="line">    c = sum(AAA, AAA);
+</span><span class="line">
+</span><span class="line">    return 0;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<p>编译该文件 obj.c ：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$ gcc -g -c obj.c
+</span><span class="line">$ objdump -D obj.o &gt; obj.txt</span></code></pre></td></tr></table></div></figure>
+
+<p>反编译生成的可重定位目标文件，下面给出几部分</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">Disassembly of section .data:
+</span><span class="line">
+</span><span class="line">0000000000000000 &lt;AAA&gt;:
+</span><span class="line">   0:	03 00                	add    (%rax),%eax
+</span><span class="line">	...
+</span><span class="line">
+</span><span class="line">0000000000000004 &lt;bb.2260&gt;:
+</span><span class="line">   4:	01 00                	add    %eax,(%rax)
+</span><span class="line">	...
+</span><span class="line">
+</span><span class="line">Disassembly of section .bss:
+</span><span class="line">
+</span><span class="line">0000000000000000 &lt;cc.2261&gt;:
+</span><span class="line">   0:	00 00                	add    %al,(%rax)
+</span><span class="line">	...
+</span><span class="line">
+</span><span class="line">0000000000000004 &lt;aa.2259&gt;:
+</span><span class="line">   4:	00 00                	add    %al,(%rax)
+</span><span class="line">	...</span></code></pre></td></tr></table></div></figure>
+
+<p>可以看出，<code>.data</code> 包含了已初始化的全局变量 AAA、和静态变量 bb。<code>.bss</code>包含了未初始化的静态变量 cc 和初始化为零的静态变量 aa。但要注意，对于局部的变量 a、b、c并没有出现在上面的几个节中，因为局部变量在运行时被保护在栈中，既不出现在<code>.data</code>节中，也不出现在<code>.bss</code> 中。</p>
+
+<h3 id="section-4">符号和符号表</h3>
+
+<p>对于一个可重定位的模块 m 来说，它包含的定义和引用的符号，包含三种类型：
+* 由模块 m 定义并能被其他模块引用的全局符号。
+* 由其他模块定义并被模块 m 引用的全局符号。
+* 只被模块 m 定义和引用的局部符号。</p>
+
+<p>注意，链接器符号和程序变量是不同的，.symtab 中的符号表不包含对应于本地非静态程序变量的任何符号，非静态程序变量符号在运行时在栈中管理，链接器对此类符号不感兴趣，（但带有static 属性的变量除外）。</p>
+
+<p>下面给出符号表的一个示例 m.o 和 swap.o：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">void swap();
+</span><span class="line">
+</span><span class="line">int buf[2] = {1, 2};
+</span><span class="line">
+</span><span class="line">int main()
+</span><span class="line">{
+</span><span class="line">    sawp();
+</span><span class="line">    return 0;
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">
+</span><span class="line">extern int buf[];
+</span><span class="line">
+</span><span class="line">int *bufp0 = &amp;buf[0];
+</span><span class="line">int *bufp1;
+</span><span class="line">
+</span><span class="line">void swap()
+</span><span class="line">{
+</span><span class="line">    int temp;
+</span><span class="line">
+</span><span class="line">    bufp1 = &amp;buf[1];
+</span><span class="line">    temp  = *bufp0;
+</span><span class="line">    *bufp0 = *bufp1;
+</span><span class="line">    *bufp1 = temp;
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<p>使用 readelf 工具对 swap.o 查看符号表如下:</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">Symbol table '.symtab' contains 13 entries:
+</span><span class="line">   Num:    Value          Size Type    Bind   Vis      Ndx Name
+</span><span class="line">     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+</span><span class="line">     1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS swap.c
+</span><span class="line">     2: 0000000000000000     0 SECTION LOCAL  DEFAULT    1 
+</span><span class="line">     3: 0000000000000000     0 SECTION LOCAL  DEFAULT    3 
+</span><span class="line">     4: 0000000000000000     0 SECTION LOCAL  DEFAULT    4 
+</span><span class="line">     5: 0000000000000000     0 SECTION LOCAL  DEFAULT    5 
+</span><span class="line">     6: 0000000000000000     0 SECTION LOCAL  DEFAULT    8 
+</span><span class="line">     7: 0000000000000000     0 SECTION LOCAL  DEFAULT    9 
+</span><span class="line">     8: 0000000000000000     0 SECTION LOCAL  DEFAULT    7 
+</span><span class="line">     9: 0000000000000000     8 OBJECT  GLOBAL DEFAULT    5 bufp0
+</span><span class="line">    10: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND buf
+</span><span class="line">    11: 0000000000000008     8 OBJECT  GLOBAL DEFAULT  COM bufp1
+</span><span class="line">    12: 0000000000000000    63 FUNC    GLOBAL DEFAULT    1 swap</span></code></pre></td></tr></table></div></figure>
+
+<p>从上面可以看出几个符号的解析如下:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">符号</th>
+      <th style="text-align: center">.symtab 条目</th>
+      <th style="text-align: center">符号类型</th>
+      <th style="text-align: center">所属模块</th>
+      <th style="text-align: center">节</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">buf</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">extern</td>
+      <td style="text-align: center">m.o</td>
+      <td style="text-align: center">.data</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bufp0</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">GLOBAL</td>
+      <td style="text-align: center">swap.o</td>
+      <td style="text-align: center">.data</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">bufp1</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">GLOBAL</td>
+      <td style="text-align: center">swap.o</td>
+      <td style="text-align: center">.common</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">swap</td>
+      <td style="text-align: center">Yes</td>
+      <td style="text-align: center">GLOBAL</td>
+      <td style="text-align: center">swap.o</td>
+      <td style="text-align: center">.text</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">temp</td>
+      <td style="text-align: center">No</td>
+      <td style="text-align: center">-</td>
+      <td style="text-align: center">-</td>
+      <td style="text-align: center">-</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="section-5">符号解析</h3>
+
+<p>链接器解析符号引用的方法是将每个引用与它输入的可重定位目标文件的符号表中的一个确定的符号定义关联起来。对全局符号的解析，如果多个目标文件中定义相同名字的全局符号，链接器要么给出错误提示，要么以某种方法选出一个定义并抛弃其他定义。</p>
+
+<h4 id="section-6">链接器如何解析多重定义的全局符号</h4>
+
+<p>编译时，编译器向汇编器输出每个全局符号，或者是强或者是弱，汇编器把这个信息隐含地编码在可重定位目标文件的符号表里。函数和已初始化的全局变量是强符号，未初始化的全局变量是弱符号。链接规则如下：
+* 不允许有多个同名的强符号。
+* 如果有一个强符号和多个弱符号同名，选择强符号。
+* 如果有多个弱符号同名，从中任选一个。</p>
+
+<h4 id="section-7">与静态库链接</h4>
+
+<p>静态库，将所有相关的目标文件模块打包成一个单独的文件，该文件可以作为链接器的输入，当链接器构造一个输出的可执行文件时，链接器只会复制该文件中被应用程序引用的目标模块，这样的文件称为静态库。</p>
+
+<h4 id="section-8">链接器如何使用静态库来解析引用</h4>
+
+<p>解析阶段，链接器<strong>从左到右(有序的)</strong>按照它们在编译器驱动程序命令行上出现的顺序来扫描可重定位目标文件和存档文件。链接器会维护三个集合：可重定位目标文件集合E、未解析的符号集合U、已定义的符号集合D。链接器的解析过程如下:</p>
+
+<ul>
+  <li>对命令行上的每个输入文件 f，链接器判断是否为目标文件或静态库，如果是目标文件，将其添加到E，修改U 和 D，继续解析下一个文件。</li>
+  <li>如果 f 是静态库，链接器尝试匹配 U 中未解析的符号和由存档文件成员定义的符号。匹配成功，将模块添加到E 中，修改 U 和 D。</li>
+  <li>链接器扫描完输入文件后，U 非空，链接器输出一个错误并终止。否则，它会合并和重定位 E 中的目标文件，生成可执行文件。</li>
+</ul>
+
+<p>从链接器解析静态库的原理可以看出，编译时，静态库存放的位置很重要，同样的目标文件和静态库，位置不同，可能编译结果就不同了。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">$gcc -static ./libvector.a main.c
+</span><span class="line">$gcc -static main.c ./libvector.a</span></code></pre></td></tr></table></div></figure>
+
+<h3 id="section-9">重定位</h3>
+
+<p>链接器完成符号解析后，就把代码中的每个符号和定义关联起来了。现在链接器就可以重定位了，重定位由两步组成：</p>
+
+<ul>
+  <li>重定位节和符号定义。链接器将所有相同类型的 section 合并成一个新的 section。比如，将所有模块的 .data 合并成一个新的 .data。之后将运行时的内存地址赋给新的 section 以及每个模块的定义。</li>
+  <li>重定位节中的符号引用。链接器修改 .data 和 .text 中对每个符号的引用，使得它们指向正确的运行时地址。</li>
+</ul>
+
+<h4 id="section-10">重定位条目</h4>
+
+<p>汇编器遇到对最终位置未知的目标引用，会生成一个重定位条目，告知链接器在将目标文件合并成可执行文件时如何修改该引用。代码的重定位条目放在 .rel.text 中，已初始化数据的重定位条目放在 .rel.data 中.</p>
+
+<p>重定位类型有 32 种，最常用的两种是:</p>
+
+<ul>
+  <li><strong>R_X86_64_P32</strong>，重定位一个使用 32 位 PC  相对地址的引用。比如调用函数常用的 call 指令</li>
+  <li><strong>R_X86_64_32</strong>，重定位一个使用 32 位绝对地址的引用</li>
+</ul>
+
+<h4 id="section-11">重定位符号引用</h4>
+<p>链接器的重定位算法的伪代码如下：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">foreach section s {
+</span><span class="line">    foreach relocation entry r {
+</span><span class="line">        refptr = s + r.offset;  /*ptr to reference to be relocated*/
+</span><span class="line">        
+</span><span class="line">        /* Relocate a PC-relative reference */
+</span><span class="line">        if (r.type == R_X86_64_PC32) {
+</span><span class="line">            refaddr = ADDR(s) + r.offset; /* ref's run-time address */
+</span><span class="line">            *refptr = (unsigned)(ADDR(r.symbol) + r.addend - refaddr);
+</span><span class="line">        }
+</span><span class="line">        
+</span><span class="line">        /* Relocate an absolute reference */
+</span><span class="line">        if (r.type == R_X86_64_32) {
+</span><span class="line">            *refptr = (unsigned)(ADDR(r.symbol) + r.addend);
+</span><span class="line">        }
+</span><span class="line">    }
+</span><span class="line">}</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="section-12">可执行目标文件</h2>
+
+<p>可执行目标文件格式类似于可重定位的目标文件格式，稍有不同的是：可执行目标文件有程序的入口点（程序运行时要执行的第一条指令地址）、<code>.text/.rodata/.data</code>节已经被重定位到它们最终运行时内存地址、可执行文件已经被重定位所以不需要 <code>.rel</code> 节。</p>
+
+<p>加载器会将可执行目标文件中的代码和数据从磁盘复制到内存中，然后跳转到程序的第一条指令或入口点来运行该程序。</p>
+
+<h2 id="section-13">共享目标文件</h2>
+
+<p>静态库需要定期维护和更新，静态库的代码被复制到每个运行进程的文本段中，会极大的浪费内存系统资源。共享库可以解决静态库的问题，共享库是一个目标模块，在运行和加载时，可加载到任意的内存地址，并和内存中的程序连接起来。</p>
+
+<p>动态加载和链接共享库:Linux系统为动态链接器提供了一个简单的接口，允许应用程序在运行时加载和链接共享库。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">#include &lt;dlfcn.h&gt;
+</span><span class="line">void *dlopen(const char *filename, int flag);
+</span><span class="line">void *dlsym(void *handle, char *symbol);
+</span><span class="line">int dlclose(void *handle);
+</span><span class="line">const char *dlerror(void);</span></code></pre></td></tr></table></div></figure>
+
+<p>共享库的一个主要目的就是允许多个正在运行的进程共享内存中相同的库代码，从而节约宝贵的内存资源。现代系统以这样一种方式编译共享模块的代码段，使得可以把它们加载到内存的任何位置而无需链接器修改。使用该方法，无限多个进程可以共享一个共享模块的代码段的单一副本。加载而无需重定位的代码称为位置无关吗。</p>
+
+<h2 id="section-14">处理目标文件的工具</h2>
+<p>Linux系统中有很多工具可以帮忙处理目标文件。</p>
+
+<ul>
+  <li><strong>ar</strong> 创建静态库，插入、删除、列出和提取成员。</li>
+  <li><strong>strings</strong> 列出目标文件中所有可打印的字符串。</li>
+  <li><strong>strip</strong> 从目标文件中删除符号表信息。</li>
+  <li><strong>nm</strong> 列出一个目标文件的符号表中定义的符号。</li>
+  <li><strong>size</strong> 列出目标文件中节的名字和大小。</li>
+  <li><strong>readelf</strong> 显示目标文件的完整结构。</li>
+  <li><strong>objdump</strong> 所有二进制工具之母。能够显示目标文件中所有信息，最大作用是反编译 .text 节中的二进制指令。</li>
+  <li><strong>ldd</strong> 列出可执行文件在运行时所需要的共享库。</li>
+</ul>
 ]]></content>
   </entry>
   
@@ -3607,398 +4287,6 @@ AV1 支持从 8x8 到 64x64 的块，支持调色板模式，编码器会自动�
   <li><a href="http://www.mirlab.org/conference_papers/international_conference/ICASSP%202018/pdfs/0001193.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
   <li><a href="https://jmvalin.ca/misc_stuff/icassp2018_slides.pdf">The AV1 Constrained Directional Enhancement Filter</a></li>
 </ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ARM64 汇编指令总结]]></title>
-    <link href="http://lazybing.github.io/blog/2019/01/24/neon-of-coding/"/>
-    <updated>2019-01-24T06:35:54-08:00</updated>
-    <id>http://lazybing.github.io/blog/2019/01/24/neon-of-coding</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#sqdmulhvectorby-element" id="markdown-toc-sqdmulhvectorby-element">SQDMULH(vector/by element)</a></li>
-  <li><a href="#sqrdmulhvectorby-element" id="markdown-toc-sqrdmulhvectorby-element">SQRDMULH(vector/by element)</a></li>
-  <li><a href="#sqrshrun-sqrshrun2" id="markdown-toc-sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</a></li>
-  <li><a href="#sqshrun-sqshrun2" id="markdown-toc-sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</a></li>
-  <li><a href="#shl" id="markdown-toc-shl">SHL</a></li>
-  <li><a href="#shll-shll2" id="markdown-toc-shll-shll2">SHLL, SHLL2</a></li>
-  <li><a href="#sshll-sshll2" id="markdown-toc-sshll-sshll2">SSHLL, SSHLL2</a></li>
-  <li><a href="#ushll-ushll2" id="markdown-toc-ushll-ushll2">USHLL, USHLL2</a></li>
-  <li><a href="#trn1--trn2" id="markdown-toc-trn1--trn2">TRN1 &amp; TRN2</a></li>
-  <li><a href="#sxtl-sxtl2" id="markdown-toc-sxtl-sxtl2">SXTL, SXTL2</a></li>
-  <li><a href="#uxtl-uxtl2" id="markdown-toc-uxtl-uxtl2">UXTL, UXTL2</a></li>
-  <li><a href="#ext" id="markdown-toc-ext">EXT</a></li>
-  <li><a href="#bfm-ubfm-sbfmbitfield-move" id="markdown-toc-bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</a></li>
-  <li><a href="#srshr" id="markdown-toc-srshr">SRSHR</a></li>
-</ul>
-
-<p>ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。</p>
-
-<p>ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
-
-<!--more-->
-
-<p>指令格式：</p>
-
-<p><code>&lt;Opcode&gt;[&lt;Cond&gt;]&lt;S&gt; &lt;Rd&gt;, &lt;Rn&gt; [.&lt;Opcode2&gt;]</code></p>
-
-<ul>
-  <li>其中尖括号的选项是必须的，花括号是可选的。</li>
-  <li>A32 : Rd==&gt;{R0-R14}</li>
-  <li>A64 : Rd==&gt;Xt==&gt;{X0-X30}</li>
-</ul>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">标识符</th>
-      <th style="text-align: center">备注</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">Opcode</td>
-      <td style="text-align: center">操作码，也就是助记符，说明指令需要执行的操作类型</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Cond</td>
-      <td style="text-align: center">指令执行条件码，在编码中占4bit, 0b000-0b1110</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">S</td>
-      <td style="text-align: center">条件码设置项，决定本次指令是否影响 PSTATE 寄存器响应状态位值</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Rd/Xt</td>
-      <td style="text-align: center">目标寄存器，A32 指令可以选择 R0-R14，T32指令大部分只能选择R0-R7,A64指令可以选择X0-X30 或 W0-W30</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Rn/Xn</td>
-      <td style="text-align: center">第一个操作数的寄存器，和 Rd 一样，不同指令有不同要求</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">Opcode2</td>
-      <td style="text-align: center">第二个操作数，可以是立即数，寄存器Rm 和寄存器移位方式(Rm, #shift)</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="sqdmulhvectorby-element">SQDMULH(vector/by element)</h2>
-
-<p>Signed saturating Doubling Multiply return High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
-
-<p>Scalar:</p>
-
-<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
-
-<p>Vector:</p>
-
-<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP</li>
-  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP</li>
-  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP</li>
-  <li><code>&lt;T&gt;</code>:4H/8H/2S/4S 中的一个</li>
-</ul>
-
-<p>示例</p>
-
-<ul>
-  <li>sqdmulh v0.8h, v0.8h, v30.8h</li>
-</ul>
-
-<p>Signed saturation Doubling Multiply return High half(by element).该指令将第一个源寄存器的每个矢量元素乘以第二个源寄存器的某个特定矢量元素，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
-
-<p>Scalar:</p>
-
-<p><code>SQDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
-
-<p>Vector:</p>
-
-<p><code>SQDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
-
-<h2 id="sqrdmulhvectorby-element">SQRDMULH(vector/by element)</h2>
-
-<p>Signed saturating Rounding Doubling Multiply returning High half.该指令会将两个源寄存器中对应的元素相乘，将结果加倍，并把结果的高半部分放到矢量中，最后把矢量放到目的寄存器 SIMD&amp;FP 中。</p>
-
-<p>Scalar:</p>
-
-<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;V&gt;&lt;m&gt;</code></p>
-
-<p>Vector:</p>
-
-<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
-
-<p>Scalar:</p>
-
-<p><code>SQRDMULH &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
-
-<p>Vector:</p>
-
-<p><code>SQRDMULH &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;Ts&gt;[&lt;index&gt;]</code></p>
-
-<h2 id="sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</h2>
-
-<p>Signed saturating Rounded Shift Right Unsigned Narrow(immediate).</p>
-
-<p>Scalar:</p>
-
-<p><code>SQRSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
-
-<p>示例：</p>
-
-<ul>
-  <li>sqrshrun v0.8b, v1.8h, #5</li>
-</ul>
-
-<p>Vector:</p>
-
-<p><code>SQRSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-</ul>
-
-<p>示例：</p>
-
-<ul>
-  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
-</ul>
-
-<h2 id="sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</h2>
-
-<p>Signed saturating Shift Right Unsigned Narror(immediate).</p>
-
-<p>Scalar:</p>
-
-<p><code>SQSHRUN &lt;Vb&gt;&lt;d&gt;, &lt;Va&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
-
-<p>Vector:</p>
-
-<p><code>SQSHRUN{2} &lt;Vd&gt;.&lt;Tb&gt;, &lt;Vn&gt;.&lt;Ta&gt;, #&lt;shift&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-</ul>
-
-<p>示例：</p>
-
-<ul>
-  <li>sqrshrun2 v0.16b, v1.8h, #5</li>
-</ul>
-
-<h2 id="shl">SHL</h2>
-
-<p>Shift Left(immediate)。</p>
-
-<p>Scalar:</p>
-
-<p><code>SHL &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
-
-<p>Vector:</p>
-
-<p><code>SHL &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-</ul>
-
-<h2 id="shll-shll2">SHLL, SHLL2</h2>
-
-<p>Shift Left Long(by element size)。</p>
-
-<p>Vector:</p>
-
-<p><code>SHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-  <li>
-    <p><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</p>
-  </li>
-  <li>shll  v28.8h, v30.8b,  #8</li>
-  <li>shll2 v29.8h, v30.16b, #8</li>
-</ul>
-
-<h2 id="sshll-sshll2">SSHLL, SSHLL2</h2>
-
-<p>Signed Shift Left Long(immediate)。</p>
-
-<p><code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-</ul>
-
-<h2 id="ushll-ushll2">USHLL, USHLL2</h2>
-
-<p>Unsigned Shift Left Long(immediate)。</p>
-
-<p><code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #&lt;shift&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 的名字。</li>
-  <li><code>&lt;Ta&gt;</code>:8H/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Tb&gt;</code>:8B/16B/4H/8H/2S/4S。</li>
-</ul>
-
-<h2 id="trn1--trn2">TRN1 &amp; TRN2</h2>
-
-<p>TRN1:转置向量 Transpose vector(primary), 该指令从零开始读取两个源寄存器 SIMD&amp;FP 的相应偶数向量元素，并将每个结果放到向量的连续元素，并将向量写到目的寄存器中。第一个源寄存器中的向量元素被放到目的寄存器的偶数元素位置，第二个源寄存器中的向量元素放到目的寄存器的奇数元素位置。</p>
-
-<p>Advanced SIMD variant</p>
-
-<p><code>TRN1 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;T&gt;</code>:8B/16B/4H/8H/2S/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
-</ul>
-
-<p>示例：</p>
-
-<ul>
-  <li>trn1 v4.2d, v4.2d, v5.2d</li>
-</ul>
-
-<p>TRN2:转置向量 Transpose vectors(secondary)。该指令读取两个源寄存器 SIMD&amp;FP 的相应奇数向量元素，并将每个结果放到向量的连续元素，并将向量写到目的寄存器中。第一个源寄存器中的向量元素被放到目的寄存器的偶数元素位置，第二个源寄存器中的向量元素放到目的寄存器的奇数元素位置。</p>
-
-<p>Advanced SIMD variant</p>
-
-<p><code>TRN2 &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;</code></p>
-
-<ul>
-  <li><code>&lt;Vd&gt;</code>:目的寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>T</code>:8B/16B/4H/8H/2S/4S/2D。</li>
-  <li><code>&lt;Vn&gt;</code>:第一个源寄存器 SIMD&amp;FP 名字。</li>
-  <li><code>&lt;Vm&gt;</code>:第二个源寄存器 SIMD&amp;FP 名字。</li>
-</ul>
-
-<p>示例：</p>
-
-<ul>
-  <li>trn2 v7.2s, v5.2s, v7.2s</li>
-</ul>
-
-<p><img src="http://lazybing.github.io/images/neon_coding/trn.png" /></p>
-
-<h2 id="sxtl-sxtl2">SXTL, SXTL2</h2>
-
-<p>SXTL:Signed extend Long,该指令</p>
-
-<p>Vector:</p>
-
-<p><code>SXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>SSHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
-
-<p>示例：</p>
-
-<ul>
-  <li>sxtl v0.8h, v0.8b</li>
-</ul>
-
-<h2 id="uxtl-uxtl2">UXTL, UXTL2</h2>
-
-<p>UXTL:Unsigned extend Long.</p>
-
-<p>Vector:</p>
-
-<p><code>UXTL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;</code> 等同于 <code>USHLL{2} &lt;Vd&gt;.&lt;Ta&gt;, &lt;Vn&gt;.&lt;Tb&gt;, #0</code></p>
-
-<p>示例：</p>
-
-<ul>
-  <li>uxtl v4.8h, v4.8b</li>
-</ul>
-
-<h2 id="ext">EXT</h2>
-
-<p>EXT:Extract vector from pair of vectors.</p>
-
-<p>Advanced SIMD variant</p>
-
-<p><code>EXT &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, &lt;Vm&gt;.&lt;T&gt;, #&lt;index&gt;</code></p>
-
-<p><img src="http://lazybing.github.io/images/neon_coding/ext.png" /></p>
-
-<p>示例：</p>
-
-<ul>
-  <li>ext v5.16b, v4.16b, v4.16b, #2</li>
-</ul>
-
-<h2 id="bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</h2>
-
-<p>BFM:</p>
-
-<p>32-bit variant</p>
-
-<p><code>BFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
-
-<p>64-bit variant</p>
-
-<p><code>BFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
-
-<p>SBFM:</p>
-
-<p>32-bit variant</p>
-
-<p><code>SBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
-
-<p>64-bit variant</p>
-
-<p><code>SBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
-
-<p>UBFM:</p>
-
-<p>32-bit variant</p>
-
-<p><code>UBFM &lt;Wd&gt;, &lt;Wn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
-
-<p>64-bit variant</p>
-
-<p><code>UBFM &lt;Xd&gt;, &lt;Xn&gt;, #&lt;immr&gt;, #&lt;imms&gt;</code></p>
-
-<p>示例：</p>
-
-<ul>
-  <li>ubfm w9, w5, #7, #13</li>
-</ul>
-
-<h2 id="srshr">SRSHR</h2>
-
-<p>SRSHR:Signed Rounding Shift Right(immediate)。</p>
-
-<p>Scalar variant:</p>
-
-<p><code>SRSHR &lt;V&gt;&lt;d&gt;, &lt;V&gt;&lt;n&gt;, #&lt;shift&gt;</code></p>
-
-<p>Vector:</p>
-
-<p><code>SRSHR &lt;Vd&gt;.&lt;T&gt;, &lt;Vn&gt;.&lt;T&gt;, #&lt;shift&gt;</code></p>
-
-<p>示例：</p>
-
-<ul>
-  <li>srshr v24.8h, v24.8h, #2</li>
-</ul>
 
 ]]></content>
   </entry>

@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>如何从FFMpeg中提取CODEC(以TTA Decoder为例) - 懒人李冰</title>
+  <title>懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="TTA 简介 FFMpeg 中 TTA Decoder 提取 TTA Decoder 中可能遇到的问题 提取 TTA Decoder 实现 FFMpeg 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA &hellip;">
+  <meta name="description" content="安装octorpess 部署octopress 发布新帖 基本配置 主题修改 添加图片 添加视频 添加文章目录 添加表格 多台机器上同时使用 在新的机器上创建 ssh key 并添加到 github 中。 配置环境。 使用技巧 octopress中添加Latex支持 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/">
+  <link rel="canonical" href="http://lazybing.github.io/posts/11/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -77,12 +77,15 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div>
-<article class="hentry" role="article">
+      <div class="blog-index">
   
+  
+  
+    <article>
+      
   <header>
     
-      <h1 class="entry-title">如何从FFMpeg中提取CODEC(以TTA Decoder为例)</h1>
+      <h1 class="entry-title"><a href="/blog/2015/05/01/create-github-blog-using-octopress/">使用Octopress 搭建个人博客</a></h1>
     
     
       <p class="meta">
@@ -91,115 +94,52 @@
 
 
 
-<time class='entry-date' datetime='2018-05-06T06:55:35-08:00'><span class='date'>2018 年 05 月 06 日</span> <span class='time'>6:55 am</span></time>
+<time class='entry-date' datetime='2015-05-01T19:47:37-07:00'><span class='date'>2015 年 05 月 01 日</span> <span class='time'>7:47 pm</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#tta-" id="markdown-toc-tta-">TTA 简介</a></li>
-  <li><a href="#ffmpeg--tta-decoder" id="markdown-toc-ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</a></li>
-  <li><a href="#tta-decoder-" id="markdown-toc-tta-decoder-">提取 TTA Decoder 中可能遇到的问题</a></li>
-  <li><a href="#tta-decoder--1" id="markdown-toc-tta-decoder--1">提取 TTA Decoder 实现</a></li>
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#octorpess" id="markdown-toc-octorpess">安装octorpess</a></li>
+  <li><a href="#octopress" id="markdown-toc-octopress">部署octopress</a></li>
+  <li><a href="#section" id="markdown-toc-section">发布新帖</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">基本配置</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">主题修改</a></li>
+  <li><a href="#section-3" id="markdown-toc-section-3">添加图片</a></li>
+  <li><a href="#section-4" id="markdown-toc-section-4">添加视频</a></li>
+  <li><a href="#section-5" id="markdown-toc-section-5">添加文章目录</a></li>
+  <li><a href="#section-6" id="markdown-toc-section-6">添加表格</a></li>
+  <li><a href="#section-7" id="markdown-toc-section-7">多台机器上同时使用</a>    <ul>
+      <li><a href="#ssh-key--github-" id="markdown-toc-ssh-key--github-">在新的机器上创建 ssh key 并添加到 github 中。</a></li>
+      <li><a href="#section-8" id="markdown-toc-section-8">配置环境。</a></li>
+      <li><a href="#section-9" id="markdown-toc-section-9">使用技巧</a></li>
+    </ul>
+  </li>
+  <li><a href="#octopresslatex" id="markdown-toc-octopresslatex">octopress中添加Latex支持</a></li>
 </ul>
 
-<p><a href="https://ffmpeg.org/">FFMpeg</a> 作为音视频领域的开源工具，它几乎可以实现所有针对音视频的处理。最近一直做得工作是从 FFMpeg 中提取特定的编解码器，本位以最简单的 TTA Decoder 为例，介绍如何同 FFMpeg 中提取 CODEC。</p>
-
-<!--more-->
-
-<h2 id="tta-">TTA 简介</h2>
-
-<p>TTA(The True Audio Codec) 是免费、简单、实时无损视频压缩。基于 Adaptive Prognostic Filters, TTA 同其他同类的开源项目有强竞争力。</p>
-
-<h2 id="ffmpeg--tta-decoder">FFMpeg 中 TTA Decoder</h2>
-
-<p>FFMpeg 中关于 TTA Decoder 的部分在<code>libavcodec/tta.c</code>中定义:</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">AVCodec ff_tta_decoder = {
-</span><span class="line">    .name           = "tta",
-</span><span class="line">    .long_name      = NULL_IF_CONFIG_SMALL("TTA (True Audio)"),
-</span><span class="line">    .type           = AVMEDIA_TYPE_AUDIO,
-</span><span class="line">    .id             = AV_CODEC_ID_TTA,
-</span><span class="line">    .priv_data_size = sizeof(TTAContext),
-</span><span class="line">    .init           = tta_decode_init,
-</span><span class="line">    .close          = tta_decode_close,
-</span><span class="line">    .decode         = tta_decode_frame,
-</span><span class="line">    .init_thread_copy = ONLY_IF_THREADS_ENABLED(init_thread_copy),
-</span><span class="line">    .capabilities     = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_FRAME_THREADS,
-</span><span class="line">    .priv_class       = &amp;tta_decoder_class,
-</span><span class="line">};</span></code></pre></td></tr></table></div></figure>
-
-<p>从 TTA AVCodec 的定义可以看出，Decoder 的主要函数只有三个<code>tta_decode_init</code>、<code>tta_decode_frame</code>、<code>tta_decode_close</code>三部分。其中 init 部分主要是解析 TTA Header 信息，decode 部分是真正解码部分，close 主要是释放内存。</p>
-
-<p>不管是硬件解码还是软件解码，Decoder 部分一般都包含六部分：解码器初始化、解码器释放、设置压缩数据给解码器、从解码器获取解码后的数据、设置参数给解码器、从解码器获取参数信息。因此我们可以按照上面的思路，将 FFMpeg 中的这几个函数拆分成相应的函数。</p>
-
-<h2 id="tta-decoder-">提取 TTA Decoder 中可能遇到的问题</h2>
-
-<h2 id="tta-decoder--1">提取 TTA Decoder 实现</h2>
+<p>详细记录使用<code>Octopress</code>的搭建和使用过程中遇到的问题。
 </div>
-
-
-  <footer>
-    <p class="meta">
-      
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/05/01/create-github-blog-using-octopress/">阅读全文;</a>
+    </footer>
   
 
-<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
 
-      
-
-
-
-
-<time class='entry-date' datetime='2018-05-06T06:55:35-08:00'><span class='date'>2018 年 05 月 06 日</span> <span class='time'>6:55 am</span></time>
-      
-
-<span class="categories">
+    </article>
   
-    <a class='category' href='/blog/categories/ffmpegyuan-ma-fen-xi/'>ffmpeg源码分析</a>
-  
-</span>
-
-
-    </p>
+  <div class="pagination">
     
-      <div class="sharing">
-  
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/" data-via="" data-counturl="http://lazybing.github.io/blog/2018/05/06/how-to-extract-codecs-from-ffmpeg/" >Tweet</a>
-  
-  
-  
-</div>
-
+    <a href="/blog/archives">Blog Archives</a>
     
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2018/03/25/audio-basic-concept/" title="Previous Post: 音频概念介绍(采样频率、帧率、通道数等)">&laquo; 音频概念介绍(采样频率、帧率、通道数等)</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2018/05/10/csapp-program-optimization/" title="Next Post: 深入理解计算机系统之优化程序性能">深入理解计算机系统之优化程序性能 &raquo;</a>
-      
-    </p>
-  </footer>
-</article>
-
+    <a class="next" href="/posts/10">Newer &rarr;</a>
+    
+  </div>
 </div>
-
 <aside class="sidebar">
   
     <section>
@@ -276,7 +216,6 @@
 
   
 </aside>
-
 
     </div>
   </div>
