@@ -144,7 +144,44 @@ qp = 12 + 6 * log2(qscale / 0.85)   (2)</p>
 
 <h1 id="vbv-algorithm">VBV Algorithm</h1>
 
+<p>VBV 是一种帧级别的码率控制算法，它是这样一种机制: VBV 相当于一个容器，每编码一帧，都从容器内取走对应 bit 的数据；与此同时，往容器内以固定的速度输入 bit。每编码完一帧，根据容器内的充盈状态(上溢/下溢)，更新接下来编码参数，使得容器的充盈程都总是处于合理的范围内。</p>
+
 <p>视频缓冲检测器(VBV, Video Buffer Verifer)是 MPEG 视频缓冲模型，可以确保码率不会超过某个最大值。VBV Buffer Size 通常设置为 maximum rate 的两倍;如果客户端缓存比较小，设置 bufsize 等于 maxrate;如果想要限制码流的码率，设置 buffersize 为 maximum rate 的一半或更小。</p>
+
+<p>先来看一下，x264 中关于 VBV 的几个变量定义：</p>
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="k">struct</span> <span class="kt">x264_ratecontrol_t</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">b_vbv</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">b_vbv_min_rate</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/*VBV stuff*/</span>
+</span><span class="line">    <span class="kt">double</span> <span class="n">buffer_size</span><span class="p">;</span>     <span class="c1">//VBV buffer size, 容器的总容量</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">buffer_fill_final</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">int64_t</span> <span class="n">buffer_fill_final_min</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">double</span> <span class="n">buffer_fill</span><span class="p">;</span> <span class="c1">//planned buffer, if all in-progress frames hit their bit budget</span>
+</span><span class="line">    <span class="n">doublt</span> <span class="n">buffer_rate</span><span class="p">;</span> <span class="c1">//# of bits added to buffer_fill after each frame</span>
+</span><span class="line">    <span class="kt">double</span> <span class="n">vbv_max_rate</span><span class="p">;</span><span class="c1">//# of bits added to buffer_fill per second</span>
+</span><span class="line">    <span class="kt">predictor_t</span> <span class="o">*</span><span class="n">pred</span><span class="p">;</span>  <span class="c1">//predict frame size from satd</span>
+</span><span class="line">    <span class="kt">int</span> <span class="n">single_frame_vbv</span><span class="p">;</span>
+</span><span class="line">    <span class="kt">float</span> <span class="n">rate_factor_max_increment</span><span class="p">;</span> <span class="c1">//Don&#39;t allow RF above(CRF + this value)</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 <p>参考文档:<br />
 <a href="https://codesequoia.wordpress.com/2010/04/19/what-are-cbr-vbv-and-cpb/">What are CBR, VBV and CPB</a>  <br />
