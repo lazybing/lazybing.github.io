@@ -14,6 +14,17 @@ categories: x264
 
 # 基础知识
 
+码率控制的主要过程是：  
+
+1. 根据前面已经编好的帧计算 SATD 值来预测当前帧的复杂度(第一帧 I 帧除外)；  
+2. 计算好复杂度后，根据复杂度和线性量化控制参数(qcomp)来计算 qpscale。qpscale 会影响最终编码时所用的 qp。  
+3. 根据目标码率和之前编码所用的比特数可以确定一个 rate_factor，若之前编码的比特数多与目标实际产生，则 rate_factor 减小。这个 rate_factor 是调整 qpscale 用的，还有 overflow 来对qpscale 来做溢出补偿处理来控制文件大小。    
+4. 最后根据计算公式得到 qp。
+
+参考文档：  
+
+[x264 码率控制算法原理](https://pianshen.com/article/4198342118)
+
 编码所需的 bits 与实际编码的复杂度和量化参数有关，复杂度越复杂，量化参数越小，所需 bits 越少。复杂度用运动补偿后残差的 SATD 表示。
 
 qscale = 0.85 * 2^((qp - 12)/6.0)   (1)   
@@ -33,9 +44,53 @@ static inline float qscale2qp(float qscale)
 }
 {% endcodeblock %}
 
+# 模糊复杂度估计
+
+One Pass 编码中，模糊复杂度是基于已编码帧的复杂度加权得到的：  
+
+blurred_complexity = cplxsum/cplxcount    
+cplxsum[i]   = cplxsum[i - 1] * 0.5 + satd[i - 1]  
+cplxcount[i] = cplxcount[i - 1] * 0.5 + 1  
+
+{% codeblock lang:c %}
+double wanted_bits, overflow = 1;
+
+rcc->last_satd = x264_rc_analyse_slice(h);
+rcc->short_term_cplxsum *= 0.5;
+rcc->short_term_cplxcount *= 0.5;
+rcc->short_term_cplxsum += rcc->last_satd / (CLIP_DURATION(h->fenc->f_duration) / BASE_FRAME_DURATION);
+rcc->short_term_cplxcount++;
+
+rce.text_bits = rc->last_satd;
+rce.blurred_complexity = rcc->short_term_cplxsum / rcc->short_term_cplxcount;
+
+{% endcodeblock %}
+
 # VBV Algorithm
 
+VBV 是一种帧级别的码率控制算法，它是这样一种机制: VBV 相当于一个容器，每编码一帧，都从容器内取走对应 bit 的数据；与此同时，往容器内以固定的速度输入 bit。每编码完一帧，根据容器内的充盈状态(上溢/下溢)，更新接下来编码参数，使得容器的充盈程都总是处于合理的范围内。  
+
 视频缓冲检测器(VBV, Video Buffer Verifer)是 MPEG 视频缓冲模型，可以确保码率不会超过某个最大值。VBV Buffer Size 通常设置为 maximum rate 的两倍;如果客户端缓存比较小，设置 bufsize 等于 maxrate;如果想要限制码流的码率，设置 buffersize 为 maximum rate 的一半或更小。
+
+先来看一下，x264 中关于 VBV 的几个变量定义：  
+{% codeblock lang:c %}
+struct x264_ratecontrol_t
+{
+    int b_vbv;
+    int b_vbv_min_rate;
+
+    /*VBV stuff*/
+    double buffer_size;     //VBV buffer size, 容器的总容量
+    int64_t buffer_fill_final;
+    int64_t buffer_fill_final_min;
+    double buffer_fill; //planned buffer, if all in-progress frames hit their bit budget
+    doublt buffer_rate; //# of bits added to buffer_fill after each frame
+    double vbv_max_rate;//# of bits added to buffer_fill per second
+    predictor_t *pred;  //predict frame size from satd
+    int single_frame_vbv;
+    float rate_factor_max_increment; //Don't allow RF above(CRF + this value)
+}
+{% endcodeblock %}
 
 参考文档:  
 [What are CBR, VBV and CPB](https://codesequoia.wordpress.com/2010/04/19/what-are-cbr-vbv-and-cpb/)    
