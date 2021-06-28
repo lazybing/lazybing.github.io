@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-06-27T07:43:26-07:00</updated>
+  <updated>2021-06-28T16:35:58-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -281,23 +281,9 @@ cplxcount[i] = cplxcount[i - 1] * 0.5 + 1</p>
 
 <p>在编码过程中，有时需要根据具体的算法和 RDO 模型来选择最终成本最低的预测模式。</p>
 
-<p>16x16 亮度采用垂直预测(模型 0)、水平预测(模型 1)、DC 预测(模型 2)、平面预测(模型 3)。通过 16x16 宏块通常是应用到简单的场景，并且没有很多细节。因此</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">16 X 16 Luminance adopted plumb prediction (model 0), plane prediction (model 1), DC prediction (model 2) and planar prediction (model 3). The prediction models less than 4 X 4 luminance. It can comprehend that the macroblock should be plainness through using of 16X 16 macroblock for intra-frame and not have many details, So
-</span><span class="line">it not necessary to support many texture prediction and then the luminance is likely to the prediction mode the only difference is the model code.
-</span><span class="line">
-</span><span class="line">For reducing the extra information because of 4 X 4
-</span><span class="line">prediction mode differences by the standard, it adopt a
-</span><span class="line">method which can make intra-frame prediction
-</span><span class="line">information trans into signal mode to realize the basic
-</span><span class="line">information compression.</span></code></pre></td></tr></table></div></figure>
+<p>16x16 亮度采用垂直预测(模型 0)、水平预测(模型 1)、DC 预测(模型 2)、平面预测(模型 3)。这些预测模式均小于 4x4 亮度。通过 16x16 宏块通常是应用到简单的场景，并且没有很多细节。因此不需要支持多个纹理预测，亮度很可能与预测模式不同，唯一的区别是模型码。</p>
+
+<p>为了减少标准中 4x4 预测模式差异带来的额外信息，采用了一种将帧内预测信息转换为信号模式的方法，从而实现基本信息压缩。</p>
 
 <h2 id="the-existing-intra-frame-prediction-algorithm-flows-and-questions">The Existing Intra-Frame Prediction Algorithm Flows And Questions</h2>
 
