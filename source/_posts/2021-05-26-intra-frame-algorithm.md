@@ -27,17 +27,9 @@ categories: 论文
 
 在编码过程中，有时需要根据具体的算法和 RDO 模型来选择最终成本最低的预测模式。
 
-16x16 亮度采用垂直预测(模型 0)、水平预测(模型 1)、DC 预测(模型 2)、平面预测(模型 3)。通过 16x16 宏块通常是应用到简单的场景，并且没有很多细节。因此
-```
-16 X 16 Luminance adopted plumb prediction (model 0), plane prediction (model 1), DC prediction (model 2) and planar prediction (model 3). The prediction models less than 4 X 4 luminance. It can comprehend that the macroblock should be plainness through using of 16X 16 macroblock for intra-frame and not have many details, So
-it not necessary to support many texture prediction and then the luminance is likely to the prediction mode the only difference is the model code.
+16x16 亮度采用垂直预测(模型 0)、水平预测(模型 1)、DC 预测(模型 2)、平面预测(模型 3)。这些预测模式均小于 4x4 亮度。通过 16x16 宏块通常是应用到简单的场景，并且没有很多细节。因此不需要支持多个纹理预测，亮度很可能与预测模式不同，唯一的区别是模型码。
 
-For reducing the extra information because of 4 X 4
-prediction mode differences by the standard, it adopt a
-method which can make intra-frame prediction
-information trans into signal mode to realize the basic
-information compression.
-```
+为了减少标准中 4x4 预测模式差异带来的额外信息，采用了一种将帧内预测信息转换为信号模式的方法，从而实现基本信息压缩。
 
 ## The Existing Intra-Frame Prediction Algorithm Flows And Questions
 
