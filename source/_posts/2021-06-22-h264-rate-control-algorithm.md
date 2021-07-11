@@ -8,7 +8,7 @@ categories: x264
 * list element with functor item
 {:toc}
 
-码率控制是 H.264 编码器中非常重要的一个模块。X264 的码率控制算法大致分为帧级码率控制、宏块级码率控制。帧级码率控制算法比如：VBV 调整。宏块级别码率控制比如：MBTree 算法。
+码率控制是 H.264 编码器中非常重要的一个模块。码率控制主要包括两部分：码率分配(Bit Allocation)、量化参数调整(Quantitative Parameter Adjustment)。X264 的码率控制算法大致分为帧级码率控制、宏块级码率控制。帧级码率控制算法比如：VBV 调整。宏块级别码率控制比如：MBTree 算法、VAQ 感知量化算法。
 
 <!--more-->
 
@@ -46,7 +46,9 @@ static inline float qscale2qp(float qscale)
 
 # 模糊复杂度估计
 
-One Pass 编码中，模糊复杂度是基于已编码帧的复杂度加权得到的：  
+One Pass 编码中，由经过运动补偿后残差的 SATD 代表一帧的复杂度，SATD 是将残差做  Hadrmard 变换后再取绝对值的总和，它作为一种简单的时频交换，能在一定程度上衡量生产码流的大小。
+
+模糊复杂度是基于已编码帧的复杂度加权得到的。使用复杂度加权，相对于使用单独一帧的复杂度，能避免 QP 的波动：  
 
 blurred_complexity = cplxsum/cplxcount    
 cplxsum[i]   = cplxsum[i - 1] * 0.5 + satd[i - 1]  
@@ -92,6 +94,114 @@ struct x264_ratecontrol_t
 }
 {% endcodeblock %}
 
+X264 中，关于 VBV 的调整在 clip_qscale 中。根据是否有 lookahead，可以分为 lookahead vbv 调整和实时 VBV 调整两种。
+
+## Lookahead vbv 调整
+
+从 lookahead 模块可以得到未来若干帧的复杂度。vbv 算法的原理是：一样的 qscale 应用到 lookahead 中的所有帧中，检测会不会有帧使得 VBV 缓存下溢，并且 lookahead 中所有帧编码结束后，缓存填充度在一个合理的范围内，小步调整 qscale 直到满足上述要求。
+
+{% codeblock lang:c %}
+int terminate = 0;
+/*Avoid an infinite loop*/
+for (int iterations = 0; iterations < 1000 && terminate != 3; iterations++)
+{
+	double frame_q[3];
+	double cur_bits = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
+	double buffer_fill_cur = rcc->buffer_fill - cur_bits;
+	double target_fill;
+	double total_duration = 0;
+	double last_duration = fenc_cpb_duration;
+	frame_q[0] = h->sh.i_type == SLICE_TYPE_I ? q * h->param.rc.f_ip_factor : q;
+	frame_q[1] = frame_q[0] * h->param.rc.f_pb_factor;
+	frame_q[2] = frame_q[0] / h->param.rc.f_ip_factor;
+
+	/* Loop over the planned future frames. */
+	for( int j = 0; buffer_fill_cur >= 0 && buffer_fill_cur <= rcc->buffer_size; j++ )
+	{
+	    total_duration += last_duration;
+	    buffer_fill_cur += rcc->vbv_max_rate * last_duration;
+	    int i_type = h->fenc->i_planned_type[j];
+	    int i_satd = h->fenc->i_planned_satd[j];
+	    if( i_type == X264_TYPE_AUTO )
+		break;
+	    i_type = IS_X264_TYPE_I( i_type ) ? SLICE_TYPE_I : IS_X264_TYPE_B( i_type ) ? SLICE_TYPE_B : SLICE_TYPE_P;
+	    cur_bits = predict_size( &rcc->pred[i_type], frame_q[i_type], i_satd );
+	    buffer_fill_cur -= cur_bits;
+	    last_duration = h->fenc->f_planned_cpb_duration[j];
+	}
+	/* Try to get to get the buffer at least 50% filled, but don't set an impossible goal. */
+	target_fill = X264_MIN( rcc->buffer_fill + total_duration * rcc->vbv_max_rate * 0.5, rcc->buffer_size * 0.5 );
+	if( buffer_fill_cur < target_fill )
+	{
+	    q *= 1.01;
+	    terminate |= 1;
+	    continue;
+	}
+	/* Try to get the buffer no more than 80% filled, but don't set an impossible goal. */
+	target_fill = x264_clip3f( rcc->buffer_fill - total_duration * rcc->vbv_max_rate * 0.5, rcc->buffer_size * 0.8, rcc->buffer_size );
+	if( rcc->b_vbv_min_rate && buffer_fill_cur > target_fill )
+	{
+	    q /= 1.01;
+	    terminate |= 2;
+	    continue;
+	}
+	break;
+}
+{% endcodeblock %}
+
+## 实时 VBV 调整
+
+如果没有 lookahead，未来帧的复杂度未知，只能根据当前帧的复杂度，控制缓存的充盈程度。算法主要流程如下：
+
+1. 对于 P 帧和第一个 I 帧，让当前帧编码完成后，缓存区至少还有一半容量。  
+2. 限制每帧大小不能超过当前缓存量的一半。  
+3. 限制每帧大小至少是 buffer_rate 的一半。buffer_rate = vbv-maxrate/fps。
+4. 限制 qscale 不能小于输入 qscale。
+
+{% codeblock lang:c %}
+    if( ( pict_type == SLICE_TYPE_P ||
+        ( pict_type == SLICE_TYPE_I && rcc->last_non_b_pict_type == SLICE_TYPE_I ) ) &&
+        rcc->buffer_fill/rcc->buffer_size < 0.5 )
+    {
+        q /= x264_clip3f( 2.0*rcc->buffer_fill/rcc->buffer_size, 0.5, 1.0 );
+    }
+
+    /* Now a hard threshold to make sure the frame fits in VBV.
+     * This one is mostly for I-frames. */
+    double bits = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
+    /* For small VBVs, allow the frame to use up the entire VBV. */
+    double max_fill_factor = h->param.rc.i_vbv_buffer_size >= 5*h->param.rc.i_vbv_max_bitrate / rcc->fps ? 2 : 1;
+    /* For single-frame VBVs, request that the frame use up the entire VBV. */
+    double min_fill_factor = rcc->single_frame_vbv ? 1 : 2;
+
+    if( bits > rcc->buffer_fill/max_fill_factor )
+    {
+        double qf = x264_clip3f( rcc->buffer_fill/(max_fill_factor*bits), 0.2, 1.0 );
+        q /= qf;
+        bits *= qf;
+    }
+    if( bits < rcc->buffer_rate/min_fill_factor )
+    {
+        double qf = x264_clip3f( bits*min_fill_factor/rcc->buffer_rate, 0.001, 1.0 );
+        q *= qf;
+    }
+    q = X264_MAX( q0, q );
+{% endcodeblock %}
+
+## minGOP vbv 调整
+
+B 帧 QP 不直接被 VBV 调整，它由 P 帧加一个偏移量得到。这一步检查当前 P 帧和（编码顺序）到下一个 P 帧之前的 B 帧的复杂度。适当调低 qscale (调高码率预算)，使得本 minGOPher 过后，缓存区没有上溢。
+
+{% codeblock lang:c %}
+double bits = predict_size(&rcc->pred[h->sh.i_type], q, rcc->last_satd);
+double frame_size_maximum = X264_MIN(rcc->frame_size_maximum, X264_MAX(rcc->buffer_fill, 0.001));
+if (bits > frame_size_maximum)
+    q *= bits / frame_size_maximum;
+
+if (!rcc->b_vbv_min_rate)
+    q = X264_MAX(q0, q);
+{% endcodeblock %}
+
 参考文档:  
 [What are CBR, VBV and CPB](https://codesequoia.wordpress.com/2010/04/19/what-are-cbr-vbv-and-cpb/)    
 [The Hypothetical Reference Decoder(HRD)](https://www.youtube.com/watch?v=Mn8v1ojV80M)
@@ -123,14 +233,14 @@ lookahead的核心是`x264_slicetype_frame_cost`函数，它会被重复的调�
 
 对于每一帧，我们在所有宏块上执行 propagate step，MacroBlock-Tree 操作的 propagate step 如下：
 
-1. 对于当前宏块，读取下面变量的值：
-* intra_cost: 该宏块的帧内模式的预测 SATD 代价。
-* inter_cost: 该宏块的帧间模式的预测 SATD 代价。如果该值比 intra_cost 大，设置其为 intra_cost。
-* propatate_in: 该宏块的 propagate_cost。因为没有任何信息，执行 propagate 的第一帧，它的 propagate_cost 值为 0。
-2. 计算要执行 propagate 的当前宏块对其参考帧的宏块的信息的分数，称为 propagate_fraction。计算方法为 1 - intra_cost / inter_cost。例如，如果 inter_cost 是 intra_cost 的 80%，我们说该宏块有 20% 的信息来自于它的参考帧。
-3. 和当前宏块有关的所有信息总和大约为 intra_cost + propagate_cost（自身信息和提供给后续帧的信息），使用这个总和乘以继承率 propagate fraction, 可以得到来继承自参考帧的信息量 propagate amount。
-4. 将 propagate_amount 划分给参考帧中相关的宏块，由于当前宏块在参考帧中运动搜索得到的补偿区域可能涉及多个宏块，即参考帧中的多个宏块都参与了当前宏块的运动补偿，所以我们根据参考帧宏块参与补偿的部分尺寸大小来分配 propagate amount。特别的，对于 B 帧，我们把 propatate amount 先平分给两个参考帧，再进一步分配给参考帧中的宏块。参考帧中的宏块最终被分到的 propagate amount 加起来就是它的 propagate cost。
-5. 从前向预测的最后一帧向前一直计算到当前帧，可以得到当前帧中每个宏块对后续 n 帧的 propagate_cost，最后根据当前帧每个宏块的 propatate_cost，计算相应的偏移系数 qp_offset，所使用的公式如下：
+1. 对于当前宏块，读取下面变量的值：  
+    * intra_cost: 该宏块的帧内模式的预测 SATD 代价。  
+    * inter_cost: 该宏块的帧间模式的预测 SATD 代价。如果该值比 intra_cost 大，设置其为 intra_cost。  
+    * propatate_in: 该宏块的 propagate_cost。因为没有任何信息，执行 propagate 的第一帧，它的 propagate_cost 值为 0。  
+2. 计算要执行 propagate 的当前宏块对其参考帧的宏块的信息的分数，称为 propagate_fraction。计算方法为 1 - intra_cost / inter_cost。例如，如果 inter_cost 是 intra_cost 的 80%，我们说该宏块有 20% 的信息来自于它的参考帧。  
+3. 和当前宏块有关的所有信息总和大约为 intra_cost + propagate_cost（自身信息和提供给后续帧的信息），使用这个总和乘以继承率 propagate fraction, 可以得到来继承自参考帧的信息量 propagate amount。  
+4. 将 propagate_amount 划分给参考帧中相关的宏块，由于当前宏块在参考帧中运动搜索得到的补偿区域可能涉及多个宏块，即参考帧中的多个宏块都参与了当前宏块的运动补偿，所以我们根据参考帧宏块参与补偿的部分尺寸大小来分配 propagate amount。特别的，对于 B 帧，我们把 propatate amount 先平分给两个参考帧，再进一步分配给参考帧中的宏块。参考帧中的宏块最终被分到的 propagate amount 加起来就是它的 propagate cost。  
+5. 从前向预测的最后一帧向前一直计算到当前帧，可以得到当前帧中每个宏块对后续 n 帧的 propagate_cost，最后根据当前帧每个宏块的 propatate_cost，计算相应的偏移系数 qp_offset，所使用的公式如下：  
 
 MacroblockQP = -strength * log2((intra_cost + propagate_cost) / intra_cost)。
 
@@ -138,11 +248,78 @@ MacroblockQP = -strength * log2((intra_cost + propagate_cost) / intra_cost)。
 
 X264 源码中实现MB-Tree 的函数为 macroblock_tree，其中调用了如下三个函数来实现上述步骤：
 
-1. slicetype_frame_cost():计算宏块的帧内代价和帧间代价。
-2. macroblock_tree_propagate():计算当前宏块的遗传代价。
-3. macroblock_tree_finish():计算量化参数偏移系数。
+1. slicetype_frame_cost():计算宏块的帧内代价和帧间代价。  
+2. macroblock_tree_propagate():计算当前宏块的遗传代价。  
+3. macroblock_tree_finish():计算量化参数偏移系数。  
 
 参考文档：  
-[A novel macroblock-tree algorithm for high-performance optimization of.pdf]()
+[A novel macroblock-tree algorithm for high-performance optimization of.pdf](https://download.csdn.net/download/To_Be_IT_1/19848868?spm=1001.2014.3001.5501)
+
+# Adaptive Quantization Algorithm
+
+自适应量化就是根据宏块的复杂度来调整每个宏块量化时的量化参数。自适应量化的基本原理是：根据当前宏块的复杂度 SSD，与当前帧的平均复杂度做对比，若高于平均，则分配更多的码率，即用小于当前帧 QP 值的量化步长；低于平均值则分配更少的码率，即用大于当前帧的 QP 值的量化步长。
+
+自适应量化主要有两个参数：aq-mode（自适应量化模式）、aq-strength（自适应量化强度）。自适应量化强度决定码率偏向于低细节(SSD)部分的强度。
+
+X264 中，自适应量化的实现在`x264_adaptive_quant_frame`中：
+
+{% codeblock lang:c %}
+/* constants chosen to result in approximately the same overall bitrate as without AQ.
+ * FIXME: while they're written in 5 significant digits, they're only tuned to 2. */
+float strength;
+float avg_adj = 0.f;
+float bias_strength = 0.f;
+
+if( h->param.rc.i_aq_mode == X264_AQ_AUTOVARIANCE || h->param.rc.i_aq_mode == X264_AQ_AUTOVARIANCE_BIASED )
+{
+    float bit_depth_correction = 1.f / (1 << (2*(BIT_DEPTH-8)));
+    float avg_adj_pow2 = 0.f;
+    for( int mb_y = 0; mb_y < h->mb.i_mb_height; mb_y++ )
+        for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x++ )
+        {
+            uint32_t energy = ac_energy_mb( h, mb_x, mb_y, frame );
+            float qp_adj = powf( energy * bit_depth_correction + 1, 0.125f );
+            frame->f_qp_offset[mb_x + mb_y*h->mb.i_mb_stride] = qp_adj;
+            avg_adj += qp_adj;
+            avg_adj_pow2 += qp_adj * qp_adj;
+        }
+    avg_adj /= h->mb.i_mb_count;
+    avg_adj_pow2 /= h->mb.i_mb_count;
+    strength = h->param.rc.f_aq_strength * avg_adj;
+    avg_adj = avg_adj - 0.5f * (avg_adj_pow2 - 14.f) / avg_adj;
+    bias_strength = h->param.rc.f_aq_strength;
+}
+else
+    strength = h->param.rc.f_aq_strength * 1.0397f;
+
+for( int mb_y = 0; mb_y < h->mb.i_mb_height; mb_y++ )
+    for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x++ )
+    {
+        float qp_adj;
+        int mb_xy = mb_x + mb_y*h->mb.i_mb_stride;
+        if( h->param.rc.i_aq_mode == X264_AQ_AUTOVARIANCE_BIASED )
+        {
+            qp_adj = frame->f_qp_offset[mb_xy];
+            qp_adj = strength * (qp_adj - avg_adj) + bias_strength * (1.f - 14.f / (qp_adj * qp_adj));
+        }
+        else if( h->param.rc.i_aq_mode == X264_AQ_AUTOVARIANCE )
+        {
+            qp_adj = frame->f_qp_offset[mb_xy];
+            qp_adj = strength * (qp_adj - avg_adj);
+        }
+        else
+        {
+            uint32_t energy = ac_energy_mb( h, mb_x, mb_y, frame );
+            qp_adj = strength * (x264_log2( X264_MAX(energy, 1) ) - (14.427f + 2*(BIT_DEPTH-8)));
+        }
+        if( quant_offsets )
+            qp_adj += quant_offsets[mb_xy];
+        frame->f_qp_offset[mb_xy] =
+        frame->f_qp_offset_aq[mb_xy] = qp_adj;
+        if( h->frames.b_have_lowres )
+            frame->i_inv_qscale_factor[mb_xy] = x264_exp2fix8(qp_adj);
+    }
+
+{% endcodeblock %}
 
 
