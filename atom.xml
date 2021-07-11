@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-07-10T15:20:02-07:00</updated>
+  <updated>2021-07-11T01:38:17-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -21,16 +21,22 @@
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">基础知识</a></li>
   <li><a href="#section-1" id="markdown-toc-section-1">模糊复杂度估计</a></li>
-  <li><a href="#vbv-algorithm" id="markdown-toc-vbv-algorithm">VBV Algorithm</a></li>
+  <li><a href="#vbv-algorithm" id="markdown-toc-vbv-algorithm">VBV Algorithm</a>    <ul>
+      <li><a href="#lookahead-vbv-" id="markdown-toc-lookahead-vbv-">Lookahead vbv 调整</a></li>
+      <li><a href="#vbv-" id="markdown-toc-vbv-">实时 VBV 调整</a></li>
+      <li><a href="#mingop-vbv-" id="markdown-toc-mingop-vbv-">minGOP vbv 调整</a></li>
+    </ul>
+  </li>
   <li><a href="#mb-tree-algorithm" id="markdown-toc-mb-tree-algorithm">MB-Tree Algorithm</a>    <ul>
       <li><a href="#macroblock-tree-" id="markdown-toc-macroblock-tree-">Macroblock-Tree 的高层概述</a></li>
       <li><a href="#x264-lookahead" id="markdown-toc-x264-lookahead">x264 lookahead</a></li>
       <li><a href="#macroblock-tree-algorithm-mb-tree-" id="markdown-toc-macroblock-tree-algorithm-mb-tree-">MacroBlock-Tree Algorithm (MB-Tree 算法)</a></li>
     </ul>
   </li>
+  <li><a href="#adaptive-quantization-algorithm" id="markdown-toc-adaptive-quantization-algorithm">Adaptive Quantization Algorithm</a></li>
 </ul>
 
-<p>码率控制是 H.264 编码器中非常重要的一个模块。X264 的码率控制算法大致分为帧级码率控制、宏块级码率控制。帧级码率控制算法比如：VBV 调整。宏块级别码率控制比如：MBTree 算法。</p>
+<p>码率控制是 H.264 编码器中非常重要的一个模块。码率控制主要包括两部分：码率分配(Bit Allocation)、量化参数调整(Quantitative Parameter Adjustment)。X264 的码率控制算法大致分为帧级码率控制、宏块级码率控制。帧级码率控制算法比如：VBV 调整。宏块级别码率控制比如：MBTree 算法、VAQ 感知量化算法。</p>
 
 <!--more-->
 
@@ -78,7 +84,9 @@ qp = 12 + 6 * log2(qscale / 0.85)   (2)</p>
 
 <h1 id="section-1">模糊复杂度估计</h1>
 
-<p>One Pass 编码中，模糊复杂度是基于已编码帧的复杂度加权得到的：</p>
+<p>One Pass 编码中，由经过运动补偿后残差的 SATD 代表一帧的复杂度，SATD 是将残差做  Hadrmard 变换后再取绝对值的总和，它作为一种简单的时频交换，能在一定程度上衡量生产码流的大小。</p>
+
+<p>模糊复杂度是基于已编码帧的复杂度加权得到的。使用复杂度加权，相对于使用单独一帧的复杂度，能避免 QP 的波动：</p>
 
 <p>blurred_complexity = cplxsum/cplxcount  <br />
 cplxsum[i]   = cplxsum[i - 1] * 0.5 + satd[i - 1]<br />
@@ -147,6 +155,193 @@ cplxcount[i] = cplxcount[i - 1] * 0.5 + 1</p>
 </span><span class="line"><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+<p>X264 中，关于 VBV 的调整在 clip_qscale 中。根据是否有 lookahead，可以分为 lookahead vbv 调整和实时 VBV 调整两种。</p>
+
+<h2 id="lookahead-vbv-">Lookahead vbv 调整</h2>
+
+<p>从 lookahead 模块可以得到未来若干帧的复杂度。vbv 算法的原理是：一样的 qscale 应用到 lookahead 中的所有帧中，检测会不会有帧使得 VBV 缓存下溢，并且 lookahead 中所有帧编码结束后，缓存填充度在一个合理的范围内，小步调整 qscale 直到满足上述要求。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">int</span> <span class="n">terminate</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="cm">/*Avoid an infinite loop*/</span>
+</span><span class="line"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">iterations</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">iterations</span> <span class="o">&lt;</span> <span class="mi">1000</span> <span class="o">&amp;&amp;</span> <span class="n">terminate</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">;</span> <span class="n">iterations</span><span class="o">++</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">	<span class="kt">double</span> <span class="n">frame_q</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+</span><span class="line">	<span class="kt">double</span> <span class="n">cur_bits</span> <span class="o">=</span> <span class="n">predict_size</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">pred</span><span class="p">[</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">sh</span><span class="p">.</span><span class="n">i_type</span><span class="p">],</span> <span class="n">q</span><span class="p">,</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">last_satd</span> <span class="p">);</span>
+</span><span class="line">	<span class="kt">double</span> <span class="n">buffer_fill_cur</span> <span class="o">=</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span> <span class="o">-</span> <span class="n">cur_bits</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">double</span> <span class="n">target_fill</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">double</span> <span class="n">total_duration</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">	<span class="kt">double</span> <span class="n">last_duration</span> <span class="o">=</span> <span class="n">fenc_cpb_duration</span><span class="p">;</span>
+</span><span class="line">	<span class="n">frame_q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">sh</span><span class="p">.</span><span class="n">i_type</span> <span class="o">==</span> <span class="n">SLICE_TYPE_I</span> <span class="o">?</span> <span class="n">q</span> <span class="o">*</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="nl">f_ip_factor</span> <span class="p">:</span> <span class="n">q</span><span class="p">;</span>
+</span><span class="line">	<span class="n">frame_q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame_q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_pb_factor</span><span class="p">;</span>
+</span><span class="line">	<span class="n">frame_q</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame_q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_ip_factor</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">	<span class="cm">/* Loop over the planned future frames. */</span>
+</span><span class="line">	<span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">buffer_fill_cur</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">buffer_fill_cur</span> <span class="o">&lt;=</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_size</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">	<span class="p">{</span>
+</span><span class="line">	    <span class="n">total_duration</span> <span class="o">+=</span> <span class="n">last_duration</span><span class="p">;</span>
+</span><span class="line">	    <span class="n">buffer_fill_cur</span> <span class="o">+=</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">vbv_max_rate</span> <span class="o">*</span> <span class="n">last_duration</span><span class="p">;</span>
+</span><span class="line">	    <span class="kt">int</span> <span class="n">i_type</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">fenc</span><span class="o">-&gt;</span><span class="n">i_planned_type</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+</span><span class="line">	    <span class="kt">int</span> <span class="n">i_satd</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">fenc</span><span class="o">-&gt;</span><span class="n">i_planned_satd</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+</span><span class="line">	    <span class="k">if</span><span class="p">(</span> <span class="n">i_type</span> <span class="o">==</span> <span class="n">X264_TYPE_AUTO</span> <span class="p">)</span>
+</span><span class="line">		<span class="k">break</span><span class="p">;</span>
+</span><span class="line">	    <span class="n">i_type</span> <span class="o">=</span> <span class="n">IS_X264_TYPE_I</span><span class="p">(</span> <span class="n">i_type</span> <span class="p">)</span> <span class="o">?</span> <span class="nl">SLICE_TYPE_I</span> <span class="p">:</span> <span class="n">IS_X264_TYPE_B</span><span class="p">(</span> <span class="n">i_type</span> <span class="p">)</span> <span class="o">?</span> <span class="nl">SLICE_TYPE_B</span> <span class="p">:</span> <span class="n">SLICE_TYPE_P</span><span class="p">;</span>
+</span><span class="line">	    <span class="n">cur_bits</span> <span class="o">=</span> <span class="n">predict_size</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">pred</span><span class="p">[</span><span class="n">i_type</span><span class="p">],</span> <span class="n">frame_q</span><span class="p">[</span><span class="n">i_type</span><span class="p">],</span> <span class="n">i_satd</span> <span class="p">);</span>
+</span><span class="line">	    <span class="n">buffer_fill_cur</span> <span class="o">-=</span> <span class="n">cur_bits</span><span class="p">;</span>
+</span><span class="line">	    <span class="n">last_duration</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">fenc</span><span class="o">-&gt;</span><span class="n">f_planned_cpb_duration</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+</span><span class="line">	<span class="p">}</span>
+</span><span class="line">	<span class="cm">/* Try to get to get the buffer at least 50% filled, but don&#39;t set an impossible goal. */</span>
+</span><span class="line">	<span class="n">target_fill</span> <span class="o">=</span> <span class="n">X264_MIN</span><span class="p">(</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span> <span class="o">+</span> <span class="n">total_duration</span> <span class="o">*</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">vbv_max_rate</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_size</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="p">);</span>
+</span><span class="line">	<span class="k">if</span><span class="p">(</span> <span class="n">buffer_fill_cur</span> <span class="o">&lt;</span> <span class="n">target_fill</span> <span class="p">)</span>
+</span><span class="line">	<span class="p">{</span>
+</span><span class="line">	    <span class="n">q</span> <span class="o">*=</span> <span class="mf">1.01</span><span class="p">;</span>
+</span><span class="line">	    <span class="n">terminate</span> <span class="o">|=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">	    <span class="k">continue</span><span class="p">;</span>
+</span><span class="line">	<span class="p">}</span>
+</span><span class="line">	<span class="cm">/* Try to get the buffer no more than 80% filled, but don&#39;t set an impossible goal. */</span>
+</span><span class="line">	<span class="n">target_fill</span> <span class="o">=</span> <span class="n">x264_clip3f</span><span class="p">(</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span> <span class="o">-</span> <span class="n">total_duration</span> <span class="o">*</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">vbv_max_rate</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_size</span> <span class="p">);</span>
+</span><span class="line">	<span class="k">if</span><span class="p">(</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">b_vbv_min_rate</span> <span class="o">&amp;&amp;</span> <span class="n">buffer_fill_cur</span> <span class="o">&gt;</span> <span class="n">target_fill</span> <span class="p">)</span>
+</span><span class="line">	<span class="p">{</span>
+</span><span class="line">	    <span class="n">q</span> <span class="o">/=</span> <span class="mf">1.01</span><span class="p">;</span>
+</span><span class="line">	    <span class="n">terminate</span> <span class="o">|=</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class="line">	    <span class="k">continue</span><span class="p">;</span>
+</span><span class="line">	<span class="p">}</span>
+</span><span class="line">	<span class="k">break</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="vbv-">实时 VBV 调整</h2>
+
+<p>如果没有 lookahead，未来帧的复杂度未知，只能根据当前帧的复杂度，控制缓存的充盈程度。算法主要流程如下：</p>
+
+<ol>
+  <li>对于 P 帧和第一个 I 帧，让当前帧编码完成后，缓存区至少还有一半容量。</li>
+  <li>限制每帧大小不能超过当前缓存量的一半。</li>
+  <li>限制每帧大小至少是 buffer_rate 的一半。buffer_rate = vbv-maxrate/fps。</li>
+  <li>限制 qscale 不能小于输入 qscale。</li>
+</ol>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="p">(</span> <span class="n">pict_type</span> <span class="o">==</span> <span class="n">SLICE_TYPE_P</span> <span class="o">||</span>
+</span><span class="line">        <span class="p">(</span> <span class="n">pict_type</span> <span class="o">==</span> <span class="n">SLICE_TYPE_I</span> <span class="o">&amp;&amp;</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">last_non_b_pict_type</span> <span class="o">==</span> <span class="n">SLICE_TYPE_I</span> <span class="p">)</span> <span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span><span class="line">        <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span><span class="o">/</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_size</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="n">q</span> <span class="o">/=</span> <span class="n">x264_clip3f</span><span class="p">(</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span><span class="o">/</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_size</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span> <span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="cm">/* Now a hard threshold to make sure the frame fits in VBV.</span>
+</span><span class="line"><span class="cm">     * This one is mostly for I-frames. */</span>
+</span><span class="line">    <span class="kt">double</span> <span class="n">bits</span> <span class="o">=</span> <span class="n">predict_size</span><span class="p">(</span> <span class="o">&amp;</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">pred</span><span class="p">[</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">sh</span><span class="p">.</span><span class="n">i_type</span><span class="p">],</span> <span class="n">q</span><span class="p">,</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">last_satd</span> <span class="p">);</span>
+</span><span class="line">    <span class="cm">/* For small VBVs, allow the frame to use up the entire VBV. */</span>
+</span><span class="line">    <span class="kt">double</span> <span class="n">max_fill_factor</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_vbv_buffer_size</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="o">*</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_vbv_max_bitrate</span> <span class="o">/</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">fps</span> <span class="o">?</span> <span class="mi">2</span> <span class="o">:</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class="line">    <span class="cm">/* For single-frame VBVs, request that the frame use up the entire VBV. */</span>
+</span><span class="line">    <span class="kt">double</span> <span class="n">min_fill_factor</span> <span class="o">=</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">single_frame_vbv</span> <span class="o">?</span> <span class="mi">1</span> <span class="o">:</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">bits</span> <span class="o">&gt;</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span><span class="o">/</span><span class="n">max_fill_factor</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">double</span> <span class="n">qf</span> <span class="o">=</span> <span class="n">x264_clip3f</span><span class="p">(</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span><span class="o">/</span><span class="p">(</span><span class="n">max_fill_factor</span><span class="o">*</span><span class="n">bits</span><span class="p">),</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span> <span class="p">);</span>
+</span><span class="line">        <span class="n">q</span> <span class="o">/=</span> <span class="n">qf</span><span class="p">;</span>
+</span><span class="line">        <span class="n">bits</span> <span class="o">*=</span> <span class="n">qf</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span> <span class="n">bits</span> <span class="o">&lt;</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_rate</span><span class="o">/</span><span class="n">min_fill_factor</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">double</span> <span class="n">qf</span> <span class="o">=</span> <span class="n">x264_clip3f</span><span class="p">(</span> <span class="n">bits</span><span class="o">*</span><span class="n">min_fill_factor</span><span class="o">/</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_rate</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">1.0</span> <span class="p">);</span>
+</span><span class="line">        <span class="n">q</span> <span class="o">*=</span> <span class="n">qf</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="n">q</span> <span class="o">=</span> <span class="n">X264_MAX</span><span class="p">(</span> <span class="n">q0</span><span class="p">,</span> <span class="n">q</span> <span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+<h2 id="mingop-vbv-">minGOP vbv 调整</h2>
+
+<p>B 帧 QP 不直接被 VBV 调整，它由 P 帧加一个偏移量得到。这一步检查当前 P 帧和（编码顺序）到下一个 P 帧之前的 B 帧的复杂度。适当调低 qscale (调高码率预算)，使得本 minGOPher 过后，缓存区没有上溢。</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">double</span> <span class="n">bits</span> <span class="o">=</span> <span class="n">predict_size</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">pred</span><span class="p">[</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">sh</span><span class="p">.</span><span class="n">i_type</span><span class="p">],</span> <span class="n">q</span><span class="p">,</span> <span class="n">rcc</span><span class="o">-&gt;</span><span class="n">last_satd</span><span class="p">);</span>
+</span><span class="line"><span class="kt">double</span> <span class="n">frame_size_maximum</span> <span class="o">=</span> <span class="n">X264_MIN</span><span class="p">(</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">frame_size_maximum</span><span class="p">,</span> <span class="n">X264_MAX</span><span class="p">(</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">buffer_fill</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">));</span>
+</span><span class="line"><span class="k">if</span> <span class="p">(</span><span class="n">bits</span> <span class="o">&gt;</span> <span class="n">frame_size_maximum</span><span class="p">)</span>
+</span><span class="line">    <span class="n">q</span> <span class="o">*=</span> <span class="n">bits</span> <span class="o">/</span> <span class="n">frame_size_maximum</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">rcc</span><span class="o">-&gt;</span><span class="n">b_vbv_min_rate</span><span class="p">)</span>
+</span><span class="line">    <span class="n">q</span> <span class="o">=</span> <span class="n">X264_MAX</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="n">q</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
 <p>参考文档:<br />
 <a href="https://codesequoia.wordpress.com/2010/04/19/what-are-cbr-vbv-and-cpb/">What are CBR, VBV and CPB</a>  <br />
 <a href="https://www.youtube.com/watch?v=Mn8v1ojV80M">The Hypothetical Reference Decoder(HRD)</a></p>
@@ -179,9 +374,12 @@ cplxcount[i] = cplxcount[i - 1] * 0.5 + 1</p>
 
 <ol>
   <li>对于当前宏块，读取下面变量的值：
-* intra_cost: 该宏块的帧内模式的预测 SATD 代价。
-* inter_cost: 该宏块的帧间模式的预测 SATD 代价。如果该值比 intra_cost 大，设置其为 intra_cost。
-* propatate_in: 该宏块的 propagate_cost。因为没有任何信息，执行 propagate 的第一帧，它的 propagate_cost 值为 0。</li>
+    <ul>
+      <li>intra_cost: 该宏块的帧内模式的预测 SATD 代价。</li>
+      <li>inter_cost: 该宏块的帧间模式的预测 SATD 代价。如果该值比 intra_cost 大，设置其为 intra_cost。</li>
+      <li>propatate_in: 该宏块的 propagate_cost。因为没有任何信息，执行 propagate 的第一帧，它的 propagate_cost 值为 0。</li>
+    </ul>
+  </li>
   <li>计算要执行 propagate 的当前宏块对其参考帧的宏块的信息的分数，称为 propagate_fraction。计算方法为 1 - intra_cost / inter_cost。例如，如果 inter_cost 是 intra_cost 的 80%，我们说该宏块有 20% 的信息来自于它的参考帧。</li>
   <li>和当前宏块有关的所有信息总和大约为 intra_cost + propagate_cost（自身信息和提供给后续帧的信息），使用这个总和乘以继承率 propagate fraction, 可以得到来继承自参考帧的信息量 propagate amount。</li>
   <li>将 propagate_amount 划分给参考帧中相关的宏块，由于当前宏块在参考帧中运动搜索得到的补偿区域可能涉及多个宏块，即参考帧中的多个宏块都参与了当前宏块的运动补偿，所以我们根据参考帧宏块参与补偿的部分尺寸大小来分配 propagate amount。特别的，对于 B 帧，我们把 propatate amount 先平分给两个参考帧，再进一步分配给参考帧中的宏块。参考帧中的宏块最终被分到的 propagate amount 加起来就是它的 propagate cost。</li>
@@ -201,7 +399,127 @@ cplxcount[i] = cplxcount[i - 1] * 0.5 + 1</p>
 </ol>
 
 <p>参考文档：<br />
-<a href="">A novel macroblock-tree algorithm for high-performance optimization of.pdf</a></p>
+<a href="https://download.csdn.net/download/To_Be_IT_1/19848868?spm=1001.2014.3001.5501">A novel macroblock-tree algorithm for high-performance optimization of.pdf</a></p>
+
+<h1 id="adaptive-quantization-algorithm">Adaptive Quantization Algorithm</h1>
+
+<p>自适应量化就是根据宏块的复杂度来调整每个宏块量化时的量化参数。自适应量化的基本原理是：根据当前宏块的复杂度 SSD，与当前帧的平均复杂度做对比，若高于平均，则分配更多的码率，即用小于当前帧 QP 值的量化步长；低于平均值则分配更少的码率，即用大于当前帧的 QP 值的量化步长。</p>
+
+<p>自适应量化主要有两个参数：aq-mode（自适应量化模式）、aq-strength（自适应量化强度）。自适应量化强度决定码率偏向于低细节(SSD)部分的强度。</p>
+
+<p>X264 中，自适应量化的实现在<code>x264_adaptive_quant_frame</code>中：</p>
+
+<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cm">/* constants chosen to result in approximately the same overall bitrate as without AQ.</span>
+</span><span class="line"><span class="cm"> * FIXME: while they&#39;re written in 5 significant digits, they&#39;re only tuned to 2. */</span>
+</span><span class="line"><span class="kt">float</span> <span class="n">strength</span><span class="p">;</span>
+</span><span class="line"><span class="kt">float</span> <span class="n">avg_adj</span> <span class="o">=</span> <span class="mf">0.f</span><span class="p">;</span>
+</span><span class="line"><span class="kt">float</span> <span class="n">bias_strength</span> <span class="o">=</span> <span class="mf">0.f</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_aq_mode</span> <span class="o">==</span> <span class="n">X264_AQ_AUTOVARIANCE</span> <span class="o">||</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_aq_mode</span> <span class="o">==</span> <span class="n">X264_AQ_AUTOVARIANCE_BIASED</span> <span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">    <span class="kt">float</span> <span class="n">bit_depth_correction</span> <span class="o">=</span> <span class="mf">1.f</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">BIT_DEPTH</span><span class="o">-</span><span class="mi">8</span><span class="p">)));</span>
+</span><span class="line">    <span class="kt">float</span> <span class="n">avg_adj_pow2</span> <span class="o">=</span> <span class="mf">0.f</span><span class="p">;</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">mb_y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">mb_y</span> <span class="o">&lt;</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_height</span><span class="p">;</span> <span class="n">mb_y</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">        <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">mb_x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">mb_x</span> <span class="o">&lt;</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_width</span><span class="p">;</span> <span class="n">mb_x</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">        <span class="p">{</span>
+</span><span class="line">            <span class="kt">uint32_t</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">ac_energy_mb</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">mb_x</span><span class="p">,</span> <span class="n">mb_y</span><span class="p">,</span> <span class="n">frame</span> <span class="p">);</span>
+</span><span class="line">            <span class="kt">float</span> <span class="n">qp_adj</span> <span class="o">=</span> <span class="n">powf</span><span class="p">(</span> <span class="n">energy</span> <span class="o">*</span> <span class="n">bit_depth_correction</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.125f</span> <span class="p">);</span>
+</span><span class="line">            <span class="n">frame</span><span class="o">-&gt;</span><span class="n">f_qp_offset</span><span class="p">[</span><span class="n">mb_x</span> <span class="o">+</span> <span class="n">mb_y</span><span class="o">*</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_stride</span><span class="p">]</span> <span class="o">=</span> <span class="n">qp_adj</span><span class="p">;</span>
+</span><span class="line">            <span class="n">avg_adj</span> <span class="o">+=</span> <span class="n">qp_adj</span><span class="p">;</span>
+</span><span class="line">            <span class="n">avg_adj_pow2</span> <span class="o">+=</span> <span class="n">qp_adj</span> <span class="o">*</span> <span class="n">qp_adj</span><span class="p">;</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="n">avg_adj</span> <span class="o">/=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_count</span><span class="p">;</span>
+</span><span class="line">    <span class="n">avg_adj_pow2</span> <span class="o">/=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_count</span><span class="p">;</span>
+</span><span class="line">    <span class="n">strength</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_aq_strength</span> <span class="o">*</span> <span class="n">avg_adj</span><span class="p">;</span>
+</span><span class="line">    <span class="n">avg_adj</span> <span class="o">=</span> <span class="n">avg_adj</span> <span class="o">-</span> <span class="mf">0.5f</span> <span class="o">*</span> <span class="p">(</span><span class="n">avg_adj_pow2</span> <span class="o">-</span> <span class="mf">14.f</span><span class="p">)</span> <span class="o">/</span> <span class="n">avg_adj</span><span class="p">;</span>
+</span><span class="line">    <span class="n">bias_strength</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_aq_strength</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line"><span class="k">else</span>
+</span><span class="line">    <span class="n">strength</span> <span class="o">=</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">f_aq_strength</span> <span class="o">*</span> <span class="mf">1.0397f</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">mb_y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">mb_y</span> <span class="o">&lt;</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_height</span><span class="p">;</span> <span class="n">mb_y</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">    <span class="k">for</span><span class="p">(</span> <span class="kt">int</span> <span class="n">mb_x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">mb_x</span> <span class="o">&lt;</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_width</span><span class="p">;</span> <span class="n">mb_x</span><span class="o">++</span> <span class="p">)</span>
+</span><span class="line">    <span class="p">{</span>
+</span><span class="line">        <span class="kt">float</span> <span class="n">qp_adj</span><span class="p">;</span>
+</span><span class="line">        <span class="kt">int</span> <span class="n">mb_xy</span> <span class="o">=</span> <span class="n">mb_x</span> <span class="o">+</span> <span class="n">mb_y</span><span class="o">*</span><span class="n">h</span><span class="o">-&gt;</span><span class="n">mb</span><span class="p">.</span><span class="n">i_mb_stride</span><span class="p">;</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_aq_mode</span> <span class="o">==</span> <span class="n">X264_AQ_AUTOVARIANCE_BIASED</span> <span class="p">)</span>
+</span><span class="line">        <span class="p">{</span>
+</span><span class="line">            <span class="n">qp_adj</span> <span class="o">=</span> <span class="n">frame</span><span class="o">-&gt;</span><span class="n">f_qp_offset</span><span class="p">[</span><span class="n">mb_xy</span><span class="p">];</span>
+</span><span class="line">            <span class="n">qp_adj</span> <span class="o">=</span> <span class="n">strength</span> <span class="o">*</span> <span class="p">(</span><span class="n">qp_adj</span> <span class="o">-</span> <span class="n">avg_adj</span><span class="p">)</span> <span class="o">+</span> <span class="n">bias_strength</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.f</span> <span class="o">-</span> <span class="mf">14.f</span> <span class="o">/</span> <span class="p">(</span><span class="n">qp_adj</span> <span class="o">*</span> <span class="n">qp_adj</span><span class="p">));</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="k">else</span> <span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">param</span><span class="p">.</span><span class="n">rc</span><span class="p">.</span><span class="n">i_aq_mode</span> <span class="o">==</span> <span class="n">X264_AQ_AUTOVARIANCE</span> <span class="p">)</span>
+</span><span class="line">        <span class="p">{</span>
+</span><span class="line">            <span class="n">qp_adj</span> <span class="o">=</span> <span class="n">frame</span><span class="o">-&gt;</span><span class="n">f_qp_offset</span><span class="p">[</span><span class="n">mb_xy</span><span class="p">];</span>
+</span><span class="line">            <span class="n">qp_adj</span> <span class="o">=</span> <span class="n">strength</span> <span class="o">*</span> <span class="p">(</span><span class="n">qp_adj</span> <span class="o">-</span> <span class="n">avg_adj</span><span class="p">);</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="k">else</span>
+</span><span class="line">        <span class="p">{</span>
+</span><span class="line">            <span class="kt">uint32_t</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">ac_energy_mb</span><span class="p">(</span> <span class="n">h</span><span class="p">,</span> <span class="n">mb_x</span><span class="p">,</span> <span class="n">mb_y</span><span class="p">,</span> <span class="n">frame</span> <span class="p">);</span>
+</span><span class="line">            <span class="n">qp_adj</span> <span class="o">=</span> <span class="n">strength</span> <span class="o">*</span> <span class="p">(</span><span class="n">x264_log2</span><span class="p">(</span> <span class="n">X264_MAX</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="mf">14.427f</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">BIT_DEPTH</span><span class="o">-</span><span class="mi">8</span><span class="p">)));</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">quant_offsets</span> <span class="p">)</span>
+</span><span class="line">            <span class="n">qp_adj</span> <span class="o">+=</span> <span class="n">quant_offsets</span><span class="p">[</span><span class="n">mb_xy</span><span class="p">];</span>
+</span><span class="line">        <span class="n">frame</span><span class="o">-&gt;</span><span class="n">f_qp_offset</span><span class="p">[</span><span class="n">mb_xy</span><span class="p">]</span> <span class="o">=</span>
+</span><span class="line">        <span class="n">frame</span><span class="o">-&gt;</span><span class="n">f_qp_offset_aq</span><span class="p">[</span><span class="n">mb_xy</span><span class="p">]</span> <span class="o">=</span> <span class="n">qp_adj</span><span class="p">;</span>
+</span><span class="line">        <span class="k">if</span><span class="p">(</span> <span class="n">h</span><span class="o">-&gt;</span><span class="n">frames</span><span class="p">.</span><span class="n">b_have_lowres</span> <span class="p">)</span>
+</span><span class="line">            <span class="n">frame</span><span class="o">-&gt;</span><span class="n">i_inv_qscale_factor</span><span class="p">[</span><span class="n">mb_xy</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_exp2fix8</span><span class="p">(</span><span class="n">qp_adj</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
   </entry>
