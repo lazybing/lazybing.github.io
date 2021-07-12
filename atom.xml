@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-07-11T01:38:17-07:00</updated>
+  <updated>2021-07-12T16:34:25-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -34,6 +34,10 @@
     </ul>
   </li>
   <li><a href="#adaptive-quantization-algorithm" id="markdown-toc-adaptive-quantization-algorithm">Adaptive Quantization Algorithm</a></li>
+  <li><a href="#section-2" id="markdown-toc-section-2">优化方法</a>    <ul>
+      <li><a href="#vbr-" id="markdown-toc-vbr-">VBR 情况下的码率优化</a></li>
+    </ul>
+  </li>
 </ul>
 
 <p>码率控制是 H.264 编码器中非常重要的一个模块。码率控制主要包括两部分：码率分配(Bit Allocation)、量化参数调整(Quantitative Parameter Adjustment)。X264 的码率控制算法大致分为帧级码率控制、宏块级码率控制。帧级码率控制算法比如：VBV 调整。宏块级别码率控制比如：MBTree 算法、VAQ 感知量化算法。</p>
@@ -520,6 +524,12 @@ cplxcount[i] = cplxcount[i - 1] * 0.5 + 1</p>
 </span><span class="line">            <span class="n">frame</span><span class="o">-&gt;</span><span class="n">i_inv_qscale_factor</span><span class="p">[</span><span class="n">mb_xy</span><span class="p">]</span> <span class="o">=</span> <span class="n">x264_exp2fix8</span><span class="p">(</span><span class="n">qp_adj</span><span class="p">);</span>
 </span><span class="line">    <span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
+
+<h1 id="section-2">优化方法</h1>
+
+<h2 id="vbr-">VBR 情况下的码率优化</h2>
+
+<p>通常情况下，CRF 的值与 QP 都是严格一对一的，这里其实是并不准确的。比如当前帧画面复杂，人眼对其并不敏感，此时可以选择更大的 QP。基于此，优化思路是：根据当前帧的复杂度，优化 CRF 与 QP 之间的映射关系。这个在纯 CRF 下可以节省 3% 的码率。基本思想就是让更多的码率用于人眼敏感的平坦区域。这就实现了<strong>帧级别的内容自适应</strong>。</p>
 
 ]]></content>
   </entry>
