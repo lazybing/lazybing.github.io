@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="介绍 开始之前 可替换的 指令 VMOV 和 VSWAP：Move 和 Swap VREV:Reverse VEXT:Extract VRTN:Transpose VZIP 和 VUZP:Zip 和 Unzip VTBL, VTBX:Table 和 Table Extend 其他 结论 &hellip;">
+  <meta name="description" content="SQDMULH(vector/by element) SQRDMULH(vector/by element) SQRSHRUN, SQRSHRUN2 SQSHRUN, SQSHRUN2 SHL SHLL, SHLL2 SSHLL, SSHLL2 USHLL, USHLL2 TRN1 &amp; &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,59 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/01/24/neon-of-coding/">ARM64 汇编指令总结</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-01-24T06:35:54-08:00'><span class='date'>2019 年 01 月 24 日</span> <span class='time'>6:35 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#sqdmulhvectorby-element" id="markdown-toc-sqdmulhvectorby-element">SQDMULH(vector/by element)</a></li>
+  <li><a href="#sqrdmulhvectorby-element" id="markdown-toc-sqrdmulhvectorby-element">SQRDMULH(vector/by element)</a></li>
+  <li><a href="#sqrshrun-sqrshrun2" id="markdown-toc-sqrshrun-sqrshrun2">SQRSHRUN, SQRSHRUN2</a></li>
+  <li><a href="#sqshrun-sqshrun2" id="markdown-toc-sqshrun-sqshrun2">SQSHRUN, SQSHRUN2</a></li>
+  <li><a href="#shl" id="markdown-toc-shl">SHL</a></li>
+  <li><a href="#shll-shll2" id="markdown-toc-shll-shll2">SHLL, SHLL2</a></li>
+  <li><a href="#sshll-sshll2" id="markdown-toc-sshll-sshll2">SSHLL, SSHLL2</a></li>
+  <li><a href="#ushll-ushll2" id="markdown-toc-ushll-ushll2">USHLL, USHLL2</a></li>
+  <li><a href="#trn1--trn2" id="markdown-toc-trn1--trn2">TRN1 &amp; TRN2</a></li>
+  <li><a href="#sxtl-sxtl2" id="markdown-toc-sxtl-sxtl2">SXTL, SXTL2</a></li>
+  <li><a href="#uxtl-uxtl2" id="markdown-toc-uxtl-uxtl2">UXTL, UXTL2</a></li>
+  <li><a href="#ext" id="markdown-toc-ext">EXT</a></li>
+  <li><a href="#bfm-ubfm-sbfmbitfield-move" id="markdown-toc-bfm-ubfm-sbfmbitfield-move">BFM, UBFM, SBFM(Bitfield move指令)</a></li>
+  <li><a href="#srshr" id="markdown-toc-srshr">SRSHR</a></li>
+</ul>
+
+<p>ARMv8 指令集可以大致分为三类:A64 指令集、A32&amp;T32 指令集。</p>
+
+<p>ARM 汇编真的太痛苦了。。。一个命令一个命令的学习记录吧</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2019/01/24/neon-of-coding/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -562,40 +615,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2018/08/22/memory-alignment/">如何理解内存对齐</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2018-08-22T08:23:49-07:00'><span class='date'>2018 年 08 月 22 日</span> <span class='time'>8:23 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>数据对齐会影响到计算机访问内存以及占用内存的空间大小。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2018/08/22/memory-alignment/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/4">&larr; Older</a>
@@ -617,7 +636,7 @@
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/vmaf/'>vmaf (1)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (22)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (23)</a></li>
 <li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
 <li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
@@ -634,6 +653,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2021/07/21/x264-rate-control-vbv-algorithm/">x264码率控制之VBV详解</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2021/06/22/h264-rate-control-algorithm/">H.264 Rate Control Algorithm</a>
       </li>
     
@@ -647,10 +670,6 @@
     
       <li class="post">
         <a href="/blog/2021/05/17/h264-motion-estimation-algorithm/">H264 Motion Estimation Algorithm</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2020/06/30/hack-vmaf/">Hacking VMAF With Video Color and Contrast Distortion</a>
       </li>
     
   </ul>
