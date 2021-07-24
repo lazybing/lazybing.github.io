@@ -98,7 +98,7 @@ X264 中，关于 VBV 的调整在 clip_qscale 中。根据是否有 lookahead�
 
 ## Lookahead vbv 调整
 
-从 lookahead 模块可以得到未来若干帧的复杂度。vbv 算法的原理是：一样的 qscale 应用到 lookahead 中的所有帧中，检测会不会有帧使得 VBV 缓存下溢，并且 lookahead 中所有帧编码结束后，缓存填充度在一个合理的范围内，小步调整 qscale 直到满足上述要求。
+从 lookahead 模块可以得到未来若干帧的复杂度。vbv 算法的原理是：根据相同的帧类型，使用相同的 qscale 应用到 lookahead 中的帧中，检测会不会有帧使得 VBV 缓存下溢，并且 lookahead 中所有帧编码结束后，缓存填充度在一个合理的范围内(0.5-0.8)，小步调整 qscale 直到满足上述要求。注意，代码中的对于 X264_TYPE_B 和 X264_TYPE_BREF 使用相同的 qscale，这里并步准确，其实可以设置不同的值，只需要使得 BREF 在 B 和 P 之间即可。
 
 {% codeblock lang:c %}
 int terminate = 0;
