@@ -4,7 +4,7 @@
   <title><![CDATA[分类:x264 | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/x264/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-07-24T16:32:41-07:00</updated>
+  <updated>2021-07-25T20:46:03-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -20,6 +20,7 @@
     <id>http://lazybing.github.io/blog/2021/07/21/x264-rate-control-vbv-algorithm</id>
     <content type="html"><![CDATA[<ul id="markdown-toc">
   <li><a href="#vbv-buffer" id="markdown-toc-vbv-buffer">为什么需要 VBV Buffer</a></li>
+  <li><a href="#section" id="markdown-toc-section">基本参数</a></li>
 </ul>
 
 <p>VBV 作为 H264 中码率控制的重要模块，它的作用是确保码率不会超过某个最大值。</p>
@@ -34,6 +35,13 @@
 
 <p>假设我们的编码是面向存储的，那么就无需这个 buffer，编码出来的码率随便你怎么波动，我只存在本地就 OK。现在问题是我们是面向传输的，要考虑到网络的带宽问题，以及网络的抖动，如果我们编码出来的码率变化非常大，那么很不利于传输，比如为了帧的质量，突然编出来一个很大的帧，需要传输很久，那么解码端就会需要等很久，体现在播放时上是长时间卡住。因此需要这个 buffer 来平滑码率，它通过码率控制模块来进行反馈，当码率控制模块检测 buffer 时发现 buffer 很满了，就通过调节 QP 的方法，使编码的码率降下来。另外关于时延的问题，必须说明的是，引入 vbv buffer 模型并不是为了降低时延，相反它反而会引入时延，但它可以有效防止时延抖动，让你看视频不卡（只要防止下溢就行），通过把初始充盈度调大一点就能做的很好。引自<a href="https://blog.csdn.net/ccc_cccd/article/details/114042493">假想参考解码器 vbv HRD</a></p>
 
+<h2 id="section">基本参数</h2>
+
+<ul>
+  <li>vbv-bufsize <integer> Set size of the VBV buffer (kbit)</integer></li>
+  <li>vbv-maxrate <integer> Max local bitrate &lt;kbit/s&gt;</integer></li>
+  <li>vbv-init    <float>   Initial VBV buffer occupancy</float></li>
+</ul>
 ]]></content>
   </entry>
   
