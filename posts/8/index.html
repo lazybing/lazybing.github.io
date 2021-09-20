@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="av_register_all 框架 调用关系 源码分析 注册一次 注册 codec 注册复用器 注册解复用器 注册协议 av_register_all()几乎是所有使用 FFMPEG 编程调用的第一个函数。av_register_all()的主要功能是注册所有的 formats 和 &hellip;">
+  <meta name="description" content=" avcodec_register_all 框架 调用关系 源码分析 注册一次 注册硬件加速器 注册codec 注册parser 注册bitstream filters avcodec_register_all 提供注册codecparsersfilters的功能。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,53 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/12/05/avcodec-register-all/">FFMPEG 源码分析：avcodec_register_all</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-12-05T08:42:17-08:00'><span class='date'>2016 年 12 月 05 日</span> <span class='time'>8:42 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul id="markdown-toc">
+  <li><a href="#avcodecregisterall-" id="markdown-toc-avcodecregisterall-">avcodec_register_all 框架</a></li>
+  <li><a href="#section" id="markdown-toc-section">调用关系</a></li>
+  <li><a href="#section-1" id="markdown-toc-section-1">源码分析</a>    <ul>
+      <li><a href="#section-2" id="markdown-toc-section-2">注册一次</a></li>
+      <li><a href="#section-3" id="markdown-toc-section-3">注册硬件加速器</a></li>
+      <li><a href="#codec" id="markdown-toc-codec">注册codec</a></li>
+      <li><a href="#parser" id="markdown-toc-parser">注册parser</a></li>
+      <li><a href="#bitstream-filters" id="markdown-toc-bitstream-filters">注册bitstream filters</a></li>
+    </ul>
+  </li>
+</ul>
+
+<p>avcodec_register_all 提供注册<code>codec</code><code>parsers</code><code>filters</code>的功能。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/12/05/avcodec-register-all/">阅读全文;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -490,52 +537,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2016/07/20/lib-trmp-source-code-study/">RTMP协议学习（中）：源码分析</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2016-07-20T17:03:14-07:00'><span class='date'>2016 年 07 月 20 日</span> <span class='time'>5:03 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul id="markdown-toc">
-  <li><a href="#section" id="markdown-toc-section">大致流程</a></li>
-  <li><a href="#initsocket" id="markdown-toc-initsocket">InitSocket()</a></li>
-  <li><a href="#rtmpinitstruct-rtmp" id="markdown-toc-rtmpinitstruct-rtmp">RTMP_Init(Struct RTMP)</a></li>
-  <li><a href="#rtmpparseurl" id="markdown-toc-rtmpparseurl">RTMP_ParseURL</a></li>
-  <li><a href="#rtmpsetupstream" id="markdown-toc-rtmpsetupstream">RTMP_SetupStream</a></li>
-  <li><a href="#fopen" id="markdown-toc-fopen">fopen</a></li>
-  <li><a href="#rtmpconnect" id="markdown-toc-rtmpconnect">RTMP_Connect()</a></li>
-  <li><a href="#rtmpconnectstream" id="markdown-toc-rtmpconnectstream">RTMP_ConnectStream</a></li>
-  <li><a href="#download" id="markdown-toc-download">Download</a></li>
-  <li><a href="#cleanuprtmpclosertmp-fclosefile-cleanupsockets" id="markdown-toc-cleanuprtmpclosertmp-fclosefile-cleanupsockets">CleanUp:RTMP_Close(&amp;rtmp); fclose(file); CleanupSockets();</a></li>
-</ul>
-
-<p>了解了 RTMP 协议规范后，本文主要记录下 RTMPDump 源码的学习过程。
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2016/07/20/lib-trmp-source-code-study/">阅读全文;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/9">&larr; Older</a>
@@ -557,7 +558,7 @@
 <li class='category'><a href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析 (5)</a></li>
 <li class='category'><a href='/blog/categories/rtmpyuan-ma-fen-xi/'>rtmp源码分析 (2)</a></li>
 <li class='category'><a href='/blog/categories/vmaf/'>vmaf (1)</a></li>
-<li class='category'><a href='/blog/categories/x264/'>x264 (23)</a></li>
+<li class='category'><a href='/blog/categories/x264/'>x264 (24)</a></li>
 <li class='category'><a href='/blog/categories/xing-neng-you-hua/'>性能优化 (7)</a></li>
 <li class='category'><a href='/blog/categories/zong-jie-ji-lei/'>总结积累 (9)</a></li>
 <li class='category'><a href='/blog/categories/hui-bian-xue-xi/'>汇编学习 (8)</a></li>
@@ -574,6 +575,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2021/07/26/video-coding-with-h264-tools-performance-and-complexity/">H.264/AVC 视频编码：工具、性能和复杂性</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2021/07/21/x264-rate-control-vbv-algorithm/">x264码率控制之VBV详解</a>
       </li>
     
@@ -587,10 +592,6 @@
     
       <li class="post">
         <a href="/blog/2021/05/26/intra-frame-algorithm/">Intra-frame Prediction Algorithm</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2021/05/17/h264-motion-estimation-algorithm/">H264 Motion Estimation Algorithm</a>
       </li>
     
   </ul>

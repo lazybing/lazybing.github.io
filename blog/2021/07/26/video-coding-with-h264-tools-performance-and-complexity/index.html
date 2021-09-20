@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>分类:hm源码分析 - 懒人李冰</title>
+  <title>H.264/AVC 视频编码：工具、性能和复杂性 - 懒人李冰</title>
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="Category: hm源码分析">
+  <meta name="description" content="摘要 H.264/AVC 是 ISO/IEC 运动图像专家组与 ITU-T 视频编码专家组合作的产物，是最新的视频编码标准。这项标准化工作的目标是提高压缩效率、交互式(视频电话)和非交互式应用（广播、流媒体、存储、视频点播）的网络友好视频表示。与以前的标准相比，H.264/AVC &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lazybing.github.io/blog/categories/hmyuan-ma-fen-xi/">
+  <link rel="canonical" href="http://lazybing.github.io/blog/2021/07/26/video-coding-with-h264-tools-performance-and-complexity/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="懒人李冰" type="application/atom+xml">
@@ -78,91 +78,83 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">分类:hm源码分析</h1>
+    
+      <h1 class="entry-title">H.264/AVC 视频编码：工具、性能和复杂性</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2021-07-26T01:59:05-07:00'><span class='date'>2021 年 07 月 26 日</span> <span class='time'>1:59 am</span></time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><h1 id="section">摘要</h1>
 
-  
-  <h2>2015</h2>
+<p>H.264/AVC 是 ISO/IEC 运动图像专家组与 ITU-T 视频编码专家组合作的产物，是最新的视频编码标准。这项标准化工作的目标是提高压缩效率、交互式(视频电话)和非交互式应用（广播、流媒体、存储、视频点播）的网络友好视频表示。与以前的标准相比，H.264/AVC 在较宽的比特率和视频分辨率范围内提供高达 50% 的压缩效率增益。与以前的标准相比，解码器的复杂度是 MPEG-2 的 4 倍，是 MPEG-4 的 2 倍。本文概述了 H.264/AVC 的新工具、特性和复杂性。</p>
 
-<article>
-  
-<h1><a href="/blog/2015/10/10/hm-source-code-analyse-tappdecoder/">HM 源码分析（二）: 解码器 TAppDecoder 分析</a></h1>
-<time datetime="2015-10-10T07:48:51-07:00" pubdate><span class='month'>10 月</span> <span class='day'>10 日</span> <span class='year'>2015</span></time>
+<h1 id="section-1">1. 引言</h1>
 
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析</a></span>
-</footer>
+<p>ITU-T 的新视频编码标准建议，H.264/AVC，是视频编码标准序列中的最新标准。这些先前的标准反映了视频压缩的技术进步以及视频编码对不同应用和网络的适应性。应用范围从可视电话(H.261)到消费者 CD 视频（MPEG-1）以及标准清晰度或高清晰度电视（MPEG-2）的广播。用于视频通信的网络包括诸如 PSTN（H.263、MPEG-4）或 ISDN（H.261）之类的交换网络和诸如 ATM（MPEG-2、MPEG-4）、因特网（H.263、MPEG-4）或移动网络（H.263、MPEG-4）之类的分组网络。有线调制解调器、XDSL 和 UMTS 等新网络技术的重要性，对新的视频编码标准 H.264/AVC 产生了需求，针对交互式应用（如要求低延迟系统的视频电话）和非交互式应用（如存储、广播，标准清晰度电视的流媒体，其重点是高编码效率）时，必须特别考虑性能。将H.264/AVC 视频编码工具（如多参考帧、1/4 像素运动补偿、去块滤波或整数变换等）与以前的视频编码标准相比，H.264/AVC 在标准话视频编码的发展过程中带来了最多的算法不连续性。同时，H.264/AVC 在编码性能上实现了五年前还没有预见到的飞跃。2001 年 12 月，ITU-T 和 MPEG 的视频专家成立了联合视频团队（JVT）来开发这个 H.264/AVC 视频编码标准，这使得这一进展成为可能。H.264/AVC 于 2003 年 3月定稿，并于 2003 年 5 月获得 ITU-T 的批准。</p>
 
+<p>现代视频通信使用的数字视频（从相机捕捉或使用适当的工具(如动画软件)合成)。在可选的预处理步骤(图1)中，发送者可以选择使用格式转换或增强技术对视频进行预处理。然后编码器对视频进行编码，并将视频表示为位流。在通过通信网络传输比特流之后，解码器解码视频,视频在可选的后处理步骤之后显示，后处理步骤可以包括格式转换、滤波以一致编码伪影、错误隐藏或视频增强。</p>
 
-</article>
+<p>该标准定义了位流的语法和语义，以及解码器在将位流解码为视频时需要执行的处理。因此，视频解码器制造商只能在成本和硬件要求等领域展开竞争。可选的解码视频的后处理是不同制造商将提供竞争工具以创建针对目标应用优化的解码前视频流的另一个领域。该标准没有定义如何进行编码或其他视频预处理，从而使制造商能够在成本、编码效率、错误恢复能力或硬件要求等领域与编码器竞争。同时，位流和解码器的标准化保留了任何通信标准互操作性的基本要求。</p>
 
-
-
-<article>
-  
-<h1><a href="/blog/2015/10/01/hm-source-code-analyse0/">HM 源码分析（一）: Syntax Parse 函数解析</a></h1>
-<time datetime="2015-10-01T07:48:51-07:00" pubdate><span class='month'>10 月</span> <span class='day'>01 日</span> <span class='year'>2015</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2015/09/10/intra-prediction-coding/">HM 源码分析之帧内编码(二):帧内预测的实现</a></h1>
-<time datetime="2015-09-10T06:29:40-08:00" pubdate><span class='month'>09 月</span> <span class='day'>10 日</span> <span class='year'>2015</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2015/09/07/intra-prcture-prediction/">HM源码分析之帧内编码（一）：帧内编码的原理</a></h1>
-<time datetime="2015-09-07T20:42:26-07:00" pubdate><span class='month'>09 月</span> <span class='day'>07 日</span> <span class='year'>2015</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2015/09/04/the-hierarchical-of-coding-structure/">HM源码分析（一）：HEVC编码结构</a></h1>
-<time datetime="2015-09-04T09:57:17-07:00" pubdate><span class='month'>09 月</span> <span class='day'>04 日</span> <span class='year'>2015</span></time>
-
-<footer>
-  <span class="categories"> 分类 <a class='category' href='/blog/categories/hmyuan-ma-fen-xi/'>hm源码分析</a></span>
-</footer>
-
-
-</article>
+<p>为了在不同的环境中进行高效的传输，不仅需要提高编码效率，而且还需要将编码后的视频无缝、方便地集成到所有当前和未来的协议和网络体系结构中。这包括尽最大努力交付的公共互联网，以及预计将成为新视频编码标准主要应用的无线网络。</p>
 
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">李冰</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2021-07-26T01:59:05-07:00'><span class='date'>2021 年 07 月 26 日</span> <span class='time'>1:59 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/x264/'>x264</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lazybing.github.io/blog/2021/07/26/video-coding-with-h264-tools-performance-and-complexity/" data-via="" data-counturl="http://lazybing.github.io/blog/2021/07/26/video-coding-with-h264-tools-performance-and-complexity/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2021/07/21/x264-rate-control-vbv-algorithm/" title="Previous Post: x264码率控制之VBV详解">&laquo; x264码率控制之VBV详解</a>
+      
+      
+    </p>
+  </footer>
 </article>
 
 </div>
