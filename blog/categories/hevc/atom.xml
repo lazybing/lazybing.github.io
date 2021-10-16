@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[分类:hevc学习 | 懒人李冰]]></title>
-  <link href="http://lazybing.github.io/blog/categories/hevcxue-xi/atom.xml" rel="self"/>
+  <title><![CDATA[分类:hevc | 懒人李冰]]></title>
+  <link href="http://lazybing.github.io/blog/categories/hevc/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-10-16T06:38:02-07:00</updated>
+  <updated>2021-10-16T07:43:41-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,21 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[OverView of HEVC Standard]]></title>
+    <link href="http://lazybing.github.io/blog/2021/10/16/overview-of-hevc-stand/"/>
+    <updated>2021-10-16T06:48:21-07:00</updated>
+    <id>http://lazybing.github.io/blog/2021/10/16/overview-of-hevc-stand</id>
+    <content type="html"><![CDATA[
+<p>HEVC 是 ITU-T 视频编码专家组和 ISO/IEC 运动图像专家组的最新视频编码标准。HEVC 标准化工作的主要目标是相对于现有标准，在 50% 的比特率降低范围内显著提高压缩性能，以获得相同的感知视频质量。本文概述了 HEVC 标准的技术特性和特点。</p>
+
+<!--more-->
+
+<p>##</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HEVC SPEC学习之RPS(待整理)]]></title>
@@ -434,166 +449,6 @@ SAR(Sample Aspect Ratio):采样纵横比；</p>
   <li><a href="http://forum.mediacoderhq.com/viewtopic.php?f=17&amp;t=8197">Understanding Aspect Ratios (DAR and PAR)</a></li>
   <li><a href="https://bavc.org/blog/par-sar-and-dar-making-sense-standard-definition-sd-video-pixels">PAR, SAR, and DAR: Making Sense of Standard Definition (SD) video pixels</a></li>
 </ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[HEVC SPEC学习之Profiles-Tiers-Levels]]></title>
-    <link href="http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels/"/>
-    <updated>2016-06-27T07:52:00-07:00</updated>
-    <id>http://lazybing.github.io/blog/2016/06/27/profiles-tiers-levels</id>
-    <content type="html"><![CDATA[<ul id="markdown-toc">
-  <li><a href="#profiletier--level-" id="markdown-toc-profiletier--level-">Profile、Tier 和 Level 的概念</a></li>
-  <li><a href="#hevc-spec--profile-tier-level-" id="markdown-toc-hevc-spec--profile-tier-level-">HEVC SPEC 中 Profile Tier Level 语法</a></li>
-  <li><a href="#hm--profile-tier-level-" id="markdown-toc-hm--profile-tier-level-">HM 中 Profile Tier Level 实现</a></li>
-</ul>
-
-<h2 id="profiletier--level-">Profile、Tier 和 Level 的概念</h2>
-
-<p>HEVC 中定义了三类 Profile: Main、Main10 和 Main Still Picture。<br />
-Profile 指出码流中使用了哪些编码工具和算法。</p>
-
-<!--more-->
-
-<p>Levle 指出一些对解码端的负载和内存占用影响较大的关键参数约束。主要包括采样率、分辨率、码率的最大
-值，压缩率的最小值，DPB 的容量，CPB（解码缓冲区）的大小。</p>
-
-<p>在 HEVC 的设计中，应用可以只依据最大的码率和 CPB 大小就可以区分。为了解决这个问题，有些 Level 定义了
-两个 Tier——Main Tier 用于大多数应用，High Tier 用于那些最苛刻的应用。</p>
-
-<p>HEVC 标准定义了两类 Tiers(Main 和 High) 和 13 类 Levels。不同的Tiers和Levels对<code>maximum bit rate</code><code>maximum luma sample rate</code><code>maximum luma picture size</code>
-<code>minimum compression ratio</code><code>maximum number of slices</code>和<code>maximum number of tiles</code>等。</p>
-
-<h2 id="hevc-spec--profile-tier-level-">HEVC SPEC 中 Profile Tier Level 语法</h2>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">profle_tier_level(profilePresentFlag, maxNumSubLayersMinus1){</th>
-      <th style="text-align: center">Descriptor</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">if(profilePresentFlag){</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">general_profile_space</td>
-      <td style="text-align: center">u(2)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">general_tier_flag</td>
-      <td style="text-align: center">u(1)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">general_profile_idc</td>
-      <td style="text-align: center">u(5)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">for(j = 0; j &lt; 32; j++)</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">general_profile_compatibility_flag[i]</td>
-      <td style="text-align: center">u(1)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">general_progressive_source_flag</td>
-      <td style="text-align: center">u(1)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">general_interlaced_source_flag</td>
-      <td style="text-align: center">u(1)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: center">general_level_idc</td>
-      <td style="text-align: center">u(8)</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">…</td>
-      <td style="text-align: center"> </td>
-    </tr>
-  </tbody>
-</table>
-
-<ul>
-  <li>general_profile_idc 当<code>general_profile_space</code>等于 0，该值表明了<code>profile</code>的标准，它的值必须是<code>Annex A</code>中包含的值，其他值未定义，保留。</li>
-  <li>general_level_idc 表明该视频流遵守的 level 值，它是在<code>Annex A</code>中定义的。码流中不应包含<code>Annex A</code>中未定义的值。</li>
-</ul>
-
-<blockquote>
-  <p>注意，<code>general_level_idc</code>值越大，表示更高的 level。同一个<code>CVS</code>中，码流中<code>VPS</code>指定的最大 level 可能大于<code>SPS</code>指定的最大 level。</p>
-</blockquote>
-
-<h2 id="hm--profile-tier-level-">HM 中 Profile Tier Level 实现</h2>
-
-<p>HM 中关于 ProfileTierLevel 的定义如下：</p>
-
-<p>```
-namespace Profile
-{
-    enum Name
-    {
-        NONE               = 0,
-        MAIN               = 1,
-        MAIN10             = 2,
-        MAINSTILLPICTURE   = 3,
-        MAINREXT           = 4,
-        HIGHTHROUGHPUTREXT = 5
-    };
-}</p>
-
-<p>namespace Level
-{
-    enum Tier
-    {
-        MAIN = 0,
-        HIGH = 1,
-    };</p>
-
-<pre><code>enum Name
-{
-    NONE       = 0,
-    LEVEL1     = 30,
-    LEVEL2     = 60,
-    LEVEL2_1   = 63,
-    LEVEL3     = 90,
-    LEVEL3_1   = 93,
-    LEVEL4     = 120,
-    LEVEL4_1   = 123,
-    LEVEL5     = 150,
-    LEVEL5_1   = 153,
-    LEVEL5_2   = 156,
-    LEVEL6     = 180,
-    LEVEL6_1   = 183,
-    LEVEL6_2   = 186,
-    LEVEL8_5   = 255,
-}; }
-</code></pre>
-
-<p>class ProfileTierLevel
-{
-    Int            m_profileSpace;
-    Level::Tier    m_tierFlag;
-    Profile::Name  m_profileIdc;
-    Bool           m_profileCompatibilityFlag[32];
-    Level::Name    m_levelIdc;</p>
-
-<pre><code>Bool           m_progressiveSourceFlag;
-Bool           m_interlacedSourceFlag;
-Bool           m_nonPackedConstraintFlag;
-Bool           m_frameOnlyConstraintFlag;
-UInt           m_bitDepthConstraintValue;
-ChromaFormat   m_chromaFormatConstraintValue;
-Bool           m_intraConstraintFlag;
-Bool           m_lowerBitRateConstraintFlag; } ```
-</code></pre>
 
 ]]></content>
   </entry>

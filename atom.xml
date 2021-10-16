@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-10-16T06:38:02-07:00</updated>
+  <updated>2021-10-16T07:43:41-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -12,6 +12,21 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[OverView of HEVC Standard]]></title>
+    <link href="http://lazybing.github.io/blog/2021/10/16/overview-of-hevc-stand/"/>
+    <updated>2021-10-16T06:48:21-07:00</updated>
+    <id>http://lazybing.github.io/blog/2021/10/16/overview-of-hevc-stand</id>
+    <content type="html"><![CDATA[
+<p>HEVC 是 ITU-T 视频编码专家组和 ISO/IEC 运动图像专家组的最新视频编码标准。HEVC 标准化工作的主要目标是相对于现有标准，在 50% 的比特率降低范围内显著提高压缩性能，以获得相同的感知视频质量。本文概述了 HEVC 标准的技术特性和特点。</p>
+
+<!--more-->
+
+<p>##</p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[H.264/AVC 视频编码：工具、性能和复杂性]]></title>
@@ -4277,224 +4292,6 @@ AV1 支持从 8x8 到 64x64 的块，支持调色板模式，编码器会自动�
 <h2 id="callgrindcontrol-">callgrind_control 命令行选项</h2>
 
 <p>(未完待续。。。)</p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[性能优化之性能分析工具gprof]]></title>
-    <link href="http://lazybing.github.io/blog/2019/04/13/profiler-gprof/"/>
-    <updated>2019-04-13T09:52:06-07:00</updated>
-    <id>http://lazybing.github.io/blog/2019/04/13/profiler-gprof</id>
-    <content type="html"><![CDATA[<p><a href="https://en.wikipedia.org/wiki/Gprof">Gprof</a> 是一个 Unix 应用程序性能分析工具。
-<!--more--></p>
-
-<h2 id="gprof-">gprof 概述</h2>
-
-<p><a href="https://sourceware.org/binutils/docs/gprof/index.html">Profiling</a> 可以使我们看到程序运行时程序的调用关系、函数的消耗时长等。这些信息可以使我们了解程序中那块代码耗时高于预期。</p>
-
-<p>使用 Profiling 主要包括如下三步：</p>
-
-<ul>
-  <li>
-    <p>编译链接程序时要使能 profiling 。</p>
-  </li>
-  <li>
-    <p>执行编译处的可执行文件，产生 profile 数据文件。</p>
-  </li>
-  <li>
-    <p>使用 gpro 分析 profile 数据。</p>
-  </li>
-</ul>
-
-<p>根据产生的 profile ，可以产生各种不同实行的分析输出。如 The Flat Profile、The Call Graph、The Annotated Source Listing。</p>
-
-<h2 id="gprof--1">gprof 示例代码</h2>
-
-<p>示例分析：</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;stdio.h&gt;</span>
-</span><span class="line"><span class="cp">#include &lt;stdlib.h&gt;</span>
-</span><span class="line"><span class="cp">#include &lt;time.h&gt;</span>
-</span><span class="line"><span class="cp">#include &lt;unistd.h&gt;</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="nf">fun2</span><span class="p">()</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1024</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">        <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="mi">10240</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">            <span class="n">sum</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="nf">fun1</span><span class="p">()</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">sum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">        <span class="n">fun2</span><span class="p">();</span>
-</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">2048</span><span class="o">*</span><span class="mi">2</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">        <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="mi">1024</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">            <span class="n">sum</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">j</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">    <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">;</span> <span class="n">index</span><span class="o">++</span><span class="p">)</span>
-</span><span class="line">        <span class="n">fun1</span><span class="p">();</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-<p>编译，注意要添加<code>-pg</code>选项，这样才能与后面的 gprof 结合使用。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">gcc -pg -o test test.c</span></code></pre></td></tr></table></div></figure>
-
-<p>执行, 执行完毕后，会生成 gmon.out 文件，用于性能分析的文件。</p>
-
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">./test</span></code></pre></td></tr></table></div></figure>
-
-<p>分析, 使用 gprof 分析。</p>
-<figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">gprof test gmon.out &gt; analysis.txt</span></code></pre></td></tr></table></div></figure>
-
-<p>此时生成的分析文件 analysis.txt 中有两种形式的分析数据。</p>
-
-<h3 id="flat-profile-">Flat Profile 示例图</h3>
-
-<p>Flat Profile 如图：</p>
-
-<p><img src="http://lazybing.github.io/images/gprof/Flat_profile.png" /></p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">标注</th>
-      <th style="text-align: center">释义</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">%time</td>
-      <td style="text-align: center">每个函数占用的时间比例，所有函数占比和为100%</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">cumulative seconds</td>
-      <td style="text-align: center">函数及其调用函数执行累计占用时间</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">self seconds</td>
-      <td style="text-align: center">单独函数执行累计占用时间</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">calls</td>
-      <td style="text-align: center">函数调用次数</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">self ms/call</td>
-      <td style="text-align: center">每次调用函数花费的时间,单位毫秒, 不包含调用函数运行的时间</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">total ms/call</td>
-      <td style="text-align: center">每次调用函数花费的时间,单位毫秒,包括调用函数运行的时间</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">name</td>
-      <td style="text-align: center">函数名称</td>
-    </tr>
-  </tbody>
-</table>
-
-<h3 id="call-graph-">Call Graph 示例图</h3>
-
-<p>Call Graph 如图：</p>
-
-<p><img src="http://lazybing.github.io/images/gprof/Call_graph.png" /></p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: center">标注</th>
-      <th style="text-align: center">释义</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: center">index</td>
-      <td style="text-align: center">每个函数第一次出现时分配一个编号，根据编号可以方便查找函数的具体分析数据</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">%time</td>
-      <td style="text-align: center">函数以及调用子函数所占用的总运行时间的百分比</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">self</td>
-      <td style="text-align: center">函数的总运行时间</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">children</td>
-      <td style="text-align: center">子函数执行的总时间</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">called</td>
-      <td style="text-align: center">函数被调用的次数，不包括递归调用</td>
-    </tr>
-    <tr>
-      <td style="text-align: center">name</td>
-      <td style="text-align: center">函数名称, name 列中，可查看函数之间的调用关系</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="section">参考资料</h2>
-<ol>
-  <li><a href="https://computing.llnl.gov/tutorials/performance_tools/">Performance Analysis Tools</a></li>
-  <li><a href="https://sourceware.org/binutils/docs/gprof/">GNU gprof</a></li>
-</ol>
 
 ]]></content>
   </entry>
