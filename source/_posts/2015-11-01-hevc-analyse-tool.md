@@ -3,7 +3,7 @@ layout: post
 title: "HEVC 分析工具"
 date: 2015-11-01 00:09:29 -0800
 comments: true
-categories: hevc学习
+categories: hevc
 ---
 
 * list element with functor item

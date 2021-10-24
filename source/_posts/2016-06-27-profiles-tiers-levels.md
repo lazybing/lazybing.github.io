@@ -3,7 +3,7 @@ layout: post
 title: "HEVC SPEC学习之Profiles-Tiers-Levels"
 date: 2016-06-27 07:52:00 -0700
 comments: true
-categories: hevc学习
+categories: hevc
 ---
 
 * list element with functor item

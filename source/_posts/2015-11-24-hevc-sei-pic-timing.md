@@ -3,7 +3,7 @@ layout: post
 title: "HEVC SPEC 学习之SEI——Pic_Timing"
 date: 2015-11-24 18:05:50 -0800
 comments: true
-categories: HEVC学习
+categories: HEVC
 ---
 
 * list element with functor item

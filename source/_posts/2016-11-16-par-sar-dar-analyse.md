@@ -3,7 +3,7 @@ layout: post
 title: "HEVC SPEC学习之PAR、DAR、SAR"
 date: 2016-11-16 08:11:53 -0800
 comments: true
-categories: hevc学习
+categories: hevc
 ---
 [Aspect Ratio](https://en.wikipedia.org/wiki/Aspect_ratio_(image)) 是图片的宽高比。  
 <!--more-->
