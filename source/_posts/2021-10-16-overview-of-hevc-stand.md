@@ -49,5 +49,33 @@ HEVC 的视频编码层采用自 H.261 以来所有视频压缩标准中使用�
 
 在下文中，使用 HEVC 的混合视频编码所涉及的各种特性如下所示。
 
+#### 1) Coding tree units and coding tree block(CTB) structure
+
+在以前的标准中，编码层的核心是宏块，它包含 luma 采样的 16x16 宏块，在通常的 4:2:0 颜色采样情况下，chroma 采样有对应的 8x8 色度块；而 HEVC 中的类似结构是编码树单元(CTU)，其大小由编码器选择，可以大于传统宏块。CTU 由 luma CTB 和对应的色度 CTB 以及语法元素组成。luma CTB 的大小可以选择为 L=16、32或64个样本，较大的大小通常能够实现更好的压缩。HEVC 支持使用树结构和类似四叉树的信令将 CTB 划分为更小的块。
+
+#### 2）Coding units(CUs) and coding blocks(CBs)
+
+CTU 的四叉树语法指定其亮度和色度 CBs 的大小和位置。四叉树的根与 CTU 关联。因此，luma CTB 的大小是 luma CB 支持的最大大小。CTU 分为 luma 和 chroma CBs 是联合发出的信号。一个 luma CB 和两个 sample CB，连同相关的语法，构成一个编码单元(CU)。一个 CTB 可以只包含一个 CU，或者可以分割成多个 CU，并且每个 CU 都有一个相关的分区为预测单元(PU)和变换单元树(TU)。
+
+#### 3）Prediction units and prediction blocks(PBs)
+
+在 CU 级别决定是使用图像间预测还是图像内预测对图片区域进行编码。PU 分区结构的根位于 CU 级别。取决于基本预测类型决策，luma 和 chroma CBs 随后可以在大小上进一步分割并从 luma 和 chroma 预测块(PBs)预测。HEVC 支持从 64x64 到 4x4 样本的可变 PB 大小。
+
+#### 4）TUs and transform blocks
+
+使用块变换对预测残差进行编码。TU 树结构的根位于 CU 级别。luma CB 残差可以与 luma 变换块(TB)相同，或者可以进一步分割成更小的 luma TB。这同样适用于 chroma TBs。对于 4x4、8x8、16x16 和 32x32 的正方形 TB，定义了与DCT 类似的整数基函数。对于 luma 图像内预测残差的 4x4 变换，可选指定从 DST 形式导出的整数变换。
+
+#### 5）Motion vector signaling
+
+使用AMVP(Advanced motion vector prediction)，包括基于来自相邻 PBs 和参考图片的数据导出几个最可能的候选。还使用 MV 编码的合并模式，允许 MV 从时间上或空间上相邻的 PBs 继承。此外，与 H.264/AVC 相比，还指定了改进的 skipped 和 直接运动推断。
+
+#### 6）Motion compensation
+
+MVs 使用四分之一采样精度，分数采样位置的插值使用 7 抽头或 8 抽头滤波器(相比之下，H.264/AVC 中，半采样位置的六抽头滤波后，四分之一采样位置的线性插值)。与 H.264/AVC 类似，使用了多个参考图片。对于每个 PB，传输一个或两个运动矢量，分别表示单预测或双预测编码。如在 H.264/AVC 中一样，可以称为加权预测的方式对预测信号应用缩放和偏移操作。
+
+#### 7) Intrapicture prediction
+
+
+
 
 
