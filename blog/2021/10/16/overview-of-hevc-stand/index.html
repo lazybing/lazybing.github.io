@@ -9,7 +9,7 @@
   <meta name="author" content="李冰">
 
   
-  <meta name="description" content="介绍 HEVC 编码设计和功能亮点 A. 视频编码层 HEVC 是 ITU-T 视频编码专家组和 ISO/IEC 运动图像专家组的最新视频编码标准。HEVC 标准化工作的主要目标是相对于现有标准，在 50% 的比特率降低范围内显著提高压缩性能，以获得相同的感知视频质量。本文概述了 HEVC &hellip;">
+  <meta name="description" content="介绍 HEVC 编码设计和功能亮点 A. 视频编码层 1) Coding tree units and coding tree block(CTB) structure 2）Coding units(CUs) and coding blocks(CBs) 3）Prediction units &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -101,7 +101,16 @@
 <div class="entry-content"><ul id="markdown-toc">
   <li><a href="#section" id="markdown-toc-section">介绍</a></li>
   <li><a href="#hevc-" id="markdown-toc-hevc-">HEVC 编码设计和功能亮点</a>    <ul>
-      <li><a href="#a-" id="markdown-toc-a-">A. 视频编码层</a></li>
+      <li><a href="#a-" id="markdown-toc-a-">A. 视频编码层</a>        <ul>
+          <li><a href="#coding-tree-units-and-coding-tree-blockctb-structure" id="markdown-toc-coding-tree-units-and-coding-tree-blockctb-structure">1) Coding tree units and coding tree block(CTB) structure</a></li>
+          <li><a href="#coding-unitscus-and-coding-blockscbs" id="markdown-toc-coding-unitscus-and-coding-blockscbs">2）Coding units(CUs) and coding blocks(CBs)</a></li>
+          <li><a href="#prediction-units-and-prediction-blockspbs" id="markdown-toc-prediction-units-and-prediction-blockspbs">3）Prediction units and prediction blocks(PBs)</a></li>
+          <li><a href="#tus-and-transform-blocks" id="markdown-toc-tus-and-transform-blocks">4）TUs and transform blocks</a></li>
+          <li><a href="#motion-vector-signaling" id="markdown-toc-motion-vector-signaling">5）Motion vector signaling</a></li>
+          <li><a href="#motion-compensation" id="markdown-toc-motion-compensation">6）Motion compensation</a></li>
+          <li><a href="#intrapicture-prediction" id="markdown-toc-intrapicture-prediction">7) Intrapicture prediction</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
 </ul>
@@ -145,6 +154,32 @@
 <p>要由 HEVC 编码的视频材料通常应作为逐行扫描图像输入(由于源视频以该格式产生，或由编码前去交错)。HEVC 设计中不存在明确的编码特征，以支持隔行扫描的使用，因为隔行扫描不再用于显示，并且在分发中变得越来越步常见。然而，在 HEVC 中提供了元数据语法，以允许编码器通过将隔行扫描视频的每个字段(即，每个视频帧的偶数或奇数行)编码以单独图片来指示隔行扫描视频已被发送，或这其已通过将每个隔行扫描帧编码为 HEVC 编码图片来发送。这提供了一种对隔行视频进行编码的有效方法，而无需使解码器负担对其支持特殊解码过程的负担。</p>
 
 <p>在下文中，使用 HEVC 的混合视频编码所涉及的各种特性如下所示。</p>
+
+<h4 id="coding-tree-units-and-coding-tree-blockctb-structure">1) Coding tree units and coding tree block(CTB) structure</h4>
+
+<p>在以前的标准中，编码层的核心是宏块，它包含 luma 采样的 16x16 宏块，在通常的 4:2:0 颜色采样情况下，chroma 采样有对应的 8x8 色度块；而 HEVC 中的类似结构是编码树单元(CTU)，其大小由编码器选择，可以大于传统宏块。CTU 由 luma CTB 和对应的色度 CTB 以及语法元素组成。luma CTB 的大小可以选择为 L=16、32或64个样本，较大的大小通常能够实现更好的压缩。HEVC 支持使用树结构和类似四叉树的信令将 CTB 划分为更小的块。</p>
+
+<h4 id="coding-unitscus-and-coding-blockscbs">2）Coding units(CUs) and coding blocks(CBs)</h4>
+
+<p>CTU 的四叉树语法指定其亮度和色度 CBs 的大小和位置。四叉树的根与 CTU 关联。因此，luma CTB 的大小是 luma CB 支持的最大大小。CTU 分为 luma 和 chroma CBs 是联合发出的信号。一个 luma CB 和两个 sample CB，连同相关的语法，构成一个编码单元(CU)。一个 CTB 可以只包含一个 CU，或者可以分割成多个 CU，并且每个 CU 都有一个相关的分区为预测单元(PU)和变换单元树(TU)。</p>
+
+<h4 id="prediction-units-and-prediction-blockspbs">3）Prediction units and prediction blocks(PBs)</h4>
+
+<p>在 CU 级别决定是使用图像间预测还是图像内预测对图片区域进行编码。PU 分区结构的根位于 CU 级别。取决于基本预测类型决策，luma 和 chroma CBs 随后可以在大小上进一步分割并从 luma 和 chroma 预测块(PBs)预测。HEVC 支持从 64x64 到 4x4 样本的可变 PB 大小。</p>
+
+<h4 id="tus-and-transform-blocks">4）TUs and transform blocks</h4>
+
+<p>使用块变换对预测残差进行编码。TU 树结构的根位于 CU 级别。luma CB 残差可以与 luma 变换块(TB)相同，或者可以进一步分割成更小的 luma TB。这同样适用于 chroma TBs。对于 4x4、8x8、16x16 和 32x32 的正方形 TB，定义了与DCT 类似的整数基函数。对于 luma 图像内预测残差的 4x4 变换，可选指定从 DST 形式导出的整数变换。</p>
+
+<h4 id="motion-vector-signaling">5）Motion vector signaling</h4>
+
+<p>使用AMVP(Advanced motion vector prediction)，包括基于来自相邻 PBs 和参考图片的数据导出几个最可能的候选。还使用 MV 编码的合并模式，允许 MV 从时间上或空间上相邻的 PBs 继承。此外，与 H.264/AVC 相比，还指定了改进的 skipped 和 直接运动推断。</p>
+
+<h4 id="motion-compensation">6）Motion compensation</h4>
+
+<p>MVs 使用四分之一采样精度，分数采样位置的插值使用 7 抽头或 8 抽头滤波器(相比之下，H.264/AVC 中，半采样位置的六抽头滤波后，四分之一采样位置的线性插值)。与 H.264/AVC 类似，使用了多个参考图片。对于每个 PB，传输一个或两个运动矢量，分别表示单预测或双预测编码。如在 H.264/AVC 中一样，可以称为加权预测的方式对预测信号应用缩放和偏移操作。</p>
+
+<h4 id="intrapicture-prediction">7) Intrapicture prediction</h4>
 
 </div>
 
