@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevc/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-10-31T08:26:12-07:00</updated>
+  <updated>2021-11-01T06:47:21-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -29,6 +29,21 @@
           <li><a href="#motion-vector-signaling" id="markdown-toc-motion-vector-signaling">5）Motion vector signaling</a></li>
           <li><a href="#motion-compensation" id="markdown-toc-motion-compensation">6）Motion compensation</a></li>
           <li><a href="#intrapicture-prediction" id="markdown-toc-intrapicture-prediction">7) Intrapicture prediction</a></li>
+          <li><a href="#quantization-control" id="markdown-toc-quantization-control">8) Quantization control</a></li>
+          <li><a href="#entropy-coding" id="markdown-toc-entropy-coding">9）Entropy coding</a></li>
+          <li><a href="#in-loop-deblocking-filtering" id="markdown-toc-in-loop-deblocking-filtering">10）In-loop deblocking filtering</a></li>
+          <li><a href="#sample-adaptive-offsetsao" id="markdown-toc-sample-adaptive-offsetsao">11）Sample adaptive offset(SAO)</a></li>
+        </ul>
+      </li>
+      <li><a href="#b-" id="markdown-toc-b-">B. 高级语法体系结构</a>        <ul>
+          <li><a href="#parameter-set-structure" id="markdown-toc-parameter-set-structure">1）Parameter set structure</a></li>
+          <li><a href="#nal-unit-syntax-structure" id="markdown-toc-nal-unit-syntax-structure">2）NAL unit syntax structure</a></li>
+          <li><a href="#slices" id="markdown-toc-slices">3）Slices</a></li>
+          <li><a href="#sei--vui" id="markdown-toc-sei--vui">4）SEI 和 VUI</a></li>
+        </ul>
+      </li>
+      <li><a href="#c--slice-" id="markdown-toc-c--slice-">C. 并行解码语法与改进的 slice 结构</a>        <ul>
+          <li><a href="#section-1" id="markdown-toc-section-1">1）</a></li>
         </ul>
       </li>
     </ul>
@@ -100,6 +115,50 @@
 <p>MVs 使用四分之一采样精度，分数采样位置的插值使用 7 抽头或 8 抽头滤波器(相比之下，H.264/AVC 中，半采样位置的六抽头滤波后，四分之一采样位置的线性插值)。与 H.264/AVC 类似，使用了多个参考图片。对于每个 PB，传输一个或两个运动矢量，分别表示单预测或双预测编码。如在 H.264/AVC 中一样，可以称为加权预测的方式对预测信号应用缩放和偏移操作。</p>
 
 <h4 id="intrapicture-prediction">7) Intrapicture prediction</h4>
+
+<p>相邻块的间边界样本，用作未执行帧间预测的区域中的空间预测的参考数据。图像内预测支持 33 种方向模式(与 H.264/AVC 中的 8 种模式相比)，以及plus plannr 和 DC 预测模式。通过基于先前解码的相邻 PBs 的模式导出最可能模式(例如，预测方向)来编码所选择的画面内预测模式。</p>
+
+<h4 id="quantization-control">8) Quantization control</h4>
+
+<p>与 H.264/AVC 中一样，HEVC 中使用均匀重建量化(URQ)，量化缩放矩阵支持各种变换块大小。</p>
+
+<h4 id="entropy-coding">9）Entropy coding</h4>
+
+<p>CABAC 用于熵编码。这类似于 H.264/AVC 中的 CABAC 方案，单经过几次改进以提高其吞吐量速度(特别是对于并行处理架构)和压缩性能，并降低其上下文内存需求。</p>
+
+<h4 id="in-loop-deblocking-filtering">10）In-loop deblocking filtering</h4>
+
+<p>与 H.264/AVC 中使用的去块滤波器类似去块滤波器，在图像间预测循环中操作。然而，该设计在决策和过滤过程方面得到了简化，并且对并行处理更加友好。</p>
+
+<h4 id="sample-adaptive-offsetsao">11）Sample adaptive offset(SAO)</h4>
+
+<p>在去块滤波器之后，在图像间预测环路中引入非线性振幅映射。它的目标是通过使用查找表更好地重建原始信号振幅，该查找表由几个附加参数描述，这些参数可以通过编码器端的直方图分析确定。</p>
+
+<h3 id="b-">B. 高级语法体系结构</h3>
+
+<p>HEVC 标准新增的许多设计方面，提高了在各种应用程序和网络环境下操作的灵活性，并提高了数据丢失的鲁棒性。然而，H.264/AVC 标准中使用的高级语法体系结构通常被保留，包括以下特征。</p>
+
+<h4 id="parameter-set-structure">1）Parameter set structure</h4>
+
+<p>参数集包含可共享的信息，用于解码解码视频的多个区域。参数集结构提供了用于传输解码过程所必需的数据的健壮机制。通过一种新的 VPS 结构，对 H.264/AVC 中的序列和图片参数集的概念进行了扩充。</p>
+
+<h4 id="nal-unit-syntax-structure">2）NAL unit syntax structure</h4>
+
+<p>每个语法结构都被放入 NAL 单元的逻辑数据包中。使用两个字节 NAL 单元报头的内容，可以容易地识别相关有效负载数据的用途。</p>
+
+<h4 id="slices">3）Slices</h4>
+
+<p>slice 是一种数据结构，在熵编码、信号预测和残差信号重建方面，可以独立于同一图片的其他 slice 进行解码。slice 可以是整个图片，也可以是图片中的一个区域。slice 的主要用途之一是在数据丢失时重新同步。在分组传输的情况下， slice 内有效负载比特的最大数量通常受到限制，并且 slice 中 CTU 的数量经常变化以最小化分组开销，同时将每个分组的大小保持在此范围内。</p>
+
+<h4 id="sei--vui">4）SEI 和 VUI</h4>
+
+<p>该语法元素支持各种类型元数据，比如 SEI 和 VUI。这些数据提供关于视频图片的定时、视频信号中使用的颜色空间的正确解释、三维立体帧打包信息、其他显示提示信息等的信息。</p>
+
+<h3 id="c--slice-">C. 并行解码语法与改进的 slice 结构</h3>
+
+<p>最后，HEVC 标准中引入了四个新的特性，以增强并行处理能力或修改 slice 数据的结构以实现打包。它们中的每一个在特定的应用环境中都可能有好处，并且通常由编码器或解码器的实现者来确定是否以及如何利用这些特性。</p>
+
+<h4 id="section-1">1）</h4>
 
 ]]></content>
   </entry>
