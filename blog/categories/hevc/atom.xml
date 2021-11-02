@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevc/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-01T08:00:07-07:00</updated>
+  <updated>2021-11-02T06:45:46-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -48,6 +48,10 @@
           <li><a href="#dependent-slice-segments" id="markdown-toc-dependent-slice-segments">3）Dependent slice segments</a></li>
         </ul>
       </li>
+    </ul>
+  </li>
+  <li><a href="#section-1" id="markdown-toc-section-1">高级语法</a>    <ul>
+      <li><a href="#a-random-access-and-bitstream-splicing-features" id="markdown-toc-a-random-access-and-bitstream-splicing-features">A) Random Access and Bitstream Splicing Features</a></li>
     </ul>
   </li>
 </ul>
@@ -173,6 +177,20 @@
 <p>一种称为 Dependent Slice Segment 的结构，允许在单独的 NAL 单元中携带与特定波前入口点或 Tiles 相关的数据，因此，与将数据全部编码在一个 slice 中相比，该结构有可能使该数据以更低的延迟提供给分片打包系统。波前入口点的 Dependent Slice Segments 只能在另一 slice 的解码过程的至少一部分已经执行之后进行解码。相关 slice 主要用于低延迟编码，其他并行工具可能会影响压缩性能。</p>
 
 <p>接下来的两个部分中，将对主要功能进行更详细的描述。</p>
+
+<h2 id="section-1">高级语法</h2>
+
+<p>HEVC 的高级语法包含许多继承自 H.264/AVC NAL 的元素。NAL 提供将表示图片内容的视频编码层(VCL)数据映射到各种传输层(包括RTP/IP，ISO MP4 和 H.222.0/MPEG-2系统)的能力，并提供分组丢失恢复的框架。有关 NAL 设计的一般概念，如 NAL 单元、参数集、访问单元、字节流格式和分组格式，请参考[9]-[11]。</p>
+
+<p>根据是否包含编码图片或其他相关数据，NAL 单元分为 VCL 和 非 VCL NAL 单元。HEVC 标准中，包括几种用于识别用于解码器初始化和随机访问目的的图片类型的 VCL NAL 单元类型。表 I 列出了 HEVC 标准中的 NAL 单元类型及其相关含义和类型类别。</p>
+
+<p>以下小节介绍了高级语法支持的新功能。</p>
+
+<h3 id="a-random-access-and-bitstream-splicing-features">A) Random Access and Bitstream Splicing Features</h3>
+
+<p>HEVC 新设计支持特殊功能以实现随机访问和比特流拼接。在 H.264/AVC 中，比特流必须始终以 IDR 访问单元开始。IDR 访问单元包含独立编码的图片，即，可以在不解码 NAL 单元流中的任何先前图片的情况下解码的编码图片。IDR 访问单元的存在指示，比特流中的后续图片将不需要参考其包含的图片之前的图片以便被解码。IDR 图片在称为闭合 GOP(其中 GOP 代表图片组)的编码结构内使用。</p>
+
+<p>新的 CRA(Clean Random Access) 图片语法指定在 RAP(Random Access Point)的位置处使用独立编码的图片。即，在比特流中解码器可以开始成功解码图片的位置处，而无需解码比特流中先前出现的任何图片，它支持一种称为开放 GOP 操作的高效时间编码顺序。对 RAP 的良好支持，对于启用通道切换、搜索操作和动态流媒体服务至关重要。以解码</p>
 
 ]]></content>
   </entry>
