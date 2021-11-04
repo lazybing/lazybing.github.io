@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-02T06:45:46-07:00</updated>
+  <updated>2021-11-03T17:26:23-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -190,7 +190,7 @@
 
 <p>HEVC 新设计支持特殊功能以实现随机访问和比特流拼接。在 H.264/AVC 中，比特流必须始终以 IDR 访问单元开始。IDR 访问单元包含独立编码的图片，即，可以在不解码 NAL 单元流中的任何先前图片的情况下解码的编码图片。IDR 访问单元的存在指示，比特流中的后续图片将不需要参考其包含的图片之前的图片以便被解码。IDR 图片在称为闭合 GOP(其中 GOP 代表图片组)的编码结构内使用。</p>
 
-<p>新的 CRA(Clean Random Access) 图片语法指定在 RAP(Random Access Point)的位置处使用独立编码的图片。即，在比特流中解码器可以开始成功解码图片的位置处，而无需解码比特流中先前出现的任何图片，它支持一种称为开放 GOP 操作的高效时间编码顺序。对 RAP 的良好支持，对于启用通道切换、搜索操作和动态流媒体服务至关重要。以解码</p>
+<p>新的 CRA(Clean Random Access) 图片语法指定在 RAP(Random Access Point)的位置处使用独立编码的图片。即，在比特流中解码器可以开始成功解码图片的位置处，而无需解码比特流中先前出现的任何图片，它支持一种称为开放 GOP 操作的高效时间编码顺序。对 RAP 的良好支持，对于启用通道切换、搜索操作和动态流媒体服务至关重要。按照解码顺序在 CRA 图像之后，按显示顺序在 CRA 图像之前的图片，可能包含对解码器处不可用的图片的帧间预测参考。因此，在 CRA 点开始解码过程的解码器，必须丢弃这些不可解码的图像。为此，此类不可解码图片被标识为 RASL（Random Access Skipped Leading）图片。来自不同编码比特流的拼接点位置可通过 BLA(Broken Link Access)图片指导。比特流拼接操作可以通过简单地将一个比特流中 CRA 图片的 NAL 单元类型更改为指示 BLA 图片的值，并将新比特流连接到另一个比特流中 RAP 图片的位置来执行。RAP 图像可能是 IDR、CRA 或 BLA 图像，并且 CRA 和 BLA 图像之后可以是比特流中的 RASL 图片(取决于用于 BLA 图片的 NAL 单元类型的特定值)。解码器必须始终丢弃与 BLA 图片相关联的任何 RASL 图片，因为它们可能包含对由于拼接操作而实际不存在于比特流中的图片的参考。另一种可以以解码顺序跟随 RAP 图片之后，并在以输出顺序在 RAP 之前的图片类型，是RADL(Random Access Decodable Leading)图片，其不能包含对以解码顺序在 RAP 图片之前的任何图片的参考。RASL 和 RADL 图片统称为 Leading Pictures.以解码顺序和输出顺序跟随在 RAP 图片之后的图像(称为 Trailing Picture)不能包含对用于图片间预测的 Leading Picture 的参考。</p>
 
 ]]></content>
   </entry>
