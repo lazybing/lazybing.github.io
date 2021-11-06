@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-06T07:34:01-07:00</updated>
+  <updated>2021-11-06T08:01:47-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -60,6 +60,7 @@
   <li><a href="#hevc--1" id="markdown-toc-hevc--1">HEVC 视频编码技术</a>    <ul>
       <li><a href="#a-sampled-representation-of-pictures" id="markdown-toc-a-sampled-representation-of-pictures">A) Sampled Representation of Pictures</a></li>
       <li><a href="#b-division-of-the-picture-into-coding-tree-unit" id="markdown-toc-b-division-of-the-picture-into-coding-tree-unit">B) Division of the Picture into Coding Tree Unit</a></li>
+      <li><a href="#c-division-of-the-ctb-into-cbs" id="markdown-toc-c-division-of-the-ctb-into-cbs">C) Division of the CTB into CBs</a></li>
     </ul>
   </li>
 </ul>
@@ -229,6 +230,16 @@
 <p>视频图像通常以矩形图片大小WxH逐步采样，其中 W 是宽度，H 是 luma 样本中图片的高度。采用4：2：0采样的每个色度分量阵列为W/2xH/2。给定这样的视频信号，HEVC 语法进一步划分图片，如下所述。</p>
 
 <h3 id="b-division-of-the-picture-into-coding-tree-unit">B) Division of the Picture into Coding Tree Unit</h3>
+
+<p>图片被划分成编码树单元(CTU)，每个单元包含亮度 CTB 和色度 CTB。亮度 CTB 覆盖亮度分量的 LxL 样本的矩形图像区域，相应的色度 CTB 覆盖两个色度分量中每个分量的 L/2xL/2 样本。L 的值可以是 16、32、64，由 SPS 中指定的编码语法元素确定。与传统宏块相比，HEVC 支持根据编码器在内存和计算需求方面的需求，选择可变大小的 CTB。而从 H.261 以来所有先前的 ITU-T 和 ISO/IEC JTC 视频编码标准中，宏块使用固定阵列大小的 16x16 luma 样本。在编码高分辨率视频内容时，支持以前的标准更大的 CTB 尤其有益。luma  CTB 和两个色度 CTB 以及相关的语法构成了CTU。CTU 是标准中用于指定解码过程的基本处理单元。</p>
+
+<h3 id="c-division-of-the-ctb-into-cbs">C) Division of the CTB into CBs</h3>
+
+<p>指定为 luma 和 chroma CTB 的块可以直接用作 CB，或者可以进一步划分为多个 CB，划分是使用树形结构实现的。HEVC 中的树划分通常同时应用于亮度和色度，但当色度达到某些最小值时例外。</p>
+
+<p>CTU 包含四叉树语法，该语法允许根据 CTB 覆盖区域的信号特征，将 CBs 划分为选定的合适大小。四叉树划分过程可以迭代，直到 luma CB 的大小达到所允许的最小luma CB 大小。该最小 luma CB 大小是编码器使用 SPS 中的语法元素指定选择的，它始终为 8x8 或更大(以 luma 样本为单位)。</p>
+
+<p>图片的边界以允许的最小 luma CB 大小为单位定义。因此，在图片的右边缘和下边缘，一些 CTU 可能会覆盖部分位于图片边界之外的区域。解码器检测到这种情况，并根据需要隐士分割 CTU 四叉树，以将 CB 大小减小到整个 CB 将适合图片的位置。</p>
 
 ]]></content>
   </entry>
