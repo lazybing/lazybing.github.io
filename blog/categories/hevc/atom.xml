@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevc/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-06T06:23:24-07:00</updated>
+  <updated>2021-11-06T07:34:01-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -55,6 +55,11 @@
       <li><a href="#b-temporal-sublayering-support" id="markdown-toc-b-temporal-sublayering-support">B) Temporal Sublayering Support</a></li>
       <li><a href="#c-additional-parameter-sets" id="markdown-toc-c-additional-parameter-sets">C) Additional Parameter Sets</a></li>
       <li><a href="#d-reference-picture-sets-and-reference-picture-lists" id="markdown-toc-d-reference-picture-sets-and-reference-picture-lists">D) Reference Picture Sets and Reference Picture Lists</a></li>
+    </ul>
+  </li>
+  <li><a href="#hevc--1" id="markdown-toc-hevc--1">HEVC 视频编码技术</a>    <ul>
+      <li><a href="#a-sampled-representation-of-pictures" id="markdown-toc-a-sampled-representation-of-pictures">A) Sampled Representation of Pictures</a></li>
+      <li><a href="#b-division-of-the-picture-into-coding-tree-unit" id="markdown-toc-b-division-of-the-picture-into-coding-tree-unit">B) Division of the Picture into Coding Tree Unit</a></li>
     </ul>
   </li>
 </ul>
@@ -212,6 +217,18 @@
 <p>与 H.264/AVC 中一样，有两个列表被构造为 DPB 中的图片列表，它们被称为参考图片列表 0 和 列表 1。称为参考图片索引的索引用于识别这些列表之一中的特定图片。对于单预测，可以从这些列表中选择图片。对于双向预测，将从每个列表中选择两张图片。当列表仅包含一个图片时，参考图片索引隐士地具有值 0，并且不需要在比特流中传输。</p>
 
 <p>与先前的 H.264/AVC 设计相比，用于识别 RPS 和建立用于画面间预测的参考图片列表的高级语法对数据丢失更为鲁棒，并且更适于诸如随机访问和技巧模式操作之类的操作(例如，快进、平滑倒带、搜索和自适应比特流切换)。这些改进的一个关键方面是语法更加明确，而不是依赖于解码过程中存储的内部状态的推断，因为它逐帧解码比特流。此外，设计的这些方面的相关语法实际上比 H.264/AVC 更简单。</p>
+
+<h2 id="hevc--1">HEVC 视频编码技术</h2>
+
+<p>与 H.261 以来所有先前的 ITU-T 和 ISO/IEC JTC 1 视频编码标准一样，HEVC 设计遵循经典的基于块的混合视频编码方法(如图1所示)。基于信源编码算法是利用时间统计相关性的帧间预测、利用空间统计相关性的帧内预测和利用空间统计相关性的预测残差信号的变换编码的混合。与先前的视频编码标准相比，HEVC 设计中没有一个编码元素能够显著提高压缩效率。更确切地说，是多个较小的改进增加了显著的收益。</p>
+
+<h3 id="a-sampled-representation-of-pictures">A) Sampled Representation of Pictures</h3>
+
+<p>为了表示彩色视频信号，HEVC 通常使用具有4:2:0 采样的 YCbCr 颜色空间(尽管扩展到其他采样格式很简单，计划在后续版本中定义)。这将颜色表示为三个组件，分别称为Y、Cb 和 Cr。Y 组件也称为亮度，表示亮度。两个色度分量Cb 和 Cr 分别表示颜色从灰色向蓝色和红色的偏离程度。由于人类视觉系统对亮度比色度更敏感，因此通常使用4：2：0采样结构，其中每个色度分量具有亮度分量样本数的四分之一(水平和垂直维度样本数的一半)。每二个组件的每个样本通常以 8 或 10 bit的精度表示，8 bit的情况更为典型。在本文的其余部分中，我们将重点放在典型用途上:YCbCr 组件具有4：2：0采样和 8bit 每个采样，用于表示编码输入和解码输出视频信号。</p>
+
+<p>视频图像通常以矩形图片大小WxH逐步采样，其中 W 是宽度，H 是 luma 样本中图片的高度。采用4：2：0采样的每个色度分量阵列为W/2xH/2。给定这样的视频信号，HEVC 语法进一步划分图片，如下所述。</p>
+
+<h3 id="b-division-of-the-picture-into-coding-tree-unit">B) Division of the Picture into Coding Tree Unit</h3>
 
 ]]></content>
   </entry>
