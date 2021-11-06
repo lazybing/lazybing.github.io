@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-04T17:08:06-07:00</updated>
+  <updated>2021-11-05T18:15:33-07:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -53,6 +53,8 @@
   <li><a href="#section-1" id="markdown-toc-section-1">高级语法</a>    <ul>
       <li><a href="#a-random-access-and-bitstream-splicing-features" id="markdown-toc-a-random-access-and-bitstream-splicing-features">A) Random Access and Bitstream Splicing Features</a></li>
       <li><a href="#b-temporal-sublayering-support" id="markdown-toc-b-temporal-sublayering-support">B) Temporal Sublayering Support</a></li>
+      <li><a href="#c-additional-parameter-sets" id="markdown-toc-c-additional-parameter-sets">C) Additional Parameter Sets</a></li>
+      <li><a href="#d-reference-picture-sets-and-reference-picture-lists" id="markdown-toc-d-reference-picture-sets-and-reference-picture-lists">D) Reference Picture Sets and Reference Picture Lists</a></li>
     </ul>
   </li>
 </ul>
@@ -197,7 +199,13 @@
 
 <p>与 H.264/AVC 可伸缩视频编码(SVC)扩展中的时间可伸缩性特征类似，HEVC 在 NAL 单元报头中指定了时间标识符，其指示分层时间预测结构中的级别。这是为了实现时间可伸缩性，而无需解析除 NAL 单元以外的比特流部分。</p>
 
-<p>在某些情况下，在一个编码视频序列的解码过程中，可以调整解码的时间子层的数量。</p>
+<p>在某些情况下，在一个编码视频序列的解码过程中，解码时间子层的数量是可以调整的。比特流中的点(此点位置是发生子层切换，可以开始解码一些更高级时间层的点)可以通过TSA(Temporal Sublayer Access)图片和STSA(StepWise TSA)图片的存在来指示。在 TSA 图像的位置，可以从解码较低的时间子层切换到解码任何较高时间子层；在 STSA 图像位置，可以从解码较低时间子层切换到仅解码一个特定较高时间子层(但不包括上面的其他层，除非它们还包含 STSA 或 TSA 图像)；</p>
+
+<h3 id="c-additional-parameter-sets">C) Additional Parameter Sets</h3>
+
+<p>VPS 已添加为元数据，已描述编码视频序列的总体特征，包括时间子层之间的依赖关系。其主要目的是实现标准在系统层的信令方面的兼容扩展性，例如，当未来扩展的可伸缩或多视图比特流的基本层需要由传统解码器解码时。但是，对于这种情况，只与高级解码器相关的关于比特流结构的附加信息将被忽略。</p>
+
+<h3 id="d-reference-picture-sets-and-reference-picture-lists">D) Reference Picture Sets and Reference Picture Lists</h3>
 
 ]]></content>
   </entry>
