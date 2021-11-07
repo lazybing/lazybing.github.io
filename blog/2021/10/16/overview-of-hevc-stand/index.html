@@ -141,6 +141,8 @@
       <li><a href="#a-sampled-representation-of-pictures" id="markdown-toc-a-sampled-representation-of-pictures">A) Sampled Representation of Pictures</a></li>
       <li><a href="#b-division-of-the-picture-into-coding-tree-unit" id="markdown-toc-b-division-of-the-picture-into-coding-tree-unit">B) Division of the Picture into Coding Tree Unit</a></li>
       <li><a href="#c-division-of-the-ctb-into-cbs" id="markdown-toc-c-division-of-the-ctb-into-cbs">C) Division of the CTB into CBs</a></li>
+      <li><a href="#d-pbs-and-pus" id="markdown-toc-d-pbs-and-pus">D) PBs and PUs</a></li>
+      <li><a href="#e-tree-structured-partitioning-into-transform-blocks-and-units" id="markdown-toc-e-tree-structured-partitioning-into-transform-blocks-and-units">E) Tree-Structured Partitioning Into Transform Blocks and Units</a></li>
     </ul>
   </li>
 </ul>
@@ -320,6 +322,22 @@
 <p>CTU 包含四叉树语法，该语法允许根据 CTB 覆盖区域的信号特征，将 CBs 划分为选定的合适大小。四叉树划分过程可以迭代，直到 luma CB 的大小达到所允许的最小luma CB 大小。该最小 luma CB 大小是编码器使用 SPS 中的语法元素指定选择的，它始终为 8x8 或更大(以 luma 样本为单位)。</p>
 
 <p>图片的边界以允许的最小 luma CB 大小为单位定义。因此，在图片的右边缘和下边缘，一些 CTU 可能会覆盖部分位于图片边界之外的区域。解码器检测到这种情况，并根据需要隐士分割 CTU 四叉树，以将 CB 大小减小到整个 CB 将适合图片的位置。</p>
+
+<h3 id="d-pbs-and-pus">D) PBs and PUs</h3>
+
+<p>根据 CU 使用的是画面内预测还是画面间预测，CU 的预测模式用信号表示为帧内预测或帧间预测。</p>
+
+<p>当预测模式是帧内模式时，PU 大小（即建立图像内预测模式时的块大小）与所有块大小的 CB 大小相同。但比特流中允许的最小 CB 大小除外。对于后一种情况，存在一个标志，指示 CB 是否被分成四个 PB 象限，每个象限都有自己的帧内预测模式。允许这种分割的原因是为大小 4x4 的块启用不同的帧内预测模式选择。当亮度帧内预测使用 4x4 块进行操作时，色度帧内预测也使用 4x4 块(每个块覆盖与四个 4x4 亮度块相同的图片区域)。帧内预测操作时的实际区域大小(与建立帧内预测模式时的 PB 大小不同)取决于如下所述的剩余编码分区。</p>
+
+<p>当预测模式是帧间时，指定亮度和色度 CBs 是否被分割成一个、两个或四个 PBs。仅当 CB 尺寸等于允许的最小 CB 尺寸时，才允许将 CB 分为四个 PBs，使用等效类型的拆分，否则可在设计的 CB 级而不是 PB 级执行拆分。当 CB 被划分为四个 PBs 时，每个 PB 覆盖 CB 的一个角；当 CB 被划分为两个 PBs 时，可能会出现六种不同的划分。图 3 描述了帧间预测的 CBs 的划分可能性。图中的上半部分说明了划分大小为 MxM 的 CB，将 CB 划分为大小为 MxM/2 或 M/2xM 的两个 PBs，将其划分为大小为 M/2xM/2 的四个 PBs 的情况。图 3 中下半部分的四种划分类型被称为非对称运动分区(AMP)，并且仅在 luma 的 M 为 16 或更大时才允许。不对称划分的一个 PB 的高度或宽度分别为 M/4 和 M，另一个 PB 的高度或宽度分别为 3M/4 和 M，填充 CB 的其余部分。每个帧间预测 PB 被分配一个或两个运动矢量和参考图片索引。为了最小化最坏情况下的内存带宽，不允许使用 luma 大小为 4x4 的 PBs 进行帧间预测，并且 luma 大小为 4x8 和 8x4 的 PBs 仅限于单预测编码。下面进一步描述帧间预测处理。</p>
+
+<p>luma 和 chroma PBs，以及相关的预测语法构成 PU。</p>
+
+<h3 id="e-tree-structured-partitioning-into-transform-blocks-and-units">E) Tree-Structured Partitioning Into Transform Blocks and Units</h3>
+
+<p>对于残差编码，CB 可以递归地划分为 TBs(Transform Blocks)。划分由残差四叉树表示。</p>
+
+<p>如图 4 所示，仅指定方形 CB 和 TB 分区，其中块可以递归地分割为四象限。对于给定大小的 MxM 的 luma CB，一个标志表示它是否被划分为大小为 M/2xM/2 的四个块。</p>
 
 </div>
 
