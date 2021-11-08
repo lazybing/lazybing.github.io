@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevc/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-07T07:22:14-08:00</updated>
+  <updated>2021-11-07T16:14:42-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -63,6 +63,7 @@
       <li><a href="#c-division-of-the-ctb-into-cbs" id="markdown-toc-c-division-of-the-ctb-into-cbs">C) Division of the CTB into CBs</a></li>
       <li><a href="#d-pbs-and-pus" id="markdown-toc-d-pbs-and-pus">D) PBs and PUs</a></li>
       <li><a href="#e-tree-structured-partitioning-into-transform-blocks-and-units" id="markdown-toc-e-tree-structured-partitioning-into-transform-blocks-and-units">E) Tree-Structured Partitioning Into Transform Blocks and Units</a></li>
+      <li><a href="#f-slices-and-tiles" id="markdown-toc-f-slices-and-tiles">F) Slices and Tiles</a></li>
     </ul>
   </li>
 </ul>
@@ -257,7 +258,11 @@
 
 <p>对于残差编码，CB 可以递归地划分为 TBs(Transform Blocks)。划分由残差四叉树表示。</p>
 
-<p>如图 4 所示，仅指定方形 CB 和 TB 分区，其中块可以递归地分割为四象限。对于给定大小的 MxM 的 luma CB，一个标志表示它是否被划分为大小为 M/2xM/2 的四个块。</p>
+<p>如图 4 所示，仅指定方形 CB 和 TB 分区，其中块可以递归地分割为四象限。对于给定大小的 MxM 的 luma CB，一个标志表示它是否被划分为大小为 M/2xM/2 的四个块。如果可以更进一步划分(SPS 中指示的残差四叉树的最大深度所示)，则为每个划分分配一个标志，指示是否将其继续拆分为四叉树。由残差四叉树产生的叶子节点，是通过变换编码进一步处理的变换块。编码器指示它将使用的最大和最小 luma  TB 大小。当 CB 大小大于最大 TB 大小时，划分是隐士的。当划分会导致 luma TB 大小小于指定的最小值时，不再划分也是隐含的。chroma TB 大小是 luma TB 大小的一半，除非 luma TB 为 4x4，在这种情况下，单个 4x4 chroma TB 用于四个 4x4 luma TB 覆盖的区域。在帧内预测 CUs 情况下，最近相邻 TBs（在CB之内或之外）的解码样本被用作帧内预测的参考数据。</p>
+
+<p>与之前标准不同，HEVC 设计允许一个 TB 跨越多个 PBs 用于帧间预测 CU，以最大限度地发挥四叉树结构 TB 分区的潜在编码效率优势。</p>
+
+<h3 id="f-slices-and-tiles">F) Slices and Tiles</h3>
 
 ]]></content>
   </entry>
