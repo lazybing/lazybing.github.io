@@ -199,5 +199,39 @@ luma 和 chroma PBs，以及相关的预测语法构成 PU。
 
 对于残差编码，CB 可以递归地划分为 TBs(Transform Blocks)。划分由残差四叉树表示。
 
-如图 4 所示，仅指定方形 CB 和 TB 分区，其中块可以递归地分割为四象限。对于给定大小的 MxM 的 luma CB，一个标志表示它是否被划分为大小为 M/2xM/2 的四个块。
+如图 4 所示，仅指定方形 CB 和 TB 分区，其中块可以递归地分割为四象限。对于给定大小的 MxM 的 luma CB，一个标志表示它是否被划分为大小为 M/2xM/2 的四个块。如果可以更进一步划分(SPS 中指示的残差四叉树的最大深度所示)，则为每个划分分配一个标志，指示是否将其继续拆分为四叉树。由残差四叉树产生的叶子节点，是通过变换编码进一步处理的变换块。编码器指示它将使用的最大和最小 luma  TB 大小。当 CB 大小大于最大 TB 大小时，划分是隐士的。当划分会导致 luma TB 大小小于指定的最小值时，不再划分也是隐含的。chroma TB 大小是 luma TB 大小的一半，除非 luma TB 为 4x4，在这种情况下，单个 4x4 chroma TB 用于四个 4x4 luma TB 覆盖的区域。在帧内预测 CUs 情况下，最近相邻 TBs（在CB之内或之外）的解码样本被用作帧内预测的参考数据。
+
+与之前标准不同，HEVC 设计允许一个 TB 跨越多个 PBs 用于帧间预测 CU，以最大限度地发挥四叉树结构 TB 分区的潜在编码效率优势。
+
+### F) Slices and Tiles
+
+Slice 是按照光栅扫描顺序处理 CTU 序列的。如图5(a)所示，可以将图片分割成一个或多个 slices，使得图片是一个或多个 slice 集合。在给定SPS 和 PPS 参数集的情况下，slice 是自包含的，可以从比特流中解析它们的语法元素，并且可以正确解码 slice 表示的图片区域中的样本值(除了 slice 边缘附近的循环过程效果)，不使用来自同以图片中其他 slice 的任何数据。这意味着帧内预测(例如，帧内图片空间信号预测或运动向量预测)不会跨 slice 边界执行。然而，可能需要来其他 slice 的一些信息，跨 slice 的应用在 Loop Filter 中。每个 slice 可以使用不同的编码类型进行编码，如下所示。
+
+1) I Slice: Slice 内的所有 CUs 单元只使用帧内预测编码。  
+2）P Slice: 除了 I Slice 的编码类型外，P Slice 中的一些 CUs 还可以使用 每个 PB 最多一个运动补偿预测信号的帧间预测来编码(即，单预测)。P Slice 仅使用 RPS List0。  
+3）B Slice: 除了 P Slice 中可用的编码类型外，B Slice 中的一些 CUs 还可以使用每个 PB 最多两个运动补偿预测信号的帧间预测编码(即，双预测)。B Slice 可以同时使用 RPS List0 和 List1。  
+
+引入 slice 的目的是，在数据丢失后重新同步。此外，Slice 经常被限制使用最大位数，例如，用于分组传输。因此，根据视频场景中的不同，不同的 Slice 可能包含不同数量 CTU。除了 Slice 之外，HEVC 还定义了 Tiles，Tile 是图片中自包含且独立可解码的矩形区域。Tiles 的主要目的是支持使用并行处理架构进行编码和解码。多个 Tiles 可以在同一个 Slice内，共享头信息。对应的，同一个 Tile 也可以包含多个 Slices。如图 5(b) 所示，Tile 由一组矩形排列的 CTU 组成（通常，但不一定，所有 CTU 都包含大约相同数量的 CTU）。
+
+为了辅助数据打包的粒度，还额外定义了相关 Slices。最后，使用 WPP，Slice 被划分为 CTU 行。在一行 CTU 中，只要做出了熵编码器的预测和自适应所需的一些决策，就可以开始同一行的解码。这样就可以在编解码中使用多线程，同时并行处理 CTU 行。图 5(c) 给出了示例。为了简化设计，不允许将 WPP 与 Tiles 结合使用(尽管原则上，这些功能可以在一起正常使用)。
+
+### G) Intrapicture Prediction
+
+### H) Interpicture Prediction
+
+### I) Transform, Scaling, and Quantization
+
+### J) Entropy Coding
+
+### K) In-Loop Filters
+
+### L) Special Coding Modes
+
+## Profiles, Tiers And Levels
+
+### A) Profile, Level, and Tier Concepts
+
+
+
+
 
