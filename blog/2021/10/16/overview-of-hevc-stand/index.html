@@ -144,6 +144,16 @@
       <li><a href="#d-pbs-and-pus" id="markdown-toc-d-pbs-and-pus">D) PBs and PUs</a></li>
       <li><a href="#e-tree-structured-partitioning-into-transform-blocks-and-units" id="markdown-toc-e-tree-structured-partitioning-into-transform-blocks-and-units">E) Tree-Structured Partitioning Into Transform Blocks and Units</a></li>
       <li><a href="#f-slices-and-tiles" id="markdown-toc-f-slices-and-tiles">F) Slices and Tiles</a></li>
+      <li><a href="#g-intrapicture-prediction" id="markdown-toc-g-intrapicture-prediction">G) Intrapicture Prediction</a></li>
+      <li><a href="#h-interpicture-prediction" id="markdown-toc-h-interpicture-prediction">H) Interpicture Prediction</a></li>
+      <li><a href="#i-transform-scaling-and-quantization" id="markdown-toc-i-transform-scaling-and-quantization">I) Transform, Scaling, and Quantization</a></li>
+      <li><a href="#j-entropy-coding" id="markdown-toc-j-entropy-coding">J) Entropy Coding</a></li>
+      <li><a href="#k-in-loop-filters" id="markdown-toc-k-in-loop-filters">K) In-Loop Filters</a></li>
+      <li><a href="#l-special-coding-modes" id="markdown-toc-l-special-coding-modes">L) Special Coding Modes</a></li>
+    </ul>
+  </li>
+  <li><a href="#profiles-tiers-and-levels" id="markdown-toc-profiles-tiers-and-levels">Profiles, Tiers And Levels</a>    <ul>
+      <li><a href="#a-profile-level-and-tier-concepts" id="markdown-toc-a-profile-level-and-tier-concepts">A) Profile, Level, and Tier Concepts</a></li>
     </ul>
   </li>
 </ul>
@@ -349,6 +359,26 @@
 <p>1) I Slice: Slice 内的所有 CUs 单元只使用帧内预测编码。<br />
 2）P Slice: 除了 I Slice 的编码类型外，P Slice 中的一些 CUs 还可以使用 每个 PB 最多一个运动补偿预测信号的帧间预测来编码(即，单预测)。P Slice 仅使用 RPS List0。<br />
 3）B Slice: 除了 P Slice 中可用的编码类型外，B Slice 中的一些 CUs 还可以使用每个 PB 最多两个运动补偿预测信号的帧间预测编码(即，双预测)。B Slice 可以同时使用 RPS List0 和 List1。</p>
+
+<p>引入 slice 的目的是，在数据丢失后重新同步。此外，Slice 经常被限制使用最大位数，例如，用于分组传输。因此，根据视频场景中的不同，不同的 Slice 可能包含不同数量 CTU。除了 Slice 之外，HEVC 还定义了 Tiles，Tile 是图片中自包含且独立可解码的矩形区域。Tiles 的主要目的是支持使用并行处理架构进行编码和解码。多个 Tiles 可以在同一个 Slice内，共享头信息。对应的，同一个 Tile 也可以包含多个 Slices。如图 5(b) 所示，Tile 由一组矩形排列的 CTU 组成（通常，但不一定，所有 CTU 都包含大约相同数量的 CTU）。</p>
+
+<p>为了辅助数据打包的粒度，还额外定义了相关 Slices。最后，使用 WPP，Slice 被划分为 CTU 行。在一行 CTU 中，只要做出了熵编码器的预测和自适应所需的一些决策，就可以开始同一行的解码。这样就可以在编解码中使用多线程，同时并行处理 CTU 行。图 5(c) 给出了示例。为了简化设计，不允许将 WPP 与 Tiles 结合使用(尽管原则上，这些功能可以在一起正常使用)。</p>
+
+<h3 id="g-intrapicture-prediction">G) Intrapicture Prediction</h3>
+
+<h3 id="h-interpicture-prediction">H) Interpicture Prediction</h3>
+
+<h3 id="i-transform-scaling-and-quantization">I) Transform, Scaling, and Quantization</h3>
+
+<h3 id="j-entropy-coding">J) Entropy Coding</h3>
+
+<h3 id="k-in-loop-filters">K) In-Loop Filters</h3>
+
+<h3 id="l-special-coding-modes">L) Special Coding Modes</h3>
+
+<h2 id="profiles-tiers-and-levels">Profiles, Tiers And Levels</h2>
+
+<h3 id="a-profile-level-and-tier-concepts">A) Profile, Level, and Tier Concepts</h3>
 
 </div>
 
