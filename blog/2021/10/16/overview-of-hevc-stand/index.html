@@ -344,7 +344,11 @@
 
 <h3 id="f-slices-and-tiles">F) Slices and Tiles</h3>
 
-<p>Slice 是按照光栅扫描顺序处理 CTU 序列的。如图5(a)所示，可以将图片分割成一个或多个 slices，使得图片是一个或多个 slice 集合。在给定SPS 和 PPS 参数集的情况下，slice 是自包含的，可以从比特流中解析它们的语法元素，并且可以正确解码 slice 表示的图片区域中的样本值(除了 slice 边缘附近的循环过程效果)，不使用来自同以图片中其他 slice 的任何数据。</p>
+<p>Slice 是按照光栅扫描顺序处理 CTU 序列的。如图5(a)所示，可以将图片分割成一个或多个 slices，使得图片是一个或多个 slice 集合。在给定SPS 和 PPS 参数集的情况下，slice 是自包含的，可以从比特流中解析它们的语法元素，并且可以正确解码 slice 表示的图片区域中的样本值(除了 slice 边缘附近的循环过程效果)，不使用来自同以图片中其他 slice 的任何数据。这意味着帧内预测(例如，帧内图片空间信号预测或运动向量预测)不会跨 slice 边界执行。然而，可能需要来其他 slice 的一些信息，跨 slice 的应用在 Loop Filter 中。每个 slice 可以使用不同的编码类型进行编码，如下所示。</p>
+
+<p>1) I Slice: Slice 内的所有 CUs 单元只使用帧内预测编码。<br />
+2）P Slice: 除了 I Slice 的编码类型外，P Slice 中的一些 CUs 还可以使用 每个 PB 最多一个运动补偿预测信号的帧间预测来编码(即，单预测)。P Slice 仅使用 RPS List0。<br />
+3）B Slice: 除了 P Slice 中可用的编码类型外，B Slice 中的一些 CUs 还可以使用每个 PB 最多两个运动补偿预测信号的帧间预测编码(即，双预测)。B Slice 可以同时使用 RPS List0 和 List1。</p>
 
 </div>
 
