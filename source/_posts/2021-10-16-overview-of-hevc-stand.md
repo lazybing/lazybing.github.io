@@ -223,6 +223,12 @@ Slice 是按照光栅扫描顺序处理 CTU 序列的。如图5(a)所示，可�
 
 ### J) Entropy Coding
 
+HEVC 只指定了一种熵编码方法，CABAC；而不是 H.264/AVC 中的两种。CABAC 算法的核心并没有改变，以下小节介绍了如何在 HEVC 设计中使用 CABAC 的几个方面。
+
+1）Context Modeling
+
+`(上下文建模)context modeling`的适当选择是提高 CABAC 编码效率的关键因素。在 HEVC 中，除了H.264/AVC 中使用的空间相邻语法元素外，还利用编码树或变换树的拆分深度来推导各种语法元素的上下文模型索引。
+
 ### K) In-Loop Filters
 
 ### L) Special Coding Modes
@@ -231,7 +237,33 @@ Slice 是按照光栅扫描顺序处理 CTU 序列的。如图5(a)所示，可�
 
 ### A) Profile, Level, and Tier Concepts
 
+Profiles，Tiers 和 Levels 指定了一致性点，使得具有类似功能需求的各种应用程序以可互操作的方式实施标准。Profile 定义了一组可用于生成一致性比特流的编码工具或算法；Level 对比特流的某些关键参数施加约束，它对应于解码器处理负载和内存的能力。根据 DPB 的最大采样率、最大图片大小、最大比特率、最小压缩比和容量以及在解码之前保存压缩数据以用于数据流管理的编码图片缓冲器(CPB)来建立 Level 限制。在 HEVC 的设计中，一些应用程序，其要求仅在最大比特率和 CPB 容量方面存在差异。为了解决此问题，为某些 Level 指定了两个 Tiers---Main Tier 用于大多数应用程序，High Tier 用于要求更苛刻的应用程序。
 
+符合特定 Tier 和 Level 的解码器需要能够符合解码所有符合同一 Level 或 Tier 或其下任何级别的比特流。符合特定 Profile 文件的解码器必须支持该 Profile 文件中的所有功能。与解码器不同，编码器并不需要使用 Profile 中支持的任何特定特征集，单需要生成一致性比特流，即符合规定约束的比特流，这些约束使一致性解码器能够对其进行解码。
 
+### B) The HEVC Profile and Level Definitions
+
+预计到 2013 年 1 月，有三个针对不同应用要求的 Profiles(Main, Main10, Main Still Picture)将最终确定。最小化 Profile 文件的数量提供了设备之间最大程度的互操作性，并通过以下应用进一步证明了这一点：传统上独立的服务(如广播、移动、流媒体)正在汇聚到一个点，即大多数设备应可用于支持所有这些服务。这三个profile包括本文前面几节中描述的编码工具和高层语法，同时施加以下限制。
+
+1) 只支持 4:2:0 chroma 采样格式。  
+2）当编码器使用多 Tiles 编码时，它不能使用 WPP，并且每个 Tile 必须至少 256 luma 采样宽度和 64 luma 采样高。  
+3）Main 和 Main Still Picture Profile，只支持 8 bit 采样精度的视频，Main10 Profile 支持 10 bps。   
+4) Main Still Picture Profile 中，整个视频只能包含一个编码图片(因此只支持帧内预测)。  
+
+如表 V 所示，13个级别的定义计划包含在第一版的 SPEC 中，范围从仅支持相对较小图片(如176x144的 luma 图片大小)的 Level 到 7680x4320 (通常称为8kx4k)的图片大小。图片的宽高均要求小于或等于 8xMaxLumaPs，其中 MaxLumaPs 是表 V 中展示的最大 luma 大小。
+
+其中 8 个Levels(Level 4 以及更高)支持 2 个 Tiers。CPB 容量等于所有级别的最大比特率乘以 1s，但 level 1 除外，其(更高) CPB 容量为 350000B。对于每个 Level，当以该 Level 支持的最大图片大小操作时，每个 Level 中指定的最大 DPB 容量为 6 张图片(包括当前图片和解码器在任何时间点保留的用于参考或输出目的的所有其他图片)。当以小于该 Level 支持的最大图片大小的图片操作时，DPB 图片存储容量可以增加到多达 16 张图片(取决于特定的图片大小)。每张图片中水平和垂直使用的最大平铺数量，以及每秒使用的最大平铺数量指定了特定于 level 的约束。
+
+## 历史与标准化进程
+
+在 H.264/AVC High Profile 于 2004 年年中最终确认之后，ITU-T VCEG 和 ISO/IEC MPEG 一致在努力确定编码效率的下一个重大进步何时可以实现标准化。VCEG 于 2004 年开始研究潜在的进展，于 2005 年初开始确定某些关键技术领域进行研究，并为本文开发了一个通用的 KTA 软件代码库。使用 KTA 软件代码库提出并验证了各种技术，该代码是从 H.264/AVC 参考软件 JM 开发的。
+
+## 结论
+
+新兴的 HEVC标准由ITU-T VCEG 和 ISO/IEC MPEG 组织共同开发和标准化。HEVC 代表了视频编码技术的一系列进步。其视频编码层设计基于传统的基于块的运动补偿混合视频编码概念，但与先前的标准有一些重要区别。
+
+如果能将各种特性很好的结合使用，新设计的功能将节省大约 50% 的码率，同时获得先前标准(尤其是高分辨率视频)相比的同等视觉质量。有关压缩性能的更多详细信息，请参阅[Comparison of the coding efficiency of video coding standards--Including High Efficiency Video Coding]。实现的复杂性分析超出了本文的范围，然而，使用现代处理技术，HEVC 整体的编码器实现复杂度不是主要负担(例如，相对于H.264/AVC)，并且编码器复杂度也是可管理的。有关实现复杂性的更多详细信息，请参阅[HEVC Complexity and implementation analysis]。
+
+JCT-VC 文件管理系统中提供了有关该项目的更多信息和文件[JCT-VC Document Management System](https://phenix.int-evry.fr/jct/)。
 
 
