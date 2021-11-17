@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-16T07:11:24-08:00</updated>
+  <updated>2021-11-17T07:21:40-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -304,6 +304,16 @@
 <h3 id="k-in-loop-filters">K) In-Loop Filters</h3>
 
 <h3 id="l-special-coding-modes">L) Special Coding Modes</h3>
+
+<p>HEVC 定义了三种特殊的编码模式，可在 CU 级或 TU 级调用。</p>
+
+<p>1）在 I-PCM 模式下，预测、变换、量化和熵编码都被跳过，samples 之间由预定义的 bits 数表示。它的主要目的是避免在信号特性异常且无法通过混合编码正确处理时过度消耗比特。(类噪声信号)。</p>
+
+<p>2）在无损模式下，影响解码图片的变换、量化和其他处理(SAO 和 Deblock 滤波)被跳过。来自帧内或帧间预测的残差信号被直接送入熵编码器(使用通常应用于量化变换系数的相同领域上下文)。这使得无需定义任何额外的编码工具即可实现数学上的无损重建。</p>
+
+<p>3）在变换 skip 模式下，只有变换才会被跳过。这主要提升了某些类型视频内容的压缩，例如计算机生成的图像或相机视图内容混合的图形。此模式仅适用于 4x4 大小的 TBs。</p>
+
+<p>SAO 和 Deblock 滤波不应用于无损模式区域，并且标志控制它们是否应用于 I-PCM 区域。</p>
 
 <h2 id="profiles-tiers-and-levels">Profiles, Tiers And Levels</h2>
 
