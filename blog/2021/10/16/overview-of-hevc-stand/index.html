@@ -383,6 +383,10 @@
 
 <h3 id="k-in-loop-filters">K) In-Loop Filters</h3>
 
+<p>在 HEVC 中，在将重建帧写入解码器的 DPB Buffer 之前，会对重建帧应用两个处理步骤，即 DBF(Deblocking Filter)和SAO Filter。DBF 旨在减少由于基于块的编码而产生的块效应。DBF 与 H.264/AVC 标准中的 DBF 类似，而 SAO 是 HEVC 中新引入的。DBF 仅应用于位于块边界处的样本，SAO 滤波器自适应地应用于满足特定条件(例如基于梯度)的所有样本。在 HEVC 的开发过程中，还考虑在 SAO 滤波器之后运行第三个处理步骤，称为自适应环路滤波器(ALF,adaptive loop filter)；但最终设计中未包含 ALF 功能。</p>
+
+<p>1) Deblocking Filter:DBF 应用于与 PU 或 TU 边界相邻的所有样本，但如果PU 或 TU 边界也是图片边界除外，或者当 Deblocking 被 slice 或 tile 边界禁用时除外(这是可以由编码器发出的信号的选项)。</p>
+
 <h3 id="l-special-coding-modes">L) Special Coding Modes</h3>
 
 <p>HEVC 定义了三种特殊的编码模式，可在 CU 级或 TU 级调用。</p>
