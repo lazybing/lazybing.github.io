@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-21T05:25:00-08:00</updated>
+  <updated>2021-11-21T07:48:16-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -292,6 +292,16 @@
 <h3 id="h-interpicture-prediction">H) Interpicture Prediction</h3>
 
 <h3 id="i-transform-scaling-and-quantization">I) Transform, Scaling, and Quantization</h3>
+
+<p>与先前标准的方式类似，HEVC 使用预测误差残差的变换编码。如 IV-E 节所述，残差块被分割为多个方形 TBs。支持的变换块大小为 4x4、8x8、16x16 和 32x32。</p>
+
+<p>1) Core Transform: 二维变换通过在水平和垂直方向上应用一维变换来计算。核心变换矩阵的元素是通过近似于缩放的DCT基函数来推导的，其考虑因素包括限制变换计算所需的动态范围，以及当矩阵项被指定为整数值时最大化精度和接近正交性。</p>
+
+<p>为简单起见，仅为 32 个点的长度指定了一个整数矩阵，并且对其他大小使用了二次抽样版本。例如，length-16 变换的矩阵如 H 的等式所示。</p>
+
+<p>长度-8 和长度-4 的变换的矩阵可通过使用第0、2、4…、行的前八个条目导出。并使用第0、4、8…行的前四个条目。尽管该标准仅根据矩阵的值来指定变换，单选择矩阵中条目的值时，其关键对称特性使快速部分分解实现比普通矩阵乘法运算少得多，较大的变换可以通过使用较小的变换作为构建块来构建。</p>
+
+<p>由于支持转换的大小的增加，限制转换第一阶段中间结果的动态范围非常重要。HEVC 在变换的第一个1-D 逆变换阶段(垂直逆变换阶段)后显式插入7-b右移和16-b裁剪操作，以确保所有中间值都可以存储在16-b内存中(用于8-b视频解码)。</p>
 
 <h3 id="j-entropy-coding">J) Entropy Coding</h3>
 
