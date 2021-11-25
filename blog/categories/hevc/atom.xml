@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevc/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-24T05:55:35-08:00</updated>
+  <updated>2021-11-25T07:16:04-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -292,6 +292,8 @@
 <p>帧内预测根据 TB 大小进行操作，并且使用来自空间相邻 TB 的先前解码的边界样本来形成预测信号。针对从 4x4 到 32x32 的方形 TB 大小，定义了具有 33 种不同方向的方向预测。可能的预测方向如图 6 所示。除了方向预测外，还可以使用 Planar 预测(假设振幅表面有从边界导出的水平和垂直斜率)和 DC 预测(具有与边界样本的平均值匹配的值的平坦表面)。对于chroma 分量，水平、垂直、planar 和 DC 预测模式可以被显示地传递；或者 chroma 预测模式可以被指示为与 luma 预测模式相同(并且，作为避免冗余发信号的特殊情况，当指示前四个选择之一并且与 luma 预测模式相同时，帧内预测模式可以被指示为与 luma 预测模式相同)。</p>
 
 <p>根据 slice 类型不同，每个 CB 可以由几种编码类型中的一种进行编码。与 H.264/AVC 类似，所有 slice 类型都支持图像内预测编码。HEVC 支持称为帧内预测编码的各种图像内预测编码方法，包括 Intra-Angular，Intra-Planar，和 Intra-DC。以下小节将对这些技术以及将共同应用的几种技术进行简要的进一步解释。</p>
+
+<p>1) PB Partitioning: 尺寸为 MxM 的帧内预测 CB 可能具有两种类型的 PB 分区之一，称为 PART-2Nx2N 和 PART-NxN，第一个表示 CB 未被拆分，第二个表示 CB 拆分为四个大相等的 PBs。从概念上讲，在这个符号中，N=M/2。然而，当前CB的尺寸大小最小CU尺寸时，可以通过使用四个较小的CB来表示由四个PBs指定的相同区域。因此，HEVC 设计只允许分区类型-当前CB尺寸等于最小CU尺寸时，使用 Part-NxN。这意味着，当使用帧内预测模式，对CB进行编码时，PB大小始终等于CB大小，并且CB大小不等于最小CU大小。尽管帧内预测模式是在PB级别建立的，但实际的预测过程对每个TB分别进行操作。</p>
 
 <h3 id="h-interpicture-prediction">H) Interpicture Prediction</h3>
 
