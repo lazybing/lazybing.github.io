@@ -4,7 +4,7 @@
   <title><![CDATA[懒人李冰]]></title>
   <link href="http://lazybing.github.io/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-26T07:33:19-08:00</updated>
+  <updated>2021-11-27T04:39:13-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -294,6 +294,18 @@
 <p>根据 slice 类型不同，每个 CB 可以由几种编码类型中的一种进行编码。与 H.264/AVC 类似，所有 slice 类型都支持图像内预测编码。HEVC 支持称为帧内预测编码的各种图像内预测编码方法，包括 Intra-Angular，Intra-Planar，和 Intra-DC。以下小节将对这些技术以及将共同应用的几种技术进行简要的进一步解释。</p>
 
 <p>1) PB Partitioning: 尺寸为 MxM 的帧内预测 CB 可能具有两种类型的 PB 分区之一，称为 PART-2Nx2N 和 PART-NxN，第一个表示 CB 未被拆分，第二个表示 CB 拆分为四个大相等的 PBs。从概念上讲，在这个符号中，N=M/2。然而，当前CB的尺寸大小最小CU尺寸时，可以通过使用四个较小的CB来表示由四个PBs指定的相同区域。因此，HEVC 设计只允许分区类型-当前CB尺寸等于最小CU尺寸时，使用 Part-NxN。这意味着，当使用帧内预测模式，对CB进行编码时，PB大小始终等于CB大小，并且CB大小不等于最小CU大小。尽管帧内预测模式是在PB级别建立的，但实际的预测过程对每个TB分别进行操作。</p>
+
+<p>2) Intra_Angular Prediction:空域的帧内预测已经成功应用于 H.264/AVC 中。HEVC 的帧内预测同样在空域中运用，但它在 TB 的大小上有增加，在可选择预测方向的数量上有增加。与 H.264/AVC 的 8 个预测方向相比，HEVC 总共支持 33 个预测方向，使用 intra_angular[k]表示，其中 k 是从 2 到 34 的模式数。这些角度旨在为近水平和近垂直角度提供更密集的覆盖，为近对角线角度提供更粗糙的覆盖，以反映观察到的角度统计普遍性和信号预测处理的有效性。</p>
+
+<p>当使用 Intra-Angular 模式，在使用该预测之前，会从重建(单尚未通过环路滤波器滤波)的空间相邻样本定向预测每个 TB。对于大小为 NxN 的 TB，总共 4N + 1 个空间上相邻的样本可用于预测，如图 6 所示。当从前面的间操作可用时，除了来自当前 TB 的左侧、上方和右侧上方 TB 的样本之外，来自左下 TB 的样本还可用于 HEVC 中的预测。Intra-Angular 模式的预测过程可涉及根据给定方向性从投影参考样本位置外推样本。为了消除在参考行和列缓冲区之间逐个采样切换(例如intra_angular[k] 其中 k 从2-17范围)，位于上列的样本作为位于左列的附加样本进行投影；当 k 从 18-34 范围内时，位于左列的样本被投影为位于上列的样本。</p>
+
+<p>为了提高帧内预测的精度，以 1/32 的样本精度计算投影参考样本位置。双线性插值用于使用位于整数位置的两个最近参考样本获得投影参考样本的值。</p>
+
+<p>Intra-Angular 模式的预测过程在所有块大小和预测方向上都是一致的，而 H.264/AVC 对其支持的 4x4、8x8 和 16x16 的块大小使用不同的方法。由于与 H.264/AVC 相比，HEVC 支持更多种类的 TB 大小和更多的预测方向数，因此这种设计一致性尤其令人满意。</p>
+
+<p>3）Intra_Planar 和 Intra_DC  Prediction: 除了 Intra_Angular Prediction 针对具有强方向性边缘的区域的角度预测，HEVC 支持两种可选的预测方法，即 Intra_Planar 和 Intra_DC 模式，H.264/AVC 中为其指定了类似模式。Intra_DC 预测使用参考像素的平均值进行预测；Intra_Planar 预测使用四个角度参考样本的两个线性预测的平均值以防止块边界出现不连续。HEVC 中的所有块尺寸都支持 Intra_Plannar 预测模式，而 H.264/AVC 仅在 luma PB 尺寸为 16x16 时才支持 plane 预测，其plane 预测的操作与 HEVC 中的 planar 预测有所不同。</p>
+
+<p>4) Reference Sample Smoothing:</p>
 
 <h3 id="h-interpicture-prediction">H) Interpicture Prediction</h3>
 
