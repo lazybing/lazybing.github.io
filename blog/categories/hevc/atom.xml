@@ -4,7 +4,7 @@
   <title><![CDATA[分类:hevc | 懒人李冰]]></title>
   <link href="http://lazybing.github.io/blog/categories/hevc/atom.xml" rel="self"/>
   <link href="http://lazybing.github.io/"/>
-  <updated>2021-11-27T04:39:13-08:00</updated>
+  <updated>2021-11-28T07:40:32-08:00</updated>
   <id>http://lazybing.github.io/</id>
   <author>
     <name><![CDATA[李冰]]></name>
@@ -305,7 +305,9 @@
 
 <p>3）Intra_Planar 和 Intra_DC  Prediction: 除了 Intra_Angular Prediction 针对具有强方向性边缘的区域的角度预测，HEVC 支持两种可选的预测方法，即 Intra_Planar 和 Intra_DC 模式，H.264/AVC 中为其指定了类似模式。Intra_DC 预测使用参考像素的平均值进行预测；Intra_Planar 预测使用四个角度参考样本的两个线性预测的平均值以防止块边界出现不连续。HEVC 中的所有块尺寸都支持 Intra_Plannar 预测模式，而 H.264/AVC 仅在 luma PB 尺寸为 16x16 时才支持 plane 预测，其plane 预测的操作与 HEVC 中的 planar 预测有所不同。</p>
 
-<p>4) Reference Sample Smoothing:</p>
+<p>4) Reference Sample Smoothing: 在 HEVC 中，用于帧内预测的参考样本有时由三抽头[1 2 1]/4 平滑滤波器，以类似于 H.264/AVC 中用于 8x8 帧内预测的方式进行滤波。HEVC 根据方向性、检测到的不连续量和块大小更自适应地应用平滑操作。与 H.264/AVC 中一样，平滑滤波器不适用于 4x4 块。对于 8x8 块，只有对角线方向，intra-angular[k] (k=2、18或34时的角度)使用参考样本平滑。对于 16x16 块，除了近水平和近垂直方向外，参考样品的大多数方向上进行过滤，k 在9-11和22-27范围内。对于 32x32 块，除完全水平(k=10)和完全垂直(k=26)方向外的所有方向，都是用平滑滤波器，并且当检测到的不连续量超过阈值时，应用来自三个相邻区域样本的双线性插值来形成平滑预测。</p>
+
+<p>当块只存大于或等于 8x8 时，Intra-planar模式同样使用平滑滤波，但平滑并不用于 Intra-DC 模式。</p>
 
 <h3 id="h-interpicture-prediction">H) Interpicture Prediction</h3>
 
